@@ -5,7 +5,6 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
-  Card,
   Col,
   Flex,
   InputNumber,
@@ -17,6 +16,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
+import GoalSection from "./GoalSection";
 import { DateTime } from "luxon";
 import React, { useCallback, useEffect, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
@@ -116,8 +116,7 @@ const HabitPanel: React.FunctionComponent<{
   };
 
   return (
-    <Card
-      size={"small"}
+    <GoalSection
       title={"Habit"}
       extra={<Text type={"secondary"}>{ruleText(goal)}</Text>}
     >
@@ -250,7 +249,7 @@ const HabitPanel: React.FunctionComponent<{
           </Space>
         </Flex>
       )}
-    </Card>
+    </GoalSection>
   );
 };
 

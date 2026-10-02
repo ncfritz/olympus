@@ -1,5 +1,6 @@
 import type { Goal, GoalCheckin } from "@ncfritz/olympus-sdk/minerva";
-import { Card, Col, Row, Statistic, Typography } from "antd";
+import { Col, Row, Statistic, Typography } from "antd";
+import GoalSection from "./GoalSection";
 import Highcharts from "highcharts";
 import "highcharts/highcharts-more";
 import HighchartsReact from "highcharts-react-official";
@@ -32,7 +33,7 @@ const OutcomePanel: React.FunctionComponent<{
   const up = (goal.targetValue ?? 0) >= (goal.startValue ?? 0);
 
   return (
-    <Card size={"small"} title={"Progress against pace"}>
+    <GoalSection title={"Progress against pace"}>
       <Row gutter={[16, 16]}>
         <Col xs={12} lg={6}>
           <Statistic
@@ -122,7 +123,7 @@ const OutcomePanel: React.FunctionComponent<{
           ],
         }}
       />
-    </Card>
+    </GoalSection>
   );
 };
 

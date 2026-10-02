@@ -7,7 +7,6 @@ import {
 import type { FullGoal } from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
-  Card,
   Checkbox,
   DatePicker,
   Flex,
@@ -20,6 +19,7 @@ import {
   Tag,
   Typography,
 } from "antd";
+import GoalSection from "./GoalSection";
 import type { Dayjs } from "dayjs";
 import React, { useState } from "react";
 import goalsApi from "../../../api/goalsApi";
@@ -74,7 +74,7 @@ const MilestonePanel: React.FunctionComponent<{
 
   if (goal.progressMode === "manual") {
     return (
-      <Card size={"small"} title={"Progress, set by hand"}>
+      <GoalSection title={"Progress, set by hand"}>
         <GoalProgress goal={goal} size={"default"} />
         <Flex gap={16} align={"center"} style={{ marginTop: 16 }}>
           <Slider
@@ -97,13 +97,12 @@ const MilestonePanel: React.FunctionComponent<{
             Save {manual}%
           </Button>
         </Flex>
-      </Card>
+      </GoalSection>
     );
   }
 
   return (
-    <Card
-      size={"small"}
+    <GoalSection
       title={
         <Space>
           <span>Milestones</span>
@@ -210,7 +209,7 @@ const MilestonePanel: React.FunctionComponent<{
           </Button>
         </Space.Compact>
       )}
-    </Card>
+    </GoalSection>
   );
 };
 

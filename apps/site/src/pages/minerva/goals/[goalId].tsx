@@ -15,8 +15,6 @@ import type {
 import {
   Alert,
   Button,
-  Card,
-  Col,
   Dropdown,
   Empty,
   Flex,
@@ -24,9 +22,9 @@ import {
   message,
   Modal,
   Result,
-  Row,
   Space,
   Spin,
+  Splitter,
   Tag,
   Typography,
 } from "antd";
@@ -34,7 +32,7 @@ import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import goalsApi from "../../../api/goalsApi";
 import tagsApi from "../../../api/tagsApi";
 import AchievementPanel from "../../../components/minerva/goals/AchievementPanel";
@@ -46,6 +44,7 @@ import {
   GoalTypeIcon,
   HealthTag,
 } from "../../../components/minerva/goals/GoalBits";
+import GoalSection from "../../../components/minerva/goals/GoalSection";
 import GoalFormDrawer from "../../../components/minerva/goals/GoalFormDrawer";
 import GoalsBreadcrumbs from "../../../components/minerva/goals/GoalsBreadcrumbs";
 import HabitPanel from "../../../components/minerva/goals/HabitPanel";
@@ -103,6 +102,22 @@ const GoalPage: React.FunctionComponent = () => {
     edit: true,
   });
   const [closing, setClosing] = useState<"achieved" | "missed" | "dropped">();
+  // The split fills the window below where it starts, measured once the
+  // goal has loaded and the header above it is in place.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number>();
+  const loaded = goal !== undefined;
+  useEffect(() => {
+    const fit = () => {
+      const top = rootRef.current?.getBoundingClientRect().top;
+      if (top !== undefined) {
+        setHeight(Math.max(320, window.innerHeight - top - 16));
+      }
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [loaded]);
 
   const load = useCallback(async () => {
     if (!goalId) return;
@@ -235,13 +250,13 @@ const GoalPage: React.FunctionComponent = () => {
   const panel = () => {
     if (goal.progressMode === "subgoals") {
       return (
-        <Card size={"small"} title={"Progress"}>
+        <GoalSection title={"Progress"}>
           <GoalProgress goal={goal} size={"default"} />
           <Text type={"secondary"}>
             {metricText(goal)}, by{" "}
             {ROLLUP_LABEL[goal.rollup ?? "average"].toLowerCase()}.
           </Text>
-        </Card>
+        </GoalSection>
       );
     }
     switch (goal.type) {
@@ -285,220 +300,221 @@ const GoalPage: React.FunctionComponent = () => {
           <span key={"g"}>{goal.title}</span>,
         ]}
       />
-      <div style={{ padding: 16 }}>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} xl={16}>
-            <Flex
-              justify={"space-between"}
-              align={"start"}
-              gap={16}
+      <div style={{ padding: "16px 16px 0" }}>
+        <Flex justify={"space-between"} align={"start"} gap={16} wrap={true}>
+          <Space
+            orientation={"vertical"}
+            size={4}
+            style={{ flex: 1, minWidth: 280 }}
+          >
+            <Space align={"center"} wrap={true}>
+              <Title level={3} style={{ margin: 0 }}>
+                <GoalTypeIcon type={goal.type} /> {goal.title}
+              </Title>
+              <HealthTag health={goal.health} />
+              {goal.deleted && <Tag color={"default"}>Deleted</Tag>}
+            </Space>
+            {goal.why && (
+              <Paragraph type={"secondary"} style={{ margin: 0 }}>
+                <Text strong={true} type={"secondary"}>
+                  Why:
+                </Text>{" "}
+                {goal.why}
+              </Paragraph>
+            )}
+            <Space
               wrap={true}
+              size={[8, 4]}
+              split={<Text type={"secondary"}>·</Text>}
             >
-              <Space
-                orientation={"vertical"}
-                size={4}
-                style={{ flex: 1, minWidth: 280 }}
-              >
-                <Space align={"center"} wrap={true}>
-                  <Title level={3} style={{ margin: 0 }}>
-                    <GoalTypeIcon type={goal.type} /> {goal.title}
-                  </Title>
-                  <HealthTag health={goal.health} />
-                  {goal.deleted && <Tag color={"default"}>Deleted</Tag>}
-                </Space>
-                {goal.why && (
-                  <Paragraph type={"secondary"} style={{ margin: 0 }}>
-                    <Text strong={true} type={"secondary"}>
-                      Why:
-                    </Text>{" "}
-                    {goal.why}
-                  </Paragraph>
-                )}
-                <Space
-                  wrap={true}
-                  size={[8, 4]}
-                  split={<Text type={"secondary"}>·</Text>}
-                >
-                  {category && <Text>{category.name}</Text>}
-                  <Text>
-                    {TYPE_LABEL[goal.type]} ·{" "}
-                    {MODE_LABEL[goal.progressMode].toLowerCase()}
-                  </Text>
-                  <Text>
-                    {cycle ? cycle.name : HORIZON_LABEL[goal.horizon]} ·{" "}
-                    {formatDay(goal.startDate, today)} – {dueText(goal, today)}
-                  </Text>
-                  <Text>{STATUS_LABEL[goal.status]}</Text>
-                  {parent && (
-                    <Link href={`/minerva/goals/${parent.id}`}>
-                      in {parent.title}
-                    </Link>
-                  )}
-                </Space>
-                {goal.tags.length > 0 && (
-                  <Space size={4} wrap={true}>
-                    {goal.tags.map((t) => (
-                      <Tag key={t.id} color={t.color}>
-                        #{t.name}
-                      </Tag>
-                    ))}
-                  </Space>
-                )}
-              </Space>
-              <Space>
-                {!readOnly && (
-                  <Button
-                    icon={<EditOutlined />}
-                    onClick={() => setForm({ open: true, edit: true })}
-                  >
-                    Edit
-                  </Button>
-                )}
-                <Dropdown
-                  menu={{ items: more, onClick: onMore }}
-                  trigger={["click"]}
-                >
-                  <Button icon={<MoreOutlined />} aria-label={"More actions"} />
-                </Dropdown>
-              </Space>
-            </Flex>
-
-            {goal.needsDecision && !readOnly && (
-              <Alert
-                style={{ marginTop: 16 }}
-                type={"warning"}
-                showIcon={true}
-                title={
-                  "At risk or off track on 3 check-ins running. Time to decide."
-                }
-                action={
-                  <Space>
-                    <Button
-                      size={"small"}
-                      onClick={() => setForm({ open: true, edit: true })}
-                    >
-                      Replan
-                    </Button>
-                    <Button
-                      size={"small"}
-                      danger={true}
-                      onClick={() => setClosing("dropped")}
-                    >
-                      Drop
-                    </Button>
-                  </Space>
-                }
-              />
-            )}
-            {closed && (
-              <Alert
-                style={{ marginTop: 16 }}
-                type={goal.status === "achieved" ? "success" : "info"}
-                showIcon={true}
-                title={`${STATUS_LABEL[goal.status]} on ${formatDay(goal.closedOn, today)}`}
-                description={goal.closeNote}
-              />
-            )}
-
-            <div style={{ marginTop: 16 }}>{panel()}</div>
-
-            <Card
-              size={"small"}
-              style={{ marginTop: 16 }}
-              title={`Sub-goals · ${goal.subGoals.length}`}
-              extra={
-                !readOnly && (
-                  <Button
-                    size={"small"}
-                    icon={<PlusOutlined />}
-                    onClick={() => setForm({ open: true, edit: false })}
-                  >
-                    Add sub-goal
-                  </Button>
-                )
-              }
-            >
-              {goal.subGoals.length ? (
-                <List
-                  dataSource={goal.subGoals}
-                  renderItem={(s) => (
-                    <List.Item>
-                      <Flex vertical={true} gap={4} style={{ width: "100%" }}>
-                        <Flex gap={8} align={"center"}>
-                          <GoalTypeIcon type={s.type} />
-                          <Link
-                            href={`/minerva/goals/${s.id}`}
-                            style={{ flex: 1 }}
-                          >
-                            {s.title}
-                          </Link>
-                          <HealthTag health={s.health} />
-                        </Flex>
-                        <GoalProgress goal={s} />
-                        <Text type={"secondary"} style={{ fontSize: 12 }}>
-                          {metricText(s)} · {dueText(s, today)}
-                        </Text>
-                      </Flex>
-                    </List.Item>
-                  )}
-                />
-              ) : (
-                <Empty
-                  description={"No sub-goals"}
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
+              {category && <Text>{category.name}</Text>}
+              <Text>
+                {TYPE_LABEL[goal.type]} ·{" "}
+                {MODE_LABEL[goal.progressMode].toLowerCase()}
+              </Text>
+              <Text>
+                {cycle ? cycle.name : HORIZON_LABEL[goal.horizon]} ·{" "}
+                {formatDay(goal.startDate, today)} – {dueText(goal, today)}
+              </Text>
+              <Text>{STATUS_LABEL[goal.status]}</Text>
+              {parent && (
+                <Link href={`/minerva/goals/${parent.id}`}>
+                  in {parent.title}
+                </Link>
               )}
-              {goal.subGoals.length > 0 && goal.progressMode !== "subgoals" && (
-                <Text type={"secondary"} style={{ fontSize: 12 }}>
-                  Progress comes from{" "}
-                  {MODE_LABEL[goal.progressMode]
-                    .toLowerCase()
-                    .replace("from ", "")}
-                  , not from the sub-goals. Switch to a rollup in Edit.
-                </Text>
-              )}
-            </Card>
-
-            <Card
-              size={"small"}
-              style={{ marginTop: 16 }}
-              title={"Linked tasks"}
-            >
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={"Linking tasks to goals ships with Tasks."}
-              />
-            </Card>
-          </Col>
-
-          <Col xs={24} xl={8}>
+            </Space>
+            {goal.tags.length > 0 && (
+              <Space size={4} wrap={true}>
+                {goal.tags.map((t) => (
+                  <Tag key={t.id} color={t.color}>
+                    #{t.name}
+                  </Tag>
+                ))}
+              </Space>
+            )}
+          </Space>
+          <Space>
             {!readOnly && (
-              <Card
-                size={"small"}
-                title={
-                  <Space>
-                    <CheckCircleOutlined />
-                    New check-in
-                  </Space>
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => setForm({ open: true, edit: true })}
+              >
+                Edit
+              </Button>
+            )}
+            <Dropdown
+              menu={{ items: more, onClick: onMore }}
+              trigger={["click"]}
+            >
+              <Button icon={<MoreOutlined />} aria-label={"More actions"} />
+            </Dropdown>
+          </Space>
+        </Flex>
+
+        {goal.needsDecision && !readOnly && (
+          <Alert
+            style={{ marginTop: 16 }}
+            type={"warning"}
+            showIcon={true}
+            title={
+              "At risk or off track on 3 check-ins running. Time to decide."
+            }
+            action={
+              <Space>
+                <Button
+                  size={"small"}
+                  onClick={() => setForm({ open: true, edit: true })}
+                >
+                  Replan
+                </Button>
+                <Button
+                  size={"small"}
+                  danger={true}
+                  onClick={() => setClosing("dropped")}
+                >
+                  Drop
+                </Button>
+              </Space>
+            }
+          />
+        )}
+        {closed && (
+          <Alert
+            style={{ marginTop: 16 }}
+            type={goal.status === "achieved" ? "success" : "info"}
+            showIcon={true}
+            title={`${STATUS_LABEL[goal.status]} on ${formatDay(goal.closedOn, today)}`}
+            description={goal.closeNote}
+          />
+        )}
+      </div>
+      {/* The split fills the window below the header; each side scrolls on
+          its own, without a visible scrollbar. */}
+      <div ref={rootRef} style={{ paddingInline: 16 }}>
+        <Splitter style={{ height }}>
+          <Splitter.Panel
+            defaultSize={"66%"}
+            min={"40%"}
+            max={"80%"}
+            style={{ overflowY: "auto", scrollbarWidth: "none" }}
+          >
+            <div style={{ paddingRight: 16 }}>
+              {panel()}
+
+              <GoalSection
+                title={`Sub-goals · ${goal.subGoals.length}`}
+                extra={
+                  !readOnly && (
+                    <Button
+                      type={"text"}
+                      size={"small"}
+                      icon={<PlusOutlined />}
+                      onClick={() => setForm({ open: true, edit: false })}
+                    >
+                      Add sub-goal
+                    </Button>
+                  )
                 }
               >
-                <CheckinForm goal={goal} onSaved={load} />
-              </Card>
-            )}
-            <Card
-              size={"small"}
-              title={`Check-in history · ${checkins.length}`}
-              style={{ marginTop: readOnly ? 0 : 16 }}
-            >
-              <CheckinHistory
-                goal={goal}
-                checkins={checkins}
-                today={today}
-                onChanged={load}
-              />
-            </Card>
-          </Col>
-        </Row>
+                {goal.subGoals.length ? (
+                  <List
+                    dataSource={goal.subGoals}
+                    renderItem={(s) => (
+                      <List.Item>
+                        <Flex vertical={true} gap={4} style={{ width: "100%" }}>
+                          <Flex gap={8} align={"center"}>
+                            <GoalTypeIcon type={s.type} />
+                            <Link
+                              href={`/minerva/goals/${s.id}`}
+                              style={{ flex: 1 }}
+                            >
+                              {s.title}
+                            </Link>
+                            <HealthTag health={s.health} />
+                          </Flex>
+                          <GoalProgress goal={s} />
+                          <Text type={"secondary"} style={{ fontSize: 12 }}>
+                            {metricText(s)} · {dueText(s, today)}
+                          </Text>
+                        </Flex>
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <Empty
+                    description={"No sub-goals"}
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                )}
+                {goal.subGoals.length > 0 &&
+                  goal.progressMode !== "subgoals" && (
+                    <Text type={"secondary"} style={{ fontSize: 12 }}>
+                      Progress comes from{" "}
+                      {MODE_LABEL[goal.progressMode]
+                        .toLowerCase()
+                        .replace("from ", "")}
+                      , not from the sub-goals. Switch to a rollup in Edit.
+                    </Text>
+                  )}
+              </GoalSection>
+
+              <GoalSection title={"Linked tasks"}>
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={"Linking tasks to goals ships with Tasks."}
+                />
+              </GoalSection>
+            </div>
+          </Splitter.Panel>
+          <Splitter.Panel
+            min={"20%"}
+            style={{ overflowY: "auto", scrollbarWidth: "none" }}
+          >
+            <div style={{ paddingLeft: 16 }}>
+              {!readOnly && (
+                <GoalSection
+                  collapsible={false}
+                  title={
+                    <Space>
+                      <CheckCircleOutlined />
+                      New check-in
+                    </Space>
+                  }
+                >
+                  <CheckinForm goal={goal} onSaved={load} />
+                </GoalSection>
+              )}
+              <GoalSection title={`Check-in history · ${checkins.length}`}>
+                <CheckinHistory
+                  goal={goal}
+                  checkins={checkins}
+                  today={today}
+                  onChanged={load}
+                />
+              </GoalSection>
+            </div>
+          </Splitter.Panel>
+        </Splitter>
       </div>
 
       <GoalFormDrawer

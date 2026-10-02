@@ -153,7 +153,12 @@ const CheckinForm: React.FunctionComponent<CheckinFormProps> = ({
           }))}
         />
       </Form.Item>
-      <Form.Item name={"note"} label={"Note"} rules={[{ max: 2000 }]}>
+      <Form.Item
+        name={"note"}
+        label={"Note"}
+        rules={[{ max: 2000 }]}
+        style={{ marginBottom: 16 }}
+      >
         <Input.TextArea
           autoSize={{ minRows: 2, maxRows: 6 }}
           maxLength={2000}

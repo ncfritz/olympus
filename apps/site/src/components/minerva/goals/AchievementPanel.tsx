@@ -1,6 +1,7 @@
 import { TrophyOutlined } from "@ant-design/icons";
 import type { Goal } from "@ncfritz/olympus-sdk/minerva";
-import { Button, Card, Flex, Statistic, Typography } from "antd";
+import { Button, Flex, Statistic, Typography } from "antd";
+import GoalSection from "./GoalSection";
 import React from "react";
 import { daysLeft, formatDay } from "../../../utils/goals";
 
@@ -16,7 +17,7 @@ const AchievementPanel: React.FunctionComponent<{
   const left = daysLeft(goal, today);
   const achieved = goal.status === "achieved";
   return (
-    <Card size={"small"} title={"Achievement"}>
+    <GoalSection title={"Achievement"}>
       <Flex justify={"space-between"} align={"center"} wrap={true} gap={16}>
         <Statistic
           title={achieved ? "Achieved" : "Not achieved yet"}
@@ -44,7 +45,7 @@ const AchievementPanel: React.FunctionComponent<{
           </Button>
         )}
       </Flex>
-    </Card>
+    </GoalSection>
   );
 };
 

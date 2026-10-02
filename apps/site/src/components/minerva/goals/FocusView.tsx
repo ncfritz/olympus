@@ -39,6 +39,7 @@ import {
   metricText,
   rankForFocus,
 } from "../../../utils/goals";
+import { Heading } from "./GoalSection";
 import { GoalTypeIcon, HealthLabel, PaceBar } from "./GoalBits";
 import { EXECUTION_TARGET } from "./SummaryStrip";
 import TodaysHabits from "./TodaysHabits";
@@ -172,23 +173,6 @@ const WeekBars: React.FunctionComponent<{
     </div>
   );
 };
-
-/** A section heading in the mocks' style: small capitals. */
-const Heading: React.FunctionComponent<{ children: React.ReactNode }> = ({
-  children,
-}) => (
-  <span
-    style={{
-      fontSize: 12,
-      fontWeight: 600,
-      letterSpacing: "0.06em",
-      textTransform: "uppercase",
-      color: "#595959",
-    }}
-  >
-    {children}
-  </span>
-);
 
 /**
  * The current cycle as the mocks draw it: its name, the week, its dates;
