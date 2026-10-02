@@ -1,6 +1,9 @@
 import { Collapse } from "antd";
 import React from "react";
 
+/** The space below each section, apart from the heading's own padding. */
+const SECTION_GAP = 16;
+
 /** A section heading in the mocks' style: small capitals. */
 export const Heading: React.FunctionComponent<{
   children: React.ReactNode;
@@ -46,6 +49,7 @@ const GoalSection: React.FunctionComponent<GoalSectionProps> = ({
     // and fixed open, so its heading lines up with the ones beside it.
     <Collapse
       ghost={true}
+      style={{ marginBottom: SECTION_GAP }}
       defaultActiveKey={["section"]}
       {...(collapsible ? {} : { activeKey: ["section"] })}
       items={[
