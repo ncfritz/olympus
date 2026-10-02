@@ -549,11 +549,13 @@
 
 /* A card without its frame: no border, no shadow, its heading kept.
  * Scoped by the column, so it outweighs AntD's own card styles. */
-.columnScroll .flat.flat {
+.columnScroll .flat.flat,
+.columnParts .flat.flat {
   box-shadow: none;
 }
 
-.columnScroll .flat .flatPart {
+.columnScroll .flat .flatPart,
+.columnParts .flat .flatPart {
   padding-inline: 0;
 }
 
@@ -768,18 +770,54 @@
   gap: 8px;
 }
 
-/* Wrap up: today and tomorrow side by side, beside tomorrow's calendar. */
+/* Wrap up: today and tomorrow side by side, beside tomorrow's calendar,
+ * filling the height left under the notice; each scrolls on its own. */
 .wrapColumns {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 32px;
-  align-items: start;
   margin-top: 8px;
 }
 
+.wrapColumn {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A column's content, under its heading: scrolls, no scroll bar showing. */
+.wrapScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 0 16px;
+  scrollbar-width: none;
+}
+
+.wrapScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.wrapToday {
+  border-left: 1px solid #f0f0f0;
+  padding-left: 16px;
+}
+
+/* Too narrow for two: one column, scrolling as a whole. */
 @media (max-width: 1200px) {
   .wrapColumns {
     grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .wrapScroll {
+    overflow-y: visible;
   }
 }
 
@@ -801,12 +839,17 @@
   cursor: default;
 }
 
-/* Scrolls with no scroll bar showing; scrollbar-width covers current
- * browsers, the WebKit rule older Safari. */
-.noScrollbar {
-  scrollbar-width: none;
+/* A step whose work scrolls in parts: no scrolling of its own. */
+.columnParts {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 0 24px;
 }
 
-.noScrollbar::-webkit-scrollbar {
-  display: none;
+/* The work filling the height it is given. */
+.fillDown {
+  flex: 1;
+  min-height: 0;
 }

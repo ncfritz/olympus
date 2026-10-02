@@ -36,6 +36,7 @@ const flat = {
  * completing it. Three columns: today (its ratings, numbers, what became
  * of its plan, and the reflection), tomorrow (its priorities, to-dos and
  * thoughts), and tomorrow's calendar with the time they have blocked.
+ * Today and tomorrow each scroll on their own under their headings.
  */
 const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
   data,
@@ -67,7 +68,7 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
     <CalendarStep
       side={"right"}
       limited={false}
-      hideScrollbar={true}
+      scroll={"parts"}
       intro={intro}
       footer={footer}
       calendar={
@@ -97,62 +98,69 @@ const WrapUpStep: React.FunctionComponent<WrapUpStepProps> = ({
         />
       )}
       <div className={styles.wrapColumns}>
-        <section className={styles.stack} aria-label={"Today"}>
+        <section
+          className={`${styles.wrapColumn} ${styles.wrapToday}`}
+          aria-label={"Today"}
+        >
           <h2 className={styles.wrapHeading}>Today</h2>
-          <Card {...flat} title={"How was the day?"}>
-            <div className={styles.stack}>
-              {RATING_FIELDS.daily.map((field, index, fields) => (
-                <RatingInput
-                  key={field.key}
-                  field={field}
-                  showEnds={index === fields.length - 1}
-                  value={review?.[field.key]}
+          <div className={styles.wrapScroll}>
+            <Card {...flat} title={"How was the day?"}>
+              <div className={styles.stack}>
+                {RATING_FIELDS.daily.map((field, index, fields) => (
+                  <RatingInput
+                    key={field.key}
+                    field={field}
+                    showEnds={index === fields.length - 1}
+                    value={review?.[field.key]}
+                    readOnly={true}
+                  />
+                ))}
+              </div>
+            </Card>
+            <TodayNumbers data={data} />
+            <Card {...flat} title={"Today's plan"}>
+              <TriageList items={today} readOnly={true} onDecide={noop} />
+            </Card>
+            <Card {...flat} title={"Reflection"}>
+              <div className={styles.stack}>
+                {promptsOf("reflect").map(shown)}
+              </div>
+            </Card>
+          </div>
+        </section>
+        <section className={styles.wrapColumn} aria-label={"Tomorrow"}>
+          <h2 className={styles.wrapHeading}>Tomorrow</h2>
+          <div className={styles.wrapScroll}>
+            <Card {...flat} title={"Top priorities"}>
+              {priorities.length ? (
+                <PlanList
+                  kind={"priority"}
+                  items={priorities}
+                  blocks={true}
                   readOnly={true}
                 />
-              ))}
-            </div>
-          </Card>
-          <TodayNumbers data={data} />
-          <Card {...flat} title={"Today's plan"}>
-            <TriageList items={today} readOnly={true} onDecide={noop} />
-          </Card>
-          <Card {...flat} title={"Reflection"}>
-            <div className={styles.stack}>
-              {promptsOf("reflect").map(shown)}
-            </div>
-          </Card>
-        </section>
-        <section className={styles.stack} aria-label={"Tomorrow"}>
-          <h2 className={styles.wrapHeading}>Tomorrow</h2>
-          <Card {...flat} title={"Top priorities"}>
-            {priorities.length ? (
-              <PlanList
-                kind={"priority"}
-                items={priorities}
-                blocks={true}
-                readOnly={true}
-              />
-            ) : (
-              <span className={styles.meta}>None planned</span>
-            )}
-          </Card>
-          <Card {...flat} title={"To-dos"}>
-            {todos.length ? (
-              <PlanList
-                kind={"todo"}
-                items={todos}
-                blocks={true}
-                readOnly={true}
-              />
-            ) : (
-              <span className={styles.meta}>None planned</span>
-            )}
-          </Card>
-          {promptsOf("plan").map((prompt) => (
-            <Card key={prompt.id} {...flat}>
-              {shown(prompt)}
+              ) : (
+                <span className={styles.meta}>None planned</span>
+              )}
             </Card>
-          ))}
+            <Card {...flat} title={"To-dos"}>
+              {todos.length ? (
+                <PlanList
+                  kind={"todo"}
+                  items={todos}
+                  blocks={true}
+                  readOnly={true}
+                />
+              ) : (
+                <span className={styles.meta}>None planned</span>
+              )}
+            </Card>
+            {promptsOf("plan").map((prompt) => (
+              <Card key={prompt.id} {...flat}>
+                {shown(prompt)}
+              </Card>
+            ))}
+          </div>
         </section>
       </div>
     </CalendarStep>

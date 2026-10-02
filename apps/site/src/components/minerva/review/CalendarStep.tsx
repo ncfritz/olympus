@@ -11,8 +11,11 @@ export interface CalendarStepProps {
    * otherwise both take the width beside the calendar.
    */
   limited?: boolean;
-  /** Whether the work scrolls without a scroll bar showing. */
-  hideScrollbar?: boolean;
+  /**
+   * How the work scrolls: as a whole (the default), or in parts it sets
+   * up itself, the work filling the height between the top and the footer.
+   */
+  scroll?: "whole" | "parts";
   /** What the step asks, above its content. */
   intro: string;
   /** Back, Save and exit, Next: kept at the foot, as wide as the content. */
@@ -30,7 +33,7 @@ const CalendarStep: React.FunctionComponent<CalendarStepProps> = ({
   calendar,
   side = "left",
   limited = true,
-  hideScrollbar = false,
+  scroll = "whole",
   intro,
   footer,
   children,
@@ -41,9 +44,13 @@ const CalendarStep: React.FunctionComponent<CalendarStepProps> = ({
       {side === "left" && calendar}
       <div className={styles.column}>
         <div
-          className={`${styles.columnScroll} ${hideScrollbar ? styles.noScrollbar : ""}`}
+          className={
+            scroll === "parts" ? styles.columnParts : styles.columnScroll
+          }
         >
-          <div className={width}>
+          <div
+            className={`${width} ${scroll === "parts" ? styles.fillDown : ""}`}
+          >
             <p className={styles.intro}>{intro}</p>
             {children}
           </div>
