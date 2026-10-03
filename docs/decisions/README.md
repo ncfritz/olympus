@@ -36,5 +36,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0025](0025-weather-data-in-dev.md)                        | Weather data reaches dev by replay for history and a relay for live pushes | Accepted                    |
 | [0026](0026-minerva-goals.md)                              | Minerva goals: per-user, relational, progress computed on read             | Accepted                    |
 | [0027](0027-minerva-activity-reviews.md)                   | Minerva reviews: per-user, what is written stored, activity read live      | Accepted                    |
+| [0028](0028-minerva-calendar-ownership.md)                 | Minerva calendars per user; accounts linked by sign-in, consent or claim   | Proposed                    |
 
 New records: copy [template.md](template.md), take the next number.
