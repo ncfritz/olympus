@@ -3259,6 +3259,10 @@
               }
             ]
           },
+          "subject": {
+            "type": "string",
+            "description": "The account's permanent ID at its provider (Google's sub; Microsoft's <tid>:<oid>), once recorded"
+          },
           "scope": {
             "type": "string",
             "description": "The OAuth scopes granted at the last sign-in"

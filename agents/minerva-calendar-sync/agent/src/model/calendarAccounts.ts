@@ -54,6 +54,14 @@ export class CalendarAccount {
   @ApiProperty({
     type: String,
     required: false,
+    description:
+      "The account's permanent ID at its provider (Google's sub; Microsoft's <tid>:<oid>), once recorded",
+  })
+  subject?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
     description: "The OAuth scopes granted at the last sign-in",
   })
   scope?: string;

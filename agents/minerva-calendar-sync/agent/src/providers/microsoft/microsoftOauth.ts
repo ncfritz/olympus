@@ -214,7 +214,7 @@ function describeTokenError(error: unknown): string {
 export async function refreshMicrosoftAccessToken(
   app: MicrosoftApp,
   refreshToken: string,
-): Promise<{ accessToken: string; expiresAt?: string }> {
+): Promise<{ accessToken: string; expiresAt?: string; subject?: string }> {
   const client = await loadOpenIdClient();
   const oidcConfig = await getOidcConfig(client, app);
   const tokenResponse = await client.refreshTokenGrant(
@@ -224,6 +224,8 @@ export async function refreshMicrosoftAccessToken(
 
   return {
     accessToken: tokenResponse.access_token,
+    // An ID token comes back when the grant included `openid`.
+    subject: microsoftSubject(tokenResponse.claims()),
     expiresAt: tokenResponse.expiresIn()
       ? new Date(Date.now() + tokenResponse.expiresIn()! * 1000).toISOString()
       : undefined,

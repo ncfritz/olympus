@@ -128,6 +128,7 @@ export class CalendarAuthService {
       accountLabel,
       provider: strategy.provider,
       sources,
+      subject: credential.subject,
       scope: credential.scope,
       obtainedAt: credential.obtainedAt,
     };
@@ -137,6 +138,16 @@ export class CalendarAuthService {
 
     try {
       const { expiresAt } = await strategy.checkAccessToken(accountLabel);
+      if (!credential.subject) {
+        // Olympus links an account to its owner by subject (ADR 0028); one
+        // the provider would not give for this credential needs a sign-in.
+        return {
+          ...base,
+          status: "expired",
+          accessTokenExpiresAt: expiresAt,
+          error: "The account's identity is not recorded; sign in again",
+        };
+      }
       return { ...base, status: "ok", accessTokenExpiresAt: expiresAt };
     } catch (error) {
       const message = strategy.errorMessage(error);

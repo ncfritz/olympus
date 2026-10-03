@@ -18,6 +18,11 @@ export interface StoredGoogleCredential {
   refreshToken: string;
   scope: string;
   obtainedAt: string;
+  /**
+   * The account's Google `sub` (ADR 0028), recorded at sign-in; read once
+   * from a fresh access token for a credential stored before it was kept.
+   */
+  subject?: string;
 }
 
 /**

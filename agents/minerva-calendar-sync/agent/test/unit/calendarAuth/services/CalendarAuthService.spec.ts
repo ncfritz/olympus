@@ -205,6 +205,7 @@ describe("CalendarAuthService", () => {
         refreshToken: "refresh-token",
         scope: "https://www.googleapis.com/auth/calendar.readonly",
         obtainedAt: "2026-01-01T00:00:00.000Z",
+        subject: "google-sub-work",
       });
       const expiryDate = Date.parse("2026-09-16T12:00:00.000Z");
       mockedStore.createAuthorizedClient.mockReturnValue({
@@ -219,10 +220,30 @@ describe("CalendarAuthService", () => {
         provider: "google",
         sources: ["Work", "Work Shared"],
         status: "ok",
+        subject: "google-sub-work",
         scope: "https://www.googleapis.com/auth/calendar.readonly",
         obtainedAt: "2026-01-01T00:00:00.000Z",
         accessTokenExpiresAt: new Date(expiryDate).toISOString(),
       });
+    });
+
+    it("reports expired for a working credential whose subject is not recorded", async () => {
+      mockedStore.tryLoad.mockReturnValue({
+        accountLabel: "work",
+        refreshToken: "refresh-token",
+        scope: "scope",
+        obtainedAt: "2026-01-01T00:00:00.000Z",
+      });
+      mockedStore.createAuthorizedClient.mockReturnValue({
+        getAccessToken: vi.fn().mockResolvedValue({ token: "access-token" }),
+        credentials: {},
+      } as never);
+
+      const status = await makeService().getStatus("work");
+
+      expect(status.status).toBe("expired");
+      expect(status.subject).toBeUndefined();
+      expect(status.error).toMatch(/identity is not recorded/);
     });
 
     it("reports expired when Google rejects the refresh token", async () => {
@@ -373,6 +394,43 @@ describe("CalendarAuthService", () => {
       );
       await service.startReauth("work");
       expect((await service.getStatus("work")).status).toBe("reauth_pending");
+    });
+
+    it("refuses another subject once one is stored, even with the label's email", async () => {
+      mockedStore.tryLoad.mockReturnValue({
+        accountLabel: "work",
+        refreshToken: "refresh-token",
+        scope: "scope",
+        obtainedAt: "2026-01-01T00:00:00.000Z",
+        subject: "google-sub-work",
+      });
+      mockedLoopback.createLoopbackClient.mockResolvedValue({
+        client: {
+          generateAuthUrl: vi
+            .fn()
+            .mockReturnValue("https://accounts.google.com/o/oauth2/auth"),
+          getToken: vi.fn().mockResolvedValue({
+            tokens: {
+              refresh_token: "reassigned-address-refresh-token",
+              access_token: "access",
+              scope: "scope",
+            },
+          }),
+          getTokenInfo: vi.fn().mockResolvedValue({
+            sub: "google-sub-someone-new",
+            email: "work",
+            email_verified: true,
+          }),
+        } as never,
+        redirectUri: "http://127.0.0.1:12345",
+      });
+      mockedLoopback.waitForAuthorizationCode.mockResolvedValue("auth-code");
+
+      const service = makeService();
+      await service.startReauth("work");
+      await flushPromises();
+
+      expect(mockedStore.save).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -578,6 +636,7 @@ describe("CalendarAuthService", () => {
             },
           }),
           getTokenInfo: vi.fn().mockResolvedValue({
+            sub: "google-sub-brand-new",
             email: "brand-new@example.com",
             email_verified: true,
           }),
@@ -600,6 +659,7 @@ describe("CalendarAuthService", () => {
         expect.objectContaining({
           accountLabel: "brand-new@example.com",
           refreshToken: "new-refresh-token",
+          subject: "google-sub-brand-new",
         }),
       );
       expect(service.getNewAccountAuthStatus(transactionId)).toEqual({
@@ -670,6 +730,7 @@ describe("CalendarAuthService", () => {
         expect.objectContaining({
           accountLabel: "ms@example.com",
           refreshToken: "ms-refresh-token",
+          subject: "tid-1:oid-1",
         }),
       );
     });
@@ -685,6 +746,43 @@ describe("CalendarAuthService", () => {
       const status = await service.getStatus("ms@example.com", "microsoft");
       expect(status.status).toBe("error");
       expect(status.error).toMatch(/not "ms@example.com"/);
+    });
+  });
+  describe("GoogleAuthStrategy.recordSubject", () => {
+    const strategy = () =>
+      new GoogleAuthStrategy(mockedStore as unknown as GoogleCredentialStore);
+    const stored = {
+      accountLabel: "work",
+      refreshToken: "refresh-token",
+      scope: "scope",
+      obtainedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    it("reads the subject from a fresh access token and records it", async () => {
+      mockedStore.tryLoad.mockReturnValue(stored);
+      mockedStore.createAuthorizedClient.mockReturnValue({
+        getAccessToken: vi.fn().mockResolvedValue({ token: "access-token" }),
+        getTokenInfo: vi.fn().mockResolvedValue({ sub: "google-sub-work" }),
+      } as never);
+
+      await expect(strategy().recordSubject("work")).resolves.toBe(
+        "google-sub-work",
+      );
+      expect(mockedStore.save).toHaveBeenCalledWith({
+        ...stored,
+        subject: "google-sub-work",
+      });
+    });
+
+    it("leaves the credential alone when Google gives no subject", async () => {
+      mockedStore.tryLoad.mockReturnValue(stored);
+      mockedStore.createAuthorizedClient.mockReturnValue({
+        getAccessToken: vi.fn().mockResolvedValue({ token: "access-token" }),
+        getTokenInfo: vi.fn().mockResolvedValue({}),
+      } as never);
+
+      await expect(strategy().recordSubject("work")).resolves.toBeUndefined();
+      expect(mockedStore.save).not.toHaveBeenCalled();
     });
   });
 });

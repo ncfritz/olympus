@@ -36,6 +36,18 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     return { expiresAt: expiry ? new Date(expiry).toISOString() : undefined };
   }
 
+  async recordSubject(accountLabel: string): Promise<string | undefined> {
+    const credential = this.credentials.tryLoad(accountLabel);
+    if (!credential) return undefined;
+    if (credential.subject) return credential.subject;
+    const client = this.credentials.createAuthorizedClient(accountLabel);
+    const { token } = await client.getAccessToken();
+    if (!token) return undefined;
+    const { subject } = await readIdentity(client, token);
+    if (subject) this.credentials.save({ ...credential, subject });
+    return subject;
+  }
+
   async startLoopbackFlow(request: LoopbackFlowRequest): Promise<LoopbackFlow> {
     const { clientId, clientSecret } = this.credentials.oauthClient();
     const { client, redirectUri } = await createLoopbackClient(
@@ -86,7 +98,11 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
       }
       accountLabel = identity.email;
     } else {
-      confirmSameAccount(request.accountLabel, undefined, identity);
+      confirmSameAccount(
+        request.accountLabel,
+        this.credentials.tryLoad(request.accountLabel)?.subject,
+        identity,
+      );
       accountLabel = request.accountLabel;
     }
 
@@ -96,6 +112,7 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
       refreshToken: tokens.refresh_token,
       scope,
       obtainedAt: new Date().toISOString(),
+      subject: identity.subject,
     });
     return { accountLabel, scope };
   }

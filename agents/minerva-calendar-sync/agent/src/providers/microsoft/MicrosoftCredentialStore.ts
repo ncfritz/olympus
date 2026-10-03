@@ -17,6 +17,11 @@ export interface StoredMicrosoftCredential {
   refreshToken: string;
   scope: string;
   obtainedAt: string;
+  /**
+   * The account's `<tid>:<oid>` (ADR 0028), recorded at sign-in; read once
+   * from a refreshed ID token for a credential stored before it was kept.
+   */
+  subject?: string;
 }
 
 /**

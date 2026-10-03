@@ -5,6 +5,7 @@ import { DescribeCalendarAccountAuthorizationController } from "./controllers/De
 import { ListAvailableCalendarsController } from "./controllers/ListAvailableCalendarsController";
 import { ListCalendarAccountsController } from "./controllers/ListCalendarAccountsController";
 import { ReauthorizeCalendarAccountController } from "./controllers/ReauthorizeCalendarAccountController";
+import { AccountSubjectBackfillService } from "./services/AccountSubjectBackfillService";
 import { CalendarAccountService } from "./services/CalendarAccountService";
 import { CalendarAuthService } from "./services/CalendarAuthService";
 import { GoogleAuthStrategy } from "./strategies/GoogleAuthStrategy";
@@ -20,6 +21,7 @@ import { MicrosoftAuthStrategy } from "./strategies/MicrosoftAuthStrategy";
     ListAvailableCalendarsController,
   ],
   providers: [
+    AccountSubjectBackfillService,
     CalendarAuthService,
     CalendarAccountService,
     GoogleAuthStrategy,

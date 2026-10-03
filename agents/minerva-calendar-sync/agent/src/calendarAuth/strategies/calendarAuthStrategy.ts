@@ -28,7 +28,15 @@ export interface CalendarAuthStrategy {
 
   tryLoadCredential(
     accountLabel: string,
-  ): { scope: string; obtainedAt: string } | undefined;
+  ): { scope: string; obtainedAt: string; subject?: string } | undefined;
+
+  /**
+   * Reads the stored account's subject from a fresh token and records it on
+   * the credential, for one stored before subjects were kept. Returns the
+   * subject, or undefined when the provider did not give one (the account
+   * then needs a new sign-in).
+   */
+  recordSubject(accountLabel: string): Promise<string | undefined>;
 
   /** Mints/refreshes an access token to confirm the stored credential still works. Throws on an invalid/expired one — check with isInvalidGrantError. */
   checkAccessToken(accountLabel: string): Promise<{ expiresAt?: string }>;

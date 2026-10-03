@@ -48,6 +48,18 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
     return { expiresAt };
   }
 
+  async recordSubject(accountLabel: string): Promise<string | undefined> {
+    const credential = this.credentials.tryLoad(accountLabel);
+    if (!credential) return undefined;
+    if (credential.subject) return credential.subject;
+    const { subject } = await refreshMicrosoftAccessToken(
+      this.microsoft,
+      credential.refreshToken,
+    );
+    if (subject) this.credentials.save({ ...credential, subject });
+    return subject;
+  }
+
   async startLoopbackFlow(request: LoopbackFlowRequest): Promise<LoopbackFlow> {
     const scopes = MICROSOFT_NEW_ACCOUNT_SCOPES;
     const flow = await startMicrosoftLoopbackFlow(this.microsoft, scopes);
@@ -57,10 +69,11 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
       complete: async (timeoutMs) => {
         const result = await flow.complete(timeoutMs);
         if (request.mode === "reauth") {
-          confirmSameAccount(request.accountLabel, undefined, {
-            subject: result.subject,
-            email: result.email,
-          });
+          confirmSameAccount(
+            request.accountLabel,
+            this.credentials.tryLoad(request.accountLabel)?.subject,
+            { subject: result.subject, email: result.email },
+          );
         }
         const accountLabel =
           request.mode === "new"
@@ -71,6 +84,7 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
           refreshToken: result.refreshToken,
           scope: result.scope,
           obtainedAt: new Date().toISOString(),
+          subject: result.subject,
         });
         return { accountLabel, scope: result.scope };
       },
