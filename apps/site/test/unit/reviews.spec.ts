@@ -8,7 +8,6 @@ import {
   type ChainItem,
   daysOfWeek,
   loadLevel,
-  placeInGap,
   ratingChanges,
   ratingSeries,
   slippedItems,
@@ -19,6 +18,7 @@ import {
   dayBarBlocks,
   doneOfPlanned,
   formatBlock,
+  placeLabel,
   formatMinutes,
   formatSpan,
   itemsOf,
@@ -284,6 +284,18 @@ describe("the review steps' helpers, in Seattle", () => {
     expect(formatSpan(at("11:30"), at("12:00"))).toBe("11:30 – 12:00 PM");
     expect(formatBlock("09:00", "11:00")).toBe("9:00 – 11:00");
     expect(formatBlock("09:00")).toBeUndefined();
+  });
+
+  it("writes a week's item's place with its day", () => {
+    expect(
+      placeLabel({
+        scheduledOn: "2026-10-06",
+        scheduledStart: "09:30",
+        scheduledEnd: "11:00",
+      }),
+    ).toBe("Tue 9:30 – 11:00");
+    expect(placeLabel({ scheduledOn: "2026-10-06" })).toBeUndefined();
+    expect(placeLabel({})).toBeUndefined();
   });
 
   it("places blocks on a 7:00 to 22:00 bar", () => {
@@ -789,39 +801,6 @@ describe("the weekly review's arithmetic, in Seattle", () => {
         ["else", ["A long day."]],
       ]);
       expect(answeredPrompts(prompts, answers, "plan")).toHaveLength(1);
-    });
-  });
-
-  describe("placeInGap", () => {
-    const gap = (start: string, end: string) => ({
-      start: DateTime.fromISO(`2026-09-30T${start}`),
-      end: DateTime.fromISO(`2026-09-30T${end}`),
-    });
-
-    it("takes up to two hours from the gap's start", () => {
-      expect(placeInGap(gap("13:00", "17:00"))).toEqual({
-        start: "13:00",
-        end: "15:00",
-      });
-      expect(placeInGap(gap("11:00", "12:00"))).toEqual({
-        start: "11:00",
-        end: "12:00",
-      });
-      expect(placeInGap(gap("09:00", "17:00"), 90)).toEqual({
-        start: "09:00",
-        end: "10:30",
-      });
-    });
-
-    it("starts on the quarter hour after a meeting that ends off it", () => {
-      expect(placeInGap(gap("10:50", "17:00"))).toEqual({
-        start: "11:00",
-        end: "13:00",
-      });
-      expect(placeInGap(gap("10:46", "11:30"))).toEqual({
-        start: "11:00",
-        end: "11:30",
-      });
     });
   });
 });

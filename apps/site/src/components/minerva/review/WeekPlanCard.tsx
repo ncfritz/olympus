@@ -2,9 +2,8 @@ import { Card, Descriptions } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import React from "react";
-import { weeklyReviewPath } from "../../../utils/reviews";
+import { placeLabel, weeklyReviewPath } from "../../../utils/reviews";
 import AnswerBody from "./AnswerBody";
-import { placeLabel } from "./PlacePicker";
 import type { WeekPlan } from "./useDailyReview";
 
 export interface WeekPlanCardProps {

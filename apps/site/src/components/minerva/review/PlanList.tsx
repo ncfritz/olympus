@@ -19,7 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { ReviewItem, ReviewItemKind } from "@ncfritz/olympus-sdk/minerva";
 import { Button, Input, Space, Tag, Typography } from "antd";
 import React, { useEffect, useState } from "react";
-import { formatBlock } from "../../../utils/reviews";
+import { formatBlock, placeLabel } from "../../../utils/reviews";
 import { PLAN_KINDS } from "./planKinds";
 import styles from "./Review.module.css";
 
@@ -31,6 +31,8 @@ export interface PlanListProps {
   disabled?: boolean;
   /** Whether to show an item's block of time, set on the calendar. */
   blocks?: boolean;
+  /** Whether the block's time says its day too, as a week's items do. */
+  blockDay?: boolean;
   /**
    * Whether an item's title can be dragged onto a calendar to block its
    * time: it carries `data-block-item` for a FullCalendar Draggable.
@@ -52,6 +54,7 @@ const PlanRow: React.FunctionComponent<{
   disabled: boolean;
   onRemove: PlanListProps["onRemove"];
   showBlock: boolean;
+  blockDay: boolean;
   extra?: PlanListProps["extra"];
   calendarDrag: boolean;
   readOnly: boolean;
@@ -61,12 +64,15 @@ const PlanRow: React.FunctionComponent<{
   disabled,
   onRemove,
   showBlock,
+  blockDay,
   extra,
   calendarDrag,
   readOnly,
 }) => {
   const kind = PLAN_KINDS[item.kind];
-  const block = formatBlock(item.scheduledStart, item.scheduledEnd);
+  const block = blockDay
+    ? placeLabel(item)
+    : formatBlock(item.scheduledStart, item.scheduledEnd);
   const sortable = useSortable({ id: item.id, disabled: disabled || readOnly });
   return (
     <div
@@ -139,6 +145,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
   items,
   disabled = false,
   blocks = false,
+  blockDay = false,
   calendarDrag = false,
   placeholder,
   onAdd,
@@ -213,6 +220,7 @@ const PlanList: React.FunctionComponent<PlanListProps> = ({
               disabled={disabled}
               onRemove={onRemove}
               showBlock={blocks}
+              blockDay={blockDay}
               extra={extra}
               calendarDrag={calendarDrag}
               readOnly={readOnly}

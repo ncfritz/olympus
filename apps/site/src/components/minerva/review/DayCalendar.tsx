@@ -1,5 +1,5 @@
 import type { DropArg } from "@fullcalendar/interaction";
-import interactionPlugin from "@fullcalendar/interaction";
+import interactionPlugin, { Draggable } from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import FullCalendar from "@fullcalendar/react";
 import type { Meeting, ReviewItemKind } from "@ncfritz/olympus-sdk/minerva";
@@ -22,8 +22,10 @@ export type CalendarBlock = {
 };
 
 export interface DayCalendarProps {
-  /** The day shown, YYYY-MM-DD. */
+  /** The day shown, or the first of them, YYYY-MM-DD. */
   day: string;
+  /** How many days are shown side by side from `day`; one by default. */
+  days?: number;
   meetings: Meeting[];
   /**
    * Planned blocks, drawn behind the meetings so they keep their place and
@@ -44,15 +46,39 @@ export interface DayCalendarProps {
 /** Moves and resizes snap to a quarter hour; a block is at least that. */
 const SNAP = 15;
 
+/**
+ * Makes the list items inside `container` that carry `data-block-item`
+ * draggable onto a DayCalendar, each dropping a 30-minute block.
+ */
+export const useBlockSource = (
+  container: React.RefObject<HTMLElement | null>,
+  disabled: boolean,
+) => {
+  useEffect(() => {
+    if (!container.current || disabled) return;
+    const draggable = new Draggable(container.current, {
+      itemSelector: "[data-block-item]",
+      eventData: (el) => ({
+        title: el.textContent ?? "",
+        duration: "00:30",
+        create: false,
+      }),
+    });
+    return () => draggable.destroy();
+  }, [container, disabled]);
+};
+
 type Preview = { id: string; start: Date; end: Date; leaving?: boolean };
 
 /**
- * A day's calendar as Meetings draws it, as a time grid filling its
- * container's height, whether the day has meetings or not, with any planned
- * blocks behind the meetings.
+ * A day's calendar as Meetings draws it, or several days side by side, as
+ * a time grid filling its container's height, whether there are meetings or
+ * not, with any planned blocks behind the meetings. Across days, a block
+ * moves to the day it is dragged over.
  */
 const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   day,
+  days = 1,
   meetings,
   blocks = [],
   onBlockChange,
@@ -60,6 +86,20 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   onBlockDrop,
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<FullCalendar>(null);
+  // FullCalendar measures itself on window resizes only; a splitter or a
+  // pane changes its width without one, which leaves drops and drags
+  // aimed by the old measurements. It is re-measured whenever its box
+  // changes size.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      calendarRef.current?.getApi().updateSize(),
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
   // A block being dragged, or one saved and not yet back from the API.
   const [preview, setPreview] = useState<Preview>();
   // When the blocks come back from a save, they are where they were put.
@@ -67,7 +107,20 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   useEffect(() => setPreview(undefined), [placed]);
 
   const dayStart = DateTime.fromISO(day).startOf("day");
-  const dayEnd = dayStart.plus({ days: 1 });
+
+  /** The day of the column under `x`, if the pointer is over one. */
+  const dayAt = (x: number): DateTime | undefined => {
+    const columns = rootRef.current?.querySelectorAll<HTMLElement>(
+      "td.fc-timegrid-col[data-date]",
+    );
+    for (const column of columns ?? []) {
+      const box = column.getBoundingClientRect();
+      if (x >= box.left && x < box.right && column.dataset.date) {
+        return DateTime.fromISO(column.dataset.date).startOf("day");
+      }
+    }
+    return undefined;
+  };
 
   /** Follows the pointer, moving a block or its end, until it lets go. */
   const begin = (
@@ -87,6 +140,7 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
     const start = DateTime.fromJSDate(block.start);
     const end = DateTime.fromJSDate(block.end);
     const minutes = end.diff(start, "minutes").minutes;
+    const blockDay = start.startOf("day");
     let moved: Preview | undefined;
     let leaving = false;
 
@@ -111,18 +165,24 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
       let from = start;
       let to = end;
       if (mode === "move") {
-        from = start.plus({ minutes: delta });
-        if (from < dayStart) from = dayStart;
-        if (from.plus({ minutes }) > dayEnd) {
-          from = dayEnd.minus({ minutes });
+        // To the day under the pointer, at the time it was moved to.
+        const onDay = (days > 1 && dayAt(e.clientX)) || blockDay;
+        const shift = Math.round(onDay.diff(blockDay, "days").days);
+        const startOfDay = blockDay.plus({ days: shift });
+        const endOfDay = startOfDay.plus({ days: 1 });
+        from = start.plus({ days: shift, minutes: delta });
+        if (from < startOfDay) from = startOfDay;
+        if (from.plus({ minutes }) > endOfDay) {
+          from = endOfDay.minus({ minutes });
         }
         to = from.plus({ minutes });
       } else {
+        const endOfDay = blockDay.plus({ days: 1 });
         to = end.plus({ minutes: delta });
         if (to < start.plus({ minutes: SNAP })) {
           to = start.plus({ minutes: SNAP });
         }
-        if (to > dayEnd) to = dayEnd;
+        if (to > endOfDay) to = endOfDay;
       }
       if (
         !moved ||
@@ -161,12 +221,17 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   return (
     <div
       ref={rootRef}
-      className={`${styles.calendarRoot} ${onBlockChange ? styles.calendarEditable : ""}`}
+      className={`${styles.calendarRoot} ${onBlockChange ? styles.calendarEditable : ""} ${days > 1 ? styles.calendarDays : ""}`}
     >
       <FullCalendar
+        ref={calendarRef}
         plugins={[timeGridPlugin, interactionPlugin]}
-        viewClassNames={"minerva-cal hide-day-header"}
-        initialView={"timeGridDay"}
+        viewClassNames={
+          days > 1 ? "minerva-cal" : "minerva-cal hide-day-header"
+        }
+        initialView={days > 1 ? "days" : "timeGridDay"}
+        views={{ days: { type: "timeGrid", duration: { days } } }}
+        dayHeaderFormat={{ weekday: "short", day: "numeric" }}
         initialDate={dayStart.toJSDate()}
         events={[
           ...meetings.filter((m) => !m.isDeleted).map(meetingsApi.toEvent),

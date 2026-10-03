@@ -161,8 +161,8 @@ describe("Review prompts API", () => {
         "weekly/reflect/2: What I learned (list)",
         "weekly/reflect/3: What to change next week (list)",
         "weekly/plan/0: Theme for the week (text)",
-        "weekly/plan/1: Start (text)",
-        "weekly/plan/2: Stop (text)",
+        "weekly/plan/1: Start (list)",
+        "weekly/plan/2: Stop (list)",
       ]);
       expect(give.objects).toHaveLength(STARTER_PROMPTS.length);
       expect(give.objects.every((o) => o.userId === USER)).toBe(true);

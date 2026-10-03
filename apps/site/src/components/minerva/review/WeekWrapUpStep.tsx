@@ -8,13 +8,13 @@ import {
   doneOfPlanned,
   formatMinutes,
   itemsOf,
+  placeLabel,
   RATING_FIELDS,
   slippedItems,
   weekLoad,
 } from "../../../utils/reviews";
 import { pinnedHighlights } from "./pinned";
 import PinnedList from "./PinnedList";
-import { placeLabel } from "./PlacePicker";
 import AnswerBody from "./AnswerBody";
 import styles from "./Review.module.css";
 import type { WeeklyReviewData } from "./useWeeklyReview";

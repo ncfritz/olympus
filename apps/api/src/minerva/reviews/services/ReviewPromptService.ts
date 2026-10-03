@@ -108,11 +108,13 @@ export const STARTER_PROMPTS: ReadonlyArray<StarterPrompt> = [
   {
     kind: ReviewKind.Weekly,
     section: ReviewPromptSection.Plan,
+    style: ReviewPromptStyle.List,
     label: "Start",
   },
   {
     kind: ReviewKind.Weekly,
     section: ReviewPromptSection.Plan,
+    style: ReviewPromptStyle.List,
     label: "Stop",
   },
 ];

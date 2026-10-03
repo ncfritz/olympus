@@ -408,6 +408,20 @@ export const formatBlock = (
   return formatSpan(at(start), at(end));
 };
 
+/**
+ * Where a week's item sits, as the design writes it: its day and block of
+ * time ("Tue 9:30 – 11:00 AM"), or nothing when it has no block.
+ */
+export const placeLabel = (item: {
+  scheduledOn?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
+}): string | undefined => {
+  const block = formatBlock(item.scheduledStart, item.scheduledEnd);
+  if (!item.scheduledOn || !block) return undefined;
+  return `${DateTime.fromISO(item.scheduledOn).toFormat("ccc")} ${block}`;
+};
+
 /* ------------------------------------------------------------------------ */
 /* The weekly review: the week's arithmetic                                  */
 /* ------------------------------------------------------------------------ */
@@ -679,22 +693,6 @@ export const answersByPrompt = <
       ),
     }))
     .filter((group) => !group.prompt.archived || group.answers.length > 0);
-};
-
-/**
- * The block a priority dropped on open time takes: from the gap's start,
- * at most `minutes` long, on the quarter hour, as `HH:mm`.
- */
-export const placeInGap = (
-  gap: { start: DateTime; end: DateTime },
-  minutes = 120,
-): { start: string; end: string } => {
-  const quarter = (t: DateTime) =>
-    t.startOf("hour").plus({ minutes: Math.ceil(t.minute / 15) * 15 });
-  const start = quarter(gap.start);
-  const latest = start.plus({ minutes });
-  const end = latest < gap.end ? latest : gap.end;
-  return { start: start.toFormat("HH:mm"), end: end.toFormat("HH:mm") };
 };
 
 /**

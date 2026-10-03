@@ -1,9 +1,9 @@
-import { Draggable } from "@fullcalendar/interaction";
 import { Card } from "antd";
 import { DateTime } from "luxon";
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import CalendarPane from "./CalendarPane";
 import CalendarStep from "./CalendarStep";
+import { useBlockSource } from "./DayCalendar";
 import PlanList from "./PlanList";
 import PromptAnswer from "./PromptAnswer";
 import { answersOf } from "./reviewHooks";
@@ -44,18 +44,7 @@ const PlanTomorrowStep: React.FunctionComponent<PlanTomorrowStepProps> = ({
   // A list item's title is dragged onto the calendar by FullCalendar's
   // Draggable, which drops a 30-minute block.
   const lists = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!lists.current || disabled) return;
-    const draggable = new Draggable(lists.current, {
-      itemSelector: "[data-block-item]",
-      eventData: (el) => ({
-        title: el.textContent ?? "",
-        duration: "00:30",
-        create: false,
-      }),
-    });
-    return () => draggable.destroy();
-  }, [disabled]);
+  useBlockSource(lists, disabled);
 
   const clock = (time: Date) => DateTime.fromJSDate(time).toFormat("HH:mm");
   const itemOf = (id: string) => planned.find((i) => i.id === id);

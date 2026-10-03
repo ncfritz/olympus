@@ -386,102 +386,6 @@
   gap: 6px;
 }
 
-/* Next week's grid: a column a day, its hours top to bottom. */
-.weekGrid {
-  display: grid;
-  grid-template-columns: 40px repeat(5, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.dayHead {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-height: 64px;
-}
-
-.hours {
-  position: relative;
-  height: 400px;
-  background: #fafafa;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
-}
-
-.hourLabels {
-  position: relative;
-  height: 400px;
-  font-size: 11px;
-  color: rgba(0, 0, 0, 0.5);
-}
-
-.hourLabel {
-  position: absolute;
-  right: 4px;
-  transform: translateY(-50%);
-}
-
-.vblock {
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  overflow: hidden;
-  font-size: 11px;
-  line-height: 14px;
-  box-sizing: border-box;
-}
-
-.meetingBlock {
-  background: #bae0ff;
-  color: #002c8c;
-}
-
-.placedBlock {
-  background: #f6ffed;
-  border: 1px dashed #52c41a;
-  color: #135200;
-  cursor: grab;
-  z-index: 1;
-}
-
-/* Open time, where a priority can be dropped. */
-.gap {
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  border-radius: 3px;
-  box-sizing: border-box;
-}
-
-.gapActive {
-  border: 1px dashed #91caff;
-  background: rgba(22, 119, 255, 0.04);
-}
-
-.gapOver {
-  border: 1px solid #1677ff;
-  background: rgba(22, 119, 255, 0.12);
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-height: 32px;
-  align-items: center;
-}
-
-.chip {
-  cursor: grab;
-  touch-action: none;
-}
-
-.dragging {
-  opacity: 0.4;
-}
-
 /* A list prompt's items as they read later. */
 .answerList {
   margin: 0;
@@ -1014,4 +918,21 @@
 .clockTime {
   width: 60px;
   white-space: nowrap;
+}
+
+/* A calendar pane taking the width it is given, as in a splitter. */
+.calendarPane.calendarPaneFill {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Across several days the columns are narrow: a slimmer strip kept clear
+ * of meetings, still wide enough for a block's close button. */
+.calendarEditable.calendarDays :global(.fc-timegrid-col-events) {
+  margin-right: 20px;
+}
+
+.calendarDays .blockContent {
+  padding-right: 20px;
 }

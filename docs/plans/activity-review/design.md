@@ -63,10 +63,12 @@ week, Wrap up).
 3. **Reflect.** The three ratings (Overall, Progress, Balance) and the
    reflect prompts (starter set: Biggest win, What got in the way, What I
    learned, What to change next week), beside the pinned highlights.
-4. **Plan next week.** A Monday-to-Friday grid of next week's calendar
-   with each day's meeting load; priorities (three to five) dragged onto
-   open time; Theme for the week, Start and Stop (plan prompts); items
-   carried in; goals for the week.
+4. **Plan next week.** Next week's calendar, Monday to Sunday, beside the
+   plan: Theme for the week, priorities (three to five), to-dos, items
+   carried in, Start and Stop (plan prompts, as lists); goals for the
+   week. A priority or to-do is dragged onto the calendar to block time,
+   then moved (to another day too), resized, or dragged off, as Plan
+   tomorrow's are (Neil, 2026-10-02).
 5. **Wrap up.** This week and next week summaries; completing locks the
    ratings, and next week's theme and priorities show on Monday's daily
    review and Minerva Home.
@@ -112,7 +114,8 @@ the goals panels (the goals plan's phase 8), the monthly review, and iOS
   in the way, What I learned and What to change next week are lists of
   items that work like Top 3 and To-dos (add, rewrite, reorder, remove),
   and any item can become a to-do of the next period. Anything else about
-  today, Theme for the week, Start and Stop stay text.
+  today and Theme for the week stay text. Start and Stop became lists too
+  (Neil, 2026-10-02; migration 1791050000000).
 - The defaults in ADR 0027: answers as rows, ratings as columns, plan
   items as their own rows until Tasks, activity read live, ratings locked
   on completion, ISO weeks listed by their Thursday (Neil, 2026-10-01).

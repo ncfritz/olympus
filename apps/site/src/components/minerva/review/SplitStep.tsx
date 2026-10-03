@@ -11,15 +11,21 @@ export interface SplitStepProps {
   aside: React.ReactNode;
   /** The left panel's starting width; 45% by default. */
   defaultSize?: string;
-  /** Whether the left column scrolls with no scroll bar showing. */
+  /**
+   * Whether what the step refers to comes first, on the left, and its work
+   * on the right; the work keeps its footer either way.
+   */
+  asideFirst?: boolean;
+  /** Whether the work's column scrolls with no scroll bar showing. */
   hideScrollbar?: boolean;
   /** The left of the split, the step's own work. */
   children: React.ReactNode;
 }
 
 /**
- * A step that uses the page's full width, split: its work on the left over
- * a footer that stays put, and what it refers to on the right.
+ * A step that uses the page's full width, split: its work over a footer
+ * that stays put, and what it refers to beside it; the work on the left
+ * unless `asideFirst`.
  */
 const SplitStep: React.FunctionComponent<SplitStepProps> = ({
   intro,
@@ -27,22 +33,35 @@ const SplitStep: React.FunctionComponent<SplitStepProps> = ({
   aside,
   defaultSize = "45%",
   hideScrollbar = false,
+  asideFirst = false,
   children,
-}) => (
-  <Splitter className={styles.fill}>
-    <Splitter.Panel defaultSize={defaultSize} min={"30%"} max={"70%"}>
-      <div className={styles.column}>
-        <div
-          className={`${styles.columnScroll} ${hideScrollbar ? styles.noScrollbar : ""}`}
-        >
-          <p className={styles.intro}>{intro}</p>
-          {children}
-        </div>
-        <div className={styles.columnFooter}>{footer}</div>
+}) => {
+  const work = (
+    <div className={styles.column}>
+      <div
+        className={`${styles.columnScroll} ${hideScrollbar ? styles.noScrollbar : ""}`}
+      >
+        <p className={styles.intro}>{intro}</p>
+        {children}
       </div>
-    </Splitter.Panel>
-    <Splitter.Panel min={"35%"}>{aside}</Splitter.Panel>
-  </Splitter>
-);
+      <div className={styles.columnFooter}>{footer}</div>
+    </div>
+  );
+  return asideFirst ? (
+    <Splitter className={styles.fill}>
+      <Splitter.Panel defaultSize={defaultSize} min={"30%"} max={"70%"}>
+        {aside}
+      </Splitter.Panel>
+      <Splitter.Panel min={"30%"}>{work}</Splitter.Panel>
+    </Splitter>
+  ) : (
+    <Splitter className={styles.fill}>
+      <Splitter.Panel defaultSize={defaultSize} min={"30%"} max={"70%"}>
+        {work}
+      </Splitter.Panel>
+      <Splitter.Panel min={"35%"}>{aside}</Splitter.Panel>
+    </Splitter>
+  );
+};
 
 export default SplitStep;
