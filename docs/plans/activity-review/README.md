@@ -528,7 +528,12 @@ From Neil's use of phases 4 to 5a, each its own commit:
   Migration `1791040000000_minerva_review_half_ratings` makes the six
   ratings `numeric(2,1)`, 0.5 to 5 in halves (`down.sql` rounds a half
   up); the API takes halves and reads a rating Hasura sends as text.
-- **Lists' add box** joins its input and Add button.
+- **Lists' add box** joins its input and Add button; the Add button is
+  primary.
+- **How was the day?**: the rating circles are blue (#1677ff), as the
+  page's other controls, and the Low/High words show once, under Focus,
+  the last rating; Focus's ends are Low and High rather than Scattered
+  and Locked in.
 - Minerva's submenus close when the menu is collapsed.
 
 ## Phase 6 — The site: the lists
@@ -560,3 +565,5 @@ Review today (Continue when a draft exists). Drawn before it is built.
 - iOS: the daily review as a Day, Reflect, Tomorrow switch.
 - Tasks: an item gains `task_id`; Track as task promotes it.
 - Time blocks written to the calendar, once the calendar sync can write.
+- Anything else about today: its plain text box becomes a TinyMCE
+  editor, as notes are written.
