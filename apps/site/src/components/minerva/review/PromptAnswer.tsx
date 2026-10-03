@@ -17,6 +17,8 @@ export interface PromptAnswerProps {
   todoFor: string;
   disabled?: boolean;
   rows?: number;
+  /** Its form elements' size; AntD's default unless small, as in a widget. */
+  size?: "small";
   /** Only show the answer: a list's items as the list draws them, or the text. */
   readOnly?: boolean;
 }
@@ -33,6 +35,7 @@ const PromptAnswer: React.FunctionComponent<PromptAnswerProps> = ({
   disabled = false,
   rows = 2,
   readOnly = false,
+  size,
 }) => {
   const answer = answers[0];
   const [text, setText] = useState(answer?.body ?? "");
@@ -48,6 +51,7 @@ const PromptAnswer: React.FunctionComponent<PromptAnswerProps> = ({
         ) : (
           <AnswerList
             readOnly={readOnly}
+            size={size}
             label={prompt.label}
             items={answers}
             disabled={disabled}
@@ -83,6 +87,7 @@ const PromptAnswer: React.FunctionComponent<PromptAnswerProps> = ({
       ) : (
         <Input.TextArea
           id={id}
+          size={size}
           value={text}
           disabled={disabled}
           placeholder={prompt.placeholder}

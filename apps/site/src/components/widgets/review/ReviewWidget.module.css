@@ -1,0 +1,144 @@
+/*
+ * The daily review widget (Minerva Review, home). Its card, heading and tab
+ * bar match the goals and weather widgets', so the home page's widgets read
+ * as a set; its parts are tighter than the review's own pages.
+ */
+
+.card {
+  background: #ffffff;
+}
+
+/* The heading, today's date beside it, the review's status at its right. */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 2px;
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+/* AntD's tabs, their bar on the blue rule, as in the other widgets. */
+.tabs > :global(.ant-tabs-nav) {
+  margin: 0;
+  padding: 0 8px;
+  box-shadow: inset 0 -2px 0 #004673;
+}
+
+.tabs > :global(.ant-tabs-nav)::before {
+  display: none;
+}
+
+.badge {
+  margin-left: 6px;
+}
+
+.badge :global(.ant-badge-count) {
+  color: #595959;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 8px 12px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 12px;
+  color: #6b6b6b;
+}
+
+/* A rating: its name, then the circles and value at the right. */
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 22px;
+  font-size: 13px;
+}
+
+.rating > span:first-child {
+  flex-grow: 1;
+}
+
+.rate.rate {
+  font-size: 14px;
+  line-height: 1;
+  color: #1677ff;
+}
+
+.rate.rate :global(.ant-rate-star:not(:last-child)) {
+  margin-inline-end: 4px;
+}
+
+.dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.value {
+  width: 24px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.foot {
+  padding: 0 8px 12px;
+}
+
+.state {
+  padding: 16px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b6b6b;
+}
+
+.skeleton {
+  padding: 12px 8px;
+}
+
+/* Today's plan, a little further from the ratings above it. */
+.plan {
+  padding-top: 8px;
+}

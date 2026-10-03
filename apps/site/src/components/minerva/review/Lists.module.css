@@ -1,0 +1,405 @@
+/*
+ * The review lists (docs/plans/activity-review/design.md, Lists): rows down
+ * the page under the period's summary, a calendar in a 400 px sider.
+ */
+
+.page {
+  display: flex;
+  align-items: flex-start;
+  min-height: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sider {
+  flex: none;
+  width: 400px;
+  box-sizing: border-box;
+  padding: 16px 24px;
+  border-left: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+}
+
+@media (max-width: 1100px) {
+  .page {
+    flex-direction: column;
+  }
+
+  .sider {
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid #f0f0f0;
+    position: static;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* The period in numbers, a row of statistics. */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meta {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* The rows: one open at a time, each a line until it opens. */
+.rows:global(.ant-collapse) {
+  background: transparent;
+}
+
+.rows :global(.ant-collapse-item) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.rows.rows :global(.ant-collapse-item) > :global(.ant-collapse-header) {
+  align-items: center;
+}
+
+/* AntD's title takes its content's width; held to the row's, the headline
+ * is what gives way. */
+.rows :global(.ant-collapse-title) {
+  min-width: 0;
+}
+
+.rowHead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.when {
+  display: flex;
+  flex-direction: column;
+  width: 92px;
+  flex: none;
+}
+
+.whenName {
+  font-weight: 600;
+}
+
+.status {
+  width: 92px;
+  flex: none;
+}
+
+.ratings {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.headline {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.facts {
+  display: flex;
+  gap: 16px;
+  flex: none;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 48px;
+}
+
+.factValue {
+  font-variant-numeric: tabular-nums;
+}
+
+/* An open row: its parts side by side, its links at the foot. */
+.rowBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 0 8px 28px;
+}
+
+.parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 1400px) {
+  .parts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.part {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.partTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.answerLabel {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.missing {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* A rating as five small dots under its name. */
+.ratingDots {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 58px;
+}
+
+.ratingName {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.dotOn,
+.dotOff,
+.dotHalf {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dotOn {
+  background: #0958d9;
+}
+
+.dotOff {
+  background: #e6e6e6;
+}
+
+.dotHalf {
+  background: linear-gradient(90deg, #0958d9 50%, #e6e6e6 50%);
+}
+
+/* A week's days as seven overall dots, Monday to Sunday. */
+.weekDots {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.weekDotRow {
+  display: inline-flex;
+  gap: 3px;
+}
+
+/* The sider's calendar: a week column, the days, a dot under each. */
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendarHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calendarTitle {
+  font-weight: 600;
+}
+
+.calendarGrid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+  table-layout: fixed;
+}
+
+.calendarGrid th {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.45);
+  padding: 2px 0;
+  text-align: center;
+}
+
+.calendarGrid tbody th {
+  width: 40px;
+}
+
+.calendarGrid td {
+  text-align: center;
+  padding: 4px 0;
+  vertical-align: top;
+}
+
+.weekMarked th,
+.weekMarked td {
+  background: #e6f4ff;
+}
+
+.weekMarked th:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.weekMarked td:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.weekLink {
+  font-weight: 600;
+}
+
+.outside .dayNumber {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.dayNumber {
+  display: block;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.dayDot,
+.dayDotHollow,
+.noDot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 2px auto 0;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.dayDotHollow {
+  border: 1px solid #bfbfbf;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.siderStats {
+  display: flex;
+  gap: 24px;
+}
+
+/* The weekly sider's year: a month a cell, its weeks reviewed under it. */
+.yearHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.year {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.monthCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.monthCell:hover {
+  border-color: #91caff;
+}
+
+.monthChosen {
+  border-color: #1677ff;
+  background: #e6f4ff;
+}
+
+.monthCount {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.55);
+}

@@ -88,8 +88,13 @@ const weekPlanOf = async (monday: DateTime): Promise<WeekPlan | undefined> => {
  * Everything a daily review shows and changes (ADR 0027): the day's review,
  * prompts, calendar, notes and plan items, read live from their features.
  * The review is started on the first thing saved, not on opening it.
+ * `light` loads only the review, its prompts and the plan, for the home
+ * page's widget: no calendar, notes or week.
  */
-export const useDailyReview = (date: DateTime): DailyReviewData => {
+export const useDailyReview = (
+  date: DateTime,
+  { light = false }: { light?: boolean } = {},
+): DailyReviewData => {
   const day = date.toISODate()!;
   const tomorrow = date.plus({ days: 1 }).toISODate()!;
   const started = date.startOf("day") <= DateTime.now().startOf("day");
@@ -109,29 +114,28 @@ export const useDailyReview = (date: DateTime): DailyReviewData => {
       const [reviews, p, calendar, n, i, w] = await Promise.all([
         reviewsApi.listReviews("daily", day, day),
         reviewsApi.listPrompts("daily"),
-        meetingsApi.getMeetings(date.startOf("day"), 2),
-        notesApi.getNotes(date.startOf("day").toUTC()),
+        light ? undefined : meetingsApi.getMeetings(date.startOf("day"), 2),
+        light ? undefined : notesApi.getNotes(date.startOf("day").toUTC()),
         reviewsApi.listItems("day", day, tomorrow),
         // A Monday opens with the week its review planned.
-        date.weekday === 1 ? weekPlanOf(date) : undefined,
+        !light && date.weekday === 1 ? weekPlanOf(date) : undefined,
       ]);
       setWeek(w);
       setReview(reviews[0]);
       setPrompts(p);
       const onDay = (m: Meeting, d: string) =>
         DateTime.fromISO(m.startTime).toISODate() === d;
-      setMeetings(calendar.data.items.filter((m) => onDay(m, day)));
-      setTomorrowMeetings(
-        calendar.data.items.filter((m) => onDay(m, tomorrow)),
-      );
-      setNotes(n.data.notes.filter((note) => !note.deletedTime));
+      const meetings = calendar?.data.items ?? [];
+      setMeetings(meetings.filter((m) => onDay(m, day)));
+      setTomorrowMeetings(meetings.filter((m) => onDay(m, tomorrow)));
+      setNotes((n?.data.notes ?? []).filter((note) => !note.deletedTime));
       setItems(i);
     } catch (error) {
       fail(error, "Could not load the day");
     } finally {
       setLoading(false);
     }
-  }, [day, tomorrow]);
+  }, [day, tomorrow, light]);
 
   useEffect(() => {
     void load();

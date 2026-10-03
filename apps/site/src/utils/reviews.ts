@@ -716,3 +716,71 @@ export const answeredPrompts = <
         .sort((a, b) => a.position - b.position),
     }))
     .filter((pair) => pair.answers.length > 0);
+
+/* ------------------------------------------------------------------------ */
+/* The lists: calendar geometry and rows                                    */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * The Mondays of the weeks a month's calendar shows: from the week of its
+ * first day to the week of its last, so every day of the month is in one.
+ */
+export const calendarWeeks = (month: DateTime): DateTime[] => {
+  const first = weekStart(month.startOf("month"));
+  const last = weekStart(month.endOf("month"));
+  const count = Math.round(last.diff(first, "weeks").weeks) + 1;
+  return Array.from({ length: count }, (_, i) => first.plus({ weeks: i }));
+};
+
+/**
+ * The Mondays of the ISO weeks a month lists: those whose Thursday falls
+ * in it, so each week belongs to exactly one month.
+ */
+export const weeksOfMonth = (month: DateTime): DateTime[] =>
+  calendarWeeks(month).filter(
+    (monday) => monday.plus({ days: 3 }).month === month.month,
+  );
+
+/**
+ * The longest run of consecutive days, in `days` (YYYY-MM-DD, any order),
+ * each of which is in `done`.
+ */
+export const longestRun = (days: string[], done: Set<string>): number => {
+  let best = 0;
+  let run = 0;
+  for (const day of [...days].sort()) {
+    run = done.has(day) ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+  return best;
+};
+
+/** The colour of an overall rating's dot: warm when low, blue when high. */
+export const ratingColor = (
+  overall: number | undefined,
+): string | undefined => {
+  if (overall === undefined || overall === null) return undefined;
+  if (overall < 1.5) return "#ff7a45";
+  if (overall < 2.5) return "#ffa940";
+  if (overall < 3.5) return "#bae0ff";
+  if (overall < 4.5) return "#4096ff";
+  return "#0958d9";
+};
+
+/** The overall ratings' colours, low to high, for a legend. */
+export const RATING_LEGEND = [1, 2, 3, 4, 5].map((rating) => ({
+  rating,
+  color: ratingColor(rating)!,
+}));
+
+/** The minutes of meetings on each day of `days`, as YYYY-MM-DD → minutes. */
+export const meetingMinutesByDay = (
+  meetings: ReviewMeeting[],
+  days: DateTime[],
+): Map<string, number> =>
+  new Map(
+    days.map((day) => [
+      day.toISODate()!,
+      busyMinutes(meetingSpans(meetings, day)),
+    ]),
+  );

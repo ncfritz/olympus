@@ -1,6 +1,11 @@
 import { DateTime, Settings } from "luxon";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  calendarWeeks,
+  longestRun,
+  meetingMinutesByDay,
+  ratingColor,
+  weeksOfMonth,
   answeredPrompts,
   answersByPrompt,
   blockedSpan,
@@ -802,5 +807,81 @@ describe("the weekly review's arithmetic, in Seattle", () => {
       ]);
       expect(answeredPrompts(prompts, answers, "plan")).toHaveLength(1);
     });
+  });
+});
+
+describe("the lists' calendar", () => {
+  const month = (iso: string) => DateTime.fromISO(iso);
+  const dates = (mondays: DateTime[]) => mondays.map((m) => m.toISODate());
+
+  it("shows every week a month's days fall in", () => {
+    // September 2026 runs Tuesday the 1st to Wednesday the 30th.
+    expect(dates(calendarWeeks(month("2026-09-14")))).toEqual([
+      "2026-08-31",
+      "2026-09-07",
+      "2026-09-14",
+      "2026-09-21",
+      "2026-09-28",
+    ]);
+    // February 2027 starts on a Monday and ends on a Sunday: four weeks.
+    expect(calendarWeeks(month("2027-02-01"))).toHaveLength(4);
+    // August 2026 starts on a Saturday and ends on a Monday: six weeks.
+    expect(calendarWeeks(month("2026-08-01"))).toHaveLength(6);
+  });
+
+  it("lists a week under the month its Thursday falls in", () => {
+    // Weeks 36 to 39: week 36 (Aug 31 – Sep 6) has its Thursday on
+    // September 3; week 40 (Sep 28 – Oct 4) has its on October 1.
+    expect(dates(weeksOfMonth(month("2026-09-01")))).toEqual([
+      "2026-08-31",
+      "2026-09-07",
+      "2026-09-14",
+      "2026-09-21",
+    ]);
+    expect(dates(weeksOfMonth(month("2026-10-01")))[0]).toBe("2026-09-28");
+    // So week 36 is not August's.
+    expect(dates(weeksOfMonth(month("2026-08-01")))).not.toContain(
+      "2026-08-31",
+    );
+    // Across a year's end: week 53 of 2026 (Dec 28) lists under December.
+    expect(dates(weeksOfMonth(month("2026-12-01")))).toContain("2026-12-28");
+    expect(dates(weeksOfMonth(month("2027-01-01")))[0]).toBe("2027-01-04");
+  });
+
+  it("finds the longest run of reviewed days", () => {
+    const done = new Set(["2026-09-01", "2026-09-02", "2026-09-04"]);
+    const days = ["2026-09-04", "2026-09-01", "2026-09-03", "2026-09-02"];
+    expect(longestRun(days, done)).toBe(2);
+    expect(longestRun(days, new Set())).toBe(0);
+  });
+
+  it("colours a rating's dot from warm to blue", () => {
+    expect(ratingColor(undefined)).toBeUndefined();
+    expect(ratingColor(1)).toBe("#ff7a45");
+    expect(ratingColor(2.5)).toBe("#bae0ff");
+    expect(ratingColor(4)).toBe("#4096ff");
+    expect(ratingColor(5)).toBe("#0958d9");
+  });
+
+  it("totals each day's meetings", () => {
+    const monday = DateTime.fromISO("2026-09-28");
+    const at = (d: string, s: string, e: string) => ({
+      id: `${d}${s}`,
+      subject: "x",
+      startTime: `${d}T${s}`,
+      endTime: `${d}T${e}`,
+      isAllDay: false,
+      isDeleted: false,
+      status: "Busy",
+    });
+    const minutes = meetingMinutesByDay(
+      [
+        at("2026-09-28", "09:00", "10:00"),
+        at("2026-09-28", "09:30", "10:30"),
+        at("2026-09-29", "14:00", "14:30"),
+      ],
+      [monday, monday.plus({ days: 1 }), monday.plus({ days: 2 })],
+    );
+    expect([...minutes.values()]).toEqual([90, 30, 0]);
   });
 });

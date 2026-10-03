@@ -18,7 +18,12 @@ export type PinnedHighlight = {
  * The review's pins with what they hold, from the week's daily answers and
  * notes already loaded; a pin whose note has gone is left out.
  */
-export const pinnedHighlights = (data: WeeklyReviewData): PinnedHighlight[] =>
+export const pinnedHighlights = (
+  data: Pick<
+    WeeklyReviewData,
+    "pins" | "dailyReviews" | "dailyPrompts" | "notes"
+  >,
+): PinnedHighlight[] =>
   data.pins.flatMap((pin): PinnedHighlight[] => {
     if (pin.answerId) {
       for (const review of data.dailyReviews) {

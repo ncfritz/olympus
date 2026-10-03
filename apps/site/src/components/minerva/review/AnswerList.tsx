@@ -32,6 +32,8 @@ const { Text } = Typography;
 const MAX_ITEM = 200;
 
 export interface AnswerListProps {
+  /** The add box's size; AntD's default unless small, as in a widget. */
+  size?: "small";
   /** Only show the items, as the list draws them: no changing them. */
   readOnly?: boolean;
   /** For the add box's label. */
@@ -143,6 +145,7 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
   onReorder,
   onTodo,
   readOnly = false,
+  size,
 }) => {
   const [order, setOrder] = useState(items);
   const [adding, setAdding] = useState("");
@@ -177,6 +180,7 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
       {!disabled && !readOnly && (
         <Space.Compact className={styles.addRow} block={true}>
           <Input
+            size={size}
             value={adding}
             maxLength={MAX_ITEM}
             placeholder={placeholder ?? "Add an item"}
@@ -186,6 +190,7 @@ const AnswerList: React.FunctionComponent<AnswerListProps> = ({
           />
           <Button
             type={"primary"}
+            size={size}
             icon={<PlusOutlined />}
             onClick={() => void add()}
           >

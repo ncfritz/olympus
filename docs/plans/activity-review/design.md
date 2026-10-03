@@ -6,8 +6,8 @@ Names, numbers and answers on the canvas are sample data.
 
 The site look is Minerva's: AntD light, the `#2c3c4a` header, the app
 rail, the Minerva menu with breadcrumbs, and a 400 px right-hand sider.
-The reviews sit under Review in the Minerva menu (Daily Review, Weekly
-Review; Monthly Review stays without a route).
+The reviews sit under Reviews in the Minerva menu (Daily Reviews, Weekly
+Reviews; Monthly Reviews stays without a route).
 
 The canvas draws two layouts for each review, one page and guided steps.
 **The guided steps were chosen** (Neil, 2026-10-01); the one-page boards
@@ -24,8 +24,9 @@ stay on the canvas for reference.
 | `/minerva/review/weekly/2026/10`   | a month's weekly list                      |
 | `/minerva/review/weekly/2026/W40`  | the weekly review of a week (`?step=` 1–5) |
 
-The menu's Daily Review opens today's review, Weekly Review this week's;
-each review's title bar links to its list.
+The menu's Reviews holds Daily Reviews, opening this week's daily list,
+and Weekly Reviews, this month's weekly list (Neil, 2026-10-02); each
+review's title bar links to its list.
 
 ## Daily review
 

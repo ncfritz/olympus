@@ -13,7 +13,11 @@ import { DateTime } from "luxon";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../../redux/hooks";
-import { dailyReviewPath, weeklyReviewPath } from "../../../utils/reviews";
+import {
+  dailyListPath,
+  monthOfWeek,
+  weeklyListPath,
+} from "../../../utils/reviews";
 
 const BASE_PATH = "minerva";
 const SUB_MENUS = {
@@ -53,9 +57,9 @@ const MinervaMenu: React.FunctionComponent = () => {
       case "meetings-month":
         return `/${BASE_PATH}/meetings/${today.toFormat("yyyy/MM")}`;
       case "review-day":
-        return dailyReviewPath(today);
+        return dailyListPath(today);
       case "review-week":
-        return weeklyReviewPath(today);
+        return weeklyListPath(monthOfWeek(today));
       default:
         return key;
     }
@@ -146,23 +150,23 @@ const MinervaMenu: React.FunctionComponent = () => {
         {
           key: "review-container",
           icon: <CarryOutOutlined />,
-          label: "Review",
+          label: "Reviews",
           onTitleClick: updateSubMenus,
           children: [
             {
               key: `review-day`,
               icon: <CalendarOutlined />,
-              label: "Daily Review",
+              label: "Daily Reviews",
             },
             {
               key: `review-week`,
               icon: <CalendarOutlined />,
-              label: "Weekly Review",
+              label: "Weekly Reviews",
             },
             {
               key: `review-month`,
               icon: <CalendarOutlined />,
-              label: "Monthly Review",
+              label: "Monthly Reviews",
               disabled: true,
             },
           ],

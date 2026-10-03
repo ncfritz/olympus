@@ -8,6 +8,7 @@ import type { ReviewItem } from "@ncfritz/olympus-sdk/minerva";
 import { ConfigProvider, Empty, Radio, Tag, Typography } from "antd";
 import React from "react";
 import { type Triage, triageOf } from "../../../utils/reviews";
+import { PLAN_KINDS } from "./planKinds";
 import styles from "./Review.module.css";
 
 const { Text } = Typography;
@@ -91,6 +92,12 @@ export interface TriageListProps<D extends string = Triage> {
    * the chosen button is; nothing can be changed.
    */
   readOnly?: boolean;
+  /**
+   * Compact, where space is tight: each decision as its icon alone, named
+   * on hover; the item's kind as its icon, as the plan lists show it; rows
+   * closer together; the Carried over tag left to the line under the title.
+   */
+  iconOnly?: boolean;
 }
 
 /**
@@ -108,6 +115,7 @@ const TriageList = <D extends string = Triage>({
   empty = "Nothing was planned for today",
   whereOf,
   readOnly = false,
+  iconOnly = false,
 }: TriageListProps<D>): React.ReactElement => {
   if (items.length === 0) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} />;
@@ -117,17 +125,39 @@ const TriageList = <D extends string = Triage>({
       {items.map((item) => {
         const chosen = decisionOf(item.status);
         return (
-          <div key={item.id} className={styles.row}>
+          <div
+            key={item.id}
+            className={`${styles.row} ${iconOnly ? styles.rowTight : ""}`}
+          >
+            {iconOnly && (
+              <span
+                className={PLAN_KINDS[item.kind].tint}
+                title={PLAN_KINDS[item.kind].label}
+              >
+                {PLAN_KINDS[item.kind].icon}
+              </span>
+            )}
             <div className={styles.rowMain}>
               <Text delete={item.status === "dropped"}>{item.title}</Text>
-              <span className={styles.meta}>
-                {whereOf?.(item) && `${whereOf(item)} · `}
-                {item.kind === "priority" ? "Priority" : "To-do"}
-                {item.carryCount > 0 &&
-                  ` · carried ${item.carryCount} time${item.carryCount === 1 ? "" : "s"}`}
-              </span>
+              {iconOnly ? (
+                // The kind is the icon; only a carry is left to say.
+                item.carryCount > 0 && (
+                  <span className={styles.meta}>
+                    carried {item.carryCount} time
+                    {item.carryCount === 1 ? "" : "s"}
+                  </span>
+                )
+              ) : (
+                <span className={styles.meta}>
+                  {whereOf?.(item) && `${whereOf(item)} · `}
+                  {item.kind === "priority" ? "Priority" : "To-do"}
+                  {item.carryCount > 0 &&
+                    ` · carried ${item.carryCount} time${item.carryCount === 1 ? "" : "s"}`}
+                </span>
+              )}
             </div>
-            {item.carryCount > 0 && item.status === "open" && (
+            {/* Tight with icons alone: the line under the title says it. */}
+            {!iconOnly && item.carryCount > 0 && item.status === "open" && (
               <Tag color={"orange"}>Carried over</Tag>
             )}
             {readOnly ? (
@@ -155,6 +185,8 @@ const TriageList = <D extends string = Triage>({
                     >
                       <Radio.Button
                         value={decision.value}
+                        title={iconOnly ? decision.label : undefined}
+                        aria-label={iconOnly ? decision.label : undefined}
                         // Clicking the chosen decision again takes it back;
                         // a radio sends no change for that, so it is caught here.
                         onClick={() => {
@@ -169,8 +201,8 @@ const TriageList = <D extends string = Triage>({
                           }
                         >
                           {look.icon}
-                        </span>{" "}
-                        {decision.label}
+                        </span>
+                        {!iconOnly && ` ${decision.label}`}
                       </Radio.Button>
                     </ConfigProvider>
                   );

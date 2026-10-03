@@ -13,31 +13,21 @@ const WHAT: Record<ReviewRoute["kind"], string> = {
 };
 
 /**
- * Where a review page stands until docs/plans/activity-review builds it
- * (the weekly review in phase 5, the lists in phase 6): the breadcrumbs for
- * the route, and what will be there.
+ * A review address that names no review and no list: the breadcrumbs for
+ * the kind, and the word that there is nothing there.
  */
 const ReviewPlaceholder: React.FunctionComponent<ReviewPlaceholderProps> = ({
   route,
-}) => {
-  const label = reviewRouteLabel(route);
-  let description: string;
-  if (route.view === "invalid") {
-    description = "There is no review at this address.";
-  } else if (route.view === "list") {
-    description = `The ${WHAT[route.kind].toLowerCase()}s of ${label} are on their way.`;
-  } else {
-    description = `The ${WHAT[route.kind].toLowerCase()} of ${label} is on its way.`;
-  }
-
-  return (
-    <>
-      <ReviewBreadcrumbs what={WHAT[route.kind]} label={label} />
-      <Flex vertical={true} align={"center"} justify={"center"} flex={1}>
-        <Empty description={description} />
-      </Flex>
-    </>
-  );
-};
+}) => (
+  <>
+    <ReviewBreadcrumbs
+      what={WHAT[route.kind]}
+      label={reviewRouteLabel(route)}
+    />
+    <Flex vertical={true} align={"center"} justify={"center"} flex={1}>
+      <Empty description={"There is no review at this address."} />
+    </Flex>
+  </>
+);
 
 export default ReviewPlaceholder;

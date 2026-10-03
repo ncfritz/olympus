@@ -956,3 +956,8 @@
 .dayLabel + .row {
   border-top: 0;
 }
+
+/* A compact list's rows, closer together. */
+.row.rowTight {
+  padding: 4px 0;
+}
