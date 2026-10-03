@@ -9,6 +9,10 @@ export interface SplitStepProps {
   footer: React.ReactNode;
   /** The right of the split. */
   aside: React.ReactNode;
+  /** The left panel's starting width; 45% by default. */
+  defaultSize?: string;
+  /** Whether the left column scrolls with no scroll bar showing. */
+  hideScrollbar?: boolean;
   /** The left of the split, the step's own work. */
   children: React.ReactNode;
 }
@@ -21,12 +25,16 @@ const SplitStep: React.FunctionComponent<SplitStepProps> = ({
   intro,
   footer,
   aside,
+  defaultSize = "45%",
+  hideScrollbar = false,
   children,
 }) => (
   <Splitter className={styles.fill}>
-    <Splitter.Panel defaultSize={"45%"} min={"30%"} max={"65%"}>
+    <Splitter.Panel defaultSize={defaultSize} min={"30%"} max={"70%"}>
       <div className={styles.column}>
-        <div className={styles.columnScroll}>
+        <div
+          className={`${styles.columnScroll} ${hideScrollbar ? styles.noScrollbar : ""}`}
+        >
           <p className={styles.intro}>{intro}</p>
           {children}
         </div>

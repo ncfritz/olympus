@@ -1,4 +1,6 @@
 import type {
+  Goal,
+  GoalExecution,
   Meeting,
   Note,
   Review,
@@ -10,6 +12,7 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
+import goalsApi from "../../../api/goalsApi";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import reviewsApi from "../../../api/reviewsApi";
@@ -51,7 +54,18 @@ export type WeeklyReviewData = AnswerActions & {
   weekItems: ItemList;
   setRating: (key: RatingField["key"], value: number | null) => Promise<void>;
   setStep: (step: number) => Promise<void>;
-  quickScore: (day: string, overall: number) => Promise<void>;
+  /**
+   * One of a day's ratings, set from the week: its daily review, started
+   * if need be, as a draft. A completed day's ratings are set.
+   */
+  rateDay: (
+    day: string,
+    key: RatingField["key"],
+    value: number | null,
+  ) => Promise<void>;
+  /** The open top-level goals, and the week's habit execution. */
+  goals: Goal[];
+  execution?: GoalExecution;
   /** A decision on a planned item; null takes it back. */
   triage: (item: ReviewItem, decision: WeekTriage | null) => Promise<void>;
   pin: (target: { answerId: string } | { noteId: string }) => Promise<void>;
@@ -96,6 +110,8 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [dayItems, setDayItems] = useState<ReviewItem[]>([]);
   const [weekItems, setWeekItems] = useState<ReviewItem[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [execution, setExecution] = useState<GoalExecution>();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -134,6 +150,19 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Goals are beside the week, not part of it: the week loads without them.
+  useEffect(() => {
+    Promise.all([goalsApi.listGoals(), goalsApi.getExecution({ week: period })])
+      .then(([open, week]) => {
+        setGoals(open.filter((g) => !g.parentId));
+        setExecution(week);
+      })
+      .catch(() => {
+        setGoals([]);
+        setExecution(undefined);
+      });
+  }, [period]);
 
   /** The week's review, started now when there is none yet. */
   const ensureReview = useStartReview(
@@ -186,16 +215,15 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
     }
   };
 
-  /**
-   * A missed day scored in a click: its daily review, started if need be,
-   * given an overall rating and completed, so it counts in the averages.
-   */
-  const quickScore = async (day: string, overall: number) => {
+  const rateDay = async (
+    day: string,
+    key: RatingField["key"],
+    value: number | null,
+  ) => {
     try {
       const existing = dailyReviews.find((r) => r.periodStart === day);
       const daily = existing ?? (await reviewsApi.createReview("daily", day));
-      await reviewsApi.updateReview(daily.id, { overall });
-      await reviewsApi.completeReview(daily.id);
+      await reviewsApi.updateReview(daily.id, { [key]: value });
       const [summary, dailies] = await Promise.all([
         reviewsApi.getSummary("daily", monday, sunday),
         reviewsApi.listReviews("daily", monday, sunday),
@@ -203,7 +231,7 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
       setDays(summary);
       setDailyReviews(dailies);
     } catch (error) {
-      fail(error, "Could not save the score");
+      fail(error, "Could not save the rating");
     }
   };
 
@@ -350,7 +378,9 @@ export const useWeeklyReview = (week: DateTime): WeeklyReviewData => {
     setRating,
     setStep,
     ...answerActions,
-    quickScore,
+    rateDay,
+    goals,
+    execution,
     triage,
     pin,
     unpin,

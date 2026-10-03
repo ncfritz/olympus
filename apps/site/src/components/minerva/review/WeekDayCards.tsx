@@ -1,89 +1,114 @@
 import type { ReviewPeriodSummary } from "@ncfritz/olympus-sdk/minerva";
-import { Card, Select, Tag } from "antd";
+import { Button, Rate, Tag } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import React from "react";
-import { dailyReviewPath } from "../../../utils/reviews";
+import {
+  dailyReviewPath,
+  RATING_FIELDS,
+  type RatingField,
+} from "../../../utils/reviews";
 import styles from "./Review.module.css";
 
 const STATUS: Record<
   ReviewPeriodSummary["status"],
-  { label: string; color?: string }
+  { label: string; color?: string; action?: string }
 > = {
-  complete: { label: "Complete", color: "green" },
-  draft: { label: "Draft", color: "orange" },
-  missed: { label: "No review", color: "red" },
-  open: { label: "Today", color: "blue" },
+  complete: { label: "Complete", color: "green", action: "Read review" },
+  draft: { label: "Draft", color: "orange", action: "Continue review" },
+  missed: { label: "No review", color: "red", action: "Start review" },
+  open: { label: "Today", color: "blue", action: "Review today" },
   upcoming: { label: "Upcoming" },
 };
 
 export interface WeekDayCardsProps {
   periods: ReviewPeriodSummary[];
   disabled?: boolean;
-  onQuickScore: (day: string, overall: number) => Promise<void>;
+  /** A day's rating set from its card; null clears it. */
+  onRate: (
+    day: string,
+    key: RatingField["key"],
+    value: number | null,
+  ) => Promise<void>;
 }
 
+/** A rating as a row of small circles, in halves, as Reflect draws it. */
+const MiniRating: React.FunctionComponent<{
+  field: RatingField;
+  value?: number;
+  day: string;
+  disabled: boolean;
+  onChange: (value: number | null) => void;
+}> = ({ field, value, day, disabled, onChange }) => (
+  <div className={styles.miniRating}>
+    <span className={styles.miniLabel}>{field.label}</span>
+    <Rate
+      className={`${styles.rate} ${styles.miniRate}`}
+      allowHalf={true}
+      disabled={disabled}
+      value={value ?? 0}
+      character={<span className={styles.miniDot} />}
+      aria-label={`${field.label} for ${day}`}
+      onChange={(rating) => onChange(rating || null)}
+    />
+    <span className={styles.miniValue}>{value?.toFixed(1) ?? "–"}</span>
+  </div>
+);
+
 /**
- * The week's days, a card each: its overall rating, headline and review
- * status, linking to its daily review. A missed day can be scored in a
- * click, or reviewed in full.
+ * The week's days, a card each: its review status across the top, the
+ * date and overall score, each rating as small circles that set it (a
+ * completed day's are set), and its daily review at the foot.
  */
 const WeekDayCards: React.FunctionComponent<WeekDayCardsProps> = ({
   periods,
   disabled = false,
-  onQuickScore,
+  onRate,
 }) => (
   <div className={styles.dayCards}>
     {periods.map((period) => {
       const day = DateTime.fromISO(period.periodStart);
       const status = STATUS[period.status];
       const overall = period.ratings.overall;
+      const locked =
+        disabled ||
+        period.status === "complete" ||
+        period.status === "upcoming";
       return (
-        <Card key={period.periodStart} size={"small"}>
-          <div className={styles.dayCard}>
-            <strong className={styles.nowrap}>{day.toFormat("ccc d")}</strong>
-            <span>
-              <Tag color={status.color}>{status.label}</Tag>
-            </span>
-            {period.status === "missed" ? (
-              <>
-                <Select
-                  size={"small"}
-                  placeholder={"Quick score"}
-                  aria-label={`Quick score for ${day.toFormat("cccc")}`}
-                  disabled={disabled}
-                  options={[1, 2, 3, 4, 5].map((n) => ({
-                    label: `Overall ${n}`,
-                    value: n,
-                  }))}
-                  onChange={(value: number) =>
-                    void onQuickScore(period.periodStart, value)
-                  }
-                />
-                <Link href={dailyReviewPath(day)}>Full review</Link>
-              </>
-            ) : period.status === "upcoming" ? (
-              <span className={styles.meta}>Not yet</span>
-            ) : (
-              <>
-                <span className={styles.score}>
-                  {overall ?? "–"}
-                  <span className={styles.meta}> overall</span>
-                </span>
-                {period.headline && (
-                  <span className={styles.headline}>{period.headline}</span>
-                )}
-                <Link href={dailyReviewPath(day)}>
-                  {period.status === "complete"
-                    ? "Read review"
-                    : period.status === "open"
-                      ? "Review today"
-                      : "Continue review"}
-                </Link>
-              </>
-            )}
+        <section
+          key={period.periodStart}
+          className={styles.dayCard}
+          aria-label={day.toFormat("cccc d")}
+        >
+          <Tag className={styles.dayStatus} color={status.color}>
+            {status.label}
+          </Tag>
+          <div className={styles.dayCardBody}>
+            <div className={styles.dayCardHead}>
+              <strong className={styles.nowrap}>{day.toFormat("ccc d")}</strong>
+              <span className={styles.score}>{overall?.toFixed(1) ?? "–"}</span>
+            </div>
+            {RATING_FIELDS.daily.map((field) => (
+              <MiniRating
+                key={field.key}
+                field={field}
+                day={day.toFormat("cccc")}
+                value={period.ratings[field.key]}
+                disabled={locked}
+                onChange={(value) =>
+                  void onRate(period.periodStart, field.key, value)
+                }
+              />
+            ))}
           </div>
-        </Card>
+          {status.action && (
+            <Link href={dailyReviewPath(day)} className={styles.dayAction}>
+              <Button type={"text"} block={true} tabIndex={-1}>
+                {status.action}
+              </Button>
+            </Link>
+          )}
+        </section>
       );
     })}
   </div>

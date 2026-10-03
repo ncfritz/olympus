@@ -1,4 +1,6 @@
-import { Card, Empty, Statistic } from "antd";
+import type { Note, ReviewItem } from "@ncfritz/olympus-sdk/minerva";
+import { Card, Collapse, Empty, Statistic } from "antd";
+import { CaretRightOutlined } from "@ant-design/icons";
 import { DateTime } from "luxon";
 import React from "react";
 import { config } from "../../../utils/notes";
@@ -15,11 +17,15 @@ import {
   weekLoad,
   weekTriageOf,
 } from "../../../utils/reviews";
+import DaySections, { type DaySection } from "./DaySections";
+import NoteList from "./NoteList";
 import styles from "./Review.module.css";
+import SplitStep from "./SplitStep";
 import TriageList from "./TriageList";
 import type { WeeklyReviewData } from "./useWeeklyReview";
 import WeekDayCards from "./WeekDayCards";
 import { RatingsChart, TimeChart } from "./WeekCharts";
+import WeekGoals from "./WeekGoals";
 
 const DECISIONS: { label: string; value: WeekTriage }[] = [
   { label: "Done", value: "done" },
@@ -28,16 +34,57 @@ const DECISIONS: { label: string; value: WeekTriage }[] = [
   { label: "Drop", value: "drop" },
 ];
 
+const flat = {
+  size: "small" as const,
+  variant: "borderless" as const,
+  className: styles.flat,
+  classNames: { header: styles.flatPart, body: styles.flatPart },
+};
+
+/** A key for the week's items not tied to a day; sorts after the days. */
+const NO_DAY = "~";
+
+/**
+ * Items by day, in the week's order: each day that has any, as its name,
+ * and those on no day last.
+ */
+const byDay = <T,>(
+  things: T[],
+  dayOf: (thing: T) => string | undefined,
+  noDay: string,
+): { key: string; label: string; things: T[] }[] => {
+  const groups = new Map<string, T[]>();
+  for (const thing of things) {
+    const key = dayOf(thing) ?? NO_DAY;
+    groups.set(key, [...(groups.get(key) ?? []), thing]);
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, grouped]) => ({
+      key,
+      label: key === NO_DAY ? noDay : DateTime.fromISO(key).toFormat("cccc d"),
+      things: grouped,
+    }));
+};
+
 export interface WeekLookBackStepProps {
   data: WeeklyReviewData;
+  /** What the step asks, above its content. */
+  intro: string;
+  /** Back, Save and exit, Next: kept at the foot of the left column. */
+  footer: React.ReactNode;
 }
 
 /**
- * Step 1: the week as it happened: its days, ratings, time and notes,
- * and a decision on what it planned and what slipped.
+ * Step 1: the week as it happened, split. On the left its days, each
+ * scored from its card; its ratings; and a decision on what it planned
+ * and what slipped, each by day. On the right its time, the goals beside
+ * it, and its notes, with their timeline folded away.
  */
 const WeekLookBackStep: React.FunctionComponent<WeekLookBackStepProps> = ({
   data,
+  intro,
+  footer,
 }) => {
   const days = daysOfWeek(DateTime.fromISO(data.monday));
   const labels = days.map((d) => d.toFormat("ccc d"));
@@ -56,27 +103,109 @@ const WeekLookBackStep: React.FunctionComponent<WeekLookBackStepProps> = ({
     disabled,
     onDecide: data.triage,
   };
+  const sectionsOf = (
+    items: ReviewItem[],
+    dayOf: (item: ReviewItem) => string | undefined,
+    noDay: string,
+  ): DaySection[] =>
+    byDay(items, dayOf, noDay).map((group) => ({
+      key: group.key,
+      label: group.label,
+      count: group.things.length,
+      children: <TriageList {...triage} items={group.things} />,
+    }));
+  const noteDays = byDay<Note>(
+    data.notes,
+    (note) => DateTime.fromISO(note.createdTime).toISODate() ?? undefined,
+    "",
+  );
 
   return (
-    <>
-      <Card
-        size={"small"}
-        title={"The days"}
-        extra={
-          <span className={styles.meta}>
-            {data.days
-              ? `${periods.filter((p) => p.status === "complete").length} of ${periods.filter((p) => p.status !== "upcoming").length} reviewed`
-              : ""}
-          </span>
-        }
-      >
-        <WeekDayCards
-          periods={periods}
-          disabled={disabled}
-          onQuickScore={data.quickScore}
-        />
-      </Card>
-      <Card size={"small"} title={"Daily ratings"}>
+    <SplitStep
+      intro={intro}
+      footer={footer}
+      defaultSize={"60%"}
+      hideScrollbar={true}
+      aside={
+        <div className={`${styles.asideScroll} ${styles.noScrollbar}`}>
+          <Card {...flat} title={"Time"}>
+            <div className={styles.stack}>
+              <div className={styles.numbers}>
+                <Statistic
+                  title={`in meetings · ${meetingCount} event${meetingCount === 1 ? "" : "s"}`}
+                  value={formatMinutes(meetingMinutes)}
+                />
+                <Statistic
+                  title={"in focus blocks"}
+                  value={formatMinutes(focusMinutes)}
+                />
+              </div>
+              <TimeChart days={labels} loads={loads} />
+            </div>
+          </Card>
+          <Card {...flat} title={"Goals"}>
+            <WeekGoals goals={data.goals} execution={data.execution} />
+          </Card>
+          <Card {...flat} title={"Notes"}>
+            <div className={styles.stack}>
+              <Statistic title={"notes this week"} value={data.notes.length} />
+              {types.length ? (
+                <div className={styles.noteTypes}>
+                  {types.map(([type, count]) => {
+                    const shown = config[type] ?? config[0];
+                    return (
+                      <span key={type} className={styles.noteType}>
+                        <span
+                          className={styles.dot}
+                          style={{ background: shown.color }}
+                          aria-hidden={true}
+                        />
+                        {count} {shown.label.toLowerCase()}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={"No notes"}
+                />
+              )}
+              {data.notes.length > 0 && (
+                <Collapse
+                  ghost={true}
+                  size={"small"}
+                  className={styles.daySections}
+                  expandIcon={({ isActive }) => (
+                    <CaretRightOutlined rotate={isActive ? 90 : 0} />
+                  )}
+                  items={[
+                    {
+                      key: "timeline",
+                      label: (
+                        <span className={styles.daySectionLabel}>Timeline</span>
+                      ),
+                      children: noteDays.map((day) => (
+                        <div key={day.key}>
+                          <h4 className={styles.timelineDay}>{day.label}</h4>
+                          <NoteList notes={day.things} />
+                        </div>
+                      )),
+                    },
+                  ]}
+                />
+              )}
+            </div>
+          </Card>
+        </div>
+      }
+    >
+      <WeekDayCards
+        periods={periods}
+        disabled={disabled}
+        onRate={data.rateDay}
+      />
+      <Card {...flat} title={"Daily ratings"}>
         <RatingsChart
           days={labels}
           series={ratingSeries(
@@ -94,59 +223,18 @@ const WeekLookBackStep: React.FunctionComponent<WeekLookBackStepProps> = ({
           )}
         />
       </Card>
-      <div className={styles.columns}>
-        <Card size={"small"} title={"Time"}>
-          <div className={styles.stack}>
-            <div className={styles.numbers}>
-              <Statistic
-                title={`in meetings · ${meetingCount} event${meetingCount === 1 ? "" : "s"}`}
-                value={formatMinutes(meetingMinutes)}
-              />
-              <Statistic
-                title={"in focus blocks"}
-                value={formatMinutes(focusMinutes)}
-              />
-            </div>
-            <TimeChart days={labels} loads={loads} />
-          </div>
-        </Card>
-        <Card size={"small"} title={"Notes"}>
-          <div className={styles.stack}>
-            <Statistic title={"notes this week"} value={data.notes.length} />
-            {types.length ? (
-              <div className={styles.noteTypes}>
-                {types.map(([type, count]) => {
-                  const shown = config[type] ?? config[0];
-                  return (
-                    <span key={type} className={styles.noteType}>
-                      <span
-                        className={styles.dot}
-                        style={{ background: shown.color }}
-                        aria-hidden={true}
-                      />
-                      {count} {shown.label.toLowerCase()}
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={"No notes"}
-              />
-            )}
-          </div>
-        </Card>
-      </div>
-      <Card size={"small"} title={"This week's priorities"}>
-        <TriageList
-          {...triage}
-          items={priorities}
+      <Card {...flat} title={"This week's priorities"}>
+        <DaySections
           empty={"No priorities were planned for this week"}
+          sections={sectionsOf(
+            priorities,
+            (item) => item.scheduledOn,
+            "Not on a day",
+          )}
         />
       </Card>
       <Card
-        size={"small"}
+        {...flat}
         title={"Slipped this week"}
         extra={
           <span className={styles.meta}>
@@ -154,16 +242,12 @@ const WeekLookBackStep: React.FunctionComponent<WeekLookBackStepProps> = ({
           </span>
         }
       >
-        <TriageList
-          {...triage}
-          items={slipped}
+        <DaySections
           empty={"Nothing slipped"}
-          whereOf={(item) =>
-            DateTime.fromISO(item.periodStart).toFormat("cccc")
-          }
+          sections={sectionsOf(slipped, (item) => item.periodStart, "")}
         />
       </Card>
-    </>
+    </SplitStep>
   );
 };
 
