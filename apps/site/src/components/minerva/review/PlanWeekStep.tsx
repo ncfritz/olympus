@@ -15,7 +15,7 @@ export interface PlanWeekStepProps {
   data: WeeklyReviewData;
   /** What the step asks, above its content. */
   intro: string;
-  /** Back, Save and exit, Next: kept at the foot of the plan. */
+  /** Back, Save and exit, Next: kept at the foot of the plan, on the left. */
   footer: React.ReactNode;
 }
 
@@ -27,9 +27,9 @@ const flat = {
 };
 
 /**
- * Step 4, split: next week's calendar on the left, at full height whether
- * it has meetings or not; on the right the theme, priorities, to-dos, what
- * was carried in, and start and stop. A priority's or to-do's title dragged
+ * Step 4, split: the theme, priorities, to-dos, what was carried in, and
+ * start and stop on the left; next week's calendar on the right, at full
+ * height whether it has meetings or not. A priority's or to-do's title dragged
  * onto the calendar blocks 30 minutes for it; the block then moves (to
  * another day too) by dragging it, changes length by dragging its foot,
  * and comes off with its close button or by being dragged off the calendar.
@@ -115,8 +115,7 @@ const PlanWeekStep: React.FunctionComponent<PlanWeekStepProps> = ({
     <SplitStep
       intro={intro}
       footer={footer}
-      asideFirst={true}
-      defaultSize={"55%"}
+      defaultSize={"45%"}
       hideScrollbar={true}
       aside={
         <CalendarPane

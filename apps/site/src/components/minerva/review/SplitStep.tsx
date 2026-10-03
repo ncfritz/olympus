@@ -11,11 +11,6 @@ export interface SplitStepProps {
   aside: React.ReactNode;
   /** The left panel's starting width; 45% by default. */
   defaultSize?: string;
-  /**
-   * Whether what the step refers to comes first, on the left, and its work
-   * on the right; the work keeps its footer either way.
-   */
-  asideFirst?: boolean;
   /** Whether the work's column scrolls with no scroll bar showing. */
   hideScrollbar?: boolean;
   /** The left of the split, the step's own work. */
@@ -23,9 +18,8 @@ export interface SplitStepProps {
 }
 
 /**
- * A step that uses the page's full width, split: its work over a footer
- * that stays put, and what it refers to beside it; the work on the left
- * unless `asideFirst`.
+ * A step that uses the page's full width, split: its work on the left over
+ * a footer that stays put, and what it refers to on the right.
  */
 const SplitStep: React.FunctionComponent<SplitStepProps> = ({
   intro,
@@ -33,7 +27,6 @@ const SplitStep: React.FunctionComponent<SplitStepProps> = ({
   aside,
   defaultSize = "45%",
   hideScrollbar = false,
-  asideFirst = false,
   children,
 }) => {
   const work = (
@@ -47,14 +40,7 @@ const SplitStep: React.FunctionComponent<SplitStepProps> = ({
       <div className={styles.columnFooter}>{footer}</div>
     </div>
   );
-  return asideFirst ? (
-    <Splitter className={styles.fill}>
-      <Splitter.Panel defaultSize={defaultSize} min={"30%"} max={"70%"}>
-        {aside}
-      </Splitter.Panel>
-      <Splitter.Panel min={"30%"}>{work}</Splitter.Panel>
-    </Splitter>
-  ) : (
+  return (
     <Splitter className={styles.fill}>
       <Splitter.Panel defaultSize={defaultSize} min={"30%"} max={"70%"}>
         {work}

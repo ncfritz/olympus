@@ -1,6 +1,5 @@
-import { LockOutlined } from "@ant-design/icons";
 import type { ReviewPrompt } from "@ncfritz/olympus-sdk/minerva";
-import { Alert, Card, Tag, Typography } from "antd";
+import { Card, Tag, Typography } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 import {
@@ -202,22 +201,6 @@ const WeekWrapUpStep: React.FunctionComponent<WeekWrapUpStepProps> = ({
         </div>
       }
     >
-      {review?.completed ? (
-        <Alert
-          type={"success"}
-          showIcon={true}
-          title={`Completed ${DateTime.fromISO(review.completedTime!).toFormat("ccc d LLL 'at' h:mm a")}. The ratings are set; answers can still change and are marked as edited later.`}
-        />
-      ) : (
-        <Alert
-          type={"info"}
-          showIcon={true}
-          icon={<LockOutlined />}
-          title={
-            "Completing sets the week's ratings for the trends. Next week's theme and priorities show on Monday's daily review."
-          }
-        />
-      )}
       <Card {...flat} title={"Time"}>
         <WeekTime data={data} />
       </Card>
