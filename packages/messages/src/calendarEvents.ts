@@ -32,6 +32,19 @@ export type CalendarEventResponse =
 export type CalendarEventFreeBusyStatus =
   "free" | "busy" | "tentative" | "out_of_office" | "working_elsewhere";
 
+/**
+ * The calendar account an event's calendar syncs through (ADR 0028), which
+ * decides who owns the event in Olympus.
+ */
+export interface CalendarEventAccount {
+  provider: "google" | "microsoft";
+  /**
+   * The account's permanent ID at its provider: Google's `sub`; Microsoft's
+   * `<tid>:<oid>`.
+   */
+  subject: string;
+}
+
 /** A provider-independent snapshot of one calendar event. */
 export interface CalendarEventMessage {
   /** `<source>:<uid>`: the key to upsert by. */
@@ -72,6 +85,12 @@ export interface CalendarEventMessage {
    * messages.
    */
   recurrenceRule: string | null;
+  /**
+   * The account the event's calendar syncs through. Absent when the agent
+   * has no subject recorded for the account, or the calendar is no longer
+   * synced: such an event belongs to no one in Olympus.
+   */
+  account?: CalendarEventAccount;
 }
 
 /** `event.<action>` on CALENDAR_EVENTS_EXCHANGE. */

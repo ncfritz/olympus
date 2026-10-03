@@ -131,32 +131,48 @@ migration test checks that an update moves `updated_at` and leaves
 
 **Sign-off:** C1 on DEV, then PROD after Neil applies the migration.
 
-## Phase 2 — The agent knows accounts by subject
+## Phase 2 — The agent knows accounts by subject — built 2026-10-03, not signed off
 
-1. **Re-authorization checks the subject**, first, as its own commit with
-   a test that fails before it: the Google and Microsoft strategies read
-   the subject of the account that signed in (Google: the ID token's
-   `sub`, the `openid` scope added; Microsoft: `tid` and `oid`) and refuse
-   a re-authorization whose subject is not the stored one, keeping the
-   stored credential.
-2. **Stored credentials carry `provider` and `subject`.** New accounts
-   record them at connection. At start-up, an account without a subject
-   gets it from a fresh access token; one that fails is marked
-   `reauth_pending`. `CalendarAccount` in the management API gains
-   `subject`.
-3. **`source` is unique**: a unique index on `SyncedCalendar.source`, a
-   start-up check across `SYNCED_CALENDARS` and the stored calendars
-   (refusing to start on a duplicate, naming it), 409 from the add
-   operation.
-4. **Messages name the account**: `CalendarEventMessage.account`
-   (`provider`, `subject`) in `@ncfritz/olympus-messages` and its JSON
-   Schema; the outbox writes it into each snapshot. Rows already in the
-   outbox without it are sent as they are; the API (phase 5) treats a
-   message without `account` as unowned.
-5. **Tests**: unit tests for each strategy's subject reading and the
-   mismatch, the subject backfill, the duplicate-source checks, the
-   outbox payload; the contract test for the schema. Both Prisma schemas
-   change together (the test that keeps them identical).
+1. **Re-authorization checks the account**: **done**, its own commit with
+   tests that fail before it. Every sign-in from the agent, new or
+   re-authorization, now asks for the account's identity (Google adds
+   `openid`; Microsoft `openid`, `email` and `profile`), and
+   `confirmSameAccount` refuses a re-authorization, keeping the stored
+   credential, unless the same account signed in: by subject once one is
+   stored, until then by verified email (the label was taken from it).
+   Google's identity comes from the access token's token info; Microsoft's
+   subject is `<tid>:<oid>` from the ID token.
+2. **Stored credentials carry `subject`**: **done**. Recorded at every
+   sign-in; `AccountSubjectBackfillService` reads it once after start-up
+   for credentials stored before (Google: token info of a fresh access
+   token; Microsoft: the refreshed ID token), in the background. An
+   account with a working credential but no subject reports `expired`
+   ("The account's identity is not recorded; sign in again") instead of
+   `reauth_pending`, which means a sign-in in progress. `CalendarAccount`
+   in the management API gains `subject`.
+3. **`source` is unique**: **done** — a unique index on
+   `SyncedCalendar.source` in both stores (migration
+   `20261003190000_unique_synced_calendar_source`) and a 409 from
+   `CreateCalendar`. `SYNCED_CALENDARS` is no longer read (calendars are
+   all in the store), so there is no start-up check. If two calendars
+   already share a source, the migration fails on start-up: rename one in
+   the store first.
+4. **Messages name the account**: **done** —
+   `CalendarEventMessage.account` (`provider`, `subject`), optional, in
+   `@ncfritz/olympus-messages` and its JSON Schema. The dispatcher adds it
+   when it sends a row (`EventAccountResolver`: the source's calendar, its
+   account's stored subject) rather than when the row is written, so rows
+   queued before this change carry it too; a calendar's account never
+   changes, so the answer is the same. With no subject or no calendar the
+   message goes without `account`, and the API (phase 5) treats it as
+   unowned.
+5. **Tests**: **done** — `confirmSameAccount`; re-authorization refusals
+   for Google (another email, an unverified one, another subject) and
+   Microsoft; the subject recorded at sign-in and by the backfill; the
+   status without a subject; the duplicate source in the service and over
+   HTTP; the dispatcher and resolver. Verified 2026-10-03: the agent's
+   tests (755), typecheck, lint and convention checks, and the messages
+   package's tests, pass.
 
 **Sign-off:** C2 on DEV.
 

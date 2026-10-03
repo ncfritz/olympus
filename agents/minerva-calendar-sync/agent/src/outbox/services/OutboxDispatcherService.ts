@@ -19,6 +19,7 @@ import {
 import { OutboxEvent as OutboxRow } from "@prisma/client";
 import { recordOutboxPublish } from "../../metrics/agentMetrics";
 import { PrismaService } from "../../store/prisma/PrismaService";
+import { EventAccountResolver } from "./EventAccountResolver";
 
 const BASE_BACKOFF_MS = 2_000;
 const MAX_BACKOFF_MS = 10 * 60_000;
@@ -48,6 +49,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     private readonly amqp: AmqpConnection,
     private readonly prisma: PrismaService,
     @Inject(outboxConfig.KEY) outbox: OutboxConfigType,
+    private readonly accounts: EventAccountResolver,
   ) {
     this.batchSize = outbox.batchSize;
     this.pollIntervalMs = outbox.pollIntervalMs;
@@ -90,7 +92,7 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
       await publishMessage(
         this.amqp,
         calendarEventRoute(row.action as CalendarEventAction),
-        JSON.parse(row.payload) as CalendarEventMessage,
+        await this.withAccount(row),
         { messageId: row.id },
       );
       await this.prisma.outboxEvent.update({
@@ -101,6 +103,17 @@ export class OutboxDispatcherService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       await this.markFailed(row, error);
     }
+  }
+
+  /**
+   * The row's snapshot, naming the account its calendar syncs through
+   * (ADR 0028) unless the snapshot already does or none is known.
+   */
+  private async withAccount(row: OutboxRow): Promise<CalendarEventMessage> {
+    const message = JSON.parse(row.payload) as CalendarEventMessage;
+    if (message.account) return message;
+    const account = await this.accounts.forSource(row.source);
+    return account ? { ...message, account } : message;
   }
 
   private async markFailed(row: OutboxRow, error: unknown): Promise<void> {

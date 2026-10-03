@@ -91,6 +91,10 @@
             "null"
           ],
           "description": "The provider's recurrence description of the series, for reference only: RFC 5545 RRULE/EXDATE lines for Google, the Graph `recurrence` pattern as JSON text for Microsoft. Occurrences arrive as their own messages."
+        },
+        "account": {
+          "$ref": "#/definitions/CalendarEventAccount",
+          "description": "The account the event's calendar syncs through. Absent when the agent has no subject recorded for the account, or the calendar is no longer synced: such an event belongs to no one in Olympus."
         }
       },
       "required": [
@@ -171,6 +175,28 @@
         "out_of_office",
         "working_elsewhere"
       ]
+    },
+    "CalendarEventAccount": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "google",
+            "microsoft"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "description": "The account's permanent ID at its provider: Google's `sub`; Microsoft's `<tid>:<oid>`."
+        }
+      },
+      "required": [
+        "provider",
+        "subject"
+      ],
+      "additionalProperties": false,
+      "description": "The calendar account an event's calendar syncs through (ADR 0028), which decides who owns the event in Olympus."
     }
   }
 }
