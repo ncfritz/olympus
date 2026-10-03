@@ -46,14 +46,33 @@ migration test checks that an update moves `updated_at` and leaves
 
 ## Phase 0 — Decision and checks
 
-1. **ADR 0028 accepted** (Neil).
-2. **Branch** `feature/calendar-users` off `main`.
-3. **Orphans in prod**, before phase 1's migration is written against
-   them, read-only: `meeting_attendees` and `meeting_notes` rows whose
-   meeting is missing; `meeting_notes` rows whose note is missing; the
-   distinct `meetings.source` values and their counts. Phase 1's foreign
-   keys need none of the first two; what is found is decided with Neil
-   (deleted, or kept by leaving that key out), never removed silently.
+1. **ADR 0028 accepted**: **done** 2026-10-03 (Neil).
+2. **Branch** `feature/calendar-users` off `main`: **done**.
+3. **Orphans in prod**, read-only, run by Neil before phase 1's
+   migration is applied: `meeting_attendees` and `meeting_notes` rows
+   whose meeting is missing; `meeting_notes` rows whose note is missing;
+   notes whose parent is missing; the distinct `meetings.source` values
+   and their counts. Phase 1's foreign keys accept none of the first
+   four, so the migration checks for them itself and raises, naming the
+   counts, rather than deleting anything; what is found is decided with
+   Neil.
+
+   ```sql
+   select 'attendees without meeting', count(*) from minerva.meeting_attendees a
+    where not exists (select 1 from minerva.meetings m where m.id = a.meeting_id)
+   union all
+   select 'meeting_notes without meeting', count(*) from minerva.meeting_notes mn
+    where not exists (select 1 from minerva.meetings m where m.id = mn.meeting_id)
+   union all
+   select 'meeting_notes without note', count(*) from minerva.meeting_notes mn
+    where not exists (select 1 from minerva.notes n where n.id = mn.note_id)
+   union all
+   select 'notes without parent', count(*) from minerva.notes n
+    where n.parent_id is not null
+      and not exists (select 1 from minerva.notes p where p.id = n.parent_id)
+   union all
+   select 'source ' || source, count(*) from minerva.meetings group by source;
+   ```
 
 ## Phase 1 — Minerva per user
 

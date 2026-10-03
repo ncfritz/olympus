@@ -1,6 +1,6 @@
 # 0028. Minerva calendars per user; accounts linked by sign-in, consent or claim
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-03
 
 ## Context
