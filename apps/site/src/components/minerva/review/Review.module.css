@@ -639,20 +639,24 @@
 
 /* A planned block of time on the calendar: drawn behind the meetings,
  * which keep their place and width over it. Scoped by the calendar so it
- * outweighs FullCalendar's own background-event style. */
-.calendarFill .block.block {
+ * outweighs FullCalendar's own background-event style, wherever the
+ * calendar sits. */
+.calendarRoot .block.block {
   opacity: 1;
   border-left: 3px solid;
+}
+
+.calendarEditable .block.block {
   cursor: grab;
 }
 
-.calendarFill .blockPriority.blockPriority {
+.calendarRoot .blockPriority.blockPriority {
   background: #fff5d6;
   border-left-color: #ffcc33;
   color: #614700;
 }
 
-.calendarFill .blockTodo.blockTodo {
+.calendarRoot .blockTodo.blockTodo {
   background: #f6ffed;
   border-left-color: #52c41a;
   color: #135200;
@@ -707,7 +711,7 @@
 }
 
 /* A block dragged off the calendar, about to be removed. */
-.calendarFill .blockLeaving.blockLeaving {
+.calendarRoot .blockLeaving.blockLeaving {
   opacity: 0.35;
 }
 
@@ -935,4 +939,20 @@
 
 .calendarDays .blockContent {
   padding-right: 20px;
+}
+
+/* Wrap up's daily answers: a day as a small, light heading over its
+ * items, which line up with every other day's. */
+.dayLabel {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.dayLabel:first-child {
+  margin-top: 0;
+}
+
+.dayLabel + .row {
+  border-top: 0;
 }

@@ -26,6 +26,11 @@ export interface DayCalendarProps {
   day: string;
   /** How many days are shown side by side from `day`; one by default. */
   days?: number;
+  /**
+   * Only these hours, [from, to] as whole hours, the grid as tall as they
+   * need rather than filling its container; the whole day by default.
+   */
+  hours?: [number, number];
   meetings: Meeting[];
   /**
    * Planned blocks, drawn behind the meetings so they keep their place and
@@ -79,6 +84,7 @@ type Preview = { id: string; start: Date; end: Date; leaving?: boolean };
 const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
   day,
   days = 1,
+  hours,
   meetings,
   blocks = [],
   onBlockChange,
@@ -305,7 +311,15 @@ const DayCalendar: React.FunctionComponent<DayCalendarProps> = ({
           if (id) onBlockDrop?.(id, info.date);
         }}
         headerToolbar={false}
-        height={"100%"}
+        height={hours ? "auto" : "100%"}
+        // At its natural height it scrolls with the page: no header to pin.
+        stickyHeaderDates={!hours}
+        // Passed only with hours: an undefined option overrides
+        // FullCalendar's default and breaks it.
+        {...(hours && {
+          slotMinTime: `${String(hours[0]).padStart(2, "0")}:00:00`,
+          slotMaxTime: `${String(hours[1]).padStart(2, "0")}:00:00`,
+        })}
         allDayText={""}
         slotDuration={{ minutes: 30 }}
         snapDuration={{ minutes: SNAP }}

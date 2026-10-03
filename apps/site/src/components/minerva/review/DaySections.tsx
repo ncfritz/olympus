@@ -47,7 +47,10 @@ export interface DaySectionsProps {
   open?: boolean;
 }
 
-/** A list broken down by day, each day's part opening and closing on its caret. */
+/**
+ * A list broken into sections (by day, or by what they are), each opening
+ * and closing on its caret.
+ */
 const DaySections: React.FunctionComponent<DaySectionsProps> = ({
   sections,
   empty,

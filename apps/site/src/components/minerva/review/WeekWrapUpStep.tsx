@@ -1,147 +1,207 @@
 import { LockOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Descriptions, Empty } from "antd";
+import type { ReviewPrompt } from "@ncfritz/olympus-sdk/minerva";
+import { Alert, Card, Tag, Typography } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 import {
-  answeredPrompts,
-  daysOfWeek,
-  doneOfPlanned,
-  formatMinutes,
+  answersByPrompt,
+  blockedSpan,
   itemsOf,
-  placeLabel,
   RATING_FIELDS,
-  slippedItems,
-  weekLoad,
 } from "../../../utils/reviews";
-import { pinnedHighlights } from "./pinned";
-import PinnedList from "./PinnedList";
-import AnswerBody from "./AnswerBody";
+import AnswerList from "./AnswerList";
+import DayCalendar, { type CalendarBlock } from "./DayCalendar";
+import DaySections, { byDay } from "./DaySections";
+import PlanList from "./PlanList";
+import PromptAnswer from "./PromptAnswer";
+import RatingInput from "./RatingInput";
+import { answersOf } from "./reviewHooks";
 import styles from "./Review.module.css";
+import SplitStep from "./SplitStep";
 import type { WeeklyReviewData } from "./useWeeklyReview";
+import WeekTime from "./WeekTime";
+
+const { Text } = Typography;
+
+/** The hours next week's calendar shows: the working day. */
+const CORE_HOURS: [number, number] = [8, 18];
 
 export interface WeekWrapUpStepProps {
   data: WeeklyReviewData;
-  onEdit: (step: number) => void;
+  /** What the step asks, above its content. */
+  intro: string;
+  /** Back, Save and exit, Complete: kept at the foot of the left column. */
+  footer: React.ReactNode;
 }
 
-/** Step 5: how the review reads later, and completing it. */
+const flat = {
+  size: "small" as const,
+  variant: "borderless" as const,
+  className: styles.flat,
+  classNames: { header: styles.flatPart, body: styles.flatPart },
+};
+
+/**
+ * Step 5, split, nothing changeable but the review's completion. Left: the
+ * week's time, and its daily answers under their prompts, each prompt
+ * folding on its caret, its days as small headings over items that all
+ * line up. Right: the week's ratings, next week's calendar over the
+ * working day, its theme, and its plan, each part folding on its caret.
+ */
 const WeekWrapUpStep: React.FunctionComponent<WeekWrapUpStepProps> = ({
   data,
-  onEdit,
+  intro,
+  footer,
 }) => {
   const { review } = data;
-  const answered = (section: "reflect" | "plan") =>
-    answeredPrompts(data.prompts, review?.answers ?? [], section);
-  const days = daysOfWeek(DateTime.fromISO(data.monday));
-  const periods = data.days?.periods ?? [];
-  const reviewed = periods.filter((p) => p.status === "complete").length;
-  const due = periods.filter((p) => p.status !== "upcoming").length;
-  const meetingMinutes = weekLoad(data.meetings, days, data.dayItems).reduce(
-    (sum, d) => sum + d.meetingMinutes,
-    0,
-  );
-  const { done, planned } = doneOfPlanned(data.weekItems, data.monday);
-  const slipped = slippedItems(data.dayItems, days[0], data.today);
-  const undecided = slipped.filter((i) => i.status === "open").length;
+  const daily = answersByPrompt(data.dailyPrompts, data.dailyReviews);
   const priorities = itemsOf(data.weekItems, data.nextMonday, "priority");
   const todos = itemsOf(data.weekItems, data.nextMonday, "todo");
-  const ratings = RATING_FIELDS.weekly
-    .map((f) => `${f.label} ${review?.[f.key] ?? "–"}`)
-    .join(" · ");
-  const edit = (step: number) => (
-    <Button size={"small"} type={"link"} onClick={() => onEdit(step)}>
-      Edit
-    </Button>
+  const carriedIn = [...priorities, ...todos].filter((i) => i.carryCount > 0);
+  const prompts = data.prompts.filter(
+    (p) =>
+      p.section === "plan" &&
+      (!p.archived || review?.answers.some((a) => a.promptId === p.id)),
   );
+  const textPrompts = prompts.filter((p) => p.style !== "list");
+  const listPrompts = prompts.filter((p) => p.style === "list");
+  const blocks: CalendarBlock[] = [...priorities, ...todos]
+    .filter((i) => i.status !== "dropped" && i.status !== "carried")
+    .flatMap((item) => {
+      const span = blockedSpan(item);
+      return span
+        ? [
+            {
+              id: item.id,
+              title: item.title,
+              kind: item.kind,
+              start: span.start.toJSDate(),
+              end: span.end.toJSDate(),
+            },
+          ]
+        : [];
+    });
+  const none = (what: string) => <Text type={"secondary"}>{what}</Text>;
+  const listOf = (prompt: ReviewPrompt) => {
+    const items = answersOf(review, prompt.id);
+    return {
+      key: prompt.id,
+      label: prompt.label,
+      count: items.length,
+      children: items.length ? (
+        <AnswerList
+          label={prompt.label}
+          items={items}
+          todoFor={"next week"}
+          readOnly={true}
+        />
+      ) : (
+        none("Nothing added")
+      ),
+    };
+  };
 
   return (
-    <>
-      <div className={styles.columns}>
-        <Card size={"small"} title={"This week"} extra={edit(3)}>
-          <Descriptions
-            column={1}
-            size={"small"}
-            layout={"vertical"}
-            colon={false}
-            items={[
-              { key: "ratings", label: "Ratings", children: ratings },
-              ...answered("reflect").map(({ prompt, answers }) => ({
-                key: prompt.id,
-                label: prompt.label,
-                children: <AnswerBody prompt={prompt} answers={answers} />,
-              })),
+    <SplitStep
+      intro={intro}
+      footer={footer}
+      hideScrollbar={true}
+      aside={
+        <div className={`${styles.asideScroll} ${styles.noScrollbar}`}>
+          <Card {...flat} title={"How was the week?"}>
+            <div className={styles.stack}>
+              {RATING_FIELDS.weekly.map((field) => (
+                <RatingInput
+                  key={field.key}
+                  field={field}
+                  value={review?.[field.key]}
+                  readOnly={true}
+                />
+              ))}
+            </div>
+          </Card>
+          <Card
+            {...flat}
+            title={`Week of ${DateTime.fromISO(data.nextMonday).toFormat("LLLL d")}`}
+          >
+            <DayCalendar
+              day={data.nextMonday}
+              days={7}
+              hours={CORE_HOURS}
+              meetings={data.nextMeetings}
+              blocks={blocks}
+            />
+          </Card>
+          {textPrompts.map((prompt) => (
+            <Card key={prompt.id} {...flat}>
+              <PromptAnswer
+                prompt={prompt}
+                answers={answersOf(review, prompt.id)}
+                todoFor={"next week"}
+                readOnly={true}
+              />
+            </Card>
+          ))}
+          <DaySections
+            empty={"Nothing planned yet"}
+            sections={[
               {
-                key: "pinned",
-                label: "Pinned",
-                children: <PinnedList highlights={pinnedHighlights(data)} />,
+                key: "priorities",
+                label: "Priorities",
+                count: priorities.length,
+                children: priorities.length ? (
+                  <PlanList
+                    kind={"priority"}
+                    items={priorities}
+                    blocks={true}
+                    blockDay={true}
+                    readOnly={true}
+                  />
+                ) : (
+                  none("None planned")
+                ),
               },
               {
-                key: "record",
-                label: "Record",
-                children: [
-                  `${reviewed} of ${due} days reviewed`,
-                  `${formatMinutes(meetingMinutes)} meetings`,
-                  `${data.notes.length} notes`,
-                  planned
-                    ? `${done} of ${planned} priorities done`
-                    : "no priorities planned",
-                  undecided
-                    ? `${undecided} slipped item${undecided === 1 ? "" : "s"} undecided`
-                    : `${slipped.length} slipped`,
-                ].join(" · "),
+                key: "todos",
+                label: "To-dos",
+                count: todos.length,
+                children: todos.length ? (
+                  <PlanList
+                    kind={"todo"}
+                    items={todos}
+                    blocks={true}
+                    blockDay={true}
+                    readOnly={true}
+                  />
+                ) : (
+                  none("None planned")
+                ),
               },
+              {
+                key: "carried",
+                label: "Carried in",
+                count: carriedIn.length,
+                children: carriedIn.length
+                  ? carriedIn.map((item) => (
+                      <div key={item.id} className={styles.row}>
+                        <span className={styles.rowMain}>{item.title}</span>
+                        <Tag>
+                          {item.kind === "priority" ? "Priority" : "To-do"}
+                        </Tag>
+                        <span className={styles.meta}>
+                          carried {item.carryCount} time
+                          {item.carryCount === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                    ))
+                  : none("Nothing carried in"),
+              },
+              ...listPrompts.map(listOf),
             ]}
           />
-        </Card>
-        <Card size={"small"} title={"Next week"} extra={edit(4)}>
-          {priorities.length + todos.length + answered("plan").length === 0 ? (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={"Nothing planned yet"}
-            />
-          ) : (
-            <Descriptions
-              column={1}
-              size={"small"}
-              layout={"vertical"}
-              colon={false}
-              items={[
-                ...answered("plan").map(({ prompt, answers }) => ({
-                  key: prompt.id,
-                  label: prompt.label,
-                  children: <AnswerBody prompt={prompt} answers={answers} />,
-                })),
-                {
-                  key: "priorities",
-                  label: "Priorities",
-                  children: priorities.length ? (
-                    <ol>
-                      {priorities.map((item) => {
-                        const place = placeLabel(item);
-                        return (
-                          <li key={item.id}>
-                            {item.title}
-                            {place && ` (${place})`}
-                          </li>
-                        );
-                      })}
-                    </ol>
-                  ) : (
-                    "None"
-                  ),
-                },
-                {
-                  key: "todos",
-                  label: "To-dos",
-                  children: todos.length
-                    ? todos.map((t) => t.title).join(" · ")
-                    : "None",
-                },
-              ]}
-            />
-          )}
-        </Card>
-      </div>
+        </div>
+      }
+    >
       {review?.completed ? (
         <Alert
           type={"success"}
@@ -158,7 +218,32 @@ const WeekWrapUpStep: React.FunctionComponent<WeekWrapUpStepProps> = ({
           }
         />
       )}
-    </>
+      <Card {...flat} title={"Time"}>
+        <WeekTime data={data} />
+      </Card>
+      <DaySections
+        empty={"No daily prompts"}
+        sections={daily.map(({ prompt, answers }) => ({
+          key: prompt.id,
+          label: prompt.label,
+          count: answers.length,
+          children: answers.length
+            ? byDay(answers, (a) => a.day, "").map((day) => (
+                <div key={day.key}>
+                  <div className={styles.dayLabel}>{day.label}</div>
+                  {day.things.map(({ answer }) => (
+                    <div key={answer.id} className={styles.row}>
+                      <Text className={`${styles.rowMain} ${styles.answer}`}>
+                        {answer.body}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+              ))
+            : none("Not answered this week"),
+        }))}
+      />
+    </SplitStep>
   );
 };
 

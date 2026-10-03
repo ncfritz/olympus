@@ -191,14 +191,7 @@ const WeeklyReview: React.FunctionComponent<WeeklyReviewProps> = ({ week }) => {
         ) : step === 4 ? (
           <PlanWeekStep data={data} intro={INTROS[3]} footer={footer} />
         ) : (
-          // Keyed by step, so each step opens at its top.
-          <div key={step} className={styles.scroller}>
-            <div className={styles.body}>
-              <p className={styles.intro}>{INTROS[step - 1]}</p>
-              {step === 5 && <WeekWrapUpStep data={data} onEdit={go} />}
-            </div>
-            <div className={styles.stickyFooter}>{footer}</div>
-          </div>
+          <WeekWrapUpStep data={data} intro={INTROS[4]} footer={footer} />
         )}
       </div>
     </>
