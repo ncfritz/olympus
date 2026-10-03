@@ -78,6 +78,21 @@ describe("Calendar management (e2e)", () => {
       .expect(409);
   });
 
+  it("CreateCalendar 409s for a source another calendar already has", async () => {
+    await request(app.getHttpServer())
+      .post("/v1/calendars")
+      .set("Authorization", authHeader)
+      .send({
+        calendar: {
+          provider: KNOWN_CALENDAR.provider,
+          accountLabel: KNOWN_CALENDAR.accountLabel,
+          calendarId: "cal-other",
+          source: KNOWN_CALENDAR.source,
+        },
+      })
+      .expect(409);
+  });
+
   it("CreateCalendar adds a calendar for a known, connected account, and ListCalendars includes it", async () => {
     const added = await request(app.getHttpServer())
       .post("/v1/calendars")

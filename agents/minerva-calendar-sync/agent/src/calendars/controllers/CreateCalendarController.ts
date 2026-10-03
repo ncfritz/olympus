@@ -24,7 +24,7 @@ export class CreateCalendarController {
   @ApiOperation({
     summary: "Creates a calendar",
     description:
-      "Starts syncing a calendar of a connected account; its first sync runs in the background.",
+      "Starts syncing a calendar of a connected account; its first sync runs in the background. A calendar already synced, or a source another calendar has, is a conflict.",
     operationId: "CreateCalendar",
     tags: ["Calendars"],
   })

@@ -116,7 +116,9 @@ model SyncedCalendar {
   calendarId   String   @id
   provider     String
   accountLabel String
-  source       String
+  // Unique: it names the calendar's events (`<source>:<uid>`), which
+  // Olympus keys its meetings by across every user's calendars (ADR 0028).
+  source       String   @unique
   enablePush   Boolean  @default(false)
   createdAt    DateTime @default(now())
 }

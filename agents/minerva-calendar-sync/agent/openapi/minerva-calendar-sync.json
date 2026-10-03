@@ -832,7 +832,7 @@
         ]
       },
       "post": {
-        "description": "Starts syncing a calendar of a connected account; its first sync runs in the background.",
+        "description": "Starts syncing a calendar of a connected account; its first sync runs in the background. A calendar already synced, or a source another calendar has, is a conflict.",
         "operationId": "CreateCalendar",
         "parameters": [],
         "requestBody": {
