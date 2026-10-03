@@ -25,8 +25,7 @@ export interface WeekDayCardsProps {
   periods: ReviewPeriodSummary[];
   disabled?: boolean;
   /**
-   * Only show the days: ratings drawn, not set, and no review button;
-   * the cards widen to fill each row.
+   * Only show the days: ratings drawn, not set, and no review button.
    */
   readOnly?: boolean;
   /** A day's rating set from its card; null clears it. */
@@ -72,7 +71,7 @@ const WeekDayCards: React.FunctionComponent<WeekDayCardsProps> = ({
   readOnly = false,
   onRate,
 }) => (
-  <div className={readOnly ? styles.dayCardsFill : styles.dayCards}>
+  <div className={styles.dayCards}>
     {periods.map((period) => {
       const day = DateTime.fromISO(period.periodStart);
       const status = STATUS[period.status];

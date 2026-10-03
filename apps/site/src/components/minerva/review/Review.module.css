@@ -237,11 +237,16 @@
 
 /* The weekly review ------------------------------------------------------ */
 
-/* The week's seven days, a card each, as many to a row as fit. */
+/* The week's seven days, a card each, as many to a row as fit, widening
+ * to fill each row, a short last row included. */
 .dayCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.dayCards > .dayCard {
+  flex: 1 1 168px;
 }
 
 /* A day: its status across the top edge to edge, its button across the
@@ -1009,15 +1014,4 @@
 .clockTime {
   width: 60px;
   white-space: nowrap;
-}
-
-/* The days' cards widening to fill each row, a short last row included. */
-.dayCardsFill {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.dayCardsFill > .dayCard {
-  flex: 1 1 168px;
 }
