@@ -15,8 +15,14 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import {
   ApiStandardErrorResponses,
   HeaderTimezone,
@@ -28,6 +34,7 @@ export class GetMeetingsSummaryController {
   constructor(private readonly meetings: MeetingService) {}
 
   @Get("/meetings/summary/:start")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Gets a daily summary of meetings",
     description:
@@ -54,15 +61,21 @@ export class GetMeetingsSummaryController {
     description: "Monthly summary fetched.",
     type: GetMeetingSummaryResponse,
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @HeaderTimezone() tz: string,
     @Param("start") start: string,
     @Query("days", ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
+    const user = requireUser(principal);
     const responseBody: GetMeetingSummaryResponse =
-      await this.meetings.getSummary(tz, start, days);
+      await this.meetings.getSummary(user.userId, tz, start, days);
 
     response.status(HttpStatus.OK).send(responseBody);
   }

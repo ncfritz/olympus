@@ -15,8 +15,14 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { DescribeNoteController } from "./DescribeNoteController";
 import { setLocation } from "../../../utils/location";
@@ -27,6 +33,7 @@ export class CreateChildNoteController {
   constructor(private readonly notes: NoteService) {}
 
   @Post("/note/:noteId/children")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Creates a new child note",
     description:
@@ -58,14 +65,20 @@ export class CreateChildNoteController {
       },
     },
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @Body() request: CreateNoteRequest,
     @Req() httpRequest: Request,
     @Res() response: Response,
     @Param("noteId") noteId: string,
   ): Promise<void> {
-    const note = await this.notes.create(request.note, noteId);
+    const user = requireUser(principal);
+    const note = await this.notes.create(user.userId, request.note, noteId);
     setLocation(response, httpRequest, DescribeNoteController, {
       noteId: note.id,
     });

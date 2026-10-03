@@ -15,8 +15,14 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { MeetingService } from "../services/MeetingService";
 
@@ -25,6 +31,7 @@ export class ListCalendarItemsController {
   constructor(private readonly meetings: MeetingService) {}
 
   @Get("/meetings/:start")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Lists calendar items for a period",
     description:
@@ -48,14 +55,20 @@ export class ListCalendarItemsController {
     description: "The calendar items have been successfully fetched.",
     type: ListCalendarItemsResponse,
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @Param("start") start: string,
     @Query("days", new DefaultValuePipe(1), ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
+    const user = requireUser(principal);
     const responseBody: ListCalendarItemsResponse = {
-      items: await this.meetings.list(start, days),
+      items: await this.meetings.list(user.userId, start, days),
     };
 
     response.status(HttpStatus.OK).send(responseBody);

@@ -46,6 +46,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -99,6 +102,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -149,6 +155,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -211,6 +220,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -282,6 +294,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -352,6 +367,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -404,6 +422,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -467,6 +488,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -528,6 +552,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -601,6 +628,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -651,6 +681,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -714,6 +747,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -770,6 +806,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -821,6 +860,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -871,6 +913,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -944,6 +989,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -1005,6 +1053,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
@@ -1076,6 +1127,9 @@
               }
             }
           },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
           "404": {
             "description": "The entity with the specified identifiers was not found",
             "content": {
@@ -1137,6 +1191,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",

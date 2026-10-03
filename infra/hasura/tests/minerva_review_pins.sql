@@ -42,8 +42,8 @@ INSERT INTO minerva.review_answers (id, review_id, prompt_id, user_id, kind, bod
     ('9d5a3f00-0000-4000-8000-0000000000ff', '7b3e1d00-0000-4000-8000-0000000000fe',
      '8c4f2e00-0000-4000-8000-0000000000ff', '5f1a0c6e-0000-4000-8000-0000000000ff', 'daily',
      'Theirs.');
-INSERT INTO minerva.notes (id, author, type, value) VALUES
-    ('c0ffee00-0000-4000-8000-000000000001', 'neil', 0, 'Q4 scope is too big');
+INSERT INTO minerva.notes (id, user_id, author, type, value) VALUES
+    ('c0ffee00-0000-4000-8000-000000000001', '5f1a0c6e-0000-4000-8000-000000000001', 'neil', 0, 'Q4 scope is too big');
 
 -- A weekly review pins an answer and a note, each once.
 INSERT INTO minerva.review_pins (id, user_id, review_id, answer_id) VALUES
@@ -114,11 +114,14 @@ BEGIN
     END IF;
 END;
 $$;
-INSERT INTO minerva.notes (id, author, type, value) VALUES
-    ('c0ffee00-0000-4000-8000-000000000002', 'neil', 0, 'Another');
+-- Notes are per user (migration 1791100000000_minerva_calendar_users):
+-- each user pins a note of their own.
+INSERT INTO minerva.notes (id, user_id, author, type, value) VALUES
+    ('c0ffee00-0000-4000-8000-000000000002', '5f1a0c6e-0000-4000-8000-000000000001', 'neil', 0, 'Another'),
+    ('c0ffee00-0000-4000-8000-000000000003', '5f1a0c6e-0000-4000-8000-0000000000ff', 'them', 0, 'Theirs');
 INSERT INTO minerva.review_pins (user_id, review_id, note_id) VALUES
     ('5f1a0c6e-0000-4000-8000-000000000001', '7b3e1d00-0000-4000-8000-000000000001', 'c0ffee00-0000-4000-8000-000000000002'),
-    ('5f1a0c6e-0000-4000-8000-0000000000ff', '7b3e1d00-0000-4000-8000-0000000000ff', 'c0ffee00-0000-4000-8000-000000000002');
+    ('5f1a0c6e-0000-4000-8000-0000000000ff', '7b3e1d00-0000-4000-8000-0000000000ff', 'c0ffee00-0000-4000-8000-000000000003');
 DELETE FROM minerva.reviews WHERE id = '7b3e1d00-0000-4000-8000-000000000001';
 DO $$
 BEGIN

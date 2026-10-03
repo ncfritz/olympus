@@ -101,7 +101,9 @@ export class ReviewPinService {
             periodStart
           }
         }
-        minerva_notes_by_pk(id: $targetId) @skip(if: $isAnswer) {
+        minerva_notes(
+          where: { id: { _eq: $targetId }, userId: { _eq: $userId } }
+        ) @skip(if: $isAnswer) {
           id
         }
       }
@@ -109,7 +111,7 @@ export class ReviewPinService {
     type ContextResult = {
       minerva_reviews: ReviewRef[];
       minerva_review_answers?: { review: ReviewRef }[];
-      minerva_notes_by_pk?: { id: string } | null;
+      minerva_notes?: { id: string }[];
     };
     const context = await this.graphQLClient.request<ContextResult>(
       contextDocument,
@@ -137,7 +139,7 @@ export class ReviewPinService {
           `Only an answer from a daily review of ${review.periodStart} to ${sunday} is pinned to this week`,
         );
       }
-    } else if (!context.minerva_notes_by_pk) {
+    } else if (!context.minerva_notes?.length) {
       throw new NotFoundException(`Note with id ${noteId} not found`);
     }
 

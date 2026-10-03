@@ -14,6 +14,11 @@ import {
   ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { NoteService } from "../services/NoteService";
 
@@ -22,6 +27,7 @@ export class UpdateNoteController {
   constructor(private readonly notes: NoteService) {}
 
   @Put("/note/:noteId")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Updates an existing note",
     description: "Applies the given changes to a note.",
@@ -49,18 +55,24 @@ export class UpdateNoteController {
     description: "No updates to the record were required.",
     type: EmptyResponse,
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @Param("noteId") noteId: string,
     @Body() request: UpdateNoteRequest,
     @Res() response: Response,
   ): Promise<void> {
+    const user = requireUser(principal);
     if (Object.keys(request.note).length === 0) {
       response.status(HttpStatus.NOT_MODIFIED).end();
       return;
     }
     const responseBody: SingleNoteResponse = {
-      note: await this.notes.update(noteId, request.note),
+      note: await this.notes.update(user.userId, noteId, request.note),
     };
     response.status(HttpStatus.OK).send(responseBody);
   }

@@ -7,6 +7,7 @@ object_relationships:
     manual_configuration:
       column_mapping:
         organizer_email: email
+        user_id: user_id
       insertion_order: null
       remote_table:
         name: meeting_user
@@ -17,6 +18,7 @@ array_relationships:
     manual_configuration:
       column_mapping:
         id: meeting_id
+        user_id: user_id
       insertion_order: null
       remote_table:
         name: meeting_attendees

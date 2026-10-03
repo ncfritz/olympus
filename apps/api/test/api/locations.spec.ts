@@ -46,7 +46,6 @@ import {
   networkRow,
   productionCompanyRow,
 } from "../fixtures/metadata";
-import { graphQlMeeting, graphQlNote } from "../fixtures/minerva";
 import { controllers } from "../support/controllers";
 import { createTestApp, type TestApp } from "../support/testApp";
 
@@ -62,7 +61,6 @@ type Case = {
 };
 
 const D = "/v1/dionysus";
-const noteId = graphQlNote().id;
 const configExists = {
   dionysus_media_asset_search_configuration_by_pk: {
     assetType: "movie",
@@ -86,33 +84,6 @@ const channel = {
 };
 
 const CASES: Case[] = [
-  // Minerva
-  {
-    name: "CreateNote",
-    method: "post",
-    url: "/v1/minerva/notes",
-    body: { note: { value: "x" } },
-    graphql: { CreateNote: { insert_minerva_notes_one: graphQlNote() } },
-    location: `/minerva/note/${noteId}`,
-  },
-  {
-    name: "CreateChildNote",
-    method: "post",
-    url: "/v1/minerva/note/parent-1/children",
-    body: { note: { value: "x" } },
-    graphql: { CreateNote: { insert_minerva_notes_one: graphQlNote() } },
-    location: `/minerva/note/${noteId}`,
-  },
-  {
-    name: "CreateCalendarItem",
-    method: "post",
-    url: "/v1/minerva/meetings",
-    body: { item: { id: "meeting-1", organizer: {}, attendees: [] } },
-    graphql: {
-      CreateMeeting: { insert_minerva_meetings_one: graphQlMeeting() },
-    },
-    location: `/minerva/meeting/${graphQlMeeting().id}`,
-  },
   // Dionysus content
   {
     name: "CreateContentAsset",
@@ -639,9 +610,10 @@ describe("Location headers of created resources", () => {
   it("has a case for every operation that answers 201 with one resource", () => {
     // No GET route for a notification; an upload creates several workflows.
     // These need a signed-in caller, which this app has no keys for; their
-    // own specs (weatherLocations, weatherStations, and minerva's tags,
-    // goalCategories, goalCycles, goals, reviews, reviewPrompts,
-    // reviewItems and reviewAnswers) assert their Location headers.
+    // own specs (weatherLocations, weatherStations, and minerva's notes,
+    // calendar, tags, goalCategories, goalCycles, goals, reviews,
+    // reviewPrompts, reviewItems and reviewAnswers) assert their Location
+    // headers.
     // CreateGoalMilestone, CreateGoalCheckin, CreateReviewPin and
     // CreateReviewAnswerItem have no GET route, so they set none.
     const exempt = [
@@ -649,6 +621,9 @@ describe("Location headers of created resources", () => {
       "UploadAssets",
       "CreateWeatherLocation",
       "CreateWeatherStation",
+      "CreateNote",
+      "CreateChildNote",
+      "CreateCalendarItem",
       "CreateTag",
       "CreateGoalCategory",
       "CreateGoalCycle",

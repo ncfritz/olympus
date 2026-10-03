@@ -15,8 +15,14 @@ import {
   ApiParam,
   ApiProduces,
   ApiQuery,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import {
   ApiStandardErrorResponses,
   HeaderTimezone,
@@ -28,6 +34,7 @@ export class GetNotesSummaryController {
   constructor(private readonly notes: NoteService) {}
 
   @Get("/notes/summary/:start")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Gets the monthly summary for notes",
     description: "Gets a monthly summary of notes.",
@@ -53,14 +60,21 @@ export class GetNotesSummaryController {
     description: "Monthly summary fetched.",
     type: GetSummaryResponse,
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @HeaderTimezone() tz: string,
     @Param("start") start: string,
     @Query("days", ParseIntPipe) days: number,
     @Res() response: Response,
   ): Promise<void> {
+    const user = requireUser(principal);
     const responseBody: GetSummaryResponse = await this.notes.getSummary(
+      user.userId,
       start,
       days,
       tz,

@@ -47,7 +47,7 @@ describe("Review pins API", () => {
               ? [{ review: answerReview }]
               : [],
           }
-        : { minerva_notes_by_pk: note ? { id: NOTE_ID } : null }),
+        : { minerva_notes: note ? [{ id: NOTE_ID }] : [] }),
     }));
   const pin = (reviewPin: unknown) =>
     ctx.as(

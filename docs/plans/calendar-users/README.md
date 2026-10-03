@@ -74,7 +74,7 @@ migration test checks that an update moves `updated_at` and leaves
    select 'source ' || source, count(*) from minerva.meetings group by source;
    ```
 
-## Phase 1 — Minerva per user
+## Phase 1 — Minerva per user — built 2026-10-03, not signed off
 
 1. **Migration** `<ts>_minerva_calendar_users`:
    - Finds the user with `lower(email) = 'ncfritz@ncfritz.net'`. If any
@@ -101,18 +101,33 @@ migration test checks that an update moves `updated_at` and leaves
 2. **Operations**: every meetings and notes operation
    `@RequiresIdentity()`, `requireUser(principal)`, the user's ID passed
    to the service, every query and insert scoped by it. Another user's
-   meeting or note is a 404. `CreateNote` ignores `author` from the body
-   (kept in the model, marked deprecated, until phase 8) and writes the
-   caller's display name to it while the column remains.
-3. **Callers**: the site's meetings and notes calls and the reviews' and
-   goals' reads of them already send the user's token; checked, not
-   assumed. Anything that calls these operations without a user (an
-   agent) is listed and fixed or given a service route.
-4. **Tests**: `test/api/minerva/meetings.spec.ts` and `notes.spec.ts`
-   extended for no identity and another user's rows;
-   `infra/hasura/tests/minerva_calendar_users.sql` for the backfill, the
-   refusal without the user, the composite keys, the cascades, the
-   statistics per user, audit times.
+   meeting or note is a 404. Change sets lose `id`, `user_id`, `userId`
+   and `account_id` before they reach Hasura (they arrive as Hasura
+   column names, unchecked). `CreateCalendarItem` answers 409 for an ID
+   that is another user's meeting, and writes the people, the meeting
+   and its attendees as three inserts in one mutation instead of nested
+   ones, since the people are now keyed by user. A child note's parent
+   must be the caller's (404 otherwise). `CreateNote` keeps writing the
+   `author` the site sends until phase 8 drops the column; nothing
+   filters on it any more. `CreateReviewPin` only pins the caller's own
+   notes.
+3. **Callers**: the site's meetings and notes calls go through the
+   Minerva SDK client, which already carries the user's token
+   (`auth/interceptors.ts`); nothing else calls these operations.
+4. **Tests**: `test/api/minerva/calendar.spec.ts` and `notes.spec.ts`
+   cover no identity (401, Hasura not asked), scoping, another user's
+   rows, protected columns and the 409; their Location headers moved
+   there from `locations.spec.ts`, which has no signed-in caller.
+   `infra/hasura/tests/minerva_calendar_users.sql` covers the composite
+   keys, the cascades, the statistics per user and audit times;
+   `minerva_review_pins.sql` now gives each user a note of their own.
+   The backfill was checked by applying the migration to databases
+   seeded before it: rows and no user (refused), orphans (refused, with
+   counts), clean (every row Neil's), and `down.sql` and `up.sql` twice,
+   `down.sql` refusing once a second user owns rows. Verified
+   2026-10-03 against PostgreSQL 16 with every migration applied; the
+   API's build, lint, typecheck, tests (2,095) and convention checks
+   pass, and the site's tests pass.
 
 **Sign-off:** C1 on DEV, then PROD after Neil applies the migration.
 
