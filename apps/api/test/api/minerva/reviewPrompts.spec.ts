@@ -142,6 +142,7 @@ describe("Review prompts API", () => {
           label: string;
           placeholder: string | null;
           position: number;
+          style: string;
         }[];
       };
       expect(give.settings.userId).toBe(USER);
