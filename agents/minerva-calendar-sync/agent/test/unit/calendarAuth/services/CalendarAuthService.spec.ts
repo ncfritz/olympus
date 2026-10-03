@@ -6,13 +6,22 @@ import { MicrosoftAuthStrategy } from "../../../../src/calendarAuth/strategies/M
 import type { GoogleCredentialStore } from "../../../../src/providers/google/GoogleCredentialStore";
 import * as loopbackAuth from "../../../../src/providers/google/googleLoopbackAuth";
 import type { MicrosoftCredentialStore } from "../../../../src/providers/microsoft/MicrosoftCredentialStore";
+import * as microsoftOauth from "../../../../src/providers/microsoft/microsoftOauth";
 import { SyncedCalendarStore } from "../../../../src/store/syncedCalendarStore";
 import { SyncConfigService } from "../../../../src/sync/services/SyncConfigService";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../../src/providers/google/googleLoopbackAuth");
+vi.mock(
+  "../../../../src/providers/microsoft/microsoftOauth",
+  async (importOriginal) => ({
+    ...(await importOriginal<typeof microsoftOauth>()),
+    startMicrosoftLoopbackFlow: vi.fn(),
+  }),
+);
 
 const mockedLoopback = vi.mocked(loopbackAuth);
+const mockedMicrosoftOauth = vi.mocked(microsoftOauth);
 
 // Fake credential stores, so nothing reads the real filesystem and picks
 // up whatever has actually been authorized on this machine.
@@ -274,7 +283,16 @@ describe("CalendarAuthService", () => {
           .fn()
           .mockReturnValue("https://accounts.google.com/o/oauth2/auth?..."),
         getToken: vi.fn().mockResolvedValue({
-          tokens: { refresh_token: "new-refresh-token", scope: "scope" },
+          tokens: {
+            refresh_token: "new-refresh-token",
+            access_token: "new-access-token",
+            scope: "scope",
+          },
+        }),
+        getTokenInfo: vi.fn().mockResolvedValue({
+          sub: "google-sub-work",
+          email: "work",
+          email_verified: true,
         }),
       };
       mockedLoopback.createLoopbackClient.mockResolvedValue({
@@ -356,6 +374,54 @@ describe("CalendarAuthService", () => {
       await service.startReauth("work");
       expect((await service.getStatus("work")).status).toBe("reauth_pending");
     });
+
+    it.each([
+      [
+        "another account",
+        {
+          sub: "google-sub-other",
+          email: "other@example.com",
+          email_verified: true,
+        },
+        /Signed in as other@example.com, not "work"/,
+      ],
+      [
+        "an account whose email Google has not verified",
+        { sub: "google-sub-work", email: "work", email_verified: false },
+        /Could not confirm/,
+      ],
+    ])(
+      "refuses a sign-in as %s, keeping the stored credential",
+      async (_, tokenInfo, error) => {
+        mockedStore.tryLoad.mockReturnValue(undefined);
+        mockedLoopback.createLoopbackClient.mockResolvedValue({
+          client: {
+            generateAuthUrl: vi
+              .fn()
+              .mockReturnValue("https://accounts.google.com/o/oauth2/auth"),
+            getToken: vi.fn().mockResolvedValue({
+              tokens: {
+                refresh_token: "someone-elses-refresh-token",
+                access_token: "access",
+                scope: "scope",
+              },
+            }),
+            getTokenInfo: vi.fn().mockResolvedValue(tokenInfo),
+          } as never,
+          redirectUri: "http://127.0.0.1:12345",
+        });
+        mockedLoopback.waitForAuthorizationCode.mockResolvedValue("auth-code");
+
+        const service = makeService();
+        await service.startReauth("work");
+        await flushPromises();
+
+        expect(mockedStore.save).not.toHaveBeenCalled();
+        const status = await service.getStatus("work");
+        expect(status.status).toBe("error");
+        expect(status.error).toMatch(error);
+      },
+    );
   });
 
   describe("listAvailableCalendars", () => {
@@ -572,6 +638,53 @@ describe("CalendarAuthService", () => {
       expect(status.status).toBe("error");
       expect(status.error).toMatch(/verified email/);
       expect(mockedStore.save).not.toHaveBeenCalled();
+    });
+  });
+  describe("startReauth for a Microsoft account", () => {
+    const microsoftFlow = (result: { email?: string; subject?: string }) =>
+      mockedMicrosoftOauth.startMicrosoftLoopbackFlow.mockResolvedValue({
+        authUrl: "https://login.microsoftonline.com/authorize",
+        redirectUri: "http://localhost:12345/",
+        complete: vi.fn().mockResolvedValue({
+          refreshToken: "ms-refresh-token",
+          scope: "scope",
+          ...result,
+        }),
+      });
+
+    beforeEach(() => {
+      mockedMicrosoftStore.listAccountLabels.mockReturnValue([
+        "ms@example.com",
+      ]);
+      mockedMicrosoftStore.tryLoad.mockReturnValue(undefined);
+    });
+
+    it("saves the credential when the same account signed in", async () => {
+      microsoftFlow({ email: "MS@example.com", subject: "tid-1:oid-1" });
+
+      const service = makeService();
+      await service.startReauth("ms@example.com", "microsoft");
+      await flushPromises();
+
+      expect(mockedMicrosoftStore.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountLabel: "ms@example.com",
+          refreshToken: "ms-refresh-token",
+        }),
+      );
+    });
+
+    it("refuses another account, keeping the stored credential", async () => {
+      microsoftFlow({ email: "other@example.com", subject: "tid-1:oid-2" });
+
+      const service = makeService();
+      await service.startReauth("ms@example.com", "microsoft");
+      await flushPromises();
+
+      expect(mockedMicrosoftStore.save).not.toHaveBeenCalled();
+      const status = await service.getStatus("ms@example.com", "microsoft");
+      expect(status.status).toBe("error");
+      expect(status.error).toMatch(/not "ms@example.com"/);
     });
   });
 });

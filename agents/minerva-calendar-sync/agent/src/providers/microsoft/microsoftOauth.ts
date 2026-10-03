@@ -17,16 +17,17 @@ export const MICROSOFT_CALENDAR_SCOPES = [
 ];
 
 /**
- * Scopes for authorizing a brand-new account, where — unlike a reauth for an
- * already-known account — we don't have an accountLabel yet: the extra
- * openid/email scopes let us derive one from the signed-in address (see
- * MicrosoftAuthStrategy.completeNewAccountAuth), mirroring
- * GOOGLE_NEW_ACCOUNT_SCOPES.
+ * Scopes for every sign-in from the agent, new account or re-authorization:
+ * calendar access plus the identity of who signed in (`profile` carries the
+ * object ID), mirroring GOOGLE_NEW_ACCOUNT_SCOPES. A new account takes its
+ * label from the email; a re-authorization is refused unless the same
+ * account signed in (see confirmSameAccount).
  */
 export const MICROSOFT_NEW_ACCOUNT_SCOPES = [
   ...MICROSOFT_CALENDAR_SCOPES,
   "openid",
   "email",
+  "profile",
 ];
 
 const discoveries = new Map<string, Promise<OpenIdClient.Configuration>>();
@@ -69,8 +70,10 @@ function getOidcConfig(
 export interface MicrosoftTokenResult {
   refreshToken: string;
   scope: string;
-  /** Only present when `openid`/`email` were requested (new-account authorization). */
+  /** Only present when `openid`/`email` were requested. */
   email?: string;
+  /** `<tid>:<oid>` from the ID token, when `openid`/`profile` were requested. */
+  subject?: string;
 }
 
 export interface MicrosoftLoopbackFlow {
@@ -171,9 +174,25 @@ export async function startMicrosoftLoopbackFlow(
         refreshToken: tokenResponse.refresh_token,
         scope: tokenResponse.scope ?? scopes.join(" "),
         email: typeof claims?.email === "string" ? claims.email : undefined,
+        subject: microsoftSubject(claims),
       };
     },
   };
+}
+
+/**
+ * An account's subject for ADR 0028: `<tid>:<oid>`, the tenant and the
+ * object ID within it. Microsoft's `sub` differs per application, so it
+ * would not match the same account seen through another app.
+ */
+export function microsoftSubject(
+  claims: Record<string, unknown> | undefined,
+): string | undefined {
+  const tid = claims?.["tid"];
+  const oid = claims?.["oid"];
+  return typeof tid === "string" && typeof oid === "string"
+    ? `${tid}:${oid}`
+    : undefined;
 }
 
 /** Extracts the OAuth error code/description oauth4webapi's ResponseBodyError carries, falling back to the plain message. */

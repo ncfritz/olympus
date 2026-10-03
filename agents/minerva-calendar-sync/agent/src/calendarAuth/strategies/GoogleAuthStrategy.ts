@@ -5,10 +5,8 @@ import {
   createLoopbackClient,
   waitForAuthorizationCode,
 } from "../../providers/google/googleLoopbackAuth";
-import {
-  GOOGLE_CALENDAR_SCOPES,
-  GOOGLE_NEW_ACCOUNT_SCOPES,
-} from "../../providers/google/googleOauthScopes";
+import { GOOGLE_NEW_ACCOUNT_SCOPES } from "../../providers/google/googleOauthScopes";
+import { type AccountIdentity, confirmSameAccount } from "../accountIdentity";
 import {
   CalendarAuthStrategy,
   LoopbackFlow,
@@ -44,10 +42,7 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
       clientId,
       clientSecret,
     );
-    const scopes =
-      request.mode === "new"
-        ? GOOGLE_NEW_ACCOUNT_SCOPES
-        : GOOGLE_CALENDAR_SCOPES;
+    const scopes = GOOGLE_NEW_ACCOUNT_SCOPES;
     const authUrl = client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
@@ -77,19 +72,21 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
       );
     }
 
+    if (!tokens.access_token) {
+      throw new Error("Google did not return an access token");
+    }
+    const identity = await readIdentity(client, tokens.access_token);
+
     let accountLabel: string;
     if (request.mode === "new") {
-      if (!tokens.access_token) {
-        throw new Error("Google did not return an access token");
-      }
-      const info = await client.getTokenInfo(tokens.access_token);
-      if (!info.email || info.email_verified !== true) {
+      if (!identity.email) {
         throw new Error(
           "Google did not return a verified email address for this account",
         );
       }
-      accountLabel = info.email;
+      accountLabel = identity.email;
     } else {
+      confirmSameAccount(request.accountLabel, undefined, identity);
       accountLabel = request.accountLabel;
     }
 
@@ -120,6 +117,18 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     }
     return error instanceof Error ? error.message : String(error);
   }
+}
+
+/** The account behind an access token: its subject, and its email when Google has verified it. */
+async function readIdentity(
+  client: OAuth2Client,
+  accessToken: string,
+): Promise<AccountIdentity> {
+  const info = await client.getTokenInfo(accessToken);
+  return {
+    subject: info.sub,
+    email: info.email && info.email_verified === true ? info.email : undefined,
+  };
 }
 
 function googleErrorCode(error: unknown): string | undefined {

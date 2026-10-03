@@ -5,11 +5,11 @@ import {
 } from "../../config/configuration";
 import { MicrosoftCredentialStore } from "../../providers/microsoft/MicrosoftCredentialStore";
 import {
-  MICROSOFT_CALENDAR_SCOPES,
   MICROSOFT_NEW_ACCOUNT_SCOPES,
   refreshMicrosoftAccessToken,
   startMicrosoftLoopbackFlow,
 } from "../../providers/microsoft/microsoftOauth";
+import { confirmSameAccount } from "../accountIdentity";
 import {
   CalendarAuthStrategy,
   LoopbackFlow,
@@ -49,16 +49,19 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
   }
 
   async startLoopbackFlow(request: LoopbackFlowRequest): Promise<LoopbackFlow> {
-    const scopes =
-      request.mode === "new"
-        ? MICROSOFT_NEW_ACCOUNT_SCOPES
-        : MICROSOFT_CALENDAR_SCOPES;
+    const scopes = MICROSOFT_NEW_ACCOUNT_SCOPES;
     const flow = await startMicrosoftLoopbackFlow(this.microsoft, scopes);
 
     return {
       authUrl: flow.authUrl,
       complete: async (timeoutMs) => {
         const result = await flow.complete(timeoutMs);
+        if (request.mode === "reauth") {
+          confirmSameAccount(request.accountLabel, undefined, {
+            subject: result.subject,
+            email: result.email,
+          });
+        }
         const accountLabel =
           request.mode === "new"
             ? requireEmail(result.email)

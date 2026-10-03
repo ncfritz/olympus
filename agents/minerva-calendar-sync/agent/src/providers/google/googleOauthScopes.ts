@@ -4,12 +4,14 @@ export const GOOGLE_CALENDAR_SCOPES = [
 ];
 
 /**
- * Scopes for authorizing a brand-new account, where — unlike a reauth for an
- * already-known account — we don't have an accountLabel yet: the extra email
- * scope lets us derive one from the signed-in address (see
- * CalendarAuthService.completeNewAccountAuth).
+ * Scopes for every sign-in from the agent, new account or re-authorization:
+ * calendar access plus the identity of who signed in. A new account takes
+ * its label from the verified email; a re-authorization is refused unless
+ * the same account signed in (see confirmSameAccount). The bare calendar
+ * scope stays for the command-line setup script.
  */
 export const GOOGLE_NEW_ACCOUNT_SCOPES = [
   ...GOOGLE_CALENDAR_SCOPES,
+  "openid",
   "https://www.googleapis.com/auth/userinfo.email",
 ];
