@@ -27,7 +27,7 @@ import WeekWrapUpStep from "./WeekWrapUpStep";
 
 const INTROS = [
   "Here's the week as it happened. Score a day you missed, and decide what happens to what slipped; what goes to next week shows up in step 4.",
-  "The week's daily answers and flagged notes. Pin what's worth keeping; pins sit beside Reflect and stay with the week.",
+  "The week's daily answers and notes, by day. Pin what's worth keeping; pins sit beside Reflect and stay with the week.",
   "Score the week, then answer what's useful. Skip any prompt; an empty one isn't saved.",
   "Map out next week. Drag each priority onto open time; the bar under each day is how full it already is.",
   "This is how the review reads later, in the weekly list and on Monday's daily review.",
@@ -184,12 +184,13 @@ const WeeklyReview: React.FunctionComponent<WeeklyReviewProps> = ({ week }) => {
         </div>
         {step === 1 ? (
           <WeekLookBackStep data={data} intro={INTROS[0]} footer={footer} />
+        ) : step === 2 ? (
+          <HighlightsStep data={data} intro={INTROS[1]} footer={footer} />
         ) : (
           // Keyed by step, so each step opens at its top.
           <div key={step} className={styles.scroller}>
             <div className={styles.body}>
               <p className={styles.intro}>{INTROS[step - 1]}</p>
-              {step === 2 && <HighlightsStep data={data} />}
               {step === 3 && <WeekReflectStep data={data} />}
               {step === 4 && <PlanWeekStep data={data} />}
               {step === 5 && <WeekWrapUpStep data={data} onEdit={go} />}

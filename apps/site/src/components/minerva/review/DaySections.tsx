@@ -1,7 +1,34 @@
 import { CaretRightOutlined } from "@ant-design/icons";
 import { Collapse, Empty } from "antd";
+import { DateTime } from "luxon";
 import React from "react";
 import styles from "./Review.module.css";
+
+/** A key for the week's items not tied to a day; sorts after the days. */
+const NO_DAY = "~";
+
+/**
+ * Items by day, in the week's order: each day that has any, as its name,
+ * and those on no day last.
+ */
+export const byDay = <T,>(
+  things: T[],
+  dayOf: (thing: T) => string | undefined,
+  noDay: string,
+): { key: string; label: string; things: T[] }[] => {
+  const groups = new Map<string, T[]>();
+  for (const thing of things) {
+    const key = dayOf(thing) ?? NO_DAY;
+    groups.set(key, [...(groups.get(key) ?? []), thing]);
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, grouped]) => ({
+      key,
+      label: key === NO_DAY ? noDay : DateTime.fromISO(key).toFormat("cccc d"),
+      things: grouped,
+    }));
+};
 
 export type DaySection = {
   key: string;

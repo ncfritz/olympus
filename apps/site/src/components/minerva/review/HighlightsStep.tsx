@@ -1,19 +1,32 @@
-import { PushpinFilled, PushpinOutlined } from "@ant-design/icons";
+import { FlagFilled, PushpinFilled, PushpinOutlined } from "@ant-design/icons";
 import type { ReviewPin } from "@ncfritz/olympus-sdk/minerva";
-import { Button, Card, Empty, Typography } from "antd";
+import { Button, Card, Typography } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 import { config } from "../../../utils/notes";
 import { answersByPrompt } from "../../../utils/reviews";
+import DaySections, { byDay } from "./DaySections";
 import { firstLine } from "./NoteList";
 import styles from "./Review.module.css";
+import SplitStep from "./SplitStep";
 import type { WeeklyReviewData } from "./useWeeklyReview";
 
 const { Text } = Typography;
 
 export interface HighlightsStepProps {
   data: WeeklyReviewData;
+  /** What the step asks, above its content. */
+  intro: string;
+  /** Back, Save and exit, Next: kept at the foot of the left column. */
+  footer: React.ReactNode;
 }
+
+const flat = {
+  size: "small" as const,
+  variant: "borderless" as const,
+  className: styles.flat,
+  classNames: { header: styles.flatPart, body: styles.flatPart },
+};
 
 /** Pins something to the week, or unpins it. */
 const PinButton: React.FunctionComponent<{
@@ -35,16 +48,20 @@ const PinButton: React.FunctionComponent<{
 );
 
 /**
- * Step 2: the week's daily answers under their prompts, and its flagged
- * notes. A pin keeps one with the week, beside Reflect and in Wrap up.
+ * Step 2, split: on the left the week's daily answers under their
+ * prompts, on the right its notes, flagged ones marked; each by day, a
+ * day only where it has some, opening and closing on its caret. A pin
+ * keeps one with the week, beside Reflect and in Wrap up.
  */
 const HighlightsStep: React.FunctionComponent<HighlightsStepProps> = ({
   data,
+  intro,
+  footer,
 }) => {
   const groups = answersByPrompt(data.dailyPrompts, data.dailyReviews);
-  const flagged = data.notes
-    .filter((n) => n.flagged)
-    .sort((a, b) => a.createdTime.localeCompare(b.createdTime));
+  const notes = [...data.notes].sort((a, b) =>
+    a.createdTime.localeCompare(b.createdTime),
+  );
   const disabled = !data.started;
   const pinOf = (target: { answerId?: string; noteId?: string }) =>
     data.pins.find((p) =>
@@ -52,27 +69,88 @@ const HighlightsStep: React.FunctionComponent<HighlightsStepProps> = ({
         ? p.answerId === target.answerId
         : p.noteId === target.noteId,
     );
-  const day = (iso: string) => DateTime.fromISO(iso).toFormat("ccc");
+  const noteDays = byDay(
+    notes,
+    (note) => DateTime.fromISO(note.createdTime).toISODate() ?? undefined,
+    "",
+  );
 
   return (
-    <>
-      <div className={styles.threeColumns}>
-        {groups.map(({ prompt, answers }) => (
+    <SplitStep
+      intro={intro}
+      footer={footer}
+      hideScrollbar={true}
+      aside={
+        <div className={`${styles.asideScroll} ${styles.noScrollbar}`}>
           <Card
-            key={prompt.id}
-            size={"small"}
-            title={prompt.label}
-            extra={<span className={styles.meta}>{answers.length}</span>}
+            {...flat}
+            title={"Notes"}
+            extra={
+              <span className={styles.meta}>
+                {notes.filter((n) => n.flagged).length} flagged ·{" "}
+                {data.pins.length} pinned
+              </span>
+            }
           >
-            {answers.length === 0 ? (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={"Not answered this week"}
-              />
-            ) : (
-              answers.map(({ day: on, answer }) => (
+            <DaySections
+              empty={"No notes this week"}
+              sections={noteDays.map((group) => ({
+                key: group.key,
+                label: group.label,
+                count: group.things.length,
+                children: group.things.map((note) => {
+                  const type = config[note.type] ?? config[0];
+                  return (
+                    <div key={note.id} className={styles.row}>
+                      <span className={`${styles.time} ${styles.clockTime}`}>
+                        {DateTime.fromISO(note.createdTime).toFormat("h:mm a")}
+                      </span>
+                      <span
+                        className={styles.dot}
+                        style={{ background: type.color }}
+                        aria-hidden={true}
+                      />
+                      <Text className={`${styles.rowMain} ${styles.ellipsis}`}>
+                        {firstLine(note)}
+                      </Text>
+                      {note.flagged && (
+                        <FlagFilled
+                          className={styles.flagged}
+                          aria-label={"Flagged"}
+                          title={"Flagged"}
+                        />
+                      )}
+                      <span className={styles.meta}>{type.label}</span>
+                      <PinButton
+                        pin={pinOf({ noteId: note.id })}
+                        disabled={disabled}
+                        onPin={() => data.pin({ noteId: note.id })}
+                        onUnpin={data.unpin}
+                      />
+                    </div>
+                  );
+                }),
+              }))}
+            />
+          </Card>
+        </div>
+      }
+    >
+      {groups.map(({ prompt, answers }) => (
+        <Card
+          key={prompt.id}
+          {...flat}
+          title={prompt.label}
+          extra={<span className={styles.meta}>{answers.length}</span>}
+        >
+          <DaySections
+            empty={"Not answered this week"}
+            sections={byDay(answers, (a) => a.day, "").map((group) => ({
+              key: group.key,
+              label: group.label,
+              count: group.things.length,
+              children: group.things.map(({ answer }) => (
                 <div key={answer.id} className={styles.row}>
-                  <span className={styles.time}>{day(on)}</span>
                   <Text className={`${styles.rowMain} ${styles.answer}`}>
                     {answer.body}
                   </Text>
@@ -83,48 +161,12 @@ const HighlightsStep: React.FunctionComponent<HighlightsStepProps> = ({
                     onUnpin={data.unpin}
                   />
                 </div>
-              ))
-            )}
-          </Card>
-        ))}
-      </div>
-      <Card
-        size={"small"}
-        title={"Flagged notes"}
-        extra={<span className={styles.meta}>{data.pins.length} pinned</span>}
-      >
-        {flagged.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={"No notes were flagged this week"}
+              )),
+            }))}
           />
-        ) : (
-          flagged.map((note) => {
-            const type = config[note.type] ?? config[0];
-            return (
-              <div key={note.id} className={styles.row}>
-                <span className={styles.time}>{day(note.createdTime)}</span>
-                <span
-                  className={styles.dot}
-                  style={{ background: type.color }}
-                  aria-hidden={true}
-                />
-                <Text className={`${styles.rowMain} ${styles.ellipsis}`}>
-                  {firstLine(note)}
-                </Text>
-                <span className={styles.meta}>{type.label}</span>
-                <PinButton
-                  pin={pinOf({ noteId: note.id })}
-                  disabled={disabled}
-                  onPin={() => data.pin({ noteId: note.id })}
-                  onUnpin={data.unpin}
-                />
-              </div>
-            );
-          })
-        )}
-      </Card>
-    </>
+        </Card>
+      ))}
+    </SplitStep>
   );
 };
 

@@ -999,3 +999,14 @@
   font-weight: 600;
   color: rgba(0, 0, 0, 0.65);
 }
+
+/* A flagged note's flag, beside its type, in the notes timeline's red. */
+.flagged {
+  color: #ee0000;
+}
+
+/* A time with its AM or PM, on one line. */
+.clockTime {
+  width: 60px;
+  white-space: nowrap;
+}
