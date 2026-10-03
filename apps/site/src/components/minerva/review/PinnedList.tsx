@@ -10,6 +10,8 @@ const { Text } = Typography;
 export interface PinnedListProps {
   highlights: PinnedHighlight[];
   disabled?: boolean;
+  /** Whether each says where it came from; not needed when grouped by it. */
+  showSource?: boolean;
   /** Unpins; left out where the list is only read. */
   onUnpin?: (highlight: PinnedHighlight) => Promise<void>;
 }
@@ -18,6 +20,7 @@ export interface PinnedListProps {
 const PinnedList: React.FunctionComponent<PinnedListProps> = ({
   highlights,
   disabled = false,
+  showSource = true,
   onUnpin,
 }) => {
   if (highlights.length === 0) {
@@ -35,8 +38,8 @@ const PinnedList: React.FunctionComponent<PinnedListProps> = ({
           <div className={styles.rowMain}>
             <Text className={styles.answer}>{h.text}</Text>
             <span className={styles.meta}>
-              {h.day && `${DateTime.fromISO(h.day).toFormat("ccc")} · `}
-              {h.source}
+              {h.day && DateTime.fromISO(h.day).toFormat("cccc")}
+              {showSource && `${h.day ? " · " : ""}${h.source}`}
             </span>
           </div>
           {onUnpin && (

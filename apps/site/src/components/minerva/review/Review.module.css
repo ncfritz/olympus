@@ -1010,3 +1010,14 @@
   width: 60px;
   white-space: nowrap;
 }
+
+/* The days' cards widening to fill each row, a short last row included. */
+.dayCardsFill {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dayCardsFill > .dayCard {
+  flex: 1 1 168px;
+}

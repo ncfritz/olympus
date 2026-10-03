@@ -6,7 +6,6 @@ import React from "react";
 import { config } from "../../../utils/notes";
 import {
   daysOfWeek,
-  formatMinutes,
   itemsOf,
   noteTypeCounts,
   RATING_FIELDS,
@@ -14,7 +13,6 @@ import {
   ratingSeries,
   slippedItems,
   type WeekTriage,
-  weekLoad,
   weekTriageOf,
 } from "../../../utils/reviews";
 import DaySections, { byDay, type DaySection } from "./DaySections";
@@ -24,8 +22,9 @@ import SplitStep from "./SplitStep";
 import TriageList from "./TriageList";
 import type { WeeklyReviewData } from "./useWeeklyReview";
 import WeekDayCards from "./WeekDayCards";
-import { RatingsChart, TimeChart } from "./WeekCharts";
+import { RatingsChart } from "./WeekCharts";
 import WeekGoals from "./WeekGoals";
+import WeekTime from "./WeekTime";
 
 const DECISIONS: { label: string; value: WeekTriage }[] = [
   { label: "Done", value: "done" },
@@ -63,10 +62,6 @@ const WeekLookBackStep: React.FunctionComponent<WeekLookBackStepProps> = ({
   const days = daysOfWeek(DateTime.fromISO(data.monday));
   const labels = days.map((d) => d.toFormat("ccc d"));
   const periods = data.days?.periods ?? [];
-  const loads = weekLoad(data.meetings, days, data.dayItems);
-  const meetingMinutes = loads.reduce((sum, d) => sum + d.meetingMinutes, 0);
-  const focusMinutes = loads.reduce((sum, d) => sum + d.focusMinutes, 0);
-  const meetingCount = loads.reduce((sum, d) => sum + d.meetings, 0);
   const types = [...noteTypeCounts(data.notes)].sort((a, b) => b[1] - a[1]);
   const priorities = itemsOf(data.weekItems, data.monday);
   const slipped = slippedItems(data.dayItems, days[0], data.today);
@@ -103,19 +98,7 @@ const WeekLookBackStep: React.FunctionComponent<WeekLookBackStepProps> = ({
       aside={
         <div className={`${styles.asideScroll} ${styles.noScrollbar}`}>
           <Card {...flat} title={"Time"}>
-            <div className={styles.stack}>
-              <div className={styles.numbers}>
-                <Statistic
-                  title={`in meetings · ${meetingCount} event${meetingCount === 1 ? "" : "s"}`}
-                  value={formatMinutes(meetingMinutes)}
-                />
-                <Statistic
-                  title={"in focus blocks"}
-                  value={formatMinutes(focusMinutes)}
-                />
-              </div>
-              <TimeChart days={labels} loads={loads} />
-            </div>
+            <WeekTime data={data} />
           </Card>
           <Card {...flat} title={"Goals"}>
             <WeekGoals goals={data.goals} execution={data.execution} />

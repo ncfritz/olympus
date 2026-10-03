@@ -24,8 +24,13 @@ const STATUS: Record<
 export interface WeekDayCardsProps {
   periods: ReviewPeriodSummary[];
   disabled?: boolean;
+  /**
+   * Only show the days: ratings drawn, not set, and no review button;
+   * the cards widen to fill each row.
+   */
+  readOnly?: boolean;
   /** A day's rating set from its card; null clears it. */
-  onRate: (
+  onRate?: (
     day: string,
     key: RatingField["key"],
     value: number | null,
@@ -58,20 +63,23 @@ const MiniRating: React.FunctionComponent<{
 /**
  * The week's days, a card each: its review status across the top, the
  * date and overall score, each rating as small circles that set it (a
- * completed day's are set), and its daily review at the foot.
+ * completed day's are set), and its daily review at the foot. Read
+ * only, the ratings are only shown and the button left off.
  */
 const WeekDayCards: React.FunctionComponent<WeekDayCardsProps> = ({
   periods,
   disabled = false,
+  readOnly = false,
   onRate,
 }) => (
-  <div className={styles.dayCards}>
+  <div className={readOnly ? styles.dayCardsFill : styles.dayCards}>
     {periods.map((period) => {
       const day = DateTime.fromISO(period.periodStart);
       const status = STATUS[period.status];
       const overall = period.ratings.overall;
       const locked =
         disabled ||
+        readOnly ||
         period.status === "complete" ||
         period.status === "upcoming";
       return (
@@ -96,12 +104,12 @@ const WeekDayCards: React.FunctionComponent<WeekDayCardsProps> = ({
                 value={period.ratings[field.key]}
                 disabled={locked}
                 onChange={(value) =>
-                  void onRate(period.periodStart, field.key, value)
+                  void onRate?.(period.periodStart, field.key, value)
                 }
               />
             ))}
           </div>
-          {status.action && (
+          {status.action && !readOnly && (
             <Link href={dailyReviewPath(day)} className={styles.dayAction}>
               <Button type={"text"} block={true} tabIndex={-1}>
                 {status.action}
