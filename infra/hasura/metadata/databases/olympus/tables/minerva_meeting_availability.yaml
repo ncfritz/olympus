@@ -1,0 +1,19 @@
+table:
+  name: meeting_availability
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    meeting_id:
+      custom_name: meetingId
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    created_at: createdTime
+    meeting_id: meetingId
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
