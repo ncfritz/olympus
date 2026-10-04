@@ -90,6 +90,7 @@ class MeetingsApi {
       query: {
         days: days,
       },
+      ...this.buildHeaders(),
     });
   }
 
