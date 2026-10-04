@@ -123,6 +123,73 @@ describe("Calendar events consumer", () => {
     expect(await consumed("upsert", "written")).toBe(before + 1);
   });
 
+  it("replaces a meeting only with a snapshot no older than the one it holds", async () => {
+    owned(true);
+    written();
+
+    await handler.handle(
+      calendarEvent({ snapshotTime: "2026-10-04T20:00:00.000Z" }),
+      delivery("event.upsert"),
+    );
+
+    const write = t.graphql.calls("WriteCalendarEvent")[0];
+    expect(write?.variables).toEqual({
+      meeting: expect.objectContaining({
+        snapshot_time: "2026-10-04T20:00:00.000Z",
+      }),
+      snapshotTime: "2026-10-04T20:00:00.000Z",
+    });
+    expect(write?.document).toMatch(
+      /where: \{ _or: \[\{ snapshot_time: \{ _is_null: true \} \}, \{ snapshot_time: \{ _lte: \$snapshotTime \} \}\] \}/,
+    );
+    expect(write?.document).toMatch(
+      /update_columns: \[[^\]]*\bsnapshot_time\b/,
+    );
+  });
+
+  it("acknowledges and skips an event Minerva holds a newer snapshot of", async () => {
+    owned(true);
+    // Hasura answers null when the condition keeps the row as it was.
+    t.graphql.on("WriteCalendarEvent", { insert_minerva_meetings_one: null });
+    const before = await consumed("upsert", "stale");
+
+    const result = await handler.handle(
+      calendarEvent({ snapshotTime: "2026-10-04T19:00:00.000Z" }),
+      delivery("event.upsert"),
+    );
+
+    expect(result).toBeUndefined();
+    expect(sent()).toEqual([]);
+    expect(await consumed("upsert", "stale")).toBe(before + 1);
+  });
+
+  it("lets a message from before snapshots replace only a meeting without one", async () => {
+    owned(true);
+    written();
+
+    await handler.handle(calendarEvent(), delivery("event.upsert"));
+
+    const write = t.graphql.calls("WriteCalendarEvent")[0];
+    expect(write?.variables).toEqual({
+      meeting: expect.objectContaining({ snapshot_time: null }),
+    });
+    expect(write?.document).toMatch(
+      /where: \{ snapshot_time: \{ _is_null: true \} \}/,
+    );
+  });
+
+  it("dead-letters an event whose snapshot time is not a time", async () => {
+    await handler.handle(
+      calendarEvent({ snapshotTime: "yesterday" }),
+      delivery("event.upsert"),
+    );
+
+    expect(sent()[0]?.[0]).toBe(DEAD);
+    expect(sent()[0]?.[2]).toMatchObject({
+      "x-olympus-dead-reason": expect.stringMatching(/snapshotTime/),
+    });
+  });
+
   it("writes a backfilled event the same way", async () => {
     owned(true);
     written();

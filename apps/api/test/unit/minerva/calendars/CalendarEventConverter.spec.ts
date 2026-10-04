@@ -31,6 +31,7 @@ describe("toMeetingFields", () => {
         uid: "abc123@google.com",
         recurrence_id: null,
         source: "neil",
+        snapshot_time: null,
       },
     });
   });
@@ -140,4 +141,13 @@ describe("actionOf", () => {
       expect(actionOf(key)).toBeUndefined();
     },
   );
+
+  it("reads when the agent took the snapshot, as UTC", () => {
+    const converted = toMeetingFields(
+      calendarEvent({ snapshotTime: "2026-10-04T13:00:00-07:00" }),
+    );
+    expect(converted).toMatchObject({
+      fields: { snapshot_time: "2026-10-04T20:00:00.000Z" },
+    });
+  });
 });

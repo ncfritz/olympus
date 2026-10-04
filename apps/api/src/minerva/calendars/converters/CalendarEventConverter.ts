@@ -40,6 +40,8 @@ export type MeetingRow = {
   uid: string;
   recurrence_id: string | null;
   source: string;
+  /** When the agent took the snapshot; null from a message queued before it said. */
+  snapshot_time: string | null;
   user_id: string;
   account_id: string;
 };
@@ -170,6 +172,10 @@ export const toMeetingFields = (
     uid: text("uid"),
     recurrence_id: optionalText("recurrenceId"),
     source: text("source"),
+    snapshot_time:
+      m.snapshotTime === undefined || m.snapshotTime === null
+        ? null
+        : time("snapshotTime"),
   };
   return problems.length ? { problems } : { fields };
 };

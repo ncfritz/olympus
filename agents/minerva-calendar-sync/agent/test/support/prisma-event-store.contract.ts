@@ -200,6 +200,25 @@ export function testPrismaEventStoreContract(
       expect(JSON.parse(rows[1].payload).subject).toBe("Renamed");
     });
 
+    it("stamps each snapshot with when it was taken, later for a later change", async () => {
+      const store = getStore();
+      const prisma = getPrisma();
+      const event = fixtureEvent();
+      const before = Date.now();
+      await store.upsertEvent(event);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      await store.upsertEvent({ ...event, subject: "Renamed" });
+
+      const rows = await prisma.outboxEvent.findMany({
+        orderBy: { createdAt: "asc" },
+      });
+      const [first, second] = rows.map((r) =>
+        Date.parse(JSON.parse(r.payload).snapshotTime),
+      );
+      expect(first).toBeGreaterThanOrEqual(before);
+      expect(second).toBeGreaterThan(first!);
+    });
+
     it("enqueues an upsert-action outbox row only when markCancelled actually flips the row", async () => {
       const store = getStore();
       const prisma = getPrisma();

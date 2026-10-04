@@ -108,8 +108,12 @@ export class PrismaEventStore implements EventStore {
         eventId: event.id,
         source: event.source,
         action: event.deleted ? "delete" : "upsert",
-        // The message contract (@ncfritz/olympus-messages) is the event itself.
-        payload: JSON.stringify(event satisfies CalendarEventMessage),
+        // The message contract (@ncfritz/olympus-messages) is the event
+        // itself, stamped with when this snapshot of it was taken.
+        payload: JSON.stringify({
+          ...event,
+          snapshotTime: new Date().toISOString(),
+        } satisfies CalendarEventMessage),
       },
     });
     return [write, enqueue];

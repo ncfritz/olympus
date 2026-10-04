@@ -86,6 +86,13 @@ export interface CalendarEventMessage {
    */
   recurrenceRule: string | null;
   /**
+   * When the agent took this snapshot of the event, ISO-8601: later for a
+   * later change to the same event, so a consumer can tell a message that
+   * arrives late (retried, redriven) from a newer one it has already
+   * written. Absent from messages queued before it was added.
+   */
+  snapshotTime?: string;
+  /**
    * The account the event's calendar syncs through. Absent when the agent
    * has no subject recorded for the account, or the calendar is no longer
    * synced: such an event belongs to no one in Olympus.

@@ -92,6 +92,10 @@
           ],
           "description": "The provider's recurrence description of the series, for reference only: RFC 5545 RRULE/EXDATE lines for Google, the Graph `recurrence` pattern as JSON text for Microsoft. Occurrences arrive as their own messages."
         },
+        "snapshotTime": {
+          "type": "string",
+          "description": "When the agent took this snapshot of the event, ISO-8601: later for a later change to the same event, so a consumer can tell a message that arrives late (retried, redriven) from a newer one it has already written. Absent from messages queued before it was added."
+        },
         "account": {
           "$ref": "#/definitions/CalendarEventAccount",
           "description": "The account the event's calendar syncs through. Absent when the agent has no subject recorded for the account, or the calendar is no longer synced: such an event belongs to no one in Olympus."
