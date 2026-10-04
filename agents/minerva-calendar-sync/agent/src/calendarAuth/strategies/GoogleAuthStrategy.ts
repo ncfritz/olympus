@@ -232,8 +232,19 @@ async function readIdentity(
   const info = await client.getTokenInfo(accessToken);
   return {
     subject: info.sub,
-    email: info.email && info.email_verified === true ? info.email : undefined,
+    email:
+      info.email && isVerified(info.email_verified) ? info.email : undefined,
   };
+}
+
+/**
+ * Whether token info says the email is verified. Google's tokeninfo
+ * endpoint answers `"email_verified": "true"`, a string, though the
+ * library's type says boolean and passes the body through as it is; an ID
+ * token's claim is a boolean. Either means verified.
+ */
+function isVerified(value: unknown): boolean {
+  return value === true || value === "true";
 }
 
 function googleErrorCode(error: unknown): string | undefined {

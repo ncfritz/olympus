@@ -80,10 +80,11 @@ describe("web sign-ins (ADR 0028)", () => {
         scope: "scope",
       },
     });
+    // As Google's tokeninfo endpoint answers: the flag is a string.
     googleClient.getTokenInfo.mockResolvedValue({
       sub: "google-sub-new",
       email: "new@example.com",
-      email_verified: true,
+      email_verified: "true",
     });
   });
 
@@ -119,6 +120,46 @@ describe("web sign-ins (ADR 0028)", () => {
         }),
       );
     });
+
+    it.each([
+      ["the string Google's tokeninfo sends", "true"],
+      ["a boolean", true],
+    ])(
+      "takes a new account's email when it is verified as %s",
+      async (_, verified) => {
+        googleClient.getTokenInfo.mockResolvedValue({
+          sub: "google-sub-new",
+          email: "new@example.com",
+          email_verified: verified,
+        });
+
+        const result = await google().completeWebSignIn(
+          callback(`code=the-code&state=${STATE}`),
+        );
+
+        expect(result.accountLabel).toBe("new@example.com");
+      },
+    );
+
+    it.each([
+      ['"false"', "false"],
+      ["false", false],
+      ["absent", undefined],
+    ])(
+      "refuses a new account whose email is not verified (%s)",
+      async (_, verified) => {
+        googleClient.getTokenInfo.mockResolvedValue({
+          sub: "google-sub-new",
+          email: "new@example.com",
+          email_verified: verified,
+        });
+
+        await expect(
+          google().completeWebSignIn(callback(`code=the-code&state=${STATE}`)),
+        ).rejects.toThrow("Google did not return a verified email address");
+        expect(googleStore.save).not.toHaveBeenCalled();
+      },
+    );
 
     it("redeems a new account's redirect and keeps it as the web client's", async () => {
       const result = await google().completeWebSignIn(
