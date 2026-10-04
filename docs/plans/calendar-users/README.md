@@ -139,7 +139,9 @@ migration test checks that an update moves `updated_at` and leaves
    API's build, lint, typecheck, tests (2,095) and convention checks
    pass, and the site's tests pass.
 
-**Sign-off:** C1 on DEV, then PROD after Neil applies the migration.
+**Sign-off:** C1 on DEV: clean (Neil, 2026-10-03; the migration and
+metadata applied to `hasura-dev`, 159 note associations kept). PROD
+after Neil applies the migration.
 
 ## Phase 2 — The agent knows accounts by subject — built 2026-10-03, not signed off
 
