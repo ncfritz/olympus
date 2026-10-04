@@ -94,7 +94,9 @@ this lands (Neil, 2026-10-04). The console stays as an operator's view
   `AUTH_ALLOWED_EMAILS` are retired.
 - The console's availability views call the Olympus API with the same
   token, so it shows and sets the signed-in user's availability: one set,
-  seen the same from the site and the console. Its pages look as they do
+  seen the same from the site and the console. The token is an httpOnly
+  cookie on the console's origin, so the console calls through its agent,
+  which presents it and forwards the availability operations alone. Its pages look as they do
   now; only their source changes. What else it shows (every
   account's events, sync runs, the outbox) stays the agent's.
 

@@ -549,9 +549,42 @@ console signs in through Olympus and sees the same availability.
    console signs in through Olympus and its availability views call the
    API, looking as they do now; the agent's override and availability
    operations, tables and rows go, with its OIDC sign-in and allow-list.
+   **Done** —
+   - **API**: `minerva-calendar-console` is a body client whose redirect
+     URI is `<base>/auth/callback` under each of `AUTH_CONSOLE_BASE_URLS`,
+     where the agent is published. `ListMeetingAvailabilities`
+     (`/meeting-availabilities?meetingIds=`, at most 500) gives the
+     console's list view the level of each of a page of meetings; one
+     that is not the caller's is left out. nginx publishes the signing
+     keys at `/api/.well-known/jwks.json`.
+   - **Agent**: the console's sign-in goes to the API's
+     `/v1/auth/authorize` (PKCE, the provider the console names) and comes
+     back to `/auth/callback`, where the agent exchanges the code. Both
+     tokens live in httpOnly cookies on the console's path; an expired
+     access token is refreshed by the guard, once for requests that arrive
+     together, since presenting a rotated refresh token twice ends the
+     session (ADR 0018). Every route needs an Olympus token with `admin`,
+     checked against the published keys (`OLYMPUS_API_URL`); a Bearer
+     caller refreshes with the API itself. Signing out ends the Olympus
+     session too. `AUTH_JWT_SECRET`, `AUTH_OIDC_PROVIDERS`,
+     `AUTH_ALLOWED_EMAILS`, `RefreshAccessToken`, the overrides,
+     `GetFreeBusy` and `GetStatusTimeline` are gone, and a migration drops
+     `EventOverride` and `OverrideBlock`.
+   - **Console**: its availability goes to the API through the agent at
+     `/olympus/v1/minerva/...`, which forwards the availability operations
+     and nothing else, as the signed-in user: the console cannot present
+     its own token, an httpOnly cookie, to another origin. It uses the
+     SDK's Minerva client, so the shapes are the API's; ranges past 92 days
+     and long lists of meetings are asked for in pieces. Its pages are
+     unchanged.
 5. **Tests**: the rules (precedence, blocks over meetings, working day,
    time zones, excluded calendars, cancelled and deleted); every operation
    scoped to its caller; the site's adapter (levels both ways, signals,
-   overrides); the agent's token check.
+   overrides); the agent's token check. **Done** — with, for the agent, a
+   fake of the API (`test/e2e/olympus-fake.ts`) that publishes a key set
+   and signs tokens with it: the role, expiry and a foreign key; the
+   sign-in's redirect, exchange and state; one refresh for concurrent
+   requests; cookies cleared when the session has ended; sign-out; and
+   what is forwarded and what is not.
 
 **Sign-off:** C10 on DEV, then PROD.

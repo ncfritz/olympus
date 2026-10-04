@@ -127,6 +127,21 @@ recorded exception.
 
 ## C10 — Availability
 
+Before the run, on the environment under test:
+
+- The API knows where the console's agent is published:
+  `AUTH_CONSOLE_BASE_URLS` (`http://localhost:4432` for the agent run from
+  the workspace on DEV; set in `env/prod/olympus-api.env` on PROD).
+- The agent knows where the API is: `OLYMPUS_API_URL` (DEV:
+  `https://olympus.dev.ncfritz.net/api`; PROD: compose sets it), and its
+  `AUTH_JWT_SECRET`, `AUTH_OIDC_PROVIDERS` and `AUTH_ALLOWED_EMAILS` are
+  gone from its env file. On PROD the `minerva_auth_jwt_secret` and
+  `minerva_oidc_providers` secret files can go once C10 passes.
+- nginx reloaded, so the API's keys are at `/api/.well-known/jwks.json`.
+- `neil` has the `admin` role in Olympus. The agent requires it itself,
+  whatever `AUTH_MODE_USERS` says.
+- The agent started once on this build: it drops its override tables.
+
 1. The OnAir drawer looks and works as before, on Minerva: setting a
    meeting's status changes the shading for its time; choosing Clear puts
    the meeting's own back.
@@ -136,6 +151,11 @@ recorded exception.
    Disturb or Interruptable.
 4. `user-b` sees none of `neil`'s availability, blocks or meeting
    statuses.
-5. The console signs in through Olympus (refused without `admin`) and
-   shows the same availability as the drawer.
+5. The console signs in through Olympus, with an Olympus session already
+   open in one redirect, and is refused to `user-b`, who has no `admin`.
+   It shows the same availability as the drawer, and a block or a
+   meeting's status set in one shows in the other. An event of an account
+   that is not `neil`'s has no status to set. Ten minutes on, the console
+   still works (its token refreshed), and signing out of it ends its
+   session in the site's session list.
 6. The agent has no override tables or availability operations left.
