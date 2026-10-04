@@ -55,6 +55,10 @@ Microsoft Graph ─┴─────────────────▶ │
   (ADR 0029): the console calls the API's availability operations through
   the agent at `/olympus/v1/minerva/...`, which forwards exactly those, as
   the user, and nothing else.
+- **The API's dead letters** (ADR 0028, amended): the Publish page shows
+  the calendar events the API could not write, and why, and redrives them,
+  through the same forwarding (`DescribeCalendarEventDeadLetters`,
+  `RedriveCalendarEventDeadLetters`; admin).
 - **Metrics** at `/metrics` (Prometheus, ADR 0017): Node's defaults,
   `http_server_request_duration_seconds` for the management API (by
   caller, from `X-Olympus-Client`, and operation), and the agent's own

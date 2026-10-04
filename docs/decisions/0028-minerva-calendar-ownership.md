@@ -168,7 +168,24 @@ the only Hasura client (queue `olympus-api.calendar-events`).
 - When an account is linked, the API asks the agent to backfill each of
   its calendars, which publishes their events again. That is how events
   from before the link arrive; the consumer needs no other path.
-- Ordering and version guards stay deferred, as in ADR 0013.
+- ~~Ordering and version guards stay deferred, as in ADR 0013.~~
+  **Amended (Neil, 2026-10-04):** a message carries `snapshotTime`, when
+  the agent took the snapshot, and the meeting keeps it
+  (`snapshot_time`). A write whose snapshot is older than the stored one
+  is skipped and counted (`result="stale"`), so a retried or redriven
+  message cannot undo a newer change. Rows and messages without one are
+  written as before.
+- **Amended (Neil, 2026-10-04): failures retry, then dead-letter with
+  why.** Anything the handler does not catch is dead-lettered rather than
+  requeued, so one bad message cannot spin. A write that fails for a
+  reason other than its data waits in a delay queue (5 s, then 30 s, then
+  5 min; `olympus-api.calendar-events.retry.*`) and comes back, ten times
+  at most, counting attempts in a header. Then, and for what can never be
+  written, it goes to `olympus-api.calendar-events.dead` with the reason
+  and the time in headers. Admins describe the dead letters and redrive
+  them to the queue (`DescribeCalendarEventDeadLetters`,
+  `RedriveCalendarEventDeadLetters`); the console's Publish page shows
+  them with a Redrive button.
 
 ### Schema
 

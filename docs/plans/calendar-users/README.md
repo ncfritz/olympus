@@ -339,6 +339,20 @@ after Neil applies the migration.
      (no answer, Postgres down) puts the message back after a wait of 5 s,
      doubling to at most a minute, so an outage holds the queue rather
      than emptying it into the dead letters.
+   - **Changed 2026-10-04** (ADR 0028, amended): the requeue spun when the
+     handler threw before reaching its own handling (the auth guard read
+     HTTP headers off a RabbitMQ message). Now an uncaught error
+     dead-letters; a retryable failure goes to a delay queue (5 s twice,
+     30 s three times, then 5 min) and back, ten attempts at most
+     (`x-olympus-attempts`), then to the dead letters with
+     `x-olympus-dead-reason` and `x-olympus-dead-at`, as does what can
+     never be written. Admin operations `DescribeCalendarEventDeadLetters`
+     (count and the first 20) and `RedriveCalendarEventDeadLetters` (up
+     to 1,000 back to the queue, attempts reset); the console's Publish
+     page has a card for them, forwarded by the agent. Messages carry
+     `snapshotTime` and `minerva.meetings.snapshot_time` keeps it
+     (migration `1791150000000_minerva_meetings_snapshot_time`): an older
+     snapshot than the stored one is skipped (`stale`).
 2. **Backfill on link**: **done** — after a web sign-in links a new
    account, and after `ListCalendarAccounts` links sign-in identities (it
    reads back which ones), the API asks the agent to `BackfillCalendar`
@@ -348,7 +362,9 @@ after Neil applies the migration.
    use the same path.
 3. **Metrics**: **done** — `calendar_events_consumed_total{action, result}`
    with `written`, `unowned`, `invalid` (dead-lettered) and `failed`
-   (requeued). `invalid` is new beside the plan's three.
+   (requeued). `invalid` is new beside the plan's three. Since 2026-10-04: `written`,
+   `unowned`, `stale`, `invalid`, `retried` and `gave_up`, and
+   `calendar_events_redriven_total`.
 4. **Tests**: **done** — the converter, field by field, and the routing
    key; the handler as RabbitMQ calls it, against the API's Hasura
    stand-in: owned, backfill, delete, a repeated message, unowned, no
@@ -572,9 +588,9 @@ console signs in through Olympus and sees the same availability.
      `EventOverride` and `OverrideBlock`.
    - **Console**: its availability goes to the API through the agent at
      `/olympus/v1/minerva/...`, which forwards the availability operations
-     and nothing else, as the signed-in user: the console cannot present
-     its own token, an httpOnly cookie, to another origin. It uses the
-     SDK's Minerva client, so the shapes are the API's; ranges past 92 days
+     and the calendar events' dead letters, and nothing else, as the
+     signed-in user: the console cannot present its own token, an
+     httpOnly cookie, to another origin. It uses the SDK's Minerva client, so the shapes are the API's; ranges past 92 days
      and long lists of meetings are asked for in pieces. Its pages are
      unchanged.
 5. **Tests**: the rules (precedence, blocks over meetings, working day,
