@@ -30,6 +30,22 @@
     ],
     "type": "object"
   },
+  "AddCalendarRequest": {
+    "properties": {
+      "calendar": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseCalendar"
+          }
+        ],
+        "description": "The calendar to start syncing."
+      }
+    },
+    "required": [
+      "calendar"
+    ],
+    "type": "object"
+  },
   "AddContentAssetTagToAssetRequest": {
     "properties": {
       "tag": {
@@ -139,6 +155,28 @@
     ],
     "type": "object"
   },
+  "AvailableCalendar": {
+    "properties": {
+      "calendarId": {
+        "description": "The provider's ID of the calendar",
+        "type": "string"
+      },
+      "name": {
+        "description": "The calendar's name, as the provider shows it",
+        "type": "string"
+      },
+      "synced": {
+        "description": "Whether the calendar is already synced",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "calendarId",
+      "name",
+      "synced"
+    ],
+    "type": "object"
+  },
   "BackfillWeatherStationsRequest": {
     "properties": {
       "backfill": {
@@ -152,6 +190,44 @@
     },
     "required": [
       "backfill"
+    ],
+    "type": "object"
+  },
+  "BaseCalendar": {
+    "properties": {
+      "calendarId": {
+        "description": "The provider's ID of the calendar, from ListAvailableCalendars",
+        "type": "string"
+      },
+      "source": {
+        "description": "The calendar's source label, 1 to 64 characters; another calendar already having it is a conflict",
+        "type": "string"
+      }
+    },
+    "required": [
+      "calendarId",
+      "source"
+    ],
+    "type": "object"
+  },
+  "BaseCalendarAccountConnection": {
+    "properties": {
+      "provider": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarProvider"
+          }
+        ],
+        "description": "The provider to sign in at"
+      },
+      "returnTo": {
+        "description": "The site page to send the browser back to; its origin must be one of the API's client origins",
+        "type": "string"
+      }
+    },
+    "required": [
+      "provider",
+      "returnTo"
     ],
     "type": "object"
   },
@@ -2073,6 +2149,175 @@
     ],
     "type": "object"
   },
+  "Calendar": {
+    "properties": {
+      "accountId": {
+        "description": "The ID of the account the calendar belongs to",
+        "type": "string"
+      },
+      "calendarId": {
+        "description": "The provider's ID of the calendar",
+        "type": "string"
+      },
+      "enabled": {
+        "description": "Whether the calendar syncs",
+        "type": "boolean"
+      },
+      "includedInBusy": {
+        "description": "Whether the calendar's events count toward availability",
+        "type": "boolean"
+      },
+      "lastSyncedTime": {
+        "description": "An ISO-8601 formatted string indicating when a sync of the calendar last completed",
+        "type": "string"
+      },
+      "source": {
+        "description": "The calendar's source label: it names the calendar's events, and is unique across every calendar synced",
+        "type": "string"
+      },
+      "synced": {
+        "description": "Whether at least one full sync has completed",
+        "type": "boolean"
+      },
+      "syncing": {
+        "description": "Whether a sync of the calendar is running",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "accountId",
+      "calendarId",
+      "enabled",
+      "includedInBusy",
+      "source",
+      "synced",
+      "syncing"
+    ],
+    "type": "object"
+  },
+  "CalendarAccount": {
+    "properties": {
+      "email": {
+        "description": "The account's verified email when it signed in",
+        "type": "string"
+      },
+      "error": {
+        "description": "What went wrong, when the status is expired or error",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the account",
+        "type": "string"
+      },
+      "provider": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarProvider"
+          }
+        ],
+        "description": "The provider the account signs in with"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccountStatus"
+          }
+        ],
+        "description": "The state of the account's stored credential"
+      },
+      "verification": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccountVerification"
+          }
+        ],
+        "description": "How the user proved the account is theirs"
+      },
+      "verifiedTime": {
+        "description": "An ISO-8601 formatted string indicating when the account was proven to be the user's",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "id",
+      "provider",
+      "status",
+      "verification",
+      "verifiedTime"
+    ],
+    "type": "object"
+  },
+  "CalendarAccountReauthorization": {
+    "properties": {
+      "returnTo": {
+        "description": "The site page to send the browser back to; its origin must be one of the API's client origins",
+        "type": "string"
+      }
+    },
+    "required": [
+      "returnTo"
+    ],
+    "type": "object"
+  },
+  "CalendarAccountSignIn": {
+    "properties": {
+      "authUrl": {
+        "description": "The provider's sign-in URL; the browser returns to the site page afterwards",
+        "type": "string"
+      }
+    },
+    "required": [
+      "authUrl"
+    ],
+    "type": "object"
+  },
+  "CalendarAccountSignInResponse": {
+    "properties": {
+      "signIn": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccountSignIn"
+          }
+        ],
+        "description": "Where to send the browser."
+      }
+    },
+    "required": [
+      "signIn"
+    ],
+    "type": "object"
+  },
+  "CalendarAccountStatus": {
+    "description": "The state of the account's stored credential",
+    "enum": [
+      "ok",
+      "expired",
+      "reauth_pending",
+      "not_connected",
+      "error",
+      "unknown"
+    ],
+    "type": "string"
+  },
+  "CalendarAccountVerification": {
+    "description": "How the user proved the account is theirs",
+    "enum": [
+      "sign_in",
+      "consent",
+      "claim_email",
+      "claim_consent"
+    ],
+    "type": "string"
+  },
+  "CalendarProvider": {
+    "description": "The provider a calendar account signs in with",
+    "enum": [
+      "google",
+      "microsoft"
+    ],
+    "type": "string"
+  },
   "CarryReviewItemRequest": {
     "properties": {
       "reviewId": {
@@ -2354,6 +2599,22 @@
     },
     "required": [
       "review"
+    ],
+    "type": "object"
+  },
+  "ConnectCalendarAccountRequest": {
+    "properties": {
+      "connection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseCalendarAccountConnection"
+          }
+        ],
+        "description": "The sign-in to start."
+      }
+    },
+    "required": [
+      "connection"
     ],
     "type": "object"
   },
@@ -5077,6 +5338,22 @@
     },
     "required": [
       "job"
+    ],
+    "type": "object"
+  },
+  "DescribeCalendarAccountResponse": {
+    "properties": {
+      "calendarAccount": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccount"
+          }
+        ],
+        "description": "The calendar account."
+      }
+    },
+    "required": [
+      "calendarAccount"
     ],
     "type": "object"
   },
@@ -8403,6 +8680,21 @@
     ],
     "type": "object"
   },
+  "ListAvailableCalendarsResponse": {
+    "properties": {
+      "availableCalendars": {
+        "description": "The account's calendars at its provider.",
+        "items": {
+          "$ref": "#/components/schemas/AvailableCalendar"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "availableCalendars"
+    ],
+    "type": "object"
+  },
   "ListAvailableContentAssetTagsResponse": {
     "properties": {
       "tags": {
@@ -8458,6 +8750,21 @@
     ],
     "type": "object"
   },
+  "ListCalendarAccountsResponse": {
+    "properties": {
+      "calendarAccounts": {
+        "description": "The caller's calendar accounts.",
+        "items": {
+          "$ref": "#/components/schemas/CalendarAccount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "calendarAccounts"
+    ],
+    "type": "object"
+  },
   "ListCalendarItemsResponse": {
     "properties": {
       "items": {
@@ -8470,6 +8777,21 @@
     },
     "required": [
       "items"
+    ],
+    "type": "object"
+  },
+  "ListCalendarsResponse": {
+    "properties": {
+      "calendars": {
+        "description": "The caller's synced calendars.",
+        "items": {
+          "$ref": "#/components/schemas/Calendar"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "calendars"
     ],
     "type": "object"
   },
@@ -12836,6 +13158,19 @@
     ],
     "type": "object"
   },
+  "PartialCalendar": {
+    "properties": {
+      "enabled": {
+        "description": "Whether the calendar syncs",
+        "type": "boolean"
+      },
+      "includedInBusy": {
+        "description": "Whether the calendar's events count toward availability",
+        "type": "boolean"
+      }
+    },
+    "type": "object"
+  },
   "PartialCertification": {
     "properties": {
       "certification": {
@@ -16150,6 +16485,22 @@
     ],
     "type": "object"
   },
+  "ReauthorizeCalendarAccountRequest": {
+    "properties": {
+      "reauthorization": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccountReauthorization"
+          }
+        ],
+        "description": "The sign-in to start."
+      }
+    },
+    "required": [
+      "reauthorization"
+    ],
+    "type": "object"
+  },
   "RefreshContentAssetChannelResponse": {
     "properties": {
       "channel": {
@@ -17601,6 +17952,22 @@
         "description": "The created, updated, or requested meeting"
       }
     },
+    "type": "object"
+  },
+  "SingleCalendarResponse": {
+    "properties": {
+      "calendar": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Calendar"
+          }
+        ],
+        "description": "The calendar."
+      }
+    },
+    "required": [
+      "calendar"
+    ],
     "type": "object"
   },
   "SingleDogResponse": {
@@ -19725,6 +20092,22 @@
     },
     "required": [
       "item"
+    ],
+    "type": "object"
+  },
+  "UpdateCalendarRequest": {
+    "properties": {
+      "calendar": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialCalendar"
+          }
+        ],
+        "description": "The changes to the calendar."
+      }
+    },
+    "required": [
+      "calendar"
     ],
     "type": "object"
   },

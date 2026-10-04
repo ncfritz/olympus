@@ -5815,6 +5815,606 @@
           "Review Items"
         ]
       }
+    },
+    "/minerva/calendar-accounts": {
+      "get": {
+        "description": "Returns the caller's calendar accounts with the state of each one's credential at the sync agent. An account the agent holds that is the caller's sign-in identity is linked to them first (ADR 0028). Without the agent, the state is unknown.",
+        "operationId": "ListCalendarAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCalendarAccountsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's calendar accounts",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-accounts/connect": {
+      "post": {
+        "description": "Starts a sign-in at the provider that connects a new calendar account to the caller, and returns the provider's page to send the browser to. Signing in proves the account is the caller's (ADR 0028); the provider sends the browser to CompleteCalendarAccountConnect, and from there back to returnTo with the outcome.",
+        "operationId": "ConnectCalendarAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ConnectCalendarAccount operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectCalendarAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The sign-in was started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarAccountSignInResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The calendar sync agent, or the API's public callback URL, is not configured."
+          }
+        },
+        "summary": "Starts connecting a calendar account",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-accounts/callback/{provider}": {
+      "get": {
+        "description": "The provider's redirect. Redeems the sign-in through the sync agent, links the account to the user who started it unless it is another user's, and sends the browser back to the site page with the outcome: calendarAccount=connected (with accountId), cancelled, expired, refused (with reason) or failed.",
+        "operationId": "CompleteCalendarAccountConnect",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Back to the site page."
+          },
+          "400": {
+            "description": "No sign-in is waiting for this state, so there is nowhere safe to send the browser."
+          }
+        },
+        "summary": "Completes a calendar account sign-in",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-account/{accountId}": {
+      "get": {
+        "description": "Returns a calendar account of the caller's with its credential's state. Another user's account is not found.",
+        "operationId": "DescribeCalendarAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCalendarAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's calendar accounts",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      },
+      "delete": {
+        "description": "Stops syncing the account's calendars, deletes its credential at the sync agent and its meetings in Minerva. The caller's notes, their meeting links and their associations stay.",
+        "operationId": "RemoveCalendarAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The account was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes one of the signed-in user's calendar accounts",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-account/{accountId}/reauthorize": {
+      "post": {
+        "description": "Starts a sign-in at the provider for one of the caller's calendar accounts, whose credential expired, and returns the provider's page to send the browser to. Signing in as any other account is refused and changes nothing.",
+        "operationId": "ReauthorizeCalendarAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReauthorizeCalendarAccount operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReauthorizeCalendarAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The sign-in was started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarAccountSignInResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Starts signing one of the user's calendar accounts in again",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-account/{accountId}/available": {
+      "get": {
+        "description": "Returns every calendar the account's provider reports, synced or not, to choose one to add.",
+        "operationId": "ListAvailableCalendars",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account's calendars.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAvailableCalendarsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the calendars of one of the user's calendar accounts",
+        "tags": [
+          "Calendars"
+        ]
+      }
+    },
+    "/minerva/calendars": {
+      "get": {
+        "description": "Returns every calendar of the caller's accounts that the sync agent keeps in Minerva, with its settings and sync state.",
+        "operationId": "ListCalendars",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's calendars.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCalendarsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's synced calendars",
+        "tags": [
+          "Calendars"
+        ]
+      }
+    },
+    "/minerva/calendar-account/{accountId}/calendars": {
+      "post": {
+        "description": "Adds a calendar of the account, from ListAvailableCalendars, to the ones the sync agent keeps in Minerva; its first sync runs in the background.",
+        "operationId": "AddCalendar",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the AddCalendar operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCalendarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The calendar is synced.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleCalendarResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The calendar is already synced, or another calendar has the source."
+          }
+        },
+        "summary": "Starts syncing a calendar of one of the user's accounts",
+        "tags": [
+          "Calendars"
+        ]
+      }
+    },
+    "/minerva/calendar/{calendarId}": {
+      "put": {
+        "description": "Pauses or resumes a calendar's sync, or counts its events toward availability or not. Another user's calendar is not found.",
+        "operationId": "UpdateCalendar",
+        "parameters": [
+          {
+            "name": "calendarId",
+            "required": true,
+            "in": "path",
+            "description": "The provider's ID of the calendar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateCalendar operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCalendarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The calendar with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleCalendarResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Changes one of the signed-in user's synced calendars",
+        "tags": [
+          "Calendars"
+        ]
+      },
+      "delete": {
+        "description": "Removes a calendar from the ones the sync agent keeps in Minerva; its meetings stay. Another user's calendar is not found.",
+        "operationId": "RemoveCalendar",
+        "parameters": [
+          {
+            "name": "calendarId",
+            "required": true,
+            "in": "path",
+            "description": "The provider's ID of the calendar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The calendar is no longer synced."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stops syncing one of the signed-in user's calendars",
+        "tags": [
+          "Calendars"
+        ]
+      }
     }
   },
   "info": {
@@ -5831,6 +6431,12 @@
     {
       "name": "Minerva",
       "description": ""
+    },
+    {
+      "name": "Calendar Accounts"
+    },
+    {
+      "name": "Calendars"
     },
     {
       "name": "Goal Categories"
@@ -10742,6 +11348,389 @@
         },
         "required": [
           "reviewItem"
+        ]
+      },
+      "CalendarProvider": {
+        "type": "string",
+        "description": "The provider a calendar account signs in with",
+        "enum": [
+          "google",
+          "microsoft"
+        ]
+      },
+      "CalendarAccountStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "expired",
+          "reauth_pending",
+          "not_connected",
+          "error",
+          "unknown"
+        ],
+        "description": "The state of the account's stored credential"
+      },
+      "CalendarAccountVerification": {
+        "type": "string",
+        "enum": [
+          "sign_in",
+          "consent",
+          "claim_email",
+          "claim_consent"
+        ],
+        "description": "How the user proved the account is theirs"
+      },
+      "CalendarAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the account"
+          },
+          "provider": {
+            "description": "The provider the account signs in with",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProvider"
+              }
+            ]
+          },
+          "email": {
+            "type": "string",
+            "description": "The account's verified email when it signed in"
+          },
+          "status": {
+            "description": "The state of the account's stored credential",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountStatus"
+              }
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "What went wrong, when the status is expired or error"
+          },
+          "verification": {
+            "description": "How the user proved the account is theirs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountVerification"
+              }
+            ]
+          },
+          "verifiedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the account was proven to be the user's"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "email",
+          "status",
+          "verification",
+          "verifiedTime"
+        ]
+      },
+      "ListCalendarAccountsResponse": {
+        "type": "object",
+        "properties": {
+          "calendarAccounts": {
+            "description": "The caller's calendar accounts.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarAccount"
+            }
+          }
+        },
+        "required": [
+          "calendarAccounts"
+        ]
+      },
+      "BaseCalendarAccountConnection": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "description": "The provider to sign in at",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProvider"
+              }
+            ]
+          },
+          "returnTo": {
+            "type": "string",
+            "description": "The site page to send the browser back to; its origin must be one of the API's client origins"
+          }
+        },
+        "required": [
+          "provider",
+          "returnTo"
+        ]
+      },
+      "ConnectCalendarAccountRequest": {
+        "type": "object",
+        "properties": {
+          "connection": {
+            "description": "The sign-in to start.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseCalendarAccountConnection"
+              }
+            ]
+          }
+        },
+        "required": [
+          "connection"
+        ]
+      },
+      "CalendarAccountSignIn": {
+        "type": "object",
+        "properties": {
+          "authUrl": {
+            "type": "string",
+            "description": "The provider's sign-in URL; the browser returns to the site page afterwards"
+          }
+        },
+        "required": [
+          "authUrl"
+        ]
+      },
+      "CalendarAccountSignInResponse": {
+        "type": "object",
+        "properties": {
+          "signIn": {
+            "description": "Where to send the browser.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountSignIn"
+              }
+            ]
+          }
+        },
+        "required": [
+          "signIn"
+        ]
+      },
+      "DescribeCalendarAccountResponse": {
+        "type": "object",
+        "properties": {
+          "calendarAccount": {
+            "description": "The calendar account.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccount"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendarAccount"
+        ]
+      },
+      "CalendarAccountReauthorization": {
+        "type": "object",
+        "properties": {
+          "returnTo": {
+            "type": "string",
+            "description": "The site page to send the browser back to; its origin must be one of the API's client origins"
+          }
+        },
+        "required": [
+          "returnTo"
+        ]
+      },
+      "ReauthorizeCalendarAccountRequest": {
+        "type": "object",
+        "properties": {
+          "reauthorization": {
+            "description": "The sign-in to start.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountReauthorization"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reauthorization"
+        ]
+      },
+      "AvailableCalendar": {
+        "type": "object",
+        "properties": {
+          "calendarId": {
+            "type": "string",
+            "description": "The provider's ID of the calendar"
+          },
+          "name": {
+            "type": "string",
+            "description": "The calendar's name, as the provider shows it"
+          },
+          "synced": {
+            "type": "boolean",
+            "description": "Whether the calendar is already synced"
+          }
+        },
+        "required": [
+          "calendarId",
+          "name",
+          "synced"
+        ]
+      },
+      "ListAvailableCalendarsResponse": {
+        "type": "object",
+        "properties": {
+          "availableCalendars": {
+            "description": "The account's calendars at its provider.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailableCalendar"
+            }
+          }
+        },
+        "required": [
+          "availableCalendars"
+        ]
+      },
+      "Calendar": {
+        "type": "object",
+        "properties": {
+          "calendarId": {
+            "type": "string",
+            "description": "The provider's ID of the calendar"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The ID of the account the calendar belongs to"
+          },
+          "source": {
+            "type": "string",
+            "description": "The calendar's source label: it names the calendar's events, and is unique across every calendar synced"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the calendar syncs"
+          },
+          "includedInBusy": {
+            "type": "boolean",
+            "description": "Whether the calendar's events count toward availability"
+          },
+          "synced": {
+            "type": "boolean",
+            "description": "Whether at least one full sync has completed"
+          },
+          "syncing": {
+            "type": "boolean",
+            "description": "Whether a sync of the calendar is running"
+          },
+          "lastSyncedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when a sync of the calendar last completed"
+          }
+        },
+        "required": [
+          "calendarId",
+          "accountId",
+          "source",
+          "enabled",
+          "includedInBusy",
+          "synced",
+          "syncing"
+        ]
+      },
+      "ListCalendarsResponse": {
+        "type": "object",
+        "properties": {
+          "calendars": {
+            "description": "The caller's synced calendars.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Calendar"
+            }
+          }
+        },
+        "required": [
+          "calendars"
+        ]
+      },
+      "BaseCalendar": {
+        "type": "object",
+        "properties": {
+          "calendarId": {
+            "type": "string",
+            "description": "The provider's ID of the calendar, from ListAvailableCalendars"
+          },
+          "source": {
+            "type": "string",
+            "description": "The calendar's source label, 1 to 64 characters; another calendar already having it is a conflict"
+          }
+        },
+        "required": [
+          "calendarId",
+          "source"
+        ]
+      },
+      "AddCalendarRequest": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The calendar to start syncing.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseCalendar"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendar"
+        ]
+      },
+      "SingleCalendarResponse": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The calendar.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Calendar"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendar"
+        ]
+      },
+      "PartialCalendar": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the calendar syncs"
+          },
+          "includedInBusy": {
+            "type": "boolean",
+            "description": "Whether the calendar's events count toward availability"
+          }
+        }
+      },
+      "UpdateCalendarRequest": {
+        "type": "object",
+        "properties": {
+          "calendar": {
+            "description": "The changes to the calendar.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialCalendar"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendar"
         ]
       }
     }

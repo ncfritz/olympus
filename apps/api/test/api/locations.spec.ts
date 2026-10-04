@@ -615,7 +615,8 @@ describe("Location headers of created resources", () => {
     // reviewPrompts, reviewItems and reviewAnswers) assert their Location
     // headers.
     // CreateGoalMilestone, CreateGoalCheckin, CreateReviewPin and
-    // CreateReviewAnswerItem have no GET route, so they set none.
+    // CreateReviewAnswerItem have no GET route, so they set none; nor has
+    // AddCalendar, whose calendar is listed but not described alone.
     const exempt = [
       "CreateNotification",
       "UploadAssets",
@@ -637,6 +638,7 @@ describe("Location headers of created resources", () => {
       "CreateReviewPin",
       "CreateReviewAnswerItem",
       "CreateReviewAnswerTodo",
+      "AddCalendar",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

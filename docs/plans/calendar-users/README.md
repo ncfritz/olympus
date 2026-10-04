@@ -228,21 +228,27 @@ after Neil applies the migration.
 
 **Sign-off:** C3 on DEV, then PROD after Neil issues the certificate.
 
-## Phase 4 — Calendar accounts in Olympus
+## Phase 4 — Calendar accounts in Olympus — built 2026-10-03, not signed off
 
-1. **Migration** `<ts>_minerva_calendar_accounts`: `calendar_accounts`
-   and `calendar_account_claims` as ADR 0028 has them (claims' table
-   used in phase 6), and `meetings.account_id` (nullable, set null).
-2. **Linking by sign-in**: after every sign-in, and when an account is
-   first seen, the API links unowned accounts whose `(provider, subject)`
-   is one of the user's identities (`verification_method = sign_in`).
-   Accounts the agent has are mirrored into `calendar_accounts` (no
-   owner) when the API first lists them, so a claim can find them.
-3. **Connecting by web redirect**: the agent gains
-   `StartCalendarAccountAuthorization` (returns the provider's URL for a
-   given redirect URI, `state` and PKCE challenge) and
-   `CompleteCalendarAccountAuthorization` (code, verifier, redirect URI →
-   provider, subject, email), service-only. The API's operations:
+1. **Migration**: **done** — `1791110000000_minerva_calendar_accounts`:
+   `calendar_accounts` (an owner, its proof and the time of it are set
+   together or not at all), `calendar_account_connections` (the sign-ins
+   in flight, see 3) and `calendar_account_claims` (used in phase 6), and
+   `meetings.account_id` (nullable, set null).
+2. **Linking by sign-in**: **done**, with one change — `ListCalendarAccounts`
+   records the accounts the agent holds (no owner) and then links the
+   unowned ones whose `(provider, subject)` is one of the caller's
+   identities (`verification_method = sign_in`). It is done there rather
+   than after every sign-in, so signing in to Olympus does not depend on
+   the agent being up; the site lists accounts before showing any.
+3. **Connecting by web redirect**: **done**.
+   - The agent's side shipped in `ee6b8247`, named
+     `StartCalendarAccountWebSignIn`, `CompleteCalendarAccountWebSignIn`
+     and `DeleteCalendarAccount`, `@ServicesOnly()`. Its web sign-ins use
+     separate web clients (Google `GOOGLE_WEB_OAUTH_CLIENT_ID/SECRET`,
+     Microsoft `MICROSOFT_OAUTH_CLIENT_SECRET` on the same registration);
+     each credential records the client that issued it.
+   - The API's operations, all in `minerva/calendars`:
 
    | Operation                        | Route                                                   |
    | -------------------------------- | ------------------------------------------------------- |
@@ -257,26 +263,48 @@ after Neil applies the migration.
    | `AddCalendar`                    | `POST /minerva/calendar-account/:accountId/calendars`   |
    | `UpdateCalendar`                 | `PUT /minerva/calendar/:calendarId`                     |
    | `RemoveCalendar`                 | `DELETE /minerva/calendar/:calendarId`                  |
-   - The callback is the only route that is not `@RequiresIdentity()` by
-     token: it finds the pending connection by `state`, which is bound to
-     the user's session and single use, expires after ten minutes, and
-     redirects back to the site with the result.
-   - Connecting an account that is another user's sign-in identity, or
-     already has another owner, is refused; the agent then drops the
-     credential it just stored, unless the account was already there.
-   - `UpdateCalendar` carries enabled, busy inclusion and color, each
-     passed to the agent's existing operation.
-   - `RemoveCalendarAccount` removes its calendars and credential at the
-     agent and its meetings in Olympus, keeping notes.
+   - A started sign-in is a row in `calendar_account_connections`: the
+     user, the state's SHA-256 (the state itself goes only to the
+     provider), the PKCE verifier, the page to return to (an origin in
+     `AUTH_CLIENT_ORIGINS`) and a ten-minute expiry. The callback takes the
+     row by marking it completed, so a replay finds nothing and is a 400.
+     The state is bound to the user, not to the browser session.
+   - The callback is the only route without `@RequiresIdentity()`; it
+     always redirects to the stored page with `calendarAccount=connected`
+     (and `accountId`), `cancelled`, `expired`, `refused` (`reason=owned`
+     or `another-account`) or `failed`. It is allow-listed for the
+     standard-errors and success-response conventions, as the API's own
+     sign-in callback is.
+   - Connecting an account that is another user's, or another user's
+     sign-in identity, is refused; the agent's new credential is deleted,
+     unless the agent already held it.
+   - `UpdateCalendar` carries `enabled` and `includedInBusy`. Colors are
+     the console's per-viewer setting, not the agent's; they come with
+     the site in phase 7.
+   - `RemoveCalendarAccount` deletes the account at the agent (its
+     calendars and credential), then its meetings and the account in
+     Minerva. Notes, their meeting links and associations stay. An
+     account the agent no longer holds is removed all the same; an agent
+     failure keeps it.
    - Every operation is scoped to the caller's accounts; another user's
-     account or calendar is a 404.
+     account or calendar is a 404. The agent's 400, 404 and 409 pass
+     through; it being down is a 502 (`ListCalendarAccounts` still
+     answers, each account's status `unknown`).
+   - `AUTH_PUBLIC_BASE_URL` must be set: the callback is
+     `<it>/v1/minerva/calendar-accounts/callback/<provider>`, and without
+     it a sign-in is a 503.
 
-4. **Provider registration** (Neil): the redirect URI added to the
-   Google OAuth client (as a web client) and the Microsoft app
-   registration, for each environment's public host.
-5. **Tests**: the API's operations against a stubbed agent (ownership,
-   the refusals, `state` reuse and expiry); the linking rules as pure
-   functions; the agent's two new operations.
+4. **Provider registration** (Neil): a Google OAuth **web** client and a
+   client secret on the Microsoft app registration, each with the redirect
+   URI above for each environment's public host.
+5. **Tests**: **done** — the sign-in helpers and linking rules as pure
+   functions; every operation over HTTP against a stubbed agent: no
+   identity, ownership, the refusals, cancel, expiry, replay, another
+   provider's callback, a missing subject, removal with and without the
+   agent. The tests found the new module had not imported the GraphQL
+   client, which typecheck could not. Verified 2026-10-03: the API's
+   tests (2,171) and the model's pass, with typecheck, lint and the
+   convention checks.
 
 **Sign-off:** C4, C5 on DEV.
 

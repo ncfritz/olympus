@@ -7,7 +7,7 @@ import type { Test } from "supertest";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { issueAccessToken } from "../../src/auth/tokens/accessTokens";
 import { SigningKeyService } from "../../src/auth/tokens/SigningKeyService";
-import { createTestApp, type TestApp } from "./testApp";
+import { createTestApp, type TestApp, type TestAppOptions } from "./testApp";
 
 export const USER = "5f1a0c6e-0000-4000-8000-000000000001";
 export const OTHER_USER = "5f1a0c6e-0000-4000-8000-0000000000ff";
@@ -32,7 +32,7 @@ export const uniqueViolation = (): never => {
  * A test app with signing keys, and requests signed as a user: `as(...)`
  * signs as USER unless `signInAs` named another user for this test.
  */
-export const signedInApp = () => {
+export const signedInApp = (options: TestAppOptions = {}) => {
   const ctx = {} as {
     t: TestApp;
     as: (request: Test) => Test;
@@ -61,7 +61,10 @@ export const signedInApp = () => {
       join(keys, "2026-01-01.pem"),
       await jose.exportPKCS8(privateKey),
     );
-    ctx.t = await createTestApp({ env: { AUTH_SIGNING_KEYS: keys } });
+    ctx.t = await createTestApp({
+      ...options,
+      env: { ...options.env, AUTH_SIGNING_KEYS: keys },
+    });
   });
 
   afterAll(async () => {

@@ -1,4 +1,22 @@
 {
+  "CalendarAccountStatus": {
+    "Error": "error",
+    "Expired": "expired",
+    "NotConnected": "not_connected",
+    "Ok": "ok",
+    "ReauthPending": "reauth_pending",
+    "Unknown": "unknown"
+  },
+  "CalendarAccountVerification": {
+    "ClaimConsent": "claim_consent",
+    "ClaimEmail": "claim_email",
+    "Consent": "consent",
+    "SignIn": "sign_in"
+  },
+  "CalendarProvider": {
+    "Google": "google",
+    "Microsoft": "microsoft"
+  },
   "CertificationType": {
     "MOVIE": "Movie",
     "TV": "TV"

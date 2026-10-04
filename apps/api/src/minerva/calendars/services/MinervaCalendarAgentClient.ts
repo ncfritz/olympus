@@ -1,9 +1,12 @@
 import { CLIENT_HEADER } from "@ncfritz/olympus-metrics";
 import {
   BadGatewayException,
+  BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import axios, { type AxiosInstance, isAxiosError } from "axios";
@@ -28,6 +31,37 @@ export type AgentCalendarAccount = {
   obtainedAt?: string;
   accessTokenExpiresAt?: string;
   error?: string;
+};
+
+export type AgentProvider = "google" | "microsoft";
+
+/** A synced calendar as the agent's ListCalendars reports it. */
+export type AgentCalendar = {
+  provider: AgentProvider;
+  accountLabel: string;
+  calendarId: string;
+  source: string;
+  synced: boolean;
+  enablePush: boolean;
+  enabled: boolean;
+  lastSyncedAt?: string;
+  syncing: boolean;
+  includedInBusy: boolean;
+};
+
+/** A calendar an account's provider reports. */
+export type AgentAvailableCalendar = {
+  id: string;
+  summary: string;
+  alreadySynced: boolean;
+};
+
+/** Who signed in at the end of a web sign-in. */
+export type AgentWebSignInResult = {
+  provider: AgentProvider;
+  accountLabel: string;
+  subject?: string;
+  created: boolean;
 };
 
 /**
@@ -72,6 +106,115 @@ export class MinervaCalendarAgentClient {
     return body.calendarAccounts;
   }
 
+  /** The provider's sign-in URL for a sign-in the API started (ADR 0028). */
+  async startWebSignIn(webSignIn: {
+    provider: AgentProvider;
+    redirectUri: string;
+    state: string;
+    codeChallenge: string;
+    accountLabel?: string;
+  }): Promise<string> {
+    const body = await this.call<{ authUrl: string }>(
+      "StartCalendarAccountWebSignIn",
+      (http) => http.post("/calendar-account-web-sign-ins", { webSignIn }),
+    );
+    return body.authUrl;
+  }
+
+  /**
+   * Redeems the provider's redirect. Another account signing in again is a
+   * 409 from the agent, passed on as one.
+   */
+  async completeWebSignIn(callback: {
+    provider: AgentProvider;
+    callbackUrl: string;
+    redirectUri: string;
+    state: string;
+    codeVerifier: string;
+    accountLabel?: string;
+  }): Promise<AgentWebSignInResult> {
+    const body = await this.call<{ calendarAccount: AgentWebSignInResult }>(
+      "CompleteCalendarAccountWebSignIn",
+      (http) =>
+        http.post("/calendar-account-web-sign-ins/complete", { callback }),
+    );
+    return body.calendarAccount;
+  }
+
+  /** Stops the account's calendars and deletes its credential. */
+  async deleteCalendarAccount(
+    provider: AgentProvider,
+    accountLabel: string,
+  ): Promise<void> {
+    await this.call("DeleteCalendarAccount", (http) =>
+      http.delete(`/calendar-account/${encodeURIComponent(accountLabel)}`, {
+        params: { provider },
+      }),
+    );
+  }
+
+  async listAvailableCalendars(
+    provider: AgentProvider,
+    accountLabel: string,
+  ): Promise<AgentAvailableCalendar[]> {
+    const body = await this.call<{
+      availableCalendars: AgentAvailableCalendar[];
+    }>("ListAvailableCalendars", (http) =>
+      http.get(
+        `/calendar-account/${encodeURIComponent(accountLabel)}/calendars`,
+        { params: { provider } },
+      ),
+    );
+    return body.availableCalendars;
+  }
+
+  async listCalendars(): Promise<AgentCalendar[]> {
+    const body = await this.call<{ calendars: AgentCalendar[] }>(
+      "ListCalendars",
+      (http) => http.get("/calendars"),
+    );
+    return body.calendars;
+  }
+
+  /** A source another calendar has is a 409 from the agent, passed on. */
+  async createCalendar(calendar: {
+    provider: AgentProvider;
+    accountLabel: string;
+    calendarId: string;
+    source: string;
+  }): Promise<AgentCalendar> {
+    const body = await this.call<{ calendar: AgentCalendar }>(
+      "CreateCalendar",
+      (http) => http.post("/calendars", { calendar }),
+    );
+    return body.calendar;
+  }
+
+  async updateCalendar(
+    calendarId: string,
+    calendar: { enabled?: boolean; includedInBusy?: boolean },
+  ): Promise<AgentCalendar> {
+    const body = await this.call<{ calendar: AgentCalendar }>(
+      "UpdateCalendar",
+      (http) =>
+        http.put(`/calendar/${encodeURIComponent(calendarId)}`, { calendar }),
+    );
+    return body.calendar;
+  }
+
+  async deleteCalendar(calendarId: string): Promise<void> {
+    await this.call("DeleteCalendar", (http) =>
+      http.delete(`/calendar/${encodeURIComponent(calendarId)}`),
+    );
+  }
+
+  /** Publishes every event of the calendar again (phase 5's backfill on link). */
+  async backfillCalendar(calendarId: string): Promise<void> {
+    await this.call("BackfillCalendar", (http) =>
+      http.post(`/calendar/${encodeURIComponent(calendarId)}/backfill`),
+    );
+  }
+
   private async call<T>(
     operation: string,
     send: (http: AxiosInstance) => Promise<{ data: T }>,
@@ -84,6 +227,13 @@ export class MinervaCalendarAgentClient {
     try {
       return (await send(this.http)).data;
     } catch (error) {
+      // What the agent refused on its merits is passed on as itself; what
+      // it failed to do is the agent's failure, a 502.
+      const status = isAxiosError(error) ? error.response?.status : undefined;
+      const message = agentMessage(error);
+      if (status === 400) throw new BadRequestException(message);
+      if (status === 404) throw new NotFoundException(message);
+      if (status === 409) throw new ConflictException(message);
       const detail = isAxiosError(error)
         ? error.response
           ? `${error.response.status}`
@@ -98,3 +248,10 @@ export class MinervaCalendarAgentClient {
     }
   }
 }
+
+/** The message of the agent's error body, when it has one. */
+const agentMessage = (error: unknown): string | undefined => {
+  if (!isAxiosError(error)) return undefined;
+  const data = error.response?.data as { message?: unknown } | undefined;
+  return typeof data?.message === "string" ? data.message : undefined;
+};
