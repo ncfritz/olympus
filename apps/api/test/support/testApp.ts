@@ -16,9 +16,13 @@ import { configureApp } from "../../src/configureApp";
 import { AppModule } from "../../src/AppModule";
 import { GraphQLMock } from "./graphqlMock";
 
-// Never connect to a broker.
+// Never connect to a broker, nor consume from one: a consumer's handler is
+// called directly by its own spec.
 AmqpConnection.prototype.init = async () => {};
 AmqpConnection.prototype.close = async () => {};
+AmqpConnection.prototype.createSubscriber = async () => ({
+  consumerTag: "test",
+});
 
 export type AmqpMock = { publish: ReturnType<typeof vi.fn> };
 

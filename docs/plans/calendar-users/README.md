@@ -308,21 +308,55 @@ after Neil applies the migration.
 
 **Sign-off:** C4, C5 on DEV.
 
-## Phase 5 — The API consumes `calendar.events`
+## Phase 5 — The API consumes `calendar.events` — built 2026-10-03, not signed off
 
-1. **Consumer**: an `@RabbitSubscribe` handler on queue
-   `olympus-api.calendar-events`, bound to `event.*`, prefetch 20, with a
-   dead-letter queue. It resolves the owner from `account`; unowned is
-   acknowledged, not written, counted. `upsert` and `backfill` upsert the
-   meeting by `id` with `user_id` and `account_id`; `delete` sets
-   `deleted`. The message's fields map onto the existing columns through
-   a pure converter.
-2. **Backfill on link**: linking an account (any way) calls the agent's
-   `BackfillCalendar` for each of its calendars.
-3. **Metrics**: `calendar_events_consumed_total{action, result}`
-   (`written`, `unowned`, `failed`).
-4. **Tests**: the converter; the handler against Hasura in the API tests
-   (owned, unowned, delete, a repeated message changes nothing).
+1. **Consumer**: **done** — `CalendarEventHandler` in `minerva/calendars`,
+   the API's first RabbitMQ consumer.
+   - Queue `olympus-api.calendar-events` (durable), bound to `event.*` on
+     `calendar.events`, on its own channel with prefetch 20. Rejected
+     messages go through the default exchange to
+     `olympus-api.calendar-events.dead`, which the API declares. The API
+     also declares the exchange, so the queue binds before the agent has
+     started.
+   - The owner comes from `account`: the `calendar_accounts` row with that
+     `(provider, subject)` and a user. No account, or no owner: acknowledged
+     and not written.
+   - `upsert`, `backfill` and `delete` all upsert the event's snapshot by
+     `id` (`meetings_pkey`), rewriting every column it sets, `user_id` and
+     `account_id` included. A delete's snapshot has `deleted: true`, so a
+     delete is the same write. A repeated message writes the same values.
+   - The converter (`CalendarEventConverter`) maps the message onto the
+     table's existing vocabulary, which is Outlook's and what the site
+     shows: `Busy`, `OOF`, `RecurringMaster`, and so on. `response` becomes
+     `Organizer`, `Accepted`, `Declined`, `Tentative` or `NotResponded`, and
+     `type` becomes `Appointment`, `Meeting` or `Other`. **The import
+     script for the archived meetings must use the same values**; check
+     the archive's values against these when writing it.
+   - What can never be written is dead-lettered: an unknown routing key, a
+     malformed event (checked field by field), or a write Hasura refuses
+     for its data (a constraint, a bad value). Anything else Hasura does
+     (no answer, Postgres down) puts the message back after a wait of 5 s,
+     doubling to at most a minute, so an outage holds the queue rather
+     than emptying it into the dead letters.
+2. **Backfill on link**: **done** — after a web sign-in links a new
+   account, and after `ListCalendarAccounts` links sign-in identities (it
+   reads back which ones), the API asks the agent to `BackfillCalendar`
+   each of that account's calendars. A re-authorization of an account
+   already the user's, and a refused link, backfill nothing. It is best
+   effort: an agent failure is logged and the link stands. Phase 6's claims
+   use the same path.
+3. **Metrics**: **done** — `calendar_events_consumed_total{action, result}`
+   with `written`, `unowned`, `invalid` (dead-lettered) and `failed`
+   (requeued). `invalid` is new beside the plan's three.
+4. **Tests**: **done** — the converter, field by field, and the routing
+   key; the handler as RabbitMQ calls it, against the API's Hasura
+   stand-in: owned, backfill, delete, a repeated message, unowned, no
+   account, malformed, unknown key, refused by Hasura, requeued with the
+   growing wait; the binding's options; backfill on both kinds of link and
+   when it fails. The test app and the OpenAPI generator stub
+   `createSubscriber`, as they already stub the connection. Verified
+   2026-10-03: the API's tests (2,221), typecheck, lint and the convention
+   checks.
 
 **Sign-off:** C6 on DEV, then PROD.
 

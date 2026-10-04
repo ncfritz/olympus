@@ -11,13 +11,15 @@ import { ReauthorizeCalendarAccountController } from "./controllers/ReauthorizeC
 import { RemoveCalendarAccountController } from "./controllers/RemoveCalendarAccountController";
 import { RemoveCalendarController } from "./controllers/RemoveCalendarController";
 import { UpdateCalendarController } from "./controllers/UpdateCalendarController";
+import { CalendarEventHandler } from "./handlers/CalendarEventHandler";
 import { CalendarAccountService } from "./services/CalendarAccountService";
+import { CalendarEventService } from "./services/CalendarEventService";
 import { CalendarService } from "./services/CalendarService";
 import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClient";
 
 /**
  * Calendar accounts and calendars, by user (ADR 0028): the API's side of
- * the calendar sync agent.
+ * the calendar sync agent, and the consumer of its events.
  */
 @Module({
   imports: [GraphQLClientModule],
@@ -37,6 +39,8 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
   providers: [
     CalendarAccountService,
     CalendarService,
+    CalendarEventService,
+    CalendarEventHandler,
     MinervaCalendarAgentClient,
   ],
   exports: [CalendarAccountService, MinervaCalendarAgentClient],

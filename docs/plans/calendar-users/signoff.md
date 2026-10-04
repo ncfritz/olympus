@@ -82,6 +82,12 @@ recorded exception.
 3. Events of the still-unowned `acct-other` are counted as `unowned` and
    not stored.
 4. The same message delivered twice leaves one meeting, unchanged.
+5. Linking an account that already has events at the agent (connect it,
+   or sign in with it) brings them into Minerva without a change in
+   Google: the backfill.
+6. RabbitMQ shows `olympus-api.calendar-events` bound to `event.*` with a
+   consumer, and `olympus-api.calendar-events.dead` empty; the metric
+   `calendar_events_consumed_total` appears on the API's `/metrics`.
 
 ## C7 — Claims
 

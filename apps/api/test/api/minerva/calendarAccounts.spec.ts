@@ -49,6 +49,19 @@ const agentAccount = (overrides = {}) => ({
   ...overrides,
 });
 
+const agentCalendar = (overrides = {}) => ({
+  provider: "google",
+  accountLabel: "neil@example.com",
+  calendarId: "neil@example.com",
+  source: "neil",
+  synced: true,
+  enablePush: false,
+  enabled: true,
+  syncing: false,
+  includedInBusy: true,
+  ...overrides,
+});
+
 const connectionRow = (overrides = {}) => ({
   id: "cc000000-0000-4000-8000-000000000001",
   userId: USER,
@@ -88,6 +101,16 @@ describe("Calendar accounts API", () => {
 
   beforeEach(() => {
     for (const fn of Object.values(agent)) fn.mockReset();
+    // The account's calendars at the agent, beside another account's.
+    agent.listCalendars.mockResolvedValue([
+      agentCalendar({ calendarId: "neil@example.com" }),
+      agentCalendar({ calendarId: "team@group.calendar.google.com" }),
+      agentCalendar({
+        accountLabel: "theirs@example.com",
+        calendarId: "theirs@example.com",
+      }),
+    ]);
+    agent.backfillCalendar.mockResolvedValue(undefined);
   });
 
   describe("without an identity", () => {
@@ -172,7 +195,9 @@ describe("Calendar accounts API", () => {
           ],
         })
         .on("LinkSignInIdentities", {
-          update_minerva_calendar_accounts: { affected_rows: 1 },
+          update_minerva_calendar_accounts: {
+            returning: [{ provider: "google", email: "neil@example.com" }],
+          },
         });
 
       const res = await ctx.as(ctx.t.http().get(`${BASE}/calendar-accounts`));
@@ -189,6 +214,27 @@ describe("Calendar accounts API", () => {
       expect(
         ctx.t.graphql.calls("LinkSignInIdentities")[0]?.document,
       ).toContain('verificationMethod: "sign_in"');
+      // Its events from before the link are published again.
+      expect(agent.backfillCalendar.mock.calls).toEqual([
+        ["neil@example.com"],
+        ["team@group.calendar.google.com"],
+      ]);
+    });
+
+    it("backfills nothing when no account was newly linked", async () => {
+      agent.listCalendarAccounts.mockResolvedValue([agentAccount()]);
+      listing([accountRow({ verificationMethod: "sign_in" })]);
+      ctx.t.graphql
+        .on("ListUserIdentities", {
+          olympus_user_identities: [{ provider: "google", subject: SUBJECT }],
+        })
+        .on("LinkSignInIdentities", {
+          update_minerva_calendar_accounts: { returning: [] },
+        });
+
+      await ctx.as(ctx.t.http().get(`${BASE}/calendar-accounts`));
+
+      expect(agent.backfillCalendar).not.toHaveBeenCalled();
     });
 
     it("still lists the accounts, their state unknown, when the agent cannot be asked", async () => {
@@ -436,6 +482,27 @@ describe("Calendar accounts API", () => {
         columns: ["email", "userId", "verifiedTime", "verificationMethod"],
       });
       expect(agent.deleteCalendarAccount).not.toHaveBeenCalled();
+      // Only this account's calendars are published again.
+      expect(agent.backfillCalendar.mock.calls).toEqual([
+        ["neil@example.com"],
+        ["team@group.calendar.google.com"],
+      ]);
+    });
+
+    it("still connects the account when its backfill fails", async () => {
+      waiting(connectionRow());
+      owners();
+      agent.completeWebSignIn.mockResolvedValue({
+        provider: "google",
+        accountLabel: "neil@example.com",
+        subject: SUBJECT,
+        created: true,
+      });
+      agent.backfillCalendar.mockRejectedValue(new BadGatewayException("down"));
+
+      const res = await callback("google", { state: STATE, code: "c" });
+
+      expect(outcome(res.headers.location).calendarAccount).toBe("connected");
     });
 
     it("keeps the proof of an account already the user's", async () => {
@@ -457,6 +524,8 @@ describe("Calendar accounts API", () => {
       expect(
         ctx.t.graphql.calls("LinkCalendarAccount")[0]?.variables?.columns,
       ).toEqual(["email"]);
+      // Its events are in Minerva already.
+      expect(agent.backfillCalendar).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -485,6 +554,7 @@ describe("Calendar accounts API", () => {
           reason: "owned",
         });
         expect(ctx.t.graphql.calls("LinkCalendarAccount")).toHaveLength(0);
+        expect(agent.backfillCalendar).not.toHaveBeenCalled();
         expect(agent.deleteCalendarAccount).toHaveBeenCalledWith(
           "google",
           "theirs@example.com",

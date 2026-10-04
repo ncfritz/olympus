@@ -274,6 +274,9 @@ export class CalendarAccountService {
       result.accountLabel,
       decision.alreadyTheirs,
     );
+    if (!decision.alreadyTheirs) {
+      await this.backfill(result.provider, result.accountLabel);
+    }
     return back({ calendarAccount: "connected", accountId });
   }
 
@@ -475,11 +478,18 @@ export class CalendarAccountService {
             verificationMethod: "sign_in"
           }
         ) {
-          affected_rows
+          returning {
+            provider
+            email
+          }
         }
       }
     `;
-    await this.graphQLClient.request(mutation, {
+    const linked = await this.graphQLClient.request<{
+      update_minerva_calendar_accounts: {
+        returning: { provider: string; email: string }[];
+      };
+    }>(mutation, {
       userId,
       now: new Date().toISOString(),
       where: {
@@ -490,6 +500,33 @@ export class CalendarAccountService {
         })),
       },
     });
+    for (const account of linked.update_minerva_calendar_accounts.returning) {
+      await this.backfill(account.provider as AgentProvider, account.email);
+    }
+  }
+
+  /**
+   * Asks the agent to publish every event of the account's calendars again,
+   * now that a user owns it (ADR 0028): events from before the link reach
+   * Minerva this way. Best effort: the link stands if the agent cannot be
+   * asked, and the calendars' next changes still arrive.
+   */
+  private async backfill(
+    provider: AgentProvider,
+    accountLabel: string,
+  ): Promise<void> {
+    try {
+      const calendars = (await this.agent.listCalendars()).filter(
+        (c) => c.provider === provider && c.accountLabel === accountLabel,
+      );
+      for (const calendar of calendars) {
+        await this.agent.backfillCalendar(calendar.calendarId);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Could not backfill the ${provider} calendars of ${accountLabel}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   private async bySubject(
