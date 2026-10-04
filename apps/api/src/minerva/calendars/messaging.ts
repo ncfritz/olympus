@@ -1,3 +1,4 @@
+import { MessageHandlerErrorBehavior } from "@golevelup/nestjs-rabbitmq";
 import {
   CALENDAR_EVENTS_EXCHANGE,
   type CalendarEventAction,
@@ -29,6 +30,11 @@ export const CALENDAR_EVENTS_SUBSCRIPTION = {
     deadLetterExchange: "",
     deadLetterRoutingKey: CALENDAR_EVENTS_DEAD_LETTER_QUEUE,
   },
+  // Anything thrown before or around the handler (a guard, an
+  // interceptor, a bug) rejects the message to the dead-letter queue. The
+  // library's default puts it straight back on the queue, where it fails
+  // again for ever.
+  errorBehavior: MessageHandlerErrorBehavior.NACK,
 };
 
 /** The action of a message from its routing key, `event.<action>`. */

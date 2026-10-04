@@ -82,6 +82,8 @@ describe("Calendar events consumer", () => {
         deadLetterExchange: "",
         deadLetterRoutingKey: "olympus-api.calendar-events.dead",
       },
+      // What the handler does not catch is dead-lettered, never requeued.
+      errorBehavior: "NACK",
     });
   });
 
