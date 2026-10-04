@@ -1,177 +1,119 @@
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
-import type { EventClickArg, EventInput } from "@fullcalendar/core";
-import FullCalendar from "@fullcalendar/react";
+import { BarChartOutlined, CalendarOutlined } from "@ant-design/icons";
+import type { EventClickArg } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Layout, Space } from "antd";
-import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
-import { DateTime, Interval } from "luxon";
-import Link from "next/link";
+import FullCalendar from "@fullcalendar/react";
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
+import { DateTime } from "luxon";
 import { useRouter } from "next/router";
-import React, { useEffect, useRef, useState } from "react";
-import { DayPicker } from "react-day-picker";
+import React, { useEffect, useMemo, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
-import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
-
-const { Sider, Content } = Layout;
+import { Events, publish } from "../../../utils/events";
+import { meetingsHref, periodOf } from "../../../utils/meetings";
+import MeetingsDayPicker from "./MeetingsDayPicker";
+import MeetingsPage from "./MeetingsPage";
+import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 
 export interface MonthViewProps {
+  /** A day in the month to show. */
   startDate: DateTime;
-  breadcrumbs: Partial<BreadcrumbItemType>[];
 }
 
-const MonthView: React.FunctionComponent<MonthViewProps> = ({
-  startDate,
-  breadcrumbs,
-}: MonthViewProps) => {
+/** A month of meetings: the weeks it touches, Monday first. */
+const MonthView: React.FunctionComponent<MonthViewProps> = ({ startDate }) => {
   const router = useRouter();
-  const calendarRef = useRef<FullCalendar>(null);
-
-  const [events, setEvents] = useState<EventInput[]>([]);
-
-  const start = startDate.startOf("week");
-  const end = startDate.endOf("month").endOf("week");
-  const interval = Interval.fromDateTimes(start, end);
-  const days = interval.length("days");
+  const period = useMemo(() => periodOf("month", startDate), [startDate]);
+  const [items, setItems] = useState<Meeting[]>();
 
   useEffect(() => {
     (async () => {
-      const rawEvents = await meetingsApi.getMeetings(start, days);
-      const parsedEvents: EventInput[] = [];
-
-      rawEvents.data.items.forEach((rawEvent) => {
-        const parsedEvent = meetingsApi.toEvent(rawEvent);
-
-        if (!parsedEvent.allDay) {
-          parsedEvents.push(parsedEvent);
-        }
-      });
-
-      setEvents(parsedEvents);
+      try {
+        const response = await meetingsApi.getMeetings(
+          period.start,
+          period.days,
+        );
+        setItems(response.data.items);
+      } catch {
+        setItems([]);
+        publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
+          type: "error",
+          message: "Failed to load meetings",
+          description: `Unable to fetch the meetings of ${startDate.toFormat("LLLL yyyy")}`,
+        });
+      }
     })();
-  }, [startDate]);
+  }, [period, startDate]);
 
-  const handleDayClick = (date: Date) => {
-    const target = DateTime.fromJSDate(date);
-    const url = `/minerva/meetings/${target.year}/${target.toFormat("MM")}/${target.toFormat("dd")}`;
-
-    router.push(url, url, { shallow: true });
-  };
-
-  const handleWeekClick = (date: Date) => {
-    const target = DateTime.fromJSDate(date);
-    const url = `/minerva/meetings/${target.year}/W${target.toFormat("WW")}`;
-
-    router.push(url, url, { shallow: true });
-  };
+  // All-day items crowd a month's cells; the day view shows them.
+  const events = useMemo(
+    () =>
+      (items ?? [])
+        .filter((item) => !item.isAllDay)
+        .map((item) => meetingsApi.toEvent(item)),
+    [items],
+  );
 
   const handleEventClick = (arg: EventClickArg) => {
     const target = DateTime.fromJSDate(arg.event.start!);
-    const url = `/minerva/meetings/${target.year}/${target.toFormat("MM")}/${target.toFormat("dd")}?e=${encodeURIComponent(arg.event.id)}`;
-
-    router.push(url, url, { shallow: true });
+    void router.push(
+      `${meetingsHref("day", target)}?e=${encodeURIComponent(arg.event.id)}`,
+    );
   };
 
   return (
-    <Space>
-      <OlympusBreadcrumbs
-        items={[
-          {
-            title: (
-              <Link href={"/"}>
-                <Space size={4}>
-                  <HomeOutlined />
-                  <span>Home</span>
-                </Space>
-              </Link>
-            ),
-          },
-          {
-            title: (
-              <Link href={"/minerva"}>
-                <Space size={4}>
-                  <RadarChartOutlined />
-                  <span>Minerva</span>
-                </Space>
-              </Link>
-            ),
-          },
-          ...breadcrumbs,
-        ]}
-      />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          left: 380,
-          marginRight: 788,
-          overflow: "visible",
-          height: "calc(100vh - 102px)",
-          zIndex: 400,
+    <MeetingsPage
+      view={"month"}
+      date={startDate}
+      items={items}
+      tabs={[
+        {
+          key: "calendar",
+          label: <CalendarOutlined />,
+          children: <MeetingsDayPicker view={"month"} date={startDate} />,
+        },
+        {
+          key: "statistics",
+          label: <BarChartOutlined />,
+          children: (
+            <MeetingStatisticsPanel
+              startDate={period.from}
+              dayCount={Math.round(period.to.diff(period.from, "days").days)}
+            />
+          ),
+        },
+      ]}
+    >
+      <FullCalendar
+        viewClassNames={"minerva-cal minerva-cal-month"}
+        plugins={[dayGridPlugin, interactionPlugin]}
+        events={events}
+        initialView={"dayGridMonth"}
+        initialDate={startDate.toJSDate()}
+        firstDay={1}
+        fixedWeekCount={false}
+        headerToolbar={false}
+        height={"100%"}
+        dayMaxEventRows={5}
+        weekNumbers={true}
+        weekNumberContent={(arg) => (
+          <div className={"ribbon"}>Week&nbsp;{arg.num}</div>
+        )}
+        navLinks={true}
+        navLinkDayClick={(date) =>
+          void router.push(meetingsHref("day", DateTime.fromJSDate(date)))
+        }
+        navLinkWeekClick={(date) =>
+          void router.push(meetingsHref("week", DateTime.fromJSDate(date)))
+        }
+        eventClick={handleEventClick}
+        businessHours={{
+          daysOfWeek: [1, 2, 3, 4, 5],
+          startTime: "9:00",
+          endTime: "17:00",
         }}
-      >
-        <Content style={{ width: "calc(100vw - 780px)" }}>
-          <FullCalendar
-            ref={calendarRef}
-            viewClassNames={"minerva-cal minerva-cal-month"}
-            plugins={[dayGridPlugin, interactionPlugin]}
-            events={events}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              start: "title",
-              center: "",
-              end: "",
-            }}
-            allDaySlot={false}
-            height={"100%"}
-            dayMaxEventRows={5}
-            weekNumbers={true}
-            weekNumberContent={(arg) => {
-              return <div className={"ribbon"}>Week&nbsp;{arg.num}</div>;
-            }}
-            navLinks={true}
-            navLinkDayClick={handleDayClick}
-            navLinkWeekClick={handleWeekClick}
-            eventClick={handleEventClick}
-            businessHours={{
-              days: [1, 2, 3, 4, 5],
-              startTime: "9:00",
-              endTime: "17:00",
-            }}
-          />
-        </Content>
-        <Sider
-          width={400}
-          collapsible={false}
-          style={{
-            background: "#ffffff",
-            top: 102,
-            right: 0,
-            position: "fixed",
-            height: "calc(100vh - 104px)",
-            borderLeft: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <DayPicker
-            className={"minerva-standard"}
-            month={startDate.toJSDate()}
-            toMonth={startDate.toJSDate()}
-            showWeekNumber={true}
-            showOutsideDays={true}
-            onDayClick={() => {}}
-            onMonthChange={() => {}}
-            style={{
-              minWidth: 250,
-            }}
-          />
-        </Sider>
-      </Layout>
-    </Space>
+      />
+    </MeetingsPage>
   );
 };
+
 export default MonthView;
