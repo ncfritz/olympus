@@ -8,19 +8,19 @@ console to the site, and the API consumes `calendar.events`. Each phase
 ends in a working, deployable state and a functional sign-off against
 [signoff.md](signoff.md).
 
-| Phase | Delivers                                                                                            | Depends on | Sign-off flows |
-| ----- | --------------------------------------------------------------------------------------------------- | ---------- | -------------- |
-| 0     | ADR accepted; prod checked for orphans; the branch                                                  | —          | —              |
-| 1     | Minerva calendar and notes tables per user, existing rows Neil's; operations scoped to the caller   | 0          | C1             |
-| 2     | The agent: subject per account, re-authorization checks it, unique `source`, the account on events  | 0          | C2             |
-| 3     | The agent's service listener; the API's client certificate                                          | 2          | C3             |
-| 4     | Calendar accounts in Olympus: linking by sign-in, connecting by web redirect, account and calendars | 1, 3       | C4, C5         |
-| 5     | The API consumes `calendar.events`; backfill on link                                                | 4          | C6             |
-| 6     | Claims: the email, the landing page, release                                                        | 4          | C7             |
-| 7     | The site: the Calendars pages (canvas first)                                                        | 4, 5, 6    | C8             |
-| 8     | Clean-up: `notes.author` dropped, the docs brought up to date; the console kept as it is            | 7          | C9             |
-| 9     | Availability overrides in the site (to design: who an override belongs to)                          | 7          | to come        |
-| Later | Ordering and version guard; attendees in the message; the console as an operations view; iOS        |            |                |
+| Phase | Delivers                                                                                                       | Depends on | Sign-off flows |
+| ----- | -------------------------------------------------------------------------------------------------------------- | ---------- | -------------- |
+| 0     | ADR accepted; prod checked for orphans; the branch                                                             | —          | —              |
+| 1     | Minerva calendar and notes tables per user, existing rows Neil's; operations scoped to the caller              | 0          | C1             |
+| 2     | The agent: subject per account, re-authorization checks it, unique `source`, the account on events             | 0          | C2             |
+| 3     | The agent's service listener; the API's client certificate                                                     | 2          | C3             |
+| 4     | Calendar accounts in Olympus: linking by sign-in, connecting by web redirect, account and calendars            | 1, 3       | C4, C5         |
+| 5     | The API consumes `calendar.events`; backfill on link                                                           | 4          | C6             |
+| 6     | Claims: the email, the landing page, release                                                                   | 4          | C7             |
+| 7     | The site: the Calendars pages (canvas first)                                                                   | 4, 5, 6    | C8             |
+| 8     | Clean-up: `notes.author` dropped, the docs brought up to date; the console kept as it is                       | 7          | C9             |
+| 9     | Availability in Minerva: overrides per user, the OnAir drawer on Minerva, the console signs in through Olympus | 7          | C10            |
+| Later | Ordering and version guard; attendees in the message; the console as an operations view; iOS                   |            |                |
 
 Phases 1 and 2 are independent and can run in either order. Phase 6 can
 run beside phase 5.
@@ -506,19 +506,31 @@ and its metadata first).
 
 **Sign-off:** C9 on PROD.
 
-## Phase 9 — Availability overrides in the site (to design)
+## Phase 9 — Availability in Minerva (ADR 0029, proposed)
 
-The agent's overrides belong to no one: blocks of time with a status
-(`OverrideBlock`) and a status per event (`EventOverride`), and the
-free/busy and status timeline it works out from every calendar it syncs.
-Only the console reads or sets them. In the site they need an owner; to
-settle before building, with a canvas first:
+Decided with Neil (2026-10-04): overrides move to Minerva, per user; the
+agent's are deleted; they are set from a meeting on the calendar pages and
+in the OnAir drawer, which moves from the legacy OnAir service to Minerva;
+the console signs in through Olympus and sees the same availability.
 
-- Who an override belongs to (the user; the agent keys them by user, or
-  the API keeps them in Minerva and the agent only computes), and whose
-  calendars a user's availability is made of.
-- What the site shows: a timeline of the user's availability with its
-  blocks and per-event statuses, and where it lives (Meetings, or the
-  Calendars page).
-- What becomes of the console's overrides and of anything else reading
-  availability (nothing outside the console today).
+1. **Canvas first**: the OnAir drawer on Minerva (the day, its meetings,
+   the availability strip, a new block, a meeting's availability), the
+   availability control on the day view's meeting details, and the
+   console's sign-in through Olympus.
+2. **Schema**: `minerva.availability_blocks` and
+   `minerva.meeting_availability`, per user, audit columns, check scripts.
+3. **API**: the availability rules as pure functions, ported from the
+   agent with its tests; `GetAvailability`, the block operations,
+   `SetMeetingAvailability` and `ClearMeetingAvailability`.
+4. **Site**: the OnAir drawer rebuilt on the API (the legacy `onairApi`
+   goes); the meeting details' availability control.
+5. **Console and agent**: a `minerva-calendar-console` client in the API's
+   sign-in; the agent verifies Olympus tokens (JWKS, `admin`); the
+   console signs in through Olympus and calls the API for availability;
+   the agent's override and availability operations, tables and rows go,
+   with its OIDC sign-in and allow-list.
+6. **Tests**: the rules (precedence, blocks over meetings, working day,
+   time zones, excluded calendars, cancelled and deleted); every operation
+   scoped to its caller; the drawer's helpers; the agent's token check.
+
+**Sign-off:** C10 on DEV, then PROD.

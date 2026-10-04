@@ -124,3 +124,15 @@ recorded exception.
 1. Notes create and read with no `author`; an older client that still
    sends one creates its note all the same.
 2. The console is unchanged: its pages and its sign-in work as before.
+
+## C10 — Availability
+
+1. Overriding a meeting's availability from the day view changes the
+   drawer's strip for its time; clearing it puts the meeting's own back.
+2. A block made in the drawer by selecting a range wins over the meetings
+   in it; moved, resized and removed, the strip follows.
+3. `user-b` sees none of `neil`'s availability, blocks or meeting
+   statuses.
+4. The console signs in through Olympus (refused without `admin`) and
+   shows the same availability as the drawer.
+5. The agent has no override tables or availability operations left.
