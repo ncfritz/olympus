@@ -35,12 +35,21 @@ export const revocationCoverage = (
   bundled: crlPems.filter((pem) => occurrences(pem, "X509 CRL") > 1).length,
 });
 
+/** The variables a listener reads its authorities and lists from, for the warnings. */
+export type RevocationSettings = { ca: string; crl: string };
+
 /** What to say about it, if anything: one sentence per fault, for the log. */
-export const revocationWarnings = (coverage: RevocationCoverage): string[] => {
+export const revocationWarnings = (
+  coverage: RevocationCoverage,
+  settings: RevocationSettings = {
+    ca: "TLS_CA_SERVICES",
+    crl: "TLS_CRL_SERVICES",
+  },
+): string[] => {
   const warnings: string[] = [];
   if (coverage.lists < coverage.authorities) {
     warnings.push(
-      `TLS_CA_SERVICES holds ${coverage.authorities} authorities and TLS_CRL_SERVICES names ${coverage.lists} revocation lists. A chain is checked against a list from every authority in it, so every client certificate will be refused during the handshake -- with no reason given to either end.`,
+      `${settings.ca} holds ${coverage.authorities} authorities and ${settings.crl} names ${coverage.lists} revocation lists. A chain is checked against a list from every authority in it, so every client certificate will be refused during the handshake -- with no reason given to either end.`,
     );
   }
   if (coverage.bundled > 0) {

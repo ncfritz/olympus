@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   revocationCoverage,
   revocationWarnings,
-} from "../../../src/auth/services/revocation";
+} from "../../../src/mtls/revocation";
 
 const certificates = (n: number): string =>
   Array.from(

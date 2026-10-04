@@ -1,0 +1,126 @@
+import type { INestApplication } from "@nestjs/common";
+import { Logger } from "@nestjs/common";
+import * as fs from "fs";
+import * as https from "https";
+import type * as tls from "tls";
+import {
+  revocationCoverage,
+  type RevocationSettings,
+  revocationWarnings,
+} from "./revocation";
+
+/** Paths, and the port. */
+export type ClientCertificateListenerConfig = {
+  port: number;
+  /** PEM: the listener's own certificate. */
+  certificate: string;
+  key: string;
+  /** PEM: the authorities a client certificate may chain to. */
+  ca: string;
+  /** One file per revocation list: Node reads only the first list in a file. */
+  revocationLists: string[];
+};
+
+export type ClientCertificateListenerHooks = {
+  /** The logger's context, e.g. "ServicesListener". */
+  name: string;
+  /** Called with every request, before the application sees it. */
+  onRequest?: (request: unknown) => void;
+  /** Called for every handshake refused. */
+  onRefused?: () => void;
+  /** The variables the settings came from, for the startup warnings. */
+  settings?: RevocationSettings;
+};
+
+const secureContext = (config: ClientCertificateListenerConfig) => ({
+  cert: fs.readFileSync(config.certificate),
+  key: fs.readFileSync(config.key),
+  ca: fs.readFileSync(config.ca),
+  // One file per list: Node reads only the first list in a file, and a
+  // chain is checked against every authority in it (ADR 0018).
+  crl: config.revocationLists.map((path) => fs.readFileSync(path)),
+  requestCert: true,
+  rejectUnauthorized: true,
+});
+
+/**
+ * The application over HTTPS, where a client certificate from the given
+ * chain is required (ADR 0018): a connection without one never reaches the
+ * application. Who the certificate names is for the application to check
+ * (identifyPeerCertificate).
+ *
+ * The revocation lists are reloaded when their files change, without a
+ * restart; existing connections keep the context they handshook with.
+ */
+export const createClientCertificateListener = (
+  app: INestApplication,
+  config: ClientCertificateListenerConfig,
+  hooks: ClientCertificateListenerHooks,
+): https.Server => {
+  const logger = new Logger(hooks.name);
+  const express = app.getHttpAdapter().getInstance() as (
+    request: unknown,
+    response: unknown,
+  ) => void;
+
+  const server = https.createServer(
+    secureContext(config),
+    (request, response) => {
+      hooks.onRequest?.(request);
+      express(request, response);
+    },
+  );
+
+  // Checked once, at startup, because the handshake failure it prevents is
+  // silent at both ends (see revocation.ts).
+  const coverage = revocationCoverage(
+    fs.readFileSync(config.ca, "utf8"),
+    config.revocationLists.map((path) => fs.readFileSync(path, "utf8")),
+  );
+  logger.log(
+    `${coverage.authorities} client authorities, ${coverage.lists} revocation lists`,
+  );
+  for (const warning of revocationWarnings(coverage, hooks.settings)) {
+    logger.warn(warning);
+  }
+
+  /**
+   * A refused handshake, said out loud.
+   *
+   * Without this the only symptom is the caller's "socket hang up": the
+   * request never reaches the application, so nothing is logged -- a
+   * listener whose whole job is to refuse connections would refuse them
+   * invisibly. The reason is OpenSSL's, which names the actual fault (an
+   * unknown CA, a revoked certificate, no certificate at all) -- except where
+   * TLS 1.3 leaves it nothing to report but a reset, which is what a chain
+   * rejected for want of a revocation list looks like. The startup check
+   * above is for that one.
+   */
+  server.on("tlsClientError", (error: Error, socket: tls.TLSSocket) => {
+    logger.warn(
+      `Refused a connection from ${socket.remoteAddress ?? "an unknown address"}: ${error.message}`,
+    );
+    hooks.onRefused?.();
+  });
+
+  for (const path of config.revocationLists) {
+    // `persistent: false` so a watcher never holds the process open.
+    fs.watch(path, { persistent: false }, () => {
+      try {
+        server.setSecureContext(secureContext(config));
+        logger.log(`Reloaded the revocation lists after ${path} changed`);
+      } catch (error) {
+        logger.error(
+          `Could not reload the revocation lists: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    });
+  }
+
+  server.listen(config.port, () =>
+    logger.log(`Listening on ${config.port} (client certificates)`),
+  );
+  return server;
+};
