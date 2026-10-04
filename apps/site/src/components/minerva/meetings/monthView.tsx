@@ -32,7 +32,9 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
   const start = startDate.startOf("week");
   const end = startDate.endOf("month").endOf("week");
   const interval = Interval.fromDateTimes(start, end);
-  const days = interval.length("days");
+  // Whole days: the interval ends at 23:59:59.999, and the API takes a
+  // whole number of days (41.99… was a 400).
+  const days = Math.ceil(interval.length("days"));
 
   useEffect(() => {
     (async () => {
