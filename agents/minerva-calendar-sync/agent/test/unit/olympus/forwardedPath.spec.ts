@@ -11,6 +11,8 @@ describe("forwardedPath", () => {
     ["GET", "/olympus/v1/minerva/meeting-availabilities?meetingIds=a,b"],
     ["PUT", "/olympus/v1/minerva/meeting/work:abc@google.com/availability"],
     ["DELETE", "/olympus/v1/minerva/meeting/ms:AAMk%2FAB%3D/availability"],
+    ["GET", "/olympus/v1/minerva/calendar-events/dead-letters"],
+    ["POST", "/olympus/v1/minerva/calendar-events/dead-letters/redrive"],
   ])("forwards %s %s as it is", (method, url) => {
     expect(forwardedPath(method, url)).toBe(url.slice("/olympus".length));
   });
@@ -23,6 +25,11 @@ describe("forwardedPath", () => {
       "/olympus/v1/minerva/availability",
     ],
     ["another prefix", "GET", "/v1/minerva/availability"],
+    [
+      "a redrive by GET",
+      "GET",
+      "/olympus/v1/minerva/calendar-events/dead-letters/redrive",
+    ],
     [
       "a dot segment",
       "GET",

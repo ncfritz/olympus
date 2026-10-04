@@ -14,8 +14,11 @@ export const FORWARD_PREFIX = "/olympus";
 
 /**
  * The API's operations the console may call through the agent: the
- * signed-in user's availability (ADR 0029), and nothing else. A method and
- * a path under /v1, its query string aside.
+ * signed-in user's availability (ADR 0029), and the calendar events that
+ * could not be written to Minerva, which the Publish page shows and
+ * redrives (ADR 0028, amended); nothing else. A method and a path under
+ * /v1, its query string aside. The API decides who may: the dead letters
+ * are for admins.
  */
 const FORWARDED: { methods: string[]; path: RegExp }[] = [
   { methods: ["GET"], path: /^\/v1\/minerva\/availability$/ },
@@ -28,6 +31,11 @@ const FORWARDED: { methods: string[]; path: RegExp }[] = [
   {
     methods: ["PUT", "DELETE"],
     path: /^\/v1\/minerva\/meeting\/[^/]+\/availability$/,
+  },
+  { methods: ["GET"], path: /^\/v1\/minerva\/calendar-events\/dead-letters$/ },
+  {
+    methods: ["POST"],
+    path: /^\/v1\/minerva\/calendar-events\/dead-letters\/redrive$/,
   },
 ];
 

@@ -2,7 +2,11 @@ import { apiClient } from "./client";
 import {
   type AvailabilityBlock,
   type AvailabilityLevel,
+  type CalendarEventDeadLetters,
+  type CalendarEventRedrive,
   clearMeetingAvailability,
+  describeCalendarEventDeadLetters,
+  redriveCalendarEventDeadLetters,
   createAvailabilityBlock,
   deleteAvailabilityBlock,
   getAvailability,
@@ -416,4 +420,22 @@ export async function backfillCalendar(
   if (error || !data)
     throw new Error(`Failed to start backfill: ${JSON.stringify(error)}`);
   return data.backfill;
+}
+
+/*
+ * Events the Olympus API could not write to Minerva (ADR 0028, amended):
+ * its dead-letter queue, through the agent. For admins, as the console is.
+ */
+
+export type DeadLetters = CalendarEventDeadLetters;
+export type DeadLetter = CalendarEventDeadLetters["sample"][number];
+
+export async function fetchDeadLetters(): Promise<DeadLetters> {
+  const { data } = await describeCalendarEventDeadLetters();
+  return data.deadLetters;
+}
+
+export async function redriveDeadLetters(): Promise<CalendarEventRedrive> {
+  const { data } = await redriveCalendarEventDeadLetters();
+  return data.redrive;
 }
