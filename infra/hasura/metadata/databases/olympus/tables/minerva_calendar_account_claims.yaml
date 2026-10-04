@@ -1,0 +1,35 @@
+table:
+  name: calendar_account_claims
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    cancelled_at:
+      custom_name: cancelledTime
+    confirmed_at:
+      custom_name: confirmedTime
+    created_at:
+      custom_name: createdTime
+    expires_at:
+      custom_name: expiresTime
+    token_hash:
+      custom_name: tokenHash
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    account_id: accountId
+    cancelled_at: cancelledTime
+    confirmed_at: confirmedTime
+    created_at: createdTime
+    expires_at: expiresTime
+    token_hash: tokenHash
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id

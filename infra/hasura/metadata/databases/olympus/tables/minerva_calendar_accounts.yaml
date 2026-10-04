@@ -1,0 +1,26 @@
+table:
+  name: calendar_accounts
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+    verification_method:
+      custom_name: verificationMethod
+    verified_at:
+      custom_name: verifiedTime
+  custom_column_names:
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+    user_id: userId
+    verification_method: verificationMethod
+    verified_at: verifiedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
