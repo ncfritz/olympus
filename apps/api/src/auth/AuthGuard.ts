@@ -42,6 +42,11 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // A global guard runs before every handler Nest calls, the RabbitMQ
+    // subscribers' included, and a message has no listener, headers or
+    // principal to read. Whoever may publish is RabbitMQ's to decide.
+    if (context.getType() !== "http") return true;
+
     const request = context.switchToHttp().getRequest<RequestWithPrincipal>();
     const listener: Listener = request.listener ?? "users";
 
