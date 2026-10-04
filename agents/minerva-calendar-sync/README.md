@@ -61,7 +61,10 @@ Run from the repository root (`pnpm install` once):
 The store is SQLite by default (`DATABASE_URL="file:./dev.db"`); Postgres
 uses the second schema in `agent/prisma/postgres` (`docker compose up -d
 postgres` here starts one). Both schemas must stay identical; a test checks
-it.
+it. `dev`, `start`, `start:debug` and `start:local` apply pending
+migrations first (`scripts/migrate.mjs`, the schema chosen from
+`DATABASE_URL`), so a new `dev.db` gets its tables; `pnpm migrate` does
+just that step.
 
 OAuth credentials the calendar connectors store (`agent/.credentials*/`)
 and the SQLite files are git-ignored. When moving from the old repository,
