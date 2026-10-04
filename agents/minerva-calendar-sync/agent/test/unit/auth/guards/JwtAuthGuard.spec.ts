@@ -8,6 +8,7 @@ import { AllowlistService } from "../../../../src/auth/services/AllowlistService
 import { AuthTokenService } from "../../../../src/auth/services/AuthTokenService";
 import { ACCESS_TOKEN_COOKIE } from "../../../../src/auth/authConstants";
 import { JwtAuthGuard } from "../../../../src/auth/guards/JwtAuthGuard";
+import type { AuthConfigType } from "../../../../src/config/configuration";
 import { type Mock, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("JwtAuthGuard", () => {
@@ -15,8 +16,20 @@ describe("JwtAuthGuard", () => {
   let tokens: { verifyAccessToken: Mock };
   let allowlist: { isAllowed: Mock };
   let guard: JwtAuthGuard;
+  let auth: Partial<AuthConfigType>;
 
   beforeEach(() => {
+    auth = {
+      services: {
+        port: 4433,
+        certificate: "",
+        key: "",
+        ca: "",
+        revocationLists: [],
+        issuer: "Service Issuing CA",
+        clients: ["olympus-api"],
+      },
+    };
     reflector = { getAllAndOverride: vi.fn().mockReturnValue(false) };
     tokens = { verifyAccessToken: vi.fn() };
     allowlist = { isAllowed: vi.fn().mockReturnValue(true) };
@@ -24,6 +37,7 @@ describe("JwtAuthGuard", () => {
       reflector as unknown as Reflector,
       tokens as unknown as AuthTokenService,
       allowlist as unknown as AllowlistService,
+      auth as AuthConfigType,
     );
   });
 
@@ -56,7 +70,7 @@ describe("JwtAuthGuard", () => {
 
     expect(guard.canActivate(contextFor(req))).toBe(true);
     expect(tokens.verifyAccessToken).toHaveBeenCalledWith("good-token");
-    expect(req.user).toEqual({ email: "me@example.com" });
+    expect(req.user).toEqual({ kind: "user", email: "me@example.com" });
   });
 
   it("falls back to the access-token cookie when there is no Authorization header", () => {
@@ -92,5 +106,78 @@ describe("JwtAuthGuard", () => {
     expect(() => guard.canActivate(contextFor(req))).toThrow(
       UnauthorizedException,
     );
+  });
+
+  describe("on the services listener", () => {
+    const serviceRequest = (
+      certificate: unknown,
+      extra: Record<string, unknown> = {},
+    ): Record<string, unknown> => ({
+      listener: "services",
+      headers: {},
+      cookies: {},
+      socket: { getPeerCertificate: () => certificate },
+      ...extra,
+    });
+    const api = {
+      subject: { CN: "olympus-api", OU: "prod" },
+      issuer: { CN: "Service Issuing CA" },
+    };
+
+    it("attaches the allowed service its certificate names", () => {
+      const req = serviceRequest(api);
+
+      expect(guard.canActivate(contextFor(req))).toBe(true);
+      expect(req.user).toEqual({ kind: "service", name: "olympus-api" });
+    });
+
+    it("reads no token there, even a valid one", () => {
+      tokens.verifyAccessToken.mockReturnValue("me@example.com");
+      const req = serviceRequest(api, {
+        headers: { authorization: "Bearer good-token" },
+      });
+
+      guard.canActivate(contextFor(req));
+      expect(tokens.verifyAccessToken).not.toHaveBeenCalled();
+      expect(req.user).toEqual({ kind: "service", name: "olympus-api" });
+    });
+
+    it("refuses a service that is not allowed to call", () => {
+      expect(() =>
+        guard.canActivate(
+          contextFor(
+            serviceRequest({ ...api, subject: { CN: "dionysus-asset-agent" } }),
+          ),
+        ),
+      ).toThrow(ForbiddenException);
+    });
+
+    it("refuses a certificate from another issuer", () => {
+      expect(() =>
+        guard.canActivate(
+          contextFor(
+            serviceRequest({ ...api, issuer: { CN: "Device Issuing CA" } }),
+          ),
+        ),
+      ).toThrow(/issuer "Device Issuing CA"/);
+    });
+
+    it("refuses a request with no certificate", () => {
+      expect(() => guard.canActivate(contextFor(serviceRequest({})))).toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it("never reads a certificate on the HTTP listener", () => {
+      const req = {
+        headers: {},
+        cookies: {},
+        socket: { getPeerCertificate: () => api },
+      };
+
+      expect(() => guard.canActivate(contextFor(req))).toThrow(
+        UnauthorizedException,
+      );
+    });
   });
 });

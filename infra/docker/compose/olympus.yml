@@ -290,6 +290,9 @@ services:
       - google_oauth_client_secret
     volumes:
       - ${DATA_DIR:?}/minerva:/data
+      # The services listener's certificate, key, CA and revocation lists
+      # (ADR 0028); only the API calls it, over the backend network.
+      - ${SECRETS_DIR:?}/tls/minerva-calendar-agent:/run/secrets/tls:ro
     stop_grace_period: 30s
     networks:
       - backend

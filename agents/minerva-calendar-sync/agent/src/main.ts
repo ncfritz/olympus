@@ -1,10 +1,14 @@
 import "source-map-support/register";
 
-import { createWinstonLogger } from "@ncfritz/olympus-nest";
+import {
+  createClientCertificateListener,
+  createWinstonLogger,
+} from "@ncfritz/olympus-nest";
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "./AppModule";
+import type { AuthenticatedRequest } from "./auth/authUser";
 import { readConfig } from "./config/configuration";
 import { configureApp } from "./configureApp";
 import { buildOpenApiDocument } from "./openapi/documentBuilder";
@@ -33,6 +37,18 @@ async function bootstrap(): Promise<void> {
   }
 
   await app.listen(config.server.port);
+
+  // The management API for the Olympus API, by client certificate
+  // (ADR 0028); JwtAuthGuard identifies the caller from it.
+  const services = config.auth.services;
+  if (services) {
+    createClientCertificateListener(app, services, {
+      name: "ServicesListener",
+      onRequest: (request) => {
+        (request as AuthenticatedRequest).listener = "services";
+      },
+    });
+  }
 }
 
 bootstrap()

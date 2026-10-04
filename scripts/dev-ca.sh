@@ -247,6 +247,14 @@ csr "$out/api.key" "$ca/api.csr" "/CN=olympus-api/O=Olympus Dev"
 SAN="DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1$extra_san" \
   issue services v3_server "$ca/api.csr" "$out/api.crt" -days "$server_days"
 
+echo "calendar sync agent server certificate"
+# Its services listener, which only the API calls (ADR 0028), presents a
+# certificate from the service issuer, as the API's does.
+key "$out/minerva-calendar-sync.key"
+csr "$out/minerva-calendar-sync.key" "$ca/minerva-calendar-sync.csr" "/CN=minerva-calendar-sync-agent/O=Olympus Dev"
+SAN="DNS:minerva-calendar-agent,DNS:localhost,IP:127.0.0.1$extra_san" \
+  issue services v3_server "$ca/minerva-calendar-sync.csr" "$out/minerva-calendar-sync.crt" -days "$server_days"
+
 # client <authority> <directory> <name> <subject> [openssl ca flags...]
 client() {
   local authority=$1 dir=$2 name=$3 subject=$4
@@ -270,6 +278,8 @@ echo "agent certificates"
 for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent olympus-notification-agent olympus-weather-relay-agent; do
   client services agents "$agent" "/CN=$agent/OU=prod/O=Olympus Dev"
 done
+# The API calls the calendar sync agent's services listener (ADR 0028).
+client services agents olympus-api "/CN=olympus-api/OU=prod/O=Olympus Dev"
 client services agents dionysus-asset-agent-nas "/CN=dionysus-asset-agent/OU=nas/O=Olympus Dev"
 client services agents svc-revoked "/CN=dionysus-search-agent/OU=test/O=Olympus Dev"
 client services agents svc-expired "/CN=dionysus-search-agent/OU=test/O=Olympus Dev" \
@@ -356,6 +366,10 @@ The chain is three authorities deep, like the real one:
                        for Node, which reads only the first list in a file
   keys/<authority>.p8  the authority's key as encrypted PKCS#8, the format
                        the signer imports
+  minerva-calendar-sync.crt / .key
+                       the calendar sync agent's server certificate, for
+                       its services listener; agents/olympus-api.* is the
+                       API's client certificate for calling it
   api.crt / api.key    the API's server certificate, valid 825 days because
                        Apple refuses a longer one whatever anchor it chains to.
                        From the service issuer --

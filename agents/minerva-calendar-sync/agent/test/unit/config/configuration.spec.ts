@@ -67,6 +67,36 @@ describe("readConfig", () => {
     ]);
   });
 
+  it("has no services listener until its certificate is configured", () => {
+    expect(readConfig(REQUIRED).auth.services).toBeUndefined();
+  });
+
+  it("reads the services listener with the API's variable names", () => {
+    const { auth } = readConfig({
+      ...REQUIRED,
+      TLS_CERT: "agent.crt",
+      TLS_KEY: "agent.key",
+      TLS_CA_SERVICES: "services-ca.crt",
+      TLS_CRL_SERVICES: "services.crl,root.crl",
+      AUTH_SERVICES_ISSUER: "Service Issuing CA",
+    });
+    expect(auth.services).toEqual({
+      port: 4433,
+      certificate: "agent.crt",
+      key: "agent.key",
+      ca: "services-ca.crt",
+      revocationLists: ["services.crl", "root.crl"],
+      issuer: "Service Issuing CA",
+      clients: ["olympus-api"],
+    });
+  });
+
+  it("refuses part of the services listener's certificate", () => {
+    expect(() => readConfig({ ...REQUIRED, TLS_CERT: "agent.crt" })).toThrow(
+      /set together or not at all/,
+    );
+  });
+
   it("reports every problem at once", () => {
     try {
       readConfig({

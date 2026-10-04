@@ -55,6 +55,25 @@ export type OutboxConfig = {
   maxAttempts: number;
 };
 
+/**
+ * The services listener (ADR 0028): the management API over HTTPS for the
+ * Olympus API, which identifies itself with a client certificate from the
+ * Olympus Services chain, as it would on the API's own listener (ADR 0018).
+ */
+export type ServicesListenerConfig = {
+  port: number;
+  certificate: string;
+  key: string;
+  /** The authorities a client certificate may chain to. */
+  ca: string;
+  /** One file per authority in the chain (Node reads one list per file). */
+  revocationLists: string[];
+  /** The issuer's common name a client certificate must have (ADR 0023). */
+  issuer?: string;
+  /** The common names allowed to call: the Olympus API. */
+  clients: string[];
+};
+
 export type AuthConfig = {
   jwtSecret: string;
   /** Where the agent is reachable; the OIDC redirect URIs are built from it. */
@@ -63,6 +82,8 @@ export type AuthConfig = {
   allowedEmails: string[];
   /** The console's origin: CORS and the only allowed login returnTo. */
   webAppUrl?: string;
+  /** Unset until TLS_CERT, TLS_KEY and TLS_CA_SERVICES are: no listener. */
+  services?: ServicesListenerConfig;
 };
 
 export type AgentConfig = {
@@ -87,6 +108,31 @@ const positiveInt = (read: EnvReader, name: string, fallback: number) => {
     return fallback;
   }
   return value;
+};
+
+/**
+ * The same variables as the API's services listener: SERVICES_LISTEN_PORT,
+ * TLS_CERT, TLS_KEY, TLS_CA_SERVICES, TLS_CRL_SERVICES and
+ * AUTH_SERVICES_ISSUER; and AUTH_SERVICE_CLIENTS, the callers allowed.
+ */
+const servicesListener = (
+  read: EnvReader,
+): ServicesListenerConfig | undefined => {
+  const certificate = read.optional("TLS_CERT");
+  const key = read.optional("TLS_KEY");
+  const ca = read.optional("TLS_CA_SERVICES");
+  const port = read.port("SERVICES_LISTEN_PORT", 4433);
+  const revocationLists = read.list("TLS_CRL_SERVICES", []);
+  const issuer = read.optional("AUTH_SERVICES_ISSUER");
+  const clients = read.list("AUTH_SERVICE_CLIENTS", ["olympus-api"]);
+  if (!certificate && !key && !ca) return undefined;
+  if (!certificate || !key || !ca) {
+    read.problems.push(
+      "TLS_CERT, TLS_KEY and TLS_CA_SERVICES are set together or not at all",
+    );
+    return undefined;
+  }
+  return { port, certificate, key, ca, revocationLists, issuer, clients };
 };
 
 const oidcProviders = (read: EnvReader): OidcProviderConfig[] => {
@@ -160,6 +206,7 @@ export const readConfig = (
         .list("AUTH_ALLOWED_EMAILS", [])
         .map((email) => email.toLowerCase()),
       webAppUrl: read.optional("WEB_APP_URL"),
+      services: servicesListener(read),
     },
   };
   if (read.problems.length) throw new ConfigValidationError(read.problems);
