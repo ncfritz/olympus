@@ -6,6 +6,7 @@ import type {
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
@@ -31,6 +32,8 @@ const notFound = (calendarId: string) =>
  */
 @Injectable()
 export class CalendarService {
+  private readonly logger = new Logger(CalendarService.name);
+
   constructor(
     private readonly accounts: CalendarAccountService,
     private readonly agent: MinervaCalendarAgentClient,
@@ -48,6 +51,29 @@ export class CalendarService {
         ? [toCalendar(calendar, account.id, colors.get(calendar.source))]
         : [];
     });
+  }
+
+  /**
+   * The sources of the user's calendars that do not count toward busy, for
+   * availability (ADR 0029). With the agent unreachable, none: every
+   * meeting counts, the safe side for a sign that says whether to come in.
+   */
+  async excludedFromBusy(userId: string): Promise<Set<string>> {
+    const owned = await this.accounts.owned(userId);
+    let calendars: AgentCalendar[];
+    try {
+      calendars = await this.agent.listCalendars();
+    } catch (error) {
+      this.logger.warn(
+        `Could not list calendars for availability, counting every meeting: ${String(error)}`,
+      );
+      return new Set();
+    }
+    return new Set(
+      calendars
+        .filter((c) => !c.includedInBusy && accountOf(c, owned))
+        .map((c) => c.source),
+    );
   }
 
   /** The calendars the account's provider reports. @throws NotFoundException */

@@ -1,4 +1,10 @@
 {
+  "AvailabilityLevel": {
+    "Busy": "busy",
+    "Free": "free",
+    "Interruptable": "interruptable",
+    "None": "none"
+  },
   "CalendarAccountStatus": {
     "Error": "error",
     "Expired": "expired",

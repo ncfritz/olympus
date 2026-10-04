@@ -506,7 +506,7 @@ and its metadata first).
 
 **Sign-off:** C9 on PROD.
 
-## Phase 9 — Availability in Minerva (ADR 0029)
+## Phase 9 — Availability in Minerva (ADR 0029) — in progress
 
 Decided with Neil (2026-10-04): overrides move to Minerva, per user; the
 agent's are deleted; the OnAir drawer moves from the legacy OnAir service
@@ -517,7 +517,19 @@ console signs in through Olympus and sees the same availability.
    `minerva.meeting_availability`, per user, audit columns, check scripts.
 2. **API**: the availability rules as pure functions, ported from the
    agent with its tests; `GetAvailability`, the block operations,
-   `SetMeetingAvailability` and `ClearMeetingAvailability`.
+   `SetMeetingAvailability` and `ClearMeetingAvailability`. **Done** —
+   `minerva/availability`: the rules in `utils/availabilityRules.ts`
+   (unit-tested: levels, precedence, blocks over meetings, the working day
+   in a time zone, weekends, levels the user set outside the day); the
+   operations under `/availability`, `/availability-blocks`,
+   `/availability-block/:blockId` and `/meeting/:meetingId/availability`.
+   The working day's time zone is the `x-ncfritz-tz` header, as elsewhere,
+   and its hours and weekends are query parameters. Which calendars do not
+   count toward busy comes from the agent (`CalendarService
+.excludedFromBusy`); with the agent down every meeting counts, the safe
+   side for the sign. A meeting's level is set only on a meeting of the
+   caller's; clearing one is idempotent, since the level outlives its
+   meeting.
 3. **Site**: the OnAir drawer and the header's ON AIR button read and write
    Minerva through an adapter that keeps the shapes and words they use
    today (`dnd`, `interrupt`, `free`, `clear`); the legacy `onairApi`

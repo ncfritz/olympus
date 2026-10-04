@@ -155,6 +155,123 @@
     ],
     "type": "object"
   },
+  "Availability": {
+    "properties": {
+      "blocks": {
+        "description": "The user's blocks in the range, by start",
+        "items": {
+          "$ref": "#/components/schemas/AvailabilityBlock"
+        },
+        "type": "array"
+      },
+      "endTime": {
+        "description": "An ISO-8601 formatted string indicating where the range ends",
+        "type": "string"
+      },
+      "meetings": {
+        "description": "The user's meetings in the range, by start",
+        "items": {
+          "$ref": "#/components/schemas/MeetingAvailability"
+        },
+        "type": "array"
+      },
+      "slots": {
+        "description": "Every 15-minute slot of the range, in order",
+        "items": {
+          "$ref": "#/components/schemas/AvailabilitySlot"
+        },
+        "type": "array"
+      },
+      "startTime": {
+        "description": "An ISO-8601 formatted string indicating where the range starts, on a 15-minute boundary",
+        "type": "string"
+      }
+    },
+    "required": [
+      "blocks",
+      "endTime",
+      "meetings",
+      "slots",
+      "startTime"
+    ],
+    "type": "object"
+  },
+  "AvailabilityBlock": {
+    "properties": {
+      "createdTime": {
+        "description": "An ISO-8601 formatted string indicating when the block was created",
+        "type": "string"
+      },
+      "endTime": {
+        "description": "An ISO-8601 formatted string indicating when the block ends",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the block",
+        "type": "string"
+      },
+      "label": {
+        "description": "What the block is for",
+        "type": "string"
+      },
+      "lastUpdatedTime": {
+        "description": "An ISO-8601 formatted string indicating when the block last changed",
+        "type": "string"
+      },
+      "startTime": {
+        "description": "An ISO-8601 formatted string indicating when the block starts",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityLevel"
+          }
+        ],
+        "description": "The level the block sets"
+      }
+    },
+    "required": [
+      "createdTime",
+      "endTime",
+      "id",
+      "lastUpdatedTime",
+      "startTime",
+      "status"
+    ],
+    "type": "object"
+  },
+  "AvailabilityLevel": {
+    "description": "How interruptible the user is, lowest to highest: none, free, interruptable, busy",
+    "enum": [
+      "none",
+      "free",
+      "interruptable",
+      "busy"
+    ],
+    "type": "string"
+  },
+  "AvailabilitySlot": {
+    "properties": {
+      "startTime": {
+        "description": "An ISO-8601 formatted string indicating when the slot starts",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityLevel"
+          }
+        ],
+        "description": "The slot's level"
+      }
+    },
+    "required": [
+      "startTime",
+      "status"
+    ],
+    "type": "object"
+  },
   "AvailableCalendar": {
     "properties": {
       "calendarId": {
@@ -190,6 +307,36 @@
     },
     "required": [
       "backfill"
+    ],
+    "type": "object"
+  },
+  "BaseAvailabilityBlock": {
+    "properties": {
+      "endTime": {
+        "description": "An ISO-8601 formatted string indicating when the block ends; after its start",
+        "type": "string"
+      },
+      "label": {
+        "description": "What the block is for, at most 200 characters",
+        "type": "string"
+      },
+      "startTime": {
+        "description": "An ISO-8601 formatted string indicating when the block starts",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityLevel"
+          }
+        ],
+        "description": "The level the block sets"
+      }
+    },
+    "required": [
+      "endTime",
+      "startTime",
+      "status"
     ],
     "type": "object"
   },
@@ -3324,6 +3471,22 @@
       "country",
       "createdTime",
       "lastUpdatedTime"
+    ],
+    "type": "object"
+  },
+  "CreateAvailabilityBlockRequest": {
+    "properties": {
+      "block": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseAvailabilityBlock"
+          }
+        ],
+        "description": "The block to create."
+      }
+    },
+    "required": [
+      "block"
     ],
     "type": "object"
   },
@@ -6941,6 +7104,22 @@
     ],
     "type": "string"
   },
+  "GetAvailabilityResponse": {
+    "properties": {
+      "availability": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Availability"
+          }
+        ],
+        "description": "The caller's availability over the range."
+      }
+    },
+    "required": [
+      "availability"
+    ],
+    "type": "object"
+  },
   "GetBatchJobStatsByTypeResponse": {
     "properties": {
       "series": {
@@ -8774,6 +8953,21 @@
     },
     "required": [
       "notificationSettings"
+    ],
+    "type": "object"
+  },
+  "ListAvailabilityBlocksResponse": {
+    "properties": {
+      "blocks": {
+        "description": "The caller's blocks in the range.",
+        "items": {
+          "$ref": "#/components/schemas/AvailabilityBlock"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "blocks"
     ],
     "type": "object"
   },
@@ -11295,6 +11489,72 @@
     ],
     "type": "object"
   },
+  "MeetingAvailability": {
+    "properties": {
+      "calendarStatus": {
+        "description": "The meeting's free/busy status from its calendar: Busy, Tentative, Free, OOF or WorkingElsewhere",
+        "type": "string"
+      },
+      "counted": {
+        "description": "Whether the meeting counts toward availability (its calendar counts toward busy)",
+        "type": "boolean"
+      },
+      "endTime": {
+        "description": "An ISO-8601 formatted string indicating when the meeting ends",
+        "type": "string"
+      },
+      "meetingId": {
+        "description": "The ID of the meeting",
+        "type": "string"
+      },
+      "overridden": {
+        "description": "Whether the user set the meeting's level",
+        "type": "boolean"
+      },
+      "startTime": {
+        "description": "An ISO-8601 formatted string indicating when the meeting starts",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityLevel"
+          }
+        ],
+        "description": "The level the meeting counts for: the one the user set, else its calendar status's"
+      },
+      "subject": {
+        "description": "The meeting's subject",
+        "type": "string"
+      }
+    },
+    "required": [
+      "calendarStatus",
+      "counted",
+      "endTime",
+      "meetingId",
+      "overridden",
+      "startTime",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MeetingAvailabilityChange": {
+    "properties": {
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityLevel"
+          }
+        ],
+        "description": "The level the meeting counts for, whatever its calendar says"
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "type": "object"
+  },
   "MeetingImportance": {
     "description": "The importance level of the meeting, i.e. low, high, etc.",
     "enum": [
@@ -13165,6 +13425,32 @@
       "title",
       "type"
     ],
+    "type": "object"
+  },
+  "PartialAvailabilityBlock": {
+    "properties": {
+      "endTime": {
+        "description": "An ISO-8601 formatted string indicating when the block ends",
+        "type": "string"
+      },
+      "label": {
+        "description": "What the block is for; null removes it",
+        "nullable": true,
+        "type": "string"
+      },
+      "startTime": {
+        "description": "An ISO-8601 formatted string indicating when the block starts",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityLevel"
+          }
+        ],
+        "description": "The level the block sets"
+      }
+    },
     "type": "object"
   },
   "PartialBaseImage": {
@@ -18025,6 +18311,22 @@
     ],
     "type": "object"
   },
+  "SetMeetingAvailabilityRequest": {
+    "properties": {
+      "availability": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MeetingAvailabilityChange"
+          }
+        ],
+        "description": "The meeting's level."
+      }
+    },
+    "required": [
+      "availability"
+    ],
+    "type": "object"
+  },
   "SignOutResponse": {
     "properties": {
       "signedOut": {
@@ -18034,6 +18336,22 @@
     },
     "required": [
       "signedOut"
+    ],
+    "type": "object"
+  },
+  "SingleAvailabilityBlockResponse": {
+    "properties": {
+      "block": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AvailabilityBlock"
+          }
+        ],
+        "description": "The block."
+      }
+    },
+    "required": [
+      "block"
     ],
     "type": "object"
   },
@@ -18191,6 +18509,22 @@
     },
     "required": [
       "favorite"
+    ],
+    "type": "object"
+  },
+  "SingleMeetingAvailabilityResponse": {
+    "properties": {
+      "meeting": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MeetingAvailability"
+          }
+        ],
+        "description": "The meeting, with the level it now counts for."
+      }
+    },
+    "required": [
+      "meeting"
     ],
     "type": "object"
   },
@@ -20140,6 +20474,22 @@
       "lastUpdatedTime",
       "type",
       "width"
+    ],
+    "type": "object"
+  },
+  "UpdateAvailabilityBlockRequest": {
+    "properties": {
+      "block": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PartialAvailabilityBlock"
+          }
+        ],
+        "description": "The changes to the block."
+      }
+    },
+    "required": [
+      "block"
     ],
     "type": "object"
   },

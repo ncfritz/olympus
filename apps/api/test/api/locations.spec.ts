@@ -612,7 +612,7 @@ describe("Location headers of created resources", () => {
     // These need a signed-in caller, which this app has no keys for; their
     // own specs (weatherLocations, weatherStations, and minerva's notes,
     // calendar, tags, goalCategories, goalCycles, goals, reviews,
-    // reviewPrompts, reviewItems and reviewAnswers) assert their Location
+    // reviewPrompts, reviewItems, reviewAnswers and availability) assert their Location
     // headers.
     // CreateGoalMilestone, CreateGoalCheckin, CreateReviewPin and
     // CreateReviewAnswerItem have no GET route, so they set none; nor has
@@ -639,6 +639,7 @@ describe("Location headers of created resources", () => {
       "CreateReviewAnswerItem",
       "CreateReviewAnswerTodo",
       "AddCalendar",
+      "CreateAvailabilityBlock",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

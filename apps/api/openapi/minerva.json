@@ -6660,6 +6660,527 @@
           "Calendar Accounts"
         ]
       }
+    },
+    "/minerva/availability": {
+      "get": {
+        "description": "Every 15-minute slot of the range (widened to whole slots) at the highest level of what overlaps it: a block wins over every meeting, a meeting counts for the level the user set or else its calendar status's, and nothing is free. Outside the working day only blocks and meetings the user set count; the rest is none. Cancelled meetings, and those of calendars that do not count toward busy, do not count. The range is at most 92 days.",
+        "operationId": "GetAvailability",
+        "parameters": [
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "An ISO-8601 timestamp: where the range starts",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end",
+            "required": true,
+            "in": "query",
+            "description": "An ISO-8601 timestamp: where the range ends",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The caller's IANA timezone, which the working day is read in; Etc/UTC when absent",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeWeekends",
+            "required": false,
+            "in": "query",
+            "description": "Whether Saturday and Sunday are working days; false when absent",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "dayEnd",
+            "required": false,
+            "in": "query",
+            "description": "When the working day ends, HH:mm in the caller's time zone; 18:00 when absent",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dayStart",
+            "required": false,
+            "in": "query",
+            "description": "When the working day starts, HH:mm in the caller's time zone; 08:00 when absent",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's availability over the range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Works out the signed-in user's availability over a range",
+        "tags": [
+          "Availability"
+        ]
+      }
+    },
+    "/minerva/availability-blocks": {
+      "get": {
+        "description": "The caller's blocks overlapping the range, by start. The range is at most 92 days.",
+        "operationId": "ListAvailabilityBlocks",
+        "parameters": [
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "description": "An ISO-8601 timestamp: where the range starts",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end",
+            "required": true,
+            "in": "query",
+            "description": "An ISO-8601 timestamp: where the range ends",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's blocks in the range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAvailabilityBlocksResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's availability blocks in a range",
+        "tags": [
+          "Availability"
+        ]
+      },
+      "post": {
+        "description": "Creates a block of time at a level, which wins over every meeting it overlaps and counts outside the working day too.",
+        "operationId": "CreateAvailabilityBlock",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateAvailabilityBlock operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAvailabilityBlockRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The block was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created block"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleAvailabilityBlockResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Blocks out time for the signed-in user",
+        "tags": [
+          "Availability"
+        ]
+      }
+    },
+    "/minerva/availability-block/{blockId}": {
+      "get": {
+        "description": "Returns a block of time the caller set, with its level and label. Another user's block is not found.",
+        "operationId": "DescribeAvailabilityBlock",
+        "parameters": [
+          {
+            "name": "blockId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the block",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The block was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleAvailabilityBlockResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's availability blocks",
+        "tags": [
+          "Availability"
+        ]
+      },
+      "put": {
+        "description": "Moves, resizes, relevels or relabels a block; what the request leaves out stays. Another user's block is not found.",
+        "operationId": "UpdateAvailabilityBlock",
+        "parameters": [
+          {
+            "name": "blockId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the block",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateAvailabilityBlock operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAvailabilityBlockRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The block with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleAvailabilityBlockResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Changes one of the signed-in user's availability blocks",
+        "tags": [
+          "Availability"
+        ]
+      },
+      "delete": {
+        "description": "Removes a block; the slots it covered go back to what their meetings say. Another user's block is not found.",
+        "operationId": "DeleteAvailabilityBlock",
+        "parameters": [
+          {
+            "name": "blockId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the block",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The block was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes one of the signed-in user's availability blocks",
+        "tags": [
+          "Availability"
+        ]
+      }
+    },
+    "/minerva/meeting/{meetingId}/availability": {
+      "put": {
+        "description": "The meeting counts for this level whatever its calendar says, outside the working day too. Another user's meeting is not found.",
+        "operationId": "SetMeetingAvailability",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the meeting",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the SetMeetingAvailability operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMeetingAvailabilityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The meeting, with the level it now counts for.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleMeetingAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sets the level one of the signed-in user's meetings counts for",
+        "tags": [
+          "Availability"
+        ]
+      },
+      "delete": {
+        "description": "The meeting goes back to counting for its calendar status's level. Clearing a level that is not set changes nothing.",
+        "operationId": "ClearMeetingAvailability",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the meeting",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The meeting counts for its calendar status's level."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Clears the level the signed-in user set for a meeting",
+        "tags": [
+          "Availability"
+        ]
+      }
     }
   },
   "info": {
@@ -6676,6 +7197,9 @@
     {
       "name": "Minerva",
       "description": ""
+    },
+    {
+      "name": "Availability"
     },
     {
       "name": "Calendar Accounts"
@@ -12077,6 +12601,356 @@
         },
         "required": [
           "claim"
+        ]
+      },
+      "AvailabilityLevel": {
+        "type": "string",
+        "description": "How interruptible the user is, lowest to highest: none, free, interruptable, busy",
+        "enum": [
+          "none",
+          "free",
+          "interruptable",
+          "busy"
+        ]
+      },
+      "AvailabilitySlot": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the slot starts"
+          },
+          "status": {
+            "description": "The slot's level",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityLevel"
+              }
+            ]
+          }
+        },
+        "required": [
+          "startTime",
+          "status"
+        ]
+      },
+      "MeetingAvailability": {
+        "type": "object",
+        "properties": {
+          "meetingId": {
+            "type": "string",
+            "description": "The ID of the meeting"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The meeting's subject"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the meeting starts"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the meeting ends"
+          },
+          "calendarStatus": {
+            "type": "string",
+            "description": "The meeting's free/busy status from its calendar: Busy, Tentative, Free, OOF or WorkingElsewhere"
+          },
+          "status": {
+            "description": "The level the meeting counts for: the one the user set, else its calendar status's",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityLevel"
+              }
+            ]
+          },
+          "overridden": {
+            "type": "boolean",
+            "description": "Whether the user set the meeting's level"
+          },
+          "counted": {
+            "type": "boolean",
+            "description": "Whether the meeting counts toward availability (its calendar counts toward busy)"
+          }
+        },
+        "required": [
+          "meetingId",
+          "startTime",
+          "endTime",
+          "calendarStatus",
+          "status",
+          "overridden",
+          "counted"
+        ]
+      },
+      "AvailabilityBlock": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the block"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block starts"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block ends"
+          },
+          "status": {
+            "description": "The level the block sets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityLevel"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "What the block is for"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block was created"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block last changed"
+          }
+        },
+        "required": [
+          "id",
+          "startTime",
+          "endTime",
+          "status",
+          "createdTime",
+          "lastUpdatedTime"
+        ]
+      },
+      "Availability": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating where the range starts, on a 15-minute boundary"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating where the range ends"
+          },
+          "slots": {
+            "description": "Every 15-minute slot of the range, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilitySlot"
+            }
+          },
+          "meetings": {
+            "description": "The user's meetings in the range, by start",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingAvailability"
+            }
+          },
+          "blocks": {
+            "description": "The user's blocks in the range, by start",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityBlock"
+            }
+          }
+        },
+        "required": [
+          "startTime",
+          "endTime",
+          "slots",
+          "meetings",
+          "blocks"
+        ]
+      },
+      "GetAvailabilityResponse": {
+        "type": "object",
+        "properties": {
+          "availability": {
+            "description": "The caller's availability over the range.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Availability"
+              }
+            ]
+          }
+        },
+        "required": [
+          "availability"
+        ]
+      },
+      "ListAvailabilityBlocksResponse": {
+        "type": "object",
+        "properties": {
+          "blocks": {
+            "description": "The caller's blocks in the range.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityBlock"
+            }
+          }
+        },
+        "required": [
+          "blocks"
+        ]
+      },
+      "BaseAvailabilityBlock": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block starts"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block ends; after its start"
+          },
+          "status": {
+            "description": "The level the block sets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityLevel"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "What the block is for, at most 200 characters"
+          }
+        },
+        "required": [
+          "startTime",
+          "endTime",
+          "status"
+        ]
+      },
+      "CreateAvailabilityBlockRequest": {
+        "type": "object",
+        "properties": {
+          "block": {
+            "description": "The block to create.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseAvailabilityBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "block"
+        ]
+      },
+      "SingleAvailabilityBlockResponse": {
+        "type": "object",
+        "properties": {
+          "block": {
+            "description": "The block.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "block"
+        ]
+      },
+      "PartialAvailabilityBlock": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block starts"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the block ends"
+          },
+          "status": {
+            "description": "The level the block sets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityLevel"
+              }
+            ]
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the block is for; null removes it"
+          }
+        }
+      },
+      "UpdateAvailabilityBlockRequest": {
+        "type": "object",
+        "properties": {
+          "block": {
+            "description": "The changes to the block.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialAvailabilityBlock"
+              }
+            ]
+          }
+        },
+        "required": [
+          "block"
+        ]
+      },
+      "MeetingAvailabilityChange": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "The level the meeting counts for, whatever its calendar says",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityLevel"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "SetMeetingAvailabilityRequest": {
+        "type": "object",
+        "properties": {
+          "availability": {
+            "description": "The meeting's level.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeetingAvailabilityChange"
+              }
+            ]
+          }
+        },
+        "required": [
+          "availability"
+        ]
+      },
+      "SingleMeetingAvailabilityResponse": {
+        "type": "object",
+        "properties": {
+          "meeting": {
+            "description": "The meeting, with the level it now counts for.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MeetingAvailability"
+              }
+            ]
+          }
+        },
+        "required": [
+          "meeting"
         ]
       }
     }

@@ -54,6 +54,10 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
     CalendarEventHandler,
     MinervaCalendarAgentClient,
   ],
-  exports: [CalendarAccountService, MinervaCalendarAgentClient],
+  exports: [
+    CalendarAccountService,
+    CalendarService,
+    MinervaCalendarAgentClient,
+  ],
 })
 export class CalendarsModule {}
