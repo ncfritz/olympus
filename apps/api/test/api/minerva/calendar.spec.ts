@@ -302,44 +302,79 @@ describe("Minerva calendar API", () => {
   });
 
   describe("GET /v1/minerva/meetings/:start (ListCalendarItems)", () => {
-    it("lists the caller's meetings from the start day for the requested days", async () => {
+    const list = (path: string, tz?: string) => {
+      const request = t().http().get(path);
+      return ctx.as(tz ? request.set("x-ncfritz-tz", tz) : request);
+    };
+    const variables = () =>
+      t().graphql.calls("ListCalendarItems")[0]?.variables as {
+        start: string;
+        end: string;
+        user_id: string;
+      };
+
+    it("lists the caller's meetings over the requested days", async () => {
       t().graphql.on("ListCalendarItems", {
         minerva_meetings: [graphQlMeeting()],
       });
 
-      const res = await ctx.as(
-        t().http().get("/v1/minerva/meetings/2026-09-18?days=3"),
-      );
+      const res = await list("/v1/minerva/meetings/2026-09-18?days=3");
 
       expect(res.status).toBe(200);
       expect(res.body.items).toHaveLength(1);
-      const { start, end, user_id } = t().graphql.calls("ListCalendarItems")[0]
-        .variables as {
-        start: moment.Moment;
-        end: moment.Moment;
-        user_id: string;
-      };
-      expect(user_id).toBe(USER);
-      expect(moment(end).diff(moment(start), "days")).toBe(3);
+      expect(variables()).toEqual({
+        start: "2026-09-18T00:00:00.000Z",
+        end: "2026-09-21T00:00:00.000Z",
+        user_id: USER,
+      });
+    });
+
+    it("reads the days in the caller's timezone", async () => {
+      t().graphql.on("ListCalendarItems", { minerva_meetings: [] });
+
+      await list("/v1/minerva/meetings/2026-10-04", "America/Los_Angeles");
+
+      expect(variables()).toEqual(
+        expect.objectContaining({
+          start: "2026-10-04T07:00:00.000Z",
+          end: "2026-10-05T07:00:00.000Z",
+        }),
+      );
+    });
+
+    it("asks for what overlaps the days, not only what falls inside them", async () => {
+      t().graphql.on("ListCalendarItems", { minerva_meetings: [] });
+
+      await list("/v1/minerva/meetings/2026-09-18");
+
+      const query = t().graphql.calls("ListCalendarItems")[0]!.document;
+      expect(query).toMatch(/start_time: \{ _lt: \$end \}/);
+      expect(query).toMatch(/end_time: \{ _gt: \$start \}/);
+      expect(query).toMatch(/deleted: \{ _eq: false \}/);
     });
 
     it("defaults to one day", async () => {
       t().graphql.on("ListCalendarItems", { minerva_meetings: [] });
 
-      await ctx.as(t().http().get("/v1/minerva/meetings/2026-09-18"));
+      await list("/v1/minerva/meetings/2026-09-18");
 
-      const { start, end } = t().graphql.calls("ListCalendarItems")[0]
-        .variables as { start: moment.Moment; end: moment.Moment };
-      expect(moment(end).diff(moment(start), "days")).toBe(1);
+      expect(variables().end).toBe("2026-09-19T00:00:00.000Z");
     });
 
-    it("rejects a non-numeric day count", async () => {
+    it.each([
+      ["a non-numeric day count", "/v1/minerva/meetings/2026-09-18?days=abc"],
+      ["a fractional day count", "/v1/minerva/meetings/2026-09-18?days=41.99"],
+      ["no days", "/v1/minerva/meetings/2026-09-18?days=0"],
+      ["more than 92 days", "/v1/minerva/meetings/2026-09-18?days=93"],
+      ["a start that is not a day", "/v1/minerva/meetings/null?days=7"],
+    ])("rejects %s", async (_what, path) => {
+      expect((await list(path)).status).toBe(400);
+      expect(t().graphql.request).not.toHaveBeenCalled();
+    });
+
+    it("rejects a timezone it does not know", async () => {
       expect(
-        (
-          await ctx.as(
-            t().http().get("/v1/minerva/meetings/2026-09-18?days=abc"),
-          )
-        ).status,
+        (await list("/v1/minerva/meetings/2026-09-18", "Mars/Olympus")).status,
       ).toBe(400);
     });
   });

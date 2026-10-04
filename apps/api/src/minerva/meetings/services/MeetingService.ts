@@ -7,6 +7,7 @@ import {
   PartialMeeting,
 } from "@ncfritz/olympus-model";
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -115,6 +116,9 @@ const withoutProtectedColumns = (changes: PartialMeeting): PartialMeeting =>
  * ID and reads and writes only that user's rows. Another user's item is
  * not found.
  */
+/** The most days one ListCalendarItems spans. */
+export const LIST_DAYS_MAX = 92;
+
 @Injectable()
 export class MeetingService {
   constructor(private readonly graphQLClient: GraphQLClient) {}
@@ -365,15 +369,33 @@ export class MeetingService {
   }
 
   /** Lists the calendar items in the `days` days from `start`. */
-  async list(userId: string, start: string, days: number): Promise<Meeting[]> {
-    const startTime = moment(start);
-    const endTime = moment(startTime).add({ days: days });
-    //               {
-    //                 _and: { start_time: { _lte: $start }, end_time: { _lte: $end } }
-    //               },
-    //               {
-    //                 _and: { start_time: { _gte: $start }, end_time: { _gte: $end } }
-    //               }
+  /**
+   * The user's items that overlap `days` days from `start` (YYYY-MM-DD),
+   * the days read in `tz`: one that began the evening before or runs on
+   * past the last day is listed too. Deleted items are not.
+   * @throws BadRequestException
+   */
+  async list(
+    userId: string,
+    tz: string,
+    start: string,
+    days: number,
+  ): Promise<Meeting[]> {
+    const problems: string[] = [];
+    if (!moment.tz.zone(tz)) problems.push(`${tz} is not a known timezone`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(start) ||
+      !moment(start, "YYYY-MM-DD", true).isValid()
+    ) {
+      problems.push("start must be a day, YYYY-MM-DD");
+    }
+    if (!Number.isInteger(days) || days < 1 || days > LIST_DAYS_MAX) {
+      problems.push(`days must be a whole number from 1 to ${LIST_DAYS_MAX}`);
+    }
+    if (problems.length) throw new BadRequestException(problems);
+
+    const startTime = moment.tz(start, "YYYY-MM-DD", tz).startOf("day");
+    const endTime = moment(startTime).add(days, "days");
 
     const queryRequest = gql`
       query ListCalendarItems(
@@ -384,15 +406,14 @@ export class MeetingService {
         minerva_meetings(
           where: {
             user_id: { _eq: $user_id }
+            deleted: { _eq: false }
+            start_time: { _lt: $end }
             _or: [
-              {
-                _and: { start_time: { _gte: $start }, end_time: { _lte: $end } }
-              }
-              {
-                _and: { start_time: { _lte: $start }, end_time: { _gte: $end } }
-              }
+              { end_time: { _gt: $start } }
+              { end_time: { _is_null: true }, start_time: { _gte: $start } }
             ]
           }
+          order_by: { start_time: asc }
         ) {
           ${MEETING_WITH_ATTENDEE_EMAILS}
         }
@@ -403,8 +424,8 @@ export class MeetingService {
       await this.graphQLClient.request<GraphQlListCalendarItemsResponse>(
         queryRequest,
         {
-          start: startTime,
-          end: endTime,
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
           user_id: userId,
         },
       );
