@@ -101,8 +101,10 @@ recorded exception.
 4. Using the link again answers 410; a claim for an address no account
    has answers exactly as one that exists.
 5. A sixth claim the same day is refused (429).
-6. An `admin` releases `acct-other`; it is unowned again and its events
-   stop being stored.
+6. An `admin` releases `acct-other`; it is unowned again, its meetings
+   are gone (its notes stay) and its events stop being stored.
+7. With `acct-other` unowned, connecting it from the site (signing in to
+   it) links it as `claim_consent`.
 
 ## C8 — The site
 

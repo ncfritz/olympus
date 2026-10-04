@@ -6415,6 +6415,251 @@
           "Calendars"
         ]
       }
+    },
+    "/minerva/calendar-account-claims": {
+      "post": {
+        "description": "Claims the calendar accounts the sync agent holds without an owner that have this address, and mails each a link that confirms the claim (ADR 0028). The answer is the same whether or not any account has the address, so a claim does not reveal which accounts exist. Five claims per user a day.",
+        "operationId": "CreateCalendarAccountClaim",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateCalendarAccountClaim operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCalendarAccountClaimRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted. If an unowned account has the address, the link is on its way there.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarAccountClaimReceiptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The caller has made five claims in the last day."
+          },
+          "503": {
+            "description": "No From address is configured for the claim email."
+          }
+        },
+        "summary": "Claims a calendar account by its email",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-account-claim/{token}": {
+      "get": {
+        "description": "The account a mailed claim link names, for the claimant to confirm with ConfirmCalendarAccountClaim. Changes nothing, since a mail scanner may open the link. Only the user who made the claim may see it.",
+        "operationId": "DescribeCalendarAccountClaim",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The token from the claim's link",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The claim.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCalendarAccountClaimResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "Another user made the claim; the message says so."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The account has found an owner since the claim."
+          },
+          "410": {
+            "description": "The claim expired, was confirmed or was cancelled."
+          }
+        },
+        "summary": "Describes a calendar account claim to its claimant",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-account-claim/{token}/confirm": {
+      "post": {
+        "description": "Links the claimed account to the caller, who made the claim, as proven by its mailed link (claim_email, ADR 0028), and asks the sync agent to publish the account's events again so its earlier meetings reach Minerva. The link works once.",
+        "operationId": "ConfirmCalendarAccountClaim",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The token from the claim's link",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account, now the caller's.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCalendarAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "Another user made the claim; the message says so."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The account has found an owner since the claim, or another user signs in to Olympus with it."
+          },
+          "410": {
+            "description": "The claim expired, was confirmed or was cancelled."
+          }
+        },
+        "summary": "Confirms a calendar account claim",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/minerva/calendar-account/{accountId}/release": {
+      "post": {
+        "description": "For an account linked to the wrong user (ADR 0028). Its owner's meetings from it are deleted, keeping their notes, meeting links and associations, and its open claims are cancelled. The sync agent keeps the credential, so the account can be claimed again; until then its events are not stored.",
+        "operationId": "ReleaseCalendarAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The account is unowned."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Makes a calendar account unowned again",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
     }
   },
   "info": {
@@ -11731,6 +11976,109 @@
         },
         "required": [
           "calendar"
+        ]
+      },
+      "BaseCalendarAccountClaim": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "The email of the calendar account to claim"
+          },
+          "confirmPage": {
+            "type": "string",
+            "description": "The site page the emailed link opens, with the claim's token added as `token`; its origin must be one of the API's client origins"
+          }
+        },
+        "required": [
+          "email",
+          "confirmPage"
+        ]
+      },
+      "CreateCalendarAccountClaimRequest": {
+        "type": "object",
+        "properties": {
+          "claim": {
+            "description": "The claim to make.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseCalendarAccountClaim"
+              }
+            ]
+          }
+        },
+        "required": [
+          "claim"
+        ]
+      },
+      "CalendarAccountClaimReceipt": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "The address named. If an unowned calendar account has it, a link to confirm the claim was sent there"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "CalendarAccountClaimReceiptResponse": {
+        "type": "object",
+        "properties": {
+          "claimReceipt": {
+            "description": "The claim's receipt.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountClaimReceipt"
+              }
+            ]
+          }
+        },
+        "required": [
+          "claimReceipt"
+        ]
+      },
+      "CalendarAccountClaim": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "description": "The provider of the claimed account",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProvider"
+              }
+            ]
+          },
+          "email": {
+            "type": "string",
+            "description": "The claimed account's email, where the link was sent"
+          },
+          "expiresTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the claim's link stops working"
+          }
+        },
+        "required": [
+          "provider",
+          "email",
+          "expiresTime"
+        ]
+      },
+      "DescribeCalendarAccountClaimResponse": {
+        "type": "object",
+        "properties": {
+          "claim": {
+            "description": "The claim.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountClaim"
+              }
+            ]
+          }
+        },
+        "required": [
+          "claim"
         ]
       }
     }

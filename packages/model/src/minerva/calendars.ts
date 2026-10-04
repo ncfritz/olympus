@@ -187,6 +187,45 @@ export class AvailableCalendar {
   synced: boolean;
 }
 
+/** A claim on a calendar account, as its claimant sees it before confirming (ADR 0028). */
+export class CalendarAccountClaim {
+  @ApiProperty({
+    enum: () => CalendarProvider,
+    enumName: "CalendarProvider",
+    enumSchema: {
+      description: "The provider a calendar account signs in with",
+    },
+    required: true,
+    description: "The provider of the claimed account",
+  })
+  provider: CalendarProvider;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The claimed account's email, where the link was sent",
+  })
+  email: string;
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string indicating when the claim's link stops working",
+  })
+  expiresTime: Moment;
+}
+
+/** What a claim answers, the same whether or not an account has the address. */
+export class CalendarAccountClaimReceipt {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The address named. If an unowned calendar account has it, a link to confirm the claim was sent there",
+  })
+  email: string;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Partial and Derived Types                                                                                          */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -271,6 +310,24 @@ export class PartialCalendar {
   includedInBusy?: boolean;
 }
 
+/** A claim on an unowned calendar account, by its email. */
+export class BaseCalendarAccountClaim {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The email of the calendar account to claim",
+  })
+  email: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The site page the emailed link opens, with the claim's token added as `token`; its origin must be one of the API's client origins",
+  })
+  confirmPage: string;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -309,6 +366,15 @@ export class UpdateCalendarRequest {
     description: "The changes to the calendar.",
   })
   calendar: PartialCalendar;
+}
+
+export class CreateCalendarAccountClaimRequest {
+  @ApiProperty({
+    type: () => BaseCalendarAccountClaim,
+    required: true,
+    description: "The claim to make.",
+  })
+  claim: BaseCalendarAccountClaim;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -370,4 +436,22 @@ export class SingleCalendarResponse {
     description: "The calendar.",
   })
   calendar: Calendar;
+}
+
+export class CalendarAccountClaimReceiptResponse {
+  @ApiProperty({
+    type: () => CalendarAccountClaimReceipt,
+    required: true,
+    description: "The claim's receipt.",
+  })
+  claimReceipt: CalendarAccountClaimReceipt;
+}
+
+export class DescribeCalendarAccountClaimResponse {
+  @ApiProperty({
+    type: () => CalendarAccountClaim,
+    required: true,
+    description: "The claim.",
+  })
+  claim: CalendarAccountClaim;
 }

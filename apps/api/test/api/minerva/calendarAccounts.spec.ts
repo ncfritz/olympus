@@ -489,6 +489,28 @@ describe("Calendar accounts API", () => {
       ]);
     });
 
+    it("claims, by consent, an account the agent held unowned", async () => {
+      waiting(connectionRow());
+      owners({ owner: null });
+      agent.completeWebSignIn.mockResolvedValue({
+        provider: "google",
+        accountLabel: "neil@example.com",
+        subject: SUBJECT,
+        created: false,
+      });
+
+      const res = await callback("google", { state: STATE, code: "c" });
+
+      expect(outcome(res.headers.location).calendarAccount).toBe("connected");
+      expect(
+        ctx.t.graphql.calls("LinkCalendarAccount")[0]?.variables,
+      ).toMatchObject({
+        object: { userId: USER, verificationMethod: "claim_consent" },
+        columns: ["email", "userId", "verifiedTime", "verificationMethod"],
+      });
+      expect(agent.backfillCalendar).toHaveBeenCalled();
+    });
+
     it("still connects the account when its backfill fails", async () => {
       waiting(connectionRow());
       owners();

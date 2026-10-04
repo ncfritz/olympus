@@ -1,6 +1,11 @@
 import { Module } from "@nestjs/common";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
+import { RabbitModule } from "../../infra/RabbitModule";
 import { AddCalendarController } from "./controllers/AddCalendarController";
+import { ConfirmCalendarAccountClaimController } from "./controllers/ConfirmCalendarAccountClaimController";
+import { CreateCalendarAccountClaimController } from "./controllers/CreateCalendarAccountClaimController";
+import { DescribeCalendarAccountClaimController } from "./controllers/DescribeCalendarAccountClaimController";
+import { ReleaseCalendarAccountController } from "./controllers/ReleaseCalendarAccountController";
 import { CompleteCalendarAccountConnectController } from "./controllers/CompleteCalendarAccountConnectController";
 import { ConnectCalendarAccountController } from "./controllers/ConnectCalendarAccountController";
 import { DescribeCalendarAccountController } from "./controllers/DescribeCalendarAccountController";
@@ -12,6 +17,7 @@ import { RemoveCalendarAccountController } from "./controllers/RemoveCalendarAcc
 import { RemoveCalendarController } from "./controllers/RemoveCalendarController";
 import { UpdateCalendarController } from "./controllers/UpdateCalendarController";
 import { CalendarEventHandler } from "./handlers/CalendarEventHandler";
+import { CalendarAccountClaimService } from "./services/CalendarAccountClaimService";
 import { CalendarAccountService } from "./services/CalendarAccountService";
 import { CalendarEventService } from "./services/CalendarEventService";
 import { CalendarService } from "./services/CalendarService";
@@ -22,7 +28,7 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
  * the calendar sync agent, and the consumer of its events.
  */
 @Module({
-  imports: [GraphQLClientModule],
+  imports: [GraphQLClientModule, RabbitModule],
   controllers: [
     ListCalendarAccountsController,
     ConnectCalendarAccountController,
@@ -35,9 +41,14 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
     AddCalendarController,
     UpdateCalendarController,
     RemoveCalendarController,
+    CreateCalendarAccountClaimController,
+    DescribeCalendarAccountClaimController,
+    ConfirmCalendarAccountClaimController,
+    ReleaseCalendarAccountController,
   ],
   providers: [
     CalendarAccountService,
+    CalendarAccountClaimService,
     CalendarService,
     CalendarEventService,
     CalendarEventHandler,

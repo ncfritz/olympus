@@ -86,6 +86,15 @@ describe("readConfig", () => {
       expect(readConfig(REQUIRED).minerva).toEqual({});
     });
 
+    it("reads the From of the claim email", () => {
+      expect(
+        readConfig({
+          ...REQUIRED,
+          MINERVA_CLAIM_MAIL_FROM: "Olympus <olympus@example.com>",
+        }).minerva,
+      ).toEqual({ claimMailFrom: "Olympus <olympus@example.com>" });
+    });
+
     it("reads the URL and the API's client certificate", () => {
       expect(
         readConfig({

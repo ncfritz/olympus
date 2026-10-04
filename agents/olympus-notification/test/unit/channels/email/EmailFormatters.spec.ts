@@ -44,6 +44,58 @@ describe("EmailFormatters", () => {
     expect(email.htmlPart).toContain("<title>Olympus</title>");
   });
 
+  describe("minerva_calendar_account_claim", () => {
+    const claim = {
+      claimantName: "Neil",
+      claimantEmail: "neil@example.com",
+      provider: "google",
+      accountEmail: "work@example.com",
+      link: "https://olympus.example.com/minerva/calendars/claim?token=abc_123",
+      expiresTime: "2026-10-05T04:10:00.000Z",
+    };
+
+    it("says who asked, for which account, and links the confirm page", async () => {
+      const email = await format("minerva_calendar_account_claim", claim);
+      expect(email.subject).toBe(
+        "[Olympus] Confirm your Google calendar account",
+      );
+      for (const part of [email.plaintextPart, email.htmlPart]) {
+        expect(part).toContain("Neil");
+        expect(part).toContain("neil@example.com");
+        expect(part).toContain("work@example.com");
+        expect(part).toContain("Monday, October 5, 2026 at 04:10 UTC");
+        expect(part).toContain("If it was not you, ignore this email");
+      }
+      expect(email.plaintextPart).toContain(claim.link);
+      // Escaped in the HTML, as every value is; a browser reads it back.
+      expect(email.htmlPart).toContain(
+        'href="https://olympus.example.com/minerva/calendars/claim?token&#x3D;abc_123"',
+      );
+      expect(email.htmlPart).toContain("<title>Olympus</title>");
+    });
+
+    it("escapes what the claimant wrote in the HTML", async () => {
+      const email = await format("minerva_calendar_account_claim", {
+        ...claim,
+        claimantName: "<b>Mallory</b>",
+      });
+      expect(email.htmlPart).not.toContain("<b>Mallory</b>");
+      expect(email.htmlPart).toContain("&lt;b&gt;Mallory&lt;/b&gt;");
+      // Plain text is not HTML: it says what was written.
+      expect(email.plaintextPart).toContain(
+        "<b>Mallory</b> (neil@example.com)",
+      );
+    });
+
+    it("names Microsoft accounts", async () => {
+      const email = await format("minerva_calendar_account_claim", {
+        ...claim,
+        provider: "microsoft",
+      });
+      expect(email.subject).toContain("Microsoft");
+    });
+  });
+
   it("attaches the inline images of the partials the HTML uses, once", async () => {
     const first = await format("system_test");
     const second = await format("system_test");

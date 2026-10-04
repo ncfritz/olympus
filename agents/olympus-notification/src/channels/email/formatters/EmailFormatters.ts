@@ -6,6 +6,7 @@ import type { SmtpNotificationEvent } from "../../../delivery/events";
 import type { NotificationFormatter } from "../../../delivery/NotificationFormatter";
 import type { SmtpPayload } from "../payload";
 import { EmailTemplates } from "../services/EmailTemplates";
+import { CalendarAccountClaimEmailFormatter } from "./CalendarAccountClaimEmailFormatter";
 import { MetadataWorkflowCompleteEmailFormatter } from "./MetadataWorkflowCompleteEmailFormatter";
 import { SystemTestEmailFormatter } from "./SystemTestEmailFormatter";
 import { TranscodeWorkflowCompleteEmailFormatter } from "./TranscodeWorkflowCompleteEmailFormatter";
@@ -31,6 +32,9 @@ export class EmailFormatters {
         new MetadataWorkflowCompleteEmailFormatter(workflowApi, templates),
       dionysus_transcode_complete: new TranscodeWorkflowCompleteEmailFormatter(
         mediaApi,
+        templates,
+      ),
+      minerva_calendar_account_claim: new CalendarAccountClaimEmailFormatter(
         templates,
       ),
     };

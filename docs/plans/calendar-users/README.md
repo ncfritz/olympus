@@ -360,9 +360,10 @@ after Neil applies the migration.
 
 **Sign-off:** C6 on DEV, then PROD.
 
-## Phase 6 — Claims
+## Phase 6 — Claims — built 2026-10-03, not signed off
 
-1. **Operations**:
+1. **Operations**: **done**, in `minerva/calendars`
+   (`CalendarAccountClaimService`):
 
    | Operation                      | Route                                                         |
    | ------------------------------ | ------------------------------------------------------------- |
@@ -370,24 +371,61 @@ after Neil applies the migration.
    | `DescribeCalendarAccountClaim` | `GET /minerva/calendar-account-claim/:token`                  |
    | `ConfirmCalendarAccountClaim`  | `POST /minerva/calendar-account-claim/:token/confirm`         |
    | `ReleaseCalendarAccount`       | `POST /minerva/calendar-account/:accountId/release` (`admin`) |
-   - `CreateCalendarAccountClaim` takes the account's email and always
-     answers 202 with the same body. An unowned account with that address
-     gets a claim (the previous open one cancelled) and the email; five
-     claims per user a day, then 429.
-   - `DescribeCalendarAccountClaim` and `Confirm…` need the claimant
-     signed in: another user gets 403 with the reason; an expired, used
-     or cancelled token 410. Confirming links the account
-     (`claim_email`) and starts the backfill.
-   - An account whose address cannot receive mail is claimed by
-     `ReauthorizeCalendarAccount` on an unowned account: the subject must
-     match (`claim_consent`).
+   - `CreateCalendarAccountClaim` takes `email` and `confirmPage` (a page of
+     one of `AUTH_CLIENT_ORIGINS`, as `returnTo` is for connecting) and
+     always answers 202 with the address it was given. Each unowned account
+     with that address, matched in any case, gets a claim and an email,
+     unless another user signs in to Olympus with it. Opening a claim
+     cancels the account's previous open one in the same request. The link
+     is `confirmPage?token=<token>`; the token is 32 random bytes, stored
+     only as its SHA-256, and works for 24 hours.
+   - **The limit**: five claims per user a day, then 429. It counts every
+     claim, whether or not an account matched; counting only matches would
+     tell a user which addresses exist. It is held in memory, like the
+     sign-in limits (`RateLimiter`, keyed by user), so an API restart
+     forgets it; `AUTH_RATE_LIMITS=off` turns it off.
+   - `DescribeCalendarAccountClaim` changes nothing. Both it and
+     `Confirm…` answer 404 for an unknown token; 403 for another user, with
+     the reason; 410 once expired, confirmed or cancelled; and 409 when the
+     account has an owner since. Confirming first takes the claim (only if
+     still open and unexpired; otherwise 410), then links the account
+     where it is still unowned (`claim_email`; otherwise 409), then
+     backfills it.
+   - **No-mail accounts, changed from the plan**: an account that cannot
+     receive mail is claimed by connecting it (`ConnectCalendarAccount`),
+     not by `ReauthorizeCalendarAccount`. Re-authorizing needs the account's
+     ID, which a user who does not own it never sees. Signing in to an
+     account the agent already holds unowned proves it by the subject, and
+     is recorded as `claim_consent`.
+   - **Release**, decided here: makes the account unowned, deletes its
+     meetings in Minerva (as removing it does; notes, meeting links and
+     associations stay) and cancels its open claims. The agent keeps the
+     credential, so the account can be claimed again; until then its
+     events are `unowned`. The `admin` role is checked only where the
+     users listener enforces (`AUTH_MODE_USERS=enforce`), as for every
+     other `admin` operation; prod still reports.
 
-2. **The email**: a `minerva` context in the notification agent, the
-   claim's template (who asked, which account, the link, when it
-   expires, what to do if it was not them), sent over SMTP.
-3. **Tests**: token hashing, expiry, single use, the same answer for an
-   unknown address, the rate limit, the wrong user, release by `admin`
-   only; the formatter's rendering.
+2. **The email**: **done** — `minerva_calendar_account_claim`, published
+   by the API straight onto the notification agent's `email` channel
+   (Gmail), not through `SendNotification`, with the claim's ID as its
+   notification ID and its expiry as the message's.
+   - Its context is part of the message contract
+     (`CalendarAccountClaimContext` in `@ncfritz/olympus-messages`).
+   - The agent's `CalendarAccountClaimEmailFormatter` renders who asked,
+     the provider and account, the link, the expiry (in UTC, said so) and
+     what to do if it was not them. The HTML escapes every value; the
+     plain-text part does not, so the link survives (the test caught an
+     escaped `=` there).
+   - The From is `MINERVA_CLAIM_MAIL_FROM` on the API; unset, claims answer 503. In the env examples and commented in prod.
+3. **Tests**: **done** — the token, link, state, address and `_ilike`
+   escaping as pure functions; every operation over HTTP: the mail and its
+   contents, the same answer for an unknown address, another user's sign-in
+   identity, a broker failure, the sixth claim (for one user only), bad
+   input; describe changing nothing, the 403, 404, 409 and each 410; the
+   confirm races; release by `admin` only; the `claim_consent` sign-in; the
+   email's rendering and escaping. Verified 2026-10-03: the API's tests
+   (2,267), the notification agent's and the packages', with typecheck,
+   lint and the convention checks.
 
 **Sign-off:** C7 on DEV.
 

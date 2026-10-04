@@ -157,6 +157,11 @@ export type MinervaConfig = {
     tls?: { certificate: string; key: string; ca?: string };
     timeoutMs: number;
   };
+  /**
+   * The From of a calendar account claim's email (ADR 0028), e.g.
+   * `Olympus <olympus@ncfritz.net>`. Unset, claims answer 503.
+   */
+  claimMailFrom?: string;
 };
 
 export type AppConfig = {
@@ -322,9 +327,20 @@ export const isCidr = (value: string): boolean => {
 
 /**
  * MINERVA_CALENDAR_AGENT_URL, with MINERVA_CALENDAR_AGENT_CLIENT_CERT and
- * _CLIENT_KEY (and the optional _CA_CERT), which an https URL requires.
+ * _CLIENT_KEY (and the optional _CA_CERT), which an https URL requires; and
+ * MINERVA_CLAIM_MAIL_FROM.
  */
 const readMinervaConfig = (read: EnvReader): MinervaConfig => {
+  const claimMailFrom = read.optional("MINERVA_CLAIM_MAIL_FROM");
+  return {
+    ...readCalendarAgentConfig(read),
+    ...(claimMailFrom ? { claimMailFrom } : {}),
+  };
+};
+
+const readCalendarAgentConfig = (
+  read: EnvReader,
+): Pick<MinervaConfig, "calendarAgent"> => {
   const baseUrl = read.optional("MINERVA_CALENDAR_AGENT_URL");
   const certificate = read.optional("MINERVA_CALENDAR_AGENT_CLIENT_CERT");
   const key = read.optional("MINERVA_CALENDAR_AGENT_CLIENT_KEY");

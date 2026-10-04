@@ -273,6 +273,9 @@ export class CalendarAccountService {
       result.subject,
       result.accountLabel,
       decision.alreadyTheirs,
+      // Signing in to an account the agent already held, unowned, is how
+      // an account whose address takes no mail is claimed (ADR 0028).
+      existing && !existing.userId ? "claim_consent" : "consent",
     );
     if (!decision.alreadyTheirs) {
       await this.backfill(result.provider, result.accountLabel);
@@ -511,10 +514,7 @@ export class CalendarAccountService {
    * Minerva this way. Best effort: the link stands if the agent cannot be
    * asked, and the calendars' next changes still arrive.
    */
-  private async backfill(
-    provider: AgentProvider,
-    accountLabel: string,
-  ): Promise<void> {
+  async backfill(provider: AgentProvider, accountLabel: string): Promise<void> {
     try {
       const calendars = (await this.agent.listCalendars()).filter(
         (c) => c.provider === provider && c.accountLabel === accountLabel,
@@ -553,7 +553,7 @@ export class CalendarAccountService {
   }
 
   /** The user who signs in to Olympus with this account, if any. */
-  private async identityOwner(
+  async identityOwner(
     provider: string,
     subject: string,
   ): Promise<string | undefined> {
@@ -583,6 +583,7 @@ export class CalendarAccountService {
     subject: string,
     email: string,
     alreadyTheirs: boolean,
+    method: "consent" | "claim_consent",
   ): Promise<string> {
     const mutation = gql`
       mutation LinkCalendarAccount(
@@ -609,7 +610,7 @@ export class CalendarAccountService {
         email,
         userId,
         verifiedTime: new Date().toISOString(),
-        verificationMethod: "consent",
+        verificationMethod: method,
       },
       columns: alreadyTheirs
         ? ["email"]

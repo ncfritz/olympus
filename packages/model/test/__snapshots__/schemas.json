@@ -210,6 +210,23 @@
     ],
     "type": "object"
   },
+  "BaseCalendarAccountClaim": {
+    "properties": {
+      "confirmPage": {
+        "description": "The site page the emailed link opens, with the claim's token added as `token`; its origin must be one of the API's client origins",
+        "type": "string"
+      },
+      "email": {
+        "description": "The email of the calendar account to claim",
+        "type": "string"
+      }
+    },
+    "required": [
+      "confirmPage",
+      "email"
+    ],
+    "type": "object"
+  },
   "BaseCalendarAccountConnection": {
     "properties": {
       "provider": {
@@ -2248,6 +2265,60 @@
     ],
     "type": "object"
   },
+  "CalendarAccountClaim": {
+    "properties": {
+      "email": {
+        "description": "The claimed account's email, where the link was sent",
+        "type": "string"
+      },
+      "expiresTime": {
+        "description": "An ISO-8601 formatted string indicating when the claim's link stops working",
+        "type": "string"
+      },
+      "provider": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarProvider"
+          }
+        ],
+        "description": "The provider of the claimed account"
+      }
+    },
+    "required": [
+      "email",
+      "expiresTime",
+      "provider"
+    ],
+    "type": "object"
+  },
+  "CalendarAccountClaimReceipt": {
+    "properties": {
+      "email": {
+        "description": "The address named. If an unowned calendar account has it, a link to confirm the claim was sent there",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "type": "object"
+  },
+  "CalendarAccountClaimReceiptResponse": {
+    "properties": {
+      "claimReceipt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccountClaimReceipt"
+          }
+        ],
+        "description": "The claim's receipt."
+      }
+    },
+    "required": [
+      "claimReceipt"
+    ],
+    "type": "object"
+  },
   "CalendarAccountReauthorization": {
     "properties": {
       "returnTo": {
@@ -3305,6 +3376,22 @@
     },
     "required": [
       "job"
+    ],
+    "type": "object"
+  },
+  "CreateCalendarAccountClaimRequest": {
+    "properties": {
+      "claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseCalendarAccountClaim"
+          }
+        ],
+        "description": "The claim to make."
+      }
+    },
+    "required": [
+      "claim"
     ],
     "type": "object"
   },
@@ -5338,6 +5425,22 @@
     },
     "required": [
       "job"
+    ],
+    "type": "object"
+  },
+  "DescribeCalendarAccountClaimResponse": {
+    "properties": {
+      "claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarAccountClaim"
+          }
+        ],
+        "description": "The claim."
+      }
+    },
+    "required": [
+      "claim"
     ],
     "type": "object"
   },

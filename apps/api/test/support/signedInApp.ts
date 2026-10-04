@@ -36,20 +36,20 @@ export const signedInApp = (options: TestAppOptions = {}) => {
   const ctx = {} as {
     t: TestApp;
     as: (request: Test) => Test;
-    signInAs: (sub: string) => Promise<void>;
+    signInAs: (sub: string, roles?: string[]) => Promise<void>;
   };
   let token = "";
-  const tokenFor = (sub: string) =>
+  const tokenFor = (sub: string, roles: string[] = ["user"]) =>
     issueAccessToken(ctx.t.app.get(SigningKeyService).require(), {
       sub,
       clientId: "olympus-site",
       sessionId: "9c2f4b1a-0000-4000-8000-0000000000aa",
-      roles: ["user"],
+      roles,
       authTime: 1_790_000_000,
     });
   ctx.as = (request) => request.set("authorization", `Bearer ${token}`);
-  ctx.signInAs = async (sub) => {
-    token = await tokenFor(sub);
+  ctx.signInAs = async (sub, roles) => {
+    token = await tokenFor(sub, roles);
   };
 
   beforeAll(async () => {
