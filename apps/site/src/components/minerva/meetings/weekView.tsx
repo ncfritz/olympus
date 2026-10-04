@@ -45,9 +45,8 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
     Interval.fromDateTimes(summaryStart, summaryEnd).length("days"),
   );
 
-  if (start.weekday !== 7) {
-    start = start.startOf("week").set({ weekday: 7 }).minus({ weeks: 1 });
-  }
+  // An ISO week, Monday to Sunday, as the W-numbered URLs are.
+  start = start.startOf("week");
 
   const end = start.plus({ days: 6 });
 
@@ -186,6 +185,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
             plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridWeek"
             initialDate={range?.from}
+            firstDay={1}
             headerToolbar={{
               start: "title",
               center: "",
@@ -226,20 +226,15 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
             mode={"range"}
             defaultMonth={startDate.startOf("month").toJSDate()}
             selected={range}
+            weekStartsOn={1}
+            ISOWeek={true}
             showWeekNumber={true}
             showOutsideDays={true}
             formatters={{
               formatDay: renderDay,
             }}
             onDayClick={(date) => {
-              let start = DateTime.fromJSDate(date);
-
-              if (start.weekday !== 7) {
-                start = start
-                  .startOf("week")
-                  .set({ weekday: 7 })
-                  .minus({ weeks: 1 });
-              }
+              const start = DateTime.fromJSDate(date).startOf("week");
 
               const end = start.plus({ days: 6 });
 
