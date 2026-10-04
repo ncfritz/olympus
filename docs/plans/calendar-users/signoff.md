@@ -108,12 +108,16 @@ recorded exception.
 
 ## C8 — The site
 
-1. The Calendars pages match the chosen canvas: accounts and their
-   calendars, connect, re-authorize, claim, remove, a calendar's
+1. The Calendars pages match the chosen canvas (option A): accounts and
+   their calendars, connect, re-authorize, claim, remove, a calendar's
    settings.
 2. A `reauth_pending` account says so and re-authorizes from its row.
 3. Removing an account removes its meetings from Minerva and keeps the
    notes that were linked to them.
+4. A calendar's color, changed, survives a reload; another user does not
+   see it.
+5. A claim's link opens `/minerva/calendars/claim?token=…`, shows the
+   account, and Confirm links it.
 
 ## C9 — Clean-up
 

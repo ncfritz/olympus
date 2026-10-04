@@ -123,6 +123,7 @@
 - '!include minerva_calendar_account_claims.yaml'
 - '!include minerva_calendar_account_connections.yaml'
 - '!include minerva_calendar_accounts.yaml'
+- '!include minerva_calendar_colors.yaml'
 - '!include minerva_goal_categories.yaml'
 - '!include minerva_goal_checkins.yaml'
 - '!include minerva_goal_cycles.yaml'

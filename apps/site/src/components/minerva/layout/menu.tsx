@@ -7,6 +7,7 @@ import {
   HomeOutlined,
   ProjectOutlined,
   ScheduleOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { DateTime } from "luxon";
@@ -22,11 +23,13 @@ import {
 const BASE_PATH = "minerva";
 const SUB_MENUS = {
   "/meetings": "meetings-container",
+  "/calendars": "meetings-container",
   "/review": "review-container",
 };
 
 const MATCHERS = {
   "^/minerva/goals(/.*)?$": "/minerva/goals",
+  "^/minerva/calendars([/?].*)?$": "/minerva/calendars",
   "^/minerva/review/daily(/.*)?$": "review-day",
   "^/minerva/review/weekly(/.*)?$": "review-week",
   "meetings/\\d{4}/\\d{2}/\\d{2}": "meetings-day",
@@ -191,6 +194,11 @@ const MinervaMenu: React.FunctionComponent = () => {
               key: `meetings-month`,
               icon: <CalendarOutlined />,
               label: "This month",
+            },
+            {
+              key: `/${BASE_PATH}/calendars`,
+              icon: <SettingOutlined />,
+              label: "Calendars",
             },
           ],
         },

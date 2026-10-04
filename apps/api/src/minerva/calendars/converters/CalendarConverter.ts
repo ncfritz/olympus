@@ -46,6 +46,7 @@ export const toCalendarAccount = (
 export const toCalendar = (
   agent: AgentCalendar,
   accountId: string,
+  color?: string,
 ): Calendar => ({
   calendarId: agent.calendarId,
   accountId,
@@ -57,6 +58,7 @@ export const toCalendar = (
   ...(agent.lastSyncedAt
     ? { lastSyncedTime: moment.utc(agent.lastSyncedAt) }
     : {}),
+  ...(color ? { color } : {}),
 });
 
 export const toAvailableCalendar = (

@@ -161,6 +161,14 @@ export class Calendar {
       "An ISO-8601 formatted string indicating when a sync of the calendar last completed",
   })
   lastSyncedTime?: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The color the caller shows the calendar in, as #rrggbb; absent until they choose one",
+  })
+  color?: string;
 }
 
 /** A calendar an account's provider reports, synced or not. */
@@ -308,6 +316,14 @@ export class PartialCalendar {
     description: "Whether the calendar's events count toward availability",
   })
   includedInBusy?: boolean;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The color to show the calendar in, as #rrggbb; it is the caller's own, not the calendar's",
+  })
+  color?: string;
 }
 
 /** A claim on an unowned calendar account, by its email. */

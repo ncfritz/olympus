@@ -6294,7 +6294,7 @@
     },
     "/minerva/calendar/{calendarId}": {
       "put": {
-        "description": "Pauses or resumes a calendar's sync, or counts its events toward availability or not. Another user's calendar is not found.",
+        "description": "Pauses or resumes a calendar's sync, counts its events toward availability or not, or sets the color the caller shows it in (the caller's own). Another user's calendar is not found.",
         "operationId": "UpdateCalendar",
         "parameters": [
           {
@@ -11873,6 +11873,10 @@
           "lastSyncedTime": {
             "type": "string",
             "description": "An ISO-8601 formatted string indicating when a sync of the calendar last completed"
+          },
+          "color": {
+            "type": "string",
+            "description": "The color the caller shows the calendar in, as #rrggbb; absent until they choose one"
           }
         },
         "required": [
@@ -11959,6 +11963,10 @@
           "includedInBusy": {
             "type": "boolean",
             "description": "Whether the calendar's events count toward availability"
+          },
+          "color": {
+            "type": "string",
+            "description": "The color to show the calendar in, as #rrggbb; it is the caller's own, not the calendar's"
           }
         }
       },

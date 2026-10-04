@@ -60,6 +60,8 @@ describe("Calendars API", () => {
     ctx.t.graphql.on("ListCalendarAccounts", {
       minerva_calendar_accounts: rows,
     });
+  const colors = (rows: { source: string; color: string }[] = []) =>
+    ctx.t.graphql.on("ListCalendarColors", { minerva_calendar_colors: rows });
   const describeAccount = (rows: unknown[] = [accountRow]) =>
     ctx.t.graphql.on("DescribeCalendarAccount", {
       minerva_calendar_accounts: rows,
@@ -95,6 +97,7 @@ describe("Calendars API", () => {
   describe("ListCalendars", () => {
     it("lists only the calendars of the user's accounts", async () => {
       owned();
+      colors();
 
       const res = await ctx.as(ctx.t.http().get(`${BASE}/calendars`));
 
@@ -116,8 +119,26 @@ describe("Calendars API", () => {
       );
     });
 
+    it("shows each calendar in the user's own color", async () => {
+      owned();
+      colors([
+        { source: "neil", color: "#722ed1" },
+        { source: "theirs", color: "#000000" },
+      ]);
+
+      const res = await ctx.as(ctx.t.http().get(`${BASE}/calendars`));
+
+      expect(res.body.calendars).toEqual([
+        expect.objectContaining({ source: "neil", color: "#722ed1" }),
+      ]);
+      expect(ctx.t.graphql.calls("ListCalendarColors")[0]?.variables).toEqual({
+        userId: USER,
+      });
+    });
+
     it("lists nothing for a user with no accounts", async () => {
       owned([]);
+      colors();
 
       const res = await ctx.as(ctx.t.http().get(`${BASE}/calendars`));
 
@@ -253,6 +274,7 @@ describe("Calendars API", () => {
 
     it("pauses one of the user's calendars", async () => {
       owned();
+      colors();
       agent.updateCalendar.mockResolvedValue(agentCalendar({ enabled: false }));
 
       const res = await update({ enabled: false, source: "renamed" });
@@ -263,6 +285,66 @@ describe("Calendars API", () => {
       expect(agent.updateCalendar).toHaveBeenCalledWith(CALENDAR_ID, {
         enabled: false,
       });
+    });
+
+    it("sets the user's color without asking the agent to change anything", async () => {
+      owned();
+      ctx.t.graphql.on("SetCalendarColor", {
+        insert_minerva_calendar_colors_one: { source: "neil" },
+      });
+
+      const res = await update({ color: "#FA8C16" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.calendar).toMatchObject({
+        calendarId: CALENDAR_ID,
+        color: "#fa8c16",
+      });
+      expect(agent.updateCalendar).not.toHaveBeenCalled();
+      const set = ctx.t.graphql.calls("SetCalendarColor")[0];
+      expect(set?.variables).toEqual({
+        color: { userId: USER, source: "neil", color: "#fa8c16" },
+      });
+      expect(set?.document).toContain("update_columns: [color]");
+    });
+
+    it("sets a color and a setting together", async () => {
+      owned();
+      ctx.t.graphql.on("SetCalendarColor", {
+        insert_minerva_calendar_colors_one: { source: "neil" },
+      });
+      agent.updateCalendar.mockResolvedValue(
+        agentCalendar({ includedInBusy: false }),
+      );
+
+      const res = await update({ includedInBusy: false, color: "#13c2c2" });
+
+      expect(res.body.calendar).toMatchObject({
+        includedInBusy: false,
+        color: "#13c2c2",
+      });
+      expect(agent.updateCalendar).toHaveBeenCalledWith(CALENDAR_ID, {
+        includedInBusy: false,
+      });
+    });
+
+    it.each(["blue", "#fff", "#12345g", 7])(
+      "refuses the color %j",
+      async (color) => {
+        const res = await update({ color });
+
+        expect(res.status).toBe(400);
+        expect(ctx.t.graphql.request).not.toHaveBeenCalled();
+      },
+    );
+
+    it("does not color another user's calendar", async () => {
+      owned();
+
+      const res = await update({ color: "#13c2c2" }, THEIR_CALENDAR_ID);
+
+      expect(res.status).toBe(404);
+      expect(ctx.t.graphql.calls("SetCalendarColor")).toHaveLength(0);
     });
 
     it("answers 304 when nothing is to change", async () => {

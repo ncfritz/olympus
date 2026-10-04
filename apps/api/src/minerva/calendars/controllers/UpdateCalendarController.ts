@@ -31,7 +31,7 @@ export class UpdateCalendarController {
   @ApiOperation({
     summary: "Changes one of the signed-in user's synced calendars",
     description:
-      "Pauses or resumes a calendar's sync, or counts its events toward availability or not. Another user's calendar is not found.",
+      "Pauses or resumes a calendar's sync, counts its events toward availability or not, or sets the color the caller shows it in (the caller's own). Another user's calendar is not found.",
     operationId: "UpdateCalendar",
     tags: ["Calendars"],
   })
@@ -69,7 +69,11 @@ export class UpdateCalendarController {
   ): Promise<void> {
     const user = requireUser(principal);
     const changes = request?.calendar ?? {};
-    if (changes.enabled === undefined && changes.includedInBusy === undefined) {
+    if (
+      changes.enabled === undefined &&
+      changes.includedInBusy === undefined &&
+      changes.color === undefined
+    ) {
       response.status(HttpStatus.NOT_MODIFIED).end();
       return;
     }

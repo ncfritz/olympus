@@ -8,6 +8,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { gql, GraphQLClient } from "graphql-request";
 import {
   toAvailableCalendar,
   toCalendar,
@@ -33,15 +34,19 @@ export class CalendarService {
   constructor(
     private readonly accounts: CalendarAccountService,
     private readonly agent: MinervaCalendarAgentClient,
+    private readonly graphQLClient: GraphQLClient,
   ) {}
 
-  /** Every synced calendar of the user's accounts. */
+  /** Every synced calendar of the user's accounts, in the user's colors. */
   async list(userId: string): Promise<Calendar[]> {
     const owned = await this.accounts.owned(userId);
     const calendars = await this.agent.listCalendars();
+    const colors = await this.colors(userId);
     return calendars.flatMap((calendar) => {
       const account = accountOf(calendar, owned);
-      return account ? [toCalendar(calendar, account.id)] : [];
+      return account
+        ? [toCalendar(calendar, account.id, colors.get(calendar.source))]
+        : [];
     });
   }
 
@@ -95,7 +100,13 @@ export class CalendarService {
     return toCalendar(created, account.id);
   }
 
-  /** @throws NotFoundException for a calendar not of the user's accounts */
+  /**
+   * Changes a calendar of the user's accounts: whether it syncs and counts
+   * toward busy at the agent, and its color, which is the user's own and
+   * kept in Minerva.
+   *
+   * @throws NotFoundException for a calendar not of the user's accounts
+   */
   async update(
     userId: string,
     calendarId: string,
@@ -107,21 +118,78 @@ export class CalendarService {
         problems.push(`${key} must be true or false`);
       }
     }
+    const color =
+      changes.color === undefined ? undefined : toColor(changes.color);
+    if (color === null) problems.push("color must be #rrggbb");
     if (problems.length) throw new BadRequestException(problems);
-    const { account } = await this.requireOwnedCalendar(userId, calendarId);
-    const updated = await this.agent.updateCalendar(calendarId, {
+
+    const { calendar, account } = await this.requireOwnedCalendar(
+      userId,
+      calendarId,
+    );
+    const agentChanges = {
       ...(changes.enabled !== undefined ? { enabled: changes.enabled } : {}),
       ...(changes.includedInBusy !== undefined
         ? { includedInBusy: changes.includedInBusy }
         : {}),
-    });
-    return toCalendar(updated, account.id);
+    };
+    const updated = Object.keys(agentChanges).length
+      ? await this.agent.updateCalendar(calendarId, agentChanges)
+      : calendar;
+    if (color) await this.setColor(userId, updated.source, color);
+    const colors = color ? undefined : await this.colors(userId);
+    return toCalendar(
+      updated,
+      account.id,
+      color ?? colors?.get(updated.source),
+    );
   }
 
   /** Stops syncing a calendar; its meetings stay. @throws NotFoundException */
   async remove(userId: string, calendarId: string): Promise<void> {
     await this.requireOwnedCalendar(userId, calendarId);
     await this.agent.deleteCalendar(calendarId);
+  }
+
+  /** The user's colors, by source. */
+  private async colors(userId: string): Promise<Map<string, string>> {
+    const query = gql`
+      query ListCalendarColors($userId: uuid!) {
+        minerva_calendar_colors(where: { userId: { _eq: $userId } }) {
+          source
+          color
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      minerva_calendar_colors: { source: string; color: string }[];
+    }>(query, { userId });
+    return new Map(
+      response.minerva_calendar_colors.map((c) => [c.source, c.color]),
+    );
+  }
+
+  private async setColor(
+    userId: string,
+    source: string,
+    color: string,
+  ): Promise<void> {
+    const mutation = gql`
+      mutation SetCalendarColor($color: minerva_calendar_colors_insert_input!) {
+        insert_minerva_calendar_colors_one(
+          object: $color
+          on_conflict: {
+            constraint: calendar_colors_pkey
+            update_columns: [color]
+          }
+        ) {
+          source
+        }
+      }
+    `;
+    await this.graphQLClient.request(mutation, {
+      color: { userId, source, color },
+    });
   }
 
   private async requireOwnedCalendar(
@@ -147,3 +215,9 @@ const accountOf = (
     (a) =>
       a.provider === calendar.provider && a.email === calendar.accountLabel,
   );
+
+/** `#rrggbb` in lower case, or null for anything else. */
+const toColor = (value: unknown): string | null =>
+  typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)
+    ? value.toLowerCase()
+    : null;

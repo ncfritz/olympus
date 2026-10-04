@@ -2176,6 +2176,10 @@
         "description": "The provider's ID of the calendar",
         "type": "string"
       },
+      "color": {
+        "description": "The color the caller shows the calendar in, as #rrggbb; absent until they choose one",
+        "type": "string"
+      },
       "enabled": {
         "description": "Whether the calendar syncs",
         "type": "boolean"
@@ -13263,6 +13267,10 @@
   },
   "PartialCalendar": {
     "properties": {
+      "color": {
+        "description": "The color to show the calendar in, as #rrggbb; it is the caller's own, not the calendar's",
+        "type": "string"
+      },
       "enabled": {
         "description": "Whether the calendar syncs",
         "type": "boolean"

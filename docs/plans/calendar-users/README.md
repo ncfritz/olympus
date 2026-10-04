@@ -429,17 +429,57 @@ after Neil applies the migration.
 
 **Sign-off:** C7 on DEV.
 
-## Phase 7 — The site
+## Phase 7 — The site — built 2026-10-03, not signed off
 
-1. **Canvas first**: the Calendars pages drawn and chosen before code:
-   accounts with their calendars beneath, connect, re-authorize, claim,
-   remove; a calendar's enable, busy inclusion and color; the claim
-   landing page; how an unowned or `reauth_pending` account shows.
-2. **Build** in the site's AntD components, a Calendars entry in the
-   Minerva menu, the claim page at `/minerva/calendars/claim/[token]`.
-3. **Tests**: the site's helper modules as unit tests, as the site does.
+1. **Canvas first**: **done** — "Minerva Calendars" on claude.ai: two
+   layouts for the page, the add-calendars drawer, the claim dialog, the
+   claim landing page, every account state and sign-in outcome, and the
+   remove dialog. Neil chose (2026-10-03):
+   - **Option A**: each account a card with its calendars in a table
+     beneath it (not a list with a detail pane).
+   - **Colors kept**: a color per calendar, the user's own.
+   - **Calendars under Meetings** in the Minerva menu.
+   - **The claim page takes `?token=`**: `/minerva/calendars/claim?token=…`,
+     the `confirmPage` the API was built with, not `/claim/[token]`.
+2. **Colors**: **done**, added for this phase.
+   - Migration `1791120000000_minerva_calendar_colors`:
+     `minerva.calendar_colors`, keyed by user and source label (unique at
+     the agent, and how meetings name their calendar), `#rrggbb` in lower
+     case, audit columns, cascading with the user. Its check script is
+     `infra/hasura/tests/minerva_calendar_colors.sql`; metadata
+     `minerva_calendar_colors.yaml`.
+   - `ListCalendars` returns each calendar's `color` once the user has
+     chosen one; `UpdateCalendar` takes `color` and keeps it in Minerva,
+     asking the agent only for `enabled` and `includedInBusy`.
+   - Without a choice the site picks one of eight colors from the label,
+     so it stays put as calendars come and go. Removing a calendar or an
+     account leaves its color, which comes back with the label.
+3. **Build**: **done** — `pages/minerva/calendars/index.tsx` and
+   `claim.tsx`, `components/minerva/calendars/` (`AccountCard`,
+   `AddCalendarsDrawer`, `ClaimModal`, `CalendarsBreadcrumbs`),
+   `api/calendarsApi.ts`, `utils/calendars.ts`, and a Calendars entry under
+   Meetings in the Minerva menu.
+   - Connecting and re-authorizing send the browser to the provider and
+     back to the page, which shows the outcome once and clears it from the
+     address. A connected account offers its calendars straight away.
+   - Switches and colors change at once and go back if the API refuses.
+   - When the agent cannot be asked (every account `unknown`), the page
+     says so and changes nothing.
+   - Add calendars suggests a label from each calendar's name and checks
+     it against the user's own labels; the API's 409 for another user's
+     shows on that calendar.
+   - The claim page shows the claim and changes nothing until Confirm;
+     403, 404, 409 and 410 each say what they mean.
+4. **Tests**: **done** — the page's helpers (`test/unit/calendars.spec.ts`:
+   states, outcomes, colors, labels, last synced, claims); the colors in
+   the API's calendars spec and the migration's check script. Verified
+   2026-10-03: the site's tests (286), lint and a production build; the
+   API's tests (2,275), typecheck, lint and the convention checks. The
+   site's typecheck fails only on `test/unit/triage.spec.ts`, as on
+   `main`.
 
-**Sign-off:** C8 on PROD.
+**Sign-off:** C8 on PROD (apply `1791120000000_minerva_calendar_colors`
+and its metadata first).
 
 ## Phase 8 — Clean-up
 
