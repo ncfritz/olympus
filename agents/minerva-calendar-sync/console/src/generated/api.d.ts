@@ -13,31 +13,11 @@ export interface paths {
     };
     /**
      * Describes the current user
-     * @description Returns the signed-in user the access token belongs to.
+     * @description Returns the signed-in Olympus user the access token belongs to, as the Olympus API describes them now.
      */
     get: operations["DescribeCurrentUser"];
     put?: never;
     post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/auth/refresh": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Refreshes the access token
-     * @description Issues a new access token for a refresh token whose user is still on the allowlist.
-     */
-    post: operations["RefreshAccessToken"];
     delete?: never;
     options?: never;
     head?: never;
@@ -55,7 +35,7 @@ export interface paths {
     put?: never;
     /**
      * Ends the session
-     * @description Signs the browser out by clearing the access token cookie; Bearer tokens simply stop being sent.
+     * @description Signs the browser out: ends its Olympus session when its access token still verifies, and clears the session cookies either way. Bearer tokens simply stop being sent.
      */
     post: operations["EndSession"];
     delete?: never;
@@ -164,54 +144,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/v1/event-overrides": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Lists event overrides
-     * @description Returns the availability overrides of the given events, for a whole page of events in one request.
-     */
-    get: operations["ListEventOverrides"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/event/{eventId}/override": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Describes an event override
-     * @description Returns the availability override set on an event.
-     */
-    get: operations["DescribeEventOverride"];
-    /**
-     * Updates an event override
-     * @description Sets the availability an event counts as, whatever its synced status.
-     */
-    put: operations["UpdateEventOverride"];
-    post?: never;
-    /**
-     * Deletes an event override
-     * @description Removes an event's availability override, so its synced status counts again.
-     */
-    delete: operations["DeleteEventOverride"];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/v1/calendars": {
     parameters: {
       query?: never;
@@ -227,7 +159,7 @@ export interface paths {
     put?: never;
     /**
      * Creates a calendar
-     * @description Starts syncing a calendar of a connected account; its first sync runs in the background.
+     * @description Starts syncing a calendar of a connected account; its first sync runs in the background. A calendar already synced, or a source another calendar has, is a conflict.
      */
     post: operations["CreateCalendar"];
     delete?: never;
@@ -400,6 +332,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/calendar-account/{accountLabel}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Deletes a calendar account
+     * @description Stops syncing every calendar of the account and deletes its stored credential; its events stay stored.
+     */
+    delete: operations["DeleteCalendarAccount"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/calendar-account-web-sign-ins": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Starts a calendar account web sign-in
+     * @description Returns the provider's sign-in URL for a sign-in the Olympus API started for one of its users, with the API's callback, state and PKCE challenge (ADR 0028). With accountLabel, signs a stored account in again. Only the Olympus API, by its client certificate, may call it.
+     */
+    post: operations["StartCalendarAccountWebSignIn"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/calendar-account-web-sign-ins/complete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Completes a calendar account web sign-in
+     * @description Redeems the provider's redirect of a web sign-in and stores the account's credential, returning who signed in. Signing a stored account in again as a different account is a conflict, and changes nothing (ADR 0028). Only the Olympus API, by its client certificate, may call it.
+     */
+    post: operations["CompleteCalendarAccountWebSignIn"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/calendar-colors": {
     parameters: {
       query?: never;
@@ -435,94 +427,6 @@ export interface paths {
     put: operations["UpdateCalendarColor"];
     post?: never;
     delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/availability/free-busy": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Gets free/busy slots
-     * @description Returns the combined availability of every calendar included in busy, per 15-minute slot of the range, after overrides.
-     */
-    get: operations["GetFreeBusy"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/availability/timeline": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Gets the status timeline
-     * @description Returns the status of each 15-minute chunk of the range, with working hours, weekends and the time zone applied, as the console's timeline shows it.
-     */
-    get: operations["GetStatusTimeline"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/override-blocks": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Lists override blocks
-     * @description Returns the override blocks that overlap the range.
-     */
-    get: operations["ListOverrideBlocks"];
-    put?: never;
-    /**
-     * Creates an override block
-     * @description Adds a block of time to the Overrides calendar; its status wins over everything synced during it.
-     */
-    post: operations["CreateOverrideBlock"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/override-block/{overrideBlockId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /**
-     * Updates an override block
-     * @description Changes the status an override block sets.
-     */
-    put: operations["UpdateOverrideBlock"];
-    post?: never;
-    /**
-     * Deletes an override block
-     * @description Removes a block from the Overrides calendar; removing one that doesn't exist also succeeds.
-     */
-    delete: operations["DeleteOverrideBlock"];
     options?: never;
     head?: never;
     patch?: never;
@@ -625,14 +529,6 @@ export interface components {
       message: string;
       /** @description The HTTP status code */
       statusCode: number;
-    };
-    RefreshAccessTokenRequest: {
-      /** @description The refresh token issued at sign-in */
-      refreshToken: string;
-    };
-    RefreshAccessTokenResponse: {
-      /** @description A new access token, for the Authorization header */
-      accessToken: string;
     };
     /**
      * @description Whether a sync re-fetched everything (full) or applied the changes since the last one (incremental)
@@ -843,37 +739,6 @@ export interface components {
       event: components["schemas"]["Event"];
     };
     /**
-     * @description An availability status, lowest precedence first: none, free, interruptable, busy
-     * @enum {string}
-     */
-    AvailabilityStatus: "none" | "free" | "interruptable" | "busy";
-    EventOverride: {
-      /** @description The ID of the event the override applies to */
-      eventId: string;
-      /** @description The availability the event counts as */
-      status: components["schemas"]["AvailabilityStatus"];
-    };
-    ListEventOverridesResponse: {
-      /** @description The overrides of those events that have one. */
-      eventOverrides: components["schemas"]["EventOverride"][];
-    };
-    DescribeEventOverrideResponse: {
-      /** @description The event's override. */
-      eventOverride: components["schemas"]["EventOverride"];
-    };
-    PartialEventOverride: {
-      /** @description The availability the event counts as */
-      status: components["schemas"]["AvailabilityStatus"];
-    };
-    UpdateEventOverrideRequest: {
-      /** @description The override to set. */
-      eventOverride: components["schemas"]["PartialEventOverride"];
-    };
-    UpdateEventOverrideResponse: {
-      /** @description The override as stored. */
-      eventOverride: components["schemas"]["EventOverride"];
-    };
-    /**
      * @description A calendar provider
      * @enum {string}
      */
@@ -961,6 +826,8 @@ export interface components {
       sources: string[];
       /** @description The credential's status: ok, expired (a new sign-in is needed), reauth_pending, not_connected or error */
       status: components["schemas"]["CalendarAccountAuthStatus"];
+      /** @description The account's permanent ID at its provider (Google's sub; Microsoft's <tid>:<oid>), once recorded */
+      subject?: string;
       /** @description The OAuth scopes granted at the last sign-in */
       scope?: string;
       /** @description An ISO-8601 formatted string indicating when the stored refresh token was obtained */
@@ -1027,6 +894,58 @@ export interface components {
       /** @description The account's calendars. */
       availableCalendars: components["schemas"]["AvailableCalendar"][];
     };
+    BaseCalendarAccountWebSignIn: {
+      /** @description The provider to sign in at */
+      provider: components["schemas"]["CalendarProviderName"];
+      /** @description The Olympus API's callback URL, registered with the provider */
+      redirectUri: string;
+      /** @description The state the callback must carry back */
+      state: string;
+      /** @description The PKCE challenge (S256) of the verifier the API keeps */
+      codeChallenge: string;
+      /** @description The label of a stored account to sign in again; none connects a new one */
+      accountLabel?: string;
+    };
+    StartCalendarAccountWebSignInRequest: {
+      /** @description The sign-in to start. */
+      webSignIn: components["schemas"]["BaseCalendarAccountWebSignIn"];
+    };
+    StartCalendarAccountWebSignInResponse: {
+      /** @description The provider's URL to send the browser to. */
+      authUrl: string;
+    };
+    CalendarAccountWebSignInCallback: {
+      /** @description The provider signed in at */
+      provider: components["schemas"]["CalendarProviderName"];
+      /** @description The whole URL the provider redirected to */
+      callbackUrl: string;
+      /** @description The callback URL the sign-in was started with */
+      redirectUri: string;
+      /** @description The state the sign-in was started with */
+      state: string;
+      /** @description The PKCE verifier of the sign-in's challenge */
+      codeVerifier: string;
+      /** @description The label of the stored account being signed in again; another account signing in is refused */
+      accountLabel?: string;
+    };
+    CompleteCalendarAccountWebSignInRequest: {
+      /** @description The provider's redirect. */
+      callback: components["schemas"]["CalendarAccountWebSignInCallback"];
+    };
+    CalendarAccountWebSignInResult: {
+      /** @description The account's provider */
+      provider: components["schemas"]["CalendarProviderName"];
+      /** @description The account's label: its verified email */
+      accountLabel: string;
+      /** @description The account's subject at the provider */
+      subject?: string;
+      /** @description Whether the agent held no credential for the account before this sign-in */
+      created: boolean;
+    };
+    CompleteCalendarAccountWebSignInResponse: {
+      /** @description The account that signed in. */
+      calendarAccount: components["schemas"]["CalendarAccountWebSignInResult"];
+    };
     ListCalendarColorsResponse: {
       /**
        * @description Every stored color, keyed by source label
@@ -1062,76 +981,6 @@ export interface components {
     UpdateCalendarColorResponse: {
       /** @description The color as stored. */
       calendarColor: components["schemas"]["CalendarColor"];
-    };
-    AvailabilitySlot: {
-      /** @description An ISO-8601 formatted string indicating when the slot starts */
-      startTime: string;
-      /** @description An ISO-8601 formatted string indicating when the slot ends (exclusive) */
-      endTime: string;
-      /** @description The combined availability during the slot */
-      status: components["schemas"]["AvailabilityStatus"];
-    };
-    GetFreeBusyResponse: {
-      /** @description The 15-minute slots of the range, in order */
-      slots: components["schemas"]["AvailabilitySlot"][];
-    };
-    GetStatusTimelineResponse: {
-      /**
-       * @description The status of each 15-minute chunk of the range, keyed by the chunk's start in minutes since the epoch
-       * @example {
-       *       "28564020": "busy",
-       *       "28564035": "none"
-       *     }
-       */
-      timeline: {
-        [key: string]: "none" | "free" | "interruptable" | "busy";
-      };
-    };
-    BaseOverrideBlock: {
-      /** @description ISO-8601: when the block starts */
-      startTime: string;
-      /** @description ISO-8601: when the block ends (exclusive) */
-      endTime: string;
-      /** @description The availability the block sets */
-      status: components["schemas"]["AvailabilityStatus"];
-      /** @description A label shown on the block */
-      label?: string;
-    };
-    CreateOverrideBlockRequest: {
-      /** @description The block to create. */
-      overrideBlock: components["schemas"]["BaseOverrideBlock"];
-    };
-    OverrideBlock: {
-      /** @description The unique ID of the override block */
-      id: string;
-      /** @description An ISO-8601 formatted string indicating when the block starts */
-      startTime: string;
-      /** @description An ISO-8601 formatted string indicating when the block ends (exclusive) */
-      endTime: string;
-      /** @description The availability the block sets */
-      status: components["schemas"]["AvailabilityStatus"];
-      /** @description A label shown on the block */
-      label?: string;
-    };
-    CreateOverrideBlockResponse: {
-      /** @description The created block. */
-      overrideBlock: components["schemas"]["OverrideBlock"];
-    };
-    ListOverrideBlocksResponse: {
-      /** @description The blocks overlapping the range. */
-      overrideBlocks: components["schemas"]["OverrideBlock"][];
-    };
-    PartialOverrideBlock: {
-      /** @description The availability the block sets */
-      status: components["schemas"]["AvailabilityStatus"];
-    };
-    UpdateOverrideBlockRequest: {
-      /** @description The changes to the block. */
-      overrideBlock: components["schemas"]["PartialOverrideBlock"];
-    };
-    UpdateOverrideBlockResponse: {
-      /** @description The block with the changes applied. */
-      overrideBlock: components["schemas"]["OverrideBlock"];
     };
     OutboxSourceSummary: {
       /** @description The source label */
@@ -1241,49 +1090,6 @@ export interface operations {
       };
     };
   };
-  RefreshAccessToken: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description The refresh token. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RefreshAccessTokenRequest"];
-      };
-    };
-    responses: {
-      /** @description A new access token was issued. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["RefreshAccessTokenResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
   EndSession: {
     parameters: {
       query?: never;
@@ -1293,7 +1099,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description The session cookie was cleared. */
+      /** @description The session cookies were cleared. */
       204: {
         headers: {
           [name: string]: unknown;
@@ -1518,182 +1324,6 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["DescribeEventResponse"];
         };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  ListEventOverrides: {
-    parameters: {
-      query: {
-        /** @description Comma-separated IDs of the events to look up */
-        ids: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The overrides were listed. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ListEventOverridesResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  DescribeEventOverride: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the event (source:uid) */
-        eventId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The override was found. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["DescribeEventOverrideResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  UpdateEventOverride: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the event (source:uid) */
-        eventId: string;
-      };
-      cookie?: never;
-    };
-    /** @description The override to set. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateEventOverrideRequest"];
-      };
-    };
-    responses: {
-      /** @description The override was stored. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UpdateEventOverrideResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  DeleteEventOverride: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the event (source:uid) */
-        eventId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The event has no override. */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       /** @description No valid access token was presented */
       401: {
@@ -2209,6 +1839,161 @@ export interface operations {
       };
     };
   };
+  DeleteCalendarAccount: {
+    parameters: {
+      query: {
+        /** @description The account's provider */
+        provider: components["schemas"]["CalendarProviderName"];
+      };
+      header?: never;
+      path: {
+        /** @description The account's label */
+        accountLabel: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The account is no longer held. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  StartCalendarAccountWebSignIn: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The sign-in to start. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StartCalendarAccountWebSignInRequest"];
+      };
+    };
+    responses: {
+      /** @description The provider's sign-in URL. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StartCalendarAccountWebSignInResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CompleteCalendarAccountWebSignIn: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The provider's redirect. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CompleteCalendarAccountWebSignInRequest"];
+      };
+    };
+    responses: {
+      /** @description The account signed in, and its credential is stored. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CompleteCalendarAccountWebSignInResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   ListCalendarColors: {
     parameters: {
       query?: never;
@@ -2272,271 +2057,6 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["ErrorResponse"];
         };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  GetFreeBusy: {
-    parameters: {
-      query: {
-        /** @description ISO-8601: the inclusive start of the computed range */
-        start: string;
-        /** @description ISO-8601: the exclusive end of the computed range */
-        end: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The slots were computed. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["GetFreeBusyResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  GetStatusTimeline: {
-    parameters: {
-      query: {
-        /** @description ISO-8601: the inclusive start of the computed range */
-        start: string;
-        /** @description ISO-8601: the exclusive end of the computed range */
-        end: string;
-        /** @description HH:mm, 24-hour, in `timezone`: the start of the working-hours window */
-        dayStart?: string;
-        /** @description HH:mm, 24-hour, in `timezone`: the end of the working-hours window (exclusive) */
-        dayEnd?: string;
-        /** @description Whether Saturday and Sunday are computed like weekdays instead of as "none" (except where an override applies) */
-        treatWeekendsAsWorking?: boolean;
-        /** @description The IANA time zone (e.g. "America/Los_Angeles") dayStart, dayEnd and the weekday are evaluated in */
-        timezone?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The timeline was computed. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["GetStatusTimelineResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  ListOverrideBlocks: {
-    parameters: {
-      query: {
-        /** @description ISO-8601: the inclusive start of the range to list */
-        start: string;
-        /** @description ISO-8601: the exclusive end of the range to list */
-        end: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The blocks were listed. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ListOverrideBlocksResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  CreateOverrideBlock: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description The block to create. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateOverrideBlockRequest"];
-      };
-    };
-    responses: {
-      /** @description The block was created. */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["CreateOverrideBlockResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  UpdateOverrideBlock: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the override block */
-        overrideBlockId: string;
-      };
-      cookie?: never;
-    };
-    /** @description The changes to the block. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateOverrideBlockRequest"];
-      };
-    };
-    responses: {
-      /** @description The block was updated. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UpdateOverrideBlockResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  DeleteOverrideBlock: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The ID of the override block */
-        overrideBlockId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The block is gone. */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       /** @description No valid access token was presented */
       401: {

@@ -771,6 +771,12 @@ importers:
       '@ncfritz/olympus-console':
         specifier: workspace:*
         version: link:../../../packages/console
+      '@ncfritz/olympus-metrics':
+        specifier: workspace:*
+        version: link:../../../packages/metrics
+      '@ncfritz/olympus-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
       antd:
         specifier: 'catalog:'
         version: 6.6.4(date-fns@3.6.0)(luxon@3.7.2)(moment@2.31.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
