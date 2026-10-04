@@ -4,7 +4,7 @@ import {
   readConfig,
 } from "../../../src/config/configuration";
 
-const REQUIRED = { AUTH_JWT_SECRET: "secret" };
+const REQUIRED = { OLYMPUS_API_URL: "http://olympus-api:3100/" };
 
 describe("readConfig", () => {
   it("applies the defaults", () => {
@@ -30,8 +30,10 @@ describe("readConfig", () => {
     expect(config.google.credentialsDir).toMatch(/\.credentials$/);
     expect(config.auth).toMatchObject({
       baseUrl: "http://localhost:4432",
-      oidcProviders: [],
-      allowedEmails: [],
+      olympus: {
+        apiUrl: "http://olympus-api:3100",
+        signInUrl: "http://olympus-api:3100",
+      },
     });
   });
 
@@ -47,24 +49,22 @@ describe("readConfig", () => {
     expect(outbox.amqp.redactedUri).not.toContain("hunter2");
   });
 
-  it("parses the login providers and lower-cases the allowlist", () => {
+  it("signs in where the browser reaches the API, when that differs", () => {
     const { auth } = readConfig({
       ...REQUIRED,
-      AUTH_OIDC_PROVIDERS: JSON.stringify([
-        {
-          name: "google",
-          issuer: "https://i",
-          clientId: "c",
-          clientSecret: "s",
-        },
-      ]),
-      AUTH_ALLOWED_EMAILS: "Alice@Example.com, bob@example.com",
+      OLYMPUS_SIGN_IN_URL: "https://olympus.ncfritz.net/api/",
     });
-    expect(auth.oidcProviders.map((p) => p.name)).toEqual(["google"]);
-    expect(auth.allowedEmails).toEqual([
-      "alice@example.com",
-      "bob@example.com",
-    ]);
+    expect(auth.olympus).toEqual({
+      apiUrl: "http://olympus-api:3100",
+      signInUrl: "https://olympus.ncfritz.net/api",
+    });
+  });
+
+  it("needs to know where the API is", () => {
+    expect(() => readConfig({})).toThrow(/OLYMPUS_API_URL is required/);
+    expect(() => readConfig({ OLYMPUS_API_URL: "olympus-api" })).toThrow(
+      /OLYMPUS_API_URL must be an http\(s\) URL/,
+    );
   });
 
   it("has no services listener until its certificate is configured", () => {
@@ -102,7 +102,7 @@ describe("readConfig", () => {
       readConfig({
         LISTEN_PORT: "web",
         POLL_INTERVAL_MS: "soon",
-        AUTH_OIDC_PROVIDERS: "not json",
+        OLYMPUS_SIGN_IN_URL: "ftp://olympus",
       });
       expect.unreachable();
     } catch (e) {

@@ -1,1 +1,3 @@
-{}
+{
+  "callback-public ForwardToOlympusController": "Not a provider callback: it forwards the console's availability calls to the Olympus API as the signed-in user (ADR 0029), so it is behind the access token. Outside the OpenAPI document because the operations are the API's."
+}

@@ -18,7 +18,7 @@ describe("Calendar colors (e2e)", () => {
     configureApp(app);
     await app.init();
 
-    authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    authHeader = `Bearer ${issueE2eAccessToken()}`;
   });
 
   afterEach(async () => {

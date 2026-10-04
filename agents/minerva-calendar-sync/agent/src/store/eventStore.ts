@@ -28,11 +28,6 @@ export interface EventStore {
   /** By canonical id (`source:uid`, see buildCanonicalEventId); null when there is none. */
   getEventById(id: string): Promise<CanonicalCalendarEvent | null>;
   listEvents(filter: EventFilter): Promise<CanonicalCalendarEvent[]>;
-  /** Non-cancelled, non-deleted events overlapping [start, end) — the shape availability computation needs, distinct from listEvents' startTime-only filtering. */
-  listEventsOverlapping(
-    start: string,
-    end: string,
-  ): Promise<CanonicalCalendarEvent[]>;
   getSyncState(calendarId: string): Promise<SyncState | null>;
   saveSyncState(calendarId: string, state: SyncState): Promise<void>;
 }

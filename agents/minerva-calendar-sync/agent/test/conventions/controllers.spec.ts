@@ -23,7 +23,7 @@ describe("controller conventions", () => {
   });
 
   it("finds the controllers", () => {
-    expect(controllers.length).toBeGreaterThan(35);
+    expect(controllers.length).toBeGreaterThan(25);
   });
 
   it("has no findings outside the allow-list", () => {

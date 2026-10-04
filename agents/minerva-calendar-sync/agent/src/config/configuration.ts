@@ -10,10 +10,6 @@ import {
 } from "@ncfritz/olympus-nest";
 import { registerAs, type ConfigType } from "@nestjs/config";
 import { join } from "path";
-import {
-  parseOidcProviders,
-  type OidcProviderConfig,
-} from "../auth/oidcProviderConfig";
 
 export { ConfigValidationError };
 
@@ -89,14 +85,29 @@ export type ServicesListenerConfig = {
   clients: string[];
 };
 
+/** The Olympus API, whose sign-in the console uses (ADR 0029). */
+export type OlympusConfig = {
+  /**
+   * Where this agent reaches the API, server to server: its keys, its
+   * token endpoint and the console's availability (OLYMPUS_API_URL).
+   */
+  apiUrl: string;
+  /**
+   * Where a browser reaches it to sign in (OLYMPUS_SIGN_IN_URL); the same
+   * as apiUrl unless the agent reaches the API on a private name.
+   */
+  signInUrl: string;
+};
+
 export type AuthConfig = {
-  jwtSecret: string;
-  /** Where the agent is reachable; the OIDC redirect URIs are built from it. */
+  /**
+   * Where the agent is reachable (AUTH_BASE_URL); the sign-in's redirect
+   * URI, `<baseUrl>/auth/callback`, is built from it.
+   */
   baseUrl: string;
-  oidcProviders: OidcProviderConfig[];
-  allowedEmails: string[];
   /** The console's origin: CORS and the only allowed login returnTo. */
   webAppUrl?: string;
+  olympus: OlympusConfig;
   /** Unset until TLS_CERT, TLS_KEY and TLS_CA_SERVICES are: no listener. */
   services?: ServicesListenerConfig;
 };
@@ -150,15 +161,31 @@ const servicesListener = (
   return { port, certificate, key, ca, revocationLists, issuer, clients };
 };
 
-const oidcProviders = (read: EnvReader): OidcProviderConfig[] => {
-  const raw = read.optional("AUTH_OIDC_PROVIDERS");
-  if (!raw) return [];
+/** A base URL without its trailing slash; a problem if it is not http(s). */
+const baseUrl = (read: EnvReader, name: string, value: string): string => {
+  let url: URL | undefined;
   try {
-    return parseOidcProviders(raw);
-  } catch (e) {
-    read.problems.push(e instanceof Error ? e.message : String(e));
-    return [];
+    url = new URL(value);
+  } catch {
+    url = undefined;
   }
+  if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) {
+    read.problems.push(`${name} must be an http(s) URL, got "${value}"`);
+  }
+  return value.replace(/\/+$/, "");
+};
+
+const olympus = (read: EnvReader): OlympusConfig => {
+  const raw = read.string("OLYMPUS_API_URL");
+  const apiUrl = raw === "" ? "" : baseUrl(read, "OLYMPUS_API_URL", raw);
+  const signIn = read.optional("OLYMPUS_SIGN_IN_URL");
+  return {
+    apiUrl,
+    signInUrl:
+      signIn === undefined
+        ? apiUrl
+        : baseUrl(read, "OLYMPUS_SIGN_IN_URL", signIn),
+  };
 };
 
 /**
@@ -217,13 +244,9 @@ export const readConfig = (
       maxAttempts: positiveInt(read, "OUTBOX_MAX_ATTEMPTS", 10),
     },
     auth: {
-      jwtSecret: read.string("AUTH_JWT_SECRET"),
       baseUrl: read.string("AUTH_BASE_URL", `http://localhost:${server.port}`),
-      oidcProviders: oidcProviders(read),
-      allowedEmails: read
-        .list("AUTH_ALLOWED_EMAILS", [])
-        .map((email) => email.toLowerCase()),
       webAppUrl: read.optional("WEB_APP_URL"),
+      olympus: olympus(read),
       services: servicesListener(read),
     },
   };

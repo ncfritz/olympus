@@ -41,7 +41,7 @@ describe("Calendar management (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, KNOWN_CALENDAR);
-    authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    authHeader = `Bearer ${issueE2eAccessToken()}`;
   });
 
   afterEach(async () => {

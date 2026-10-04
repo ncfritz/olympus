@@ -54,7 +54,7 @@ describe("Events (e2e)", () => {
     await app.init();
 
     store = app.get(EVENT_STORE);
-    authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    authHeader = `Bearer ${issueE2eAccessToken()}`;
   });
 
   afterEach(async () => {
@@ -112,101 +112,6 @@ describe("Events (e2e)", () => {
     return request(app.getHttpServer())
       .get("/v1/events?bogus=1")
       .set("Authorization", authHeader)
-      .expect(400);
-  });
-
-  it("ListEventOverrides bulk-looks-up overrides for the given ids", async () => {
-    await store.upsertEvent(fixtureEvent({ uid: "bulk-a" }));
-    await store.upsertEvent(fixtureEvent({ uid: "bulk-b" }));
-    await request(app.getHttpServer())
-      .put("/v1/event/test-source:bulk-a/override")
-      .set("Authorization", authHeader)
-      .send({ eventOverride: { status: "busy" } })
-      .expect(200);
-
-    const res = await request(app.getHttpServer())
-      .get(
-        "/v1/event-overrides?ids=test-source:bulk-a,test-source:bulk-b,test-source:missing",
-      )
-      .set("Authorization", authHeader)
-      .expect(200);
-    expect(res.body.eventOverrides).toEqual([
-      { eventId: "test-source:bulk-a", status: "busy" },
-    ]);
-  });
-
-  it("ListEventOverrides returns an empty array for an empty ids list", async () => {
-    const res = await request(app.getHttpServer())
-      .get("/v1/event-overrides?ids=")
-      .set("Authorization", authHeader)
-      .expect(200);
-    expect(res.body.eventOverrides).toEqual([]);
-  });
-
-  it("DescribeEventOverride 404s for an unknown event", () => {
-    return request(app.getHttpServer())
-      .get("/v1/event/nope:nope/override")
-      .set("Authorization", authHeader)
-      .expect(404);
-  });
-
-  it("DescribeEventOverride 404s when no override is set", async () => {
-    await store.upsertEvent(fixtureEvent({ uid: "a" }));
-
-    return request(app.getHttpServer())
-      .get("/v1/event/test-source:a/override")
-      .set("Authorization", authHeader)
-      .expect(404);
-  });
-
-  it("sets, reads, and clears a per-event override", async () => {
-    await store.upsertEvent(fixtureEvent({ uid: "a" }));
-
-    const set = await request(app.getHttpServer())
-      .put("/v1/event/test-source:a/override")
-      .set("Authorization", authHeader)
-      .send({ eventOverride: { status: "interruptable" } })
-      .expect(200);
-    expect(set.body.eventOverride).toEqual({
-      eventId: "test-source:a",
-      status: "interruptable",
-    });
-
-    const get = await request(app.getHttpServer())
-      .get("/v1/event/test-source:a/override")
-      .set("Authorization", authHeader)
-      .expect(200);
-    expect(get.body.eventOverride).toEqual({
-      eventId: "test-source:a",
-      status: "interruptable",
-    });
-
-    await request(app.getHttpServer())
-      .delete("/v1/event/test-source:a/override")
-      .set("Authorization", authHeader)
-      .expect(204);
-
-    await request(app.getHttpServer())
-      .get("/v1/event/test-source:a/override")
-      .set("Authorization", authHeader)
-      .expect(404);
-  });
-
-  it("UpdateEventOverride 404s for an unknown event", () => {
-    return request(app.getHttpServer())
-      .put("/v1/event/nope:nope/override")
-      .set("Authorization", authHeader)
-      .send({ eventOverride: { status: "busy" } })
-      .expect(404);
-  });
-
-  it("rejects an invalid override status", async () => {
-    await store.upsertEvent(fixtureEvent({ uid: "a" }));
-
-    return request(app.getHttpServer())
-      .put("/v1/event/test-source:a/override")
-      .set("Authorization", authHeader)
-      .send({ eventOverride: { status: "bogus" } })
       .expect(400);
   });
 });

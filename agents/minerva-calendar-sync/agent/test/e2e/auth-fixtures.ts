@@ -1,13 +1,14 @@
-import { INestApplication } from "@nestjs/common";
-import { AuthTokenService } from "../../src/auth/services/AuthTokenService";
+import { olympus } from "./olympus-fake";
 
-/** Must match the AUTH_ALLOWED_EMAILS entry set in env-setup.ts. */
-export const E2E_ALLOWED_EMAIL = "e2e@example.com";
+export { E2E_USER_ID } from "./olympus-fake";
 
-/** Mints a valid access token the same way a real login would — no network/IdP needed for tests that don't exercise the OIDC dance itself. */
+/**
+ * An Olympus access token with the admin role, signed with the keys the
+ * fake API publishes (see env-setup.ts): what the console's sign-in leaves
+ * in its cookie, with no identity provider involved.
+ */
 export function issueE2eAccessToken(
-  app: INestApplication,
-  email = E2E_ALLOWED_EMAIL,
+  claims: { sub?: string; roles?: string[]; exp?: number } = {},
 ): string {
-  return app.get(AuthTokenService).issueAccessToken(email);
+  return olympus.token(claims);
 }

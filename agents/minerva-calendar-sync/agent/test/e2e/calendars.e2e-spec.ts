@@ -44,7 +44,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendars")
@@ -68,7 +68,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendars")
@@ -84,7 +84,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .post("/v1/calendar/unknown/sync")
@@ -100,7 +100,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .post(`/v1/calendar/${FAKE_CALENDAR.calendarId}/sync`)
@@ -115,7 +115,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put("/v1/calendar/unknown")
@@ -132,7 +132,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)
@@ -182,7 +182,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put("/v1/calendar/unknown")
@@ -199,7 +199,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)

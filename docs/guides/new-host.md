@@ -61,8 +61,6 @@ the optional ones, and these are the ones to write by hand:
 
 - `postgres_password`
 - `hasura_admin_secret`, `hasura_database_url`
-- `minerva_auth_jwt_secret`, `minerva_oidc_providers` (with the `minerva`
-  profile)
 - `hasura_dev_admin_secret`, `hasura_dev_database_url` (only where
   `hasura-dev` runs)
 

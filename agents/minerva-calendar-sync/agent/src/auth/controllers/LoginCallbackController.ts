@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Inject,
-  Param,
+  Query,
   Req,
   Res,
   VERSION_NEUTRAL,
@@ -10,54 +10,51 @@ import {
 import { ApiExcludeController } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
-import { ACCESS_TOKEN_COOKIE, OIDC_TXN_COOKIE } from "../authConstants";
+import { SIGN_IN_TXN_COOKIE } from "../authConstants";
 import { Public } from "../public";
-import { sessionCookieOptions } from "../sessionCookie";
-import { LoginService } from "../services/LoginService";
-
-const ACCESS_TOKEN_COOKIE_TTL_MS = 60 * 60 * 1000;
+import { sessionCookieOptions, setSessionCookies } from "../sessionCookie";
+import { SignInService } from "../services/SignInService";
 
 /**
- * The OIDC redirect URI ({AUTH_BASE_URL}/auth/callback/{provider}, registered
- * with each provider): unversioned and outside the OpenAPI document.
+ * The redirect URI the Olympus API's client registry holds for this console
+ * ({AUTH_BASE_URL}/auth/callback, ADR 0029): unversioned and outside the
+ * OpenAPI document.
  */
 @ApiExcludeController()
 @Public()
 @Controller({ version: VERSION_NEUTRAL })
 export class LoginCallbackController {
   constructor(
-    private readonly login: LoginService,
+    private readonly signIn: SignInService,
     @Inject(authConfig.KEY) private readonly auth: AuthConfigType,
   ) {}
 
-  @Get("/auth/callback/:provider")
+  @Get("/auth/callback")
   async handle(
-    @Param("provider") providerName: string,
+    @Query("code") code: string | undefined,
+    @Query("state") state: string | undefined,
+    @Query("error") error: string | undefined,
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const rawTransaction = request.cookies?.[OIDC_TXN_COOKIE] as
-      string | undefined;
-    const cookie = sessionCookieOptions(this.auth);
-    response.clearCookie(OIDC_TXN_COOKIE, cookie);
+    const rawTransaction = (
+      request.cookies as Record<string, string | undefined> | undefined
+    )?.[SIGN_IN_TXN_COOKIE];
+    response.clearCookie(SIGN_IN_TXN_COOKIE, sessionCookieOptions(this.auth));
 
-    const { accessToken, refreshToken, returnTo } = await this.login.complete(
-      providerName,
-      rawTransaction,
-      request.originalUrl,
-    );
-    response.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
-      ...cookie,
-      maxAge: ACCESS_TOKEN_COOKIE_TTL_MS,
+    const { returnTo, ...tokens } = await this.signIn.complete(rawTransaction, {
+      code,
+      state,
+      error,
     });
+    setSessionCookies(response, this.auth, tokens);
 
-    // Browser-based web login: the cookie above is all the console needs —
-    // redirect back into it rather than showing raw JSON. Non-browser
-    // callers (no returnTo) get the tokens directly, e.g. for Bearer use.
+    // The console: back into it, signed in. A caller with no returnTo gets
+    // the tokens, for a Bearer header, and refreshes with the API itself.
     if (returnTo) {
       response.redirect(returnTo);
       return;
     }
-    response.json({ accessToken, refreshToken, tokenType: "Bearer" });
+    response.json({ ...tokens, tokenType: "Bearer" });
   }
 }

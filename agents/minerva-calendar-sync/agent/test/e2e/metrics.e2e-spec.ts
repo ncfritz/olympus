@@ -45,7 +45,7 @@ describe("Metrics (e2e)", () => {
   it("records the management API's operations by caller", async () => {
     await request(app.getHttpServer())
       .get("/v1/calendars")
-      .set("Authorization", `Bearer ${issueE2eAccessToken(app)}`)
+      .set("Authorization", `Bearer ${issueE2eAccessToken()}`)
       .set("X-Olympus-Client", "minerva-calendar-sync-console")
       .expect(200);
 
@@ -60,7 +60,7 @@ describe("Metrics (e2e)", () => {
   it("records failed and rejected requests with their status", async () => {
     await request(app.getHttpServer())
       .get("/v1/sync-run/no-such-run")
-      .set("Authorization", `Bearer ${issueE2eAccessToken(app)}`)
+      .set("Authorization", `Bearer ${issueE2eAccessToken()}`)
       .expect(404);
     await request(app.getHttpServer()).get("/v1/sync-runs").expect(401);
 

@@ -1,5 +1,5 @@
 import { ApiTimestamp } from "@ncfritz/olympus-model";
-import { ApiProperty, PickType } from "@nestjs/swagger";
+import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import {
   IsBoolean,
@@ -10,13 +10,8 @@ import {
   IsString,
   Max,
   Min,
-  ValidateNested,
 } from "class-validator";
 import type { Moment } from "moment";
-import {
-  AVAILABILITY_STATUS_VALUES,
-  type AvailabilityStatus,
-} from "../domain/availability";
 import {
   EVENT_TYPE_VALUES,
   type EventType,
@@ -31,7 +26,6 @@ import {
   SENSITIVITY_VALUES,
   type Sensitivity,
 } from "../domain/canonicalEvent";
-import { AVAILABILITY_STATUS_ENUM } from "./common";
 
 const toBoolean = ({ value }: { value: unknown }) =>
   value === "true" || value === true;
@@ -206,30 +200,6 @@ export class Event {
   recurrenceRule?: string;
 }
 
-/** A per-event availability override: the status the event counts as. */
-export class EventOverride {
-  @ApiProperty({
-    type: String,
-    required: true,
-    description: "The ID of the event the override applies to",
-  })
-  eventId: string;
-
-  @ApiProperty({
-    ...AVAILABILITY_STATUS_ENUM,
-    required: true,
-    description: "The availability the event counts as",
-  })
-  @IsIn(AVAILABILITY_STATUS_VALUES)
-  status: AvailabilityStatus;
-}
-
-/* ------------------------------------------------------------------------------------------------------------------ */
-/* Partial and Derived Types                                                                                          */
-/* ------------------------------------------------------------------------------------------------------------------ */
-
-export class PartialEventOverride extends PickType(EventOverride, ["status"]) {}
-
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -316,27 +286,6 @@ export class ListEventsQuery {
   cursor?: string;
 }
 
-export class ListEventOverridesQuery {
-  @ApiProperty({
-    type: String,
-    required: true,
-    description: "Comma-separated IDs of the events to look up",
-  })
-  @IsString()
-  ids: string;
-}
-
-export class UpdateEventOverrideRequest {
-  @ApiProperty({
-    type: () => PartialEventOverride,
-    required: true,
-    description: "The override to set.",
-  })
-  @ValidateNested()
-  @Type(() => PartialEventOverride)
-  eventOverride: PartialEventOverride;
-}
-
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -358,32 +307,4 @@ export class DescribeEventResponse {
     description: "The event.",
   })
   event: Event;
-}
-
-export class ListEventOverridesResponse {
-  @ApiProperty({
-    type: () => EventOverride,
-    isArray: true,
-    required: true,
-    description: "The overrides of those events that have one.",
-  })
-  eventOverrides: EventOverride[];
-}
-
-export class DescribeEventOverrideResponse {
-  @ApiProperty({
-    type: () => EventOverride,
-    required: true,
-    description: "The event's override.",
-  })
-  eventOverride: EventOverride;
-}
-
-export class UpdateEventOverrideResponse {
-  @ApiProperty({
-    type: () => EventOverride,
-    required: true,
-    description: "The override as stored.",
-  })
-  eventOverride: EventOverride;
 }

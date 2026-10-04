@@ -1,9 +1,16 @@
 import type { Request } from "express";
 
-/** A person signed in through the console's OIDC sign-in. */
+/**
+ * A person signed in through Olympus (ADR 0029), named by their Olympus
+ * user ID. The access token they presented, or the one the agent just
+ * refreshed for them, rides along: the console's availability is theirs,
+ * so the API is asked with it.
+ */
 export interface AuthUser {
   kind: "user";
-  email: string;
+  userId: string;
+  roles: string[];
+  accessToken: string;
 }
 
 /**

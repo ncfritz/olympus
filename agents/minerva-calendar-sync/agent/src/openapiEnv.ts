@@ -1,9 +1,8 @@
 /**
  * Placeholder values for configuration the OpenAPI document doesn't depend
  * on but AppModule requires. Imported by openapi.ts before AppModule; never
- * used to log in or sign anything.
+ * called.
  */
-process.env.AUTH_JWT_SECRET ||= "openapi-generation-placeholder";
-process.env.AUTH_OIDC_PROVIDERS ||= "[]";
+process.env.OLYMPUS_API_URL ||= "http://olympus-api.invalid";
 
 export {};
