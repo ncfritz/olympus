@@ -47,10 +47,6 @@ variable "NEXT_PUBLIC_DIONYSUS_CDN_HOST" {
   default = ""
 }
 
-variable "NEXT_PUBLIC_ONAIR_API_HOST" {
-  default = ""
-}
-
 # The Maps key, as a buildx secret. `stack.sh build` exports both of these from
 # the environment file; building bake directly without them just omits the
 # secret, and the site then draws no map.
@@ -190,7 +186,6 @@ target "site" {
     NEXT_PUBLIC_OLYMPUS_HOST        = NEXT_PUBLIC_OLYMPUS_HOST
     NEXT_PUBLIC_CONTENT_CDN_HOST    = NEXT_PUBLIC_CONTENT_CDN_HOST
     NEXT_PUBLIC_DIONYSUS_CDN_HOST   = NEXT_PUBLIC_DIONYSUS_CDN_HOST
-    NEXT_PUBLIC_ONAIR_API_HOST      = NEXT_PUBLIC_ONAIR_API_HOST
   }
   secret = concat(
     SECRETS_DIR != "" && MAPS_KEY_SECRET != "" ? [

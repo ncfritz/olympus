@@ -533,7 +533,17 @@ console signs in through Olympus and sees the same availability.
 3. **Site**: the OnAir drawer and the header's ON AIR button read and write
    Minerva through an adapter that keeps the shapes and words they use
    today (`dnd`, `interrupt`, `free`, `clear`); the legacy `onairApi`
-   goes. No change to what the drawer looks like or does.
+   goes. No change to what the drawer looks like or does. **Done** —
+   `api/availabilityApi.ts` calls the API; `utils/onair.ts` turns its
+   availability into the drawer's shapes (slot strengths 4, 2, 1, 0;
+   meetings with their calendar status and, when the user set one, the
+   drawer's word for it; blocks as overrides) and back. The drawer shows a
+   week back and two weeks ahead. A new block is saved by trying to change
+   it and creating it on a 404, as the drawer names new ones itself.
+   **Clear** on a meeting clears the level the user set, going back to the
+   calendar's; on a block it is a block at `none`. Meetings are not
+   draggable. `NEXT_PUBLIC_ONAIR_API_HOST` is gone from the site, its
+   build and its environment files.
 4. **Console and agent**: a `minerva-calendar-console` client in the API's
    sign-in; the agent verifies Olympus tokens (JWKS, `admin`); the
    console signs in through Olympus and its availability views call the

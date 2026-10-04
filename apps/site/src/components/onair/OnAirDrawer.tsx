@@ -2,7 +2,8 @@ import { ArrowLeftOutlined } from "@ant-design/icons";
 import { EventImpl } from "@fullcalendar/core/internal";
 import { Button, Drawer, notification, Space } from "antd";
 import { useEffect, useState } from "react";
-import onairApi from "../../api/onairApi";
+import availabilityApi from "../../api/availabilityApi";
+import { signalStatus, toLevel } from "../../utils/onair";
 import CalendarPanel from "./CalendarPanel";
 import EventDetailsPanel from "./EventDetailsPanel";
 
@@ -33,23 +34,13 @@ const OnAirDrawer: React.FunctionComponent<OnAirDrawerProps> = ({
     setEventsError(undefined);
 
     try {
-      const getEventsResponse = await onairApi.getEvents();
+      const data = await availabilityApi.events();
       const signalEvents = [];
 
-      for (const key in getEventsResponse.data.signals) {
-        const signal = getEventsResponse.data.signals[key];
+      for (const key in data.signals) {
         const start = new Date(parseInt(key) * 60 * 15 * 1000);
         const end = new Date(start.getTime() + 60 * 15 * 1000);
-
-        let status = "clear";
-
-        if (signal >= 4) {
-          status = "dnd";
-        } else if (signal >= 2) {
-          status = "interrupt";
-        } else if (signal >= 1) {
-          status = "free";
-        }
+        const status = signalStatus(data.signals[key]);
 
         signalEvents.push({
           id: `signal-${key}`,
@@ -61,13 +52,9 @@ const OnAirDrawer: React.FunctionComponent<OnAirDrawerProps> = ({
         });
       }
 
-      setEvents([
-        ...signalEvents,
-        ...getEventsResponse.data.events,
-        ...getEventsResponse.data.overrides,
-      ]);
-      setRangeStart(getEventsResponse.data.start);
-      setRangeEnd(getEventsResponse.data.end);
+      setEvents([...signalEvents, ...data.events, ...data.overrides]);
+      setRangeStart(data.start);
+      setRangeEnd(data.end);
     } catch (e) {
       setEventsError(e);
       messageApi.open({
@@ -105,8 +92,13 @@ const OnAirDrawer: React.FunctionComponent<OnAirDrawerProps> = ({
     }
   };
 
+  // Clear on a meeting goes back to its calendar's status.
   const updateEventStatus = async (id: string, status: string) => {
-    await onairApi.setEventStatus(id, status);
+    if (status === "clear") {
+      await availabilityApi.clearMeetingLevel(id);
+    } else {
+      await availabilityApi.setMeetingLevel(id, toLevel(status));
+    }
 
     messageApi.open({
       type: "success",
@@ -120,12 +112,7 @@ const OnAirDrawer: React.FunctionComponent<OnAirDrawerProps> = ({
     start: Date,
     end: Date,
   ) => {
-    await onairApi.createOverride({
-      override_id: id,
-      status: status,
-      start: start,
-      end: end,
-    });
+    await availabilityApi.saveBlock(id, toLevel(status), start, end);
 
     messageApi.open({
       type: "success",
@@ -137,7 +124,7 @@ const OnAirDrawer: React.FunctionComponent<OnAirDrawerProps> = ({
     setEventsLoading(true);
 
     try {
-      await onairApi.deleteOverride(id);
+      await availabilityApi.deleteBlock(id);
 
       messageApi.open({
         type: "success",

@@ -11,10 +11,11 @@ import type {
   NotificationRefreshMessage,
 } from "../../auth/notifications";
 import notificationsApi from "../../api/notificationsApi";
-import onairApi from "../../api/onairApi";
+import availabilityApi from "../../api/availabilityApi";
 import { useAppSelector } from "../../redux/hooks";
 import { setUnreadCount } from "../../redux/slices/notificationsSlice";
 import { isElectron } from "../../utils/electron";
+import { isOnAir } from "../../utils/onair";
 import NotificationSink from "../common/NotificationSink";
 import AuthSessionTimer from "../content/AuthSessionTimer";
 import NotesEditorModal from "../notes/NotesEditorModal";
@@ -45,12 +46,7 @@ const AuthHeader: React.FunctionComponent = () => {
 
   const fetchOnAirStatus = async () => {
     try {
-      const onAirStatusResponse = await onairApi.getStstus();
-
-      setOnAirActive(
-        onAirStatusResponse.status !== "free" &&
-          onAirStatusResponse.status !== "clear",
-      );
+      setOnAirActive(isOnAir(await availabilityApi.current()));
     } catch (e) {
       console.log("Unable to fetch OnAir status", e);
     }
