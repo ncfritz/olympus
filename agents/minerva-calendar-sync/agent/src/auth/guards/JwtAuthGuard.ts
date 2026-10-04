@@ -13,6 +13,7 @@ import { AuthTokenService } from "../services/AuthTokenService";
 import { ACCESS_TOKEN_COOKIE } from "../authConstants";
 import { AuthenticatedRequest } from "../authUser";
 import { IS_PUBLIC_KEY } from "../public";
+import { SERVICES_ONLY_KEY } from "../servicesOnly";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 
 /**
@@ -56,6 +57,13 @@ export class JwtAuthGuard implements CanActivate {
     const email = this.tokens.verifyAccessToken(token);
     if (!this.allowlist.isAllowed(email)) {
       throw new ForbiddenException(`${email} is no longer on the allowlist`);
+    }
+    const servicesOnly = this.reflector.getAllAndOverride<boolean>(
+      SERVICES_ONLY_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (servicesOnly) {
+      throw new ForbiddenException("Only the Olympus API may call this");
     }
 
     req.user = { kind: "user", email };

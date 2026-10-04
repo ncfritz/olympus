@@ -1,4 +1,9 @@
-import { NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
+import { AccountMismatchError } from "../../../../src/calendarAuth/AccountMismatchError";
 import { CalendarAuthService } from "../../../../src/calendarAuth/services/CalendarAuthService";
 import { CalendarProviderRegistry } from "../../../../src/providers/services/CalendarProviderRegistry";
 import { GoogleAuthStrategy } from "../../../../src/calendarAuth/strategies/GoogleAuthStrategy";
@@ -29,6 +34,7 @@ const mockedStore = {
   listAccountLabels: vi.fn(),
   tryLoad: vi.fn(),
   save: vi.fn(),
+  remove: vi.fn(),
   createAuthorizedClient: vi.fn(),
   oauthClient: vi.fn(),
 };
@@ -36,6 +42,7 @@ const mockedMicrosoftStore = {
   listAccountLabels: vi.fn(),
   tryLoad: vi.fn(),
   save: vi.fn(),
+  remove: vi.fn(),
 };
 
 const CALENDARS = [
@@ -783,6 +790,84 @@ describe("CalendarAuthService", () => {
 
       await expect(strategy().recordSubject("work")).resolves.toBeUndefined();
       expect(mockedStore.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("completeWebSignIn", () => {
+    const callback = {
+      callbackUrl: "https://olympus.example/cb?code=c&state=s",
+      redirectUri: "https://olympus.example/cb",
+      state: "state-0123456789abcdef",
+      codeVerifier: "v".repeat(43),
+    };
+
+    it("answers 404 for an account to sign in again that it does not hold", async () => {
+      mockedStore.tryLoad.mockReturnValue(undefined);
+
+      await expect(
+        makeService().completeWebSignIn("google", {
+          ...callback,
+          accountLabel: "work",
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("answers 409 when another account signed in again", async () => {
+      mockedStore.tryLoad.mockReturnValue({ subject: "google-sub-work" });
+      const spy = vi
+        .spyOn(GoogleAuthStrategy.prototype, "completeWebSignIn")
+        .mockRejectedValue(new AccountMismatchError("not work"));
+
+      await expect(
+        makeService().completeWebSignIn("google", {
+          ...callback,
+          accountLabel: "work",
+        }),
+      ).rejects.toThrow(ConflictException);
+      spy.mockRestore();
+    });
+
+    it("answers 400 when the redirect cannot be redeemed", async () => {
+      const spy = vi
+        .spyOn(GoogleAuthStrategy.prototype, "completeWebSignIn")
+        .mockRejectedValue(new Error("The sign-in's state does not match"));
+
+      await expect(
+        makeService().completeWebSignIn("google", callback),
+      ).rejects.toThrow(BadRequestException);
+      spy.mockRestore();
+    });
+  });
+
+  describe("removeAccount", () => {
+    it("stops syncing every calendar of the account and deletes its credential", async () => {
+      const removed: string[] = [];
+      const service = new CalendarAuthService(
+        new SyncConfigService({
+          ...seededCalendarStore,
+          remove: async (calendarId: string) => {
+            removed.push(calendarId);
+          },
+        }),
+        {} as CalendarProviderRegistry,
+        new GoogleAuthStrategy(mockedStore as unknown as GoogleCredentialStore),
+        new MicrosoftAuthStrategy(
+          mockedMicrosoftStore as unknown as MicrosoftCredentialStore,
+          { clientId: "ms-client-id", tenantId: "common", credentialsDir: "" },
+        ),
+      );
+
+      await service.removeAccount("work", "google");
+
+      expect(removed).toEqual(["cal-1", "cal-2"]);
+      expect(mockedStore.remove).toHaveBeenCalledWith("work");
+      expect(mockedMicrosoftStore.remove).not.toHaveBeenCalled();
+    });
+
+    it("answers 404 for an account it does not hold", async () => {
+      await expect(
+        makeService().removeAccount("nobody", "google"),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

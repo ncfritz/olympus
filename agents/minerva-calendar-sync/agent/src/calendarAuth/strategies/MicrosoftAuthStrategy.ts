@@ -5,6 +5,8 @@ import {
 } from "../../config/configuration";
 import { MicrosoftCredentialStore } from "../../providers/microsoft/MicrosoftCredentialStore";
 import {
+  buildMicrosoftWebAuthUrl,
+  completeMicrosoftWebSignIn,
   MICROSOFT_NEW_ACCOUNT_SCOPES,
   refreshMicrosoftAccessToken,
   startMicrosoftLoopbackFlow,
@@ -14,6 +16,9 @@ import {
   CalendarAuthStrategy,
   LoopbackFlow,
   LoopbackFlowRequest,
+  type WebSignInCallback,
+  type WebSignInResult,
+  type WebSignInStart,
 } from "./calendarAuthStrategy";
 
 @Injectable()
@@ -44,6 +49,7 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
     const { expiresAt } = await refreshMicrosoftAccessToken(
       this.microsoft,
       credential.refreshToken,
+      credential.client ?? "public",
     );
     return { expiresAt };
   }
@@ -55,6 +61,7 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
     const { subject } = await refreshMicrosoftAccessToken(
       this.microsoft,
       credential.refreshToken,
+      credential.client ?? "public",
     );
     if (subject) this.credentials.save({ ...credential, subject });
     return subject;
@@ -89,6 +96,49 @@ export class MicrosoftAuthStrategy implements CalendarAuthStrategy {
         return { accountLabel, scope: result.scope };
       },
     };
+  }
+
+  startWebSignIn(start: WebSignInStart): Promise<string> {
+    return buildMicrosoftWebAuthUrl(
+      this.microsoft,
+      MICROSOFT_NEW_ACCOUNT_SCOPES,
+      start,
+    );
+  }
+
+  async completeWebSignIn(
+    callback: WebSignInCallback,
+  ): Promise<WebSignInResult> {
+    const result = await completeMicrosoftWebSignIn(
+      this.microsoft,
+      MICROSOFT_NEW_ACCOUNT_SCOPES,
+      callback,
+    );
+    let accountLabel: string;
+    if (callback.accountLabel === undefined) {
+      accountLabel = requireEmail(result.email);
+    } else {
+      confirmSameAccount(
+        callback.accountLabel,
+        this.credentials.tryLoad(callback.accountLabel)?.subject,
+        { subject: result.subject, email: result.email },
+      );
+      accountLabel = callback.accountLabel;
+    }
+    const created = this.credentials.tryLoad(accountLabel) === undefined;
+    this.credentials.save({
+      accountLabel,
+      refreshToken: result.refreshToken,
+      scope: result.scope,
+      obtainedAt: new Date().toISOString(),
+      subject: result.subject,
+      client: "web",
+    });
+    return { accountLabel, subject: result.subject, created };
+  }
+
+  removeCredential(accountLabel: string): void {
+    this.credentials.remove(accountLabel);
   }
 
   isInvalidGrantError(error: unknown): boolean {

@@ -2,9 +2,12 @@ import { Injectable } from "@nestjs/common";
 import moment from "moment";
 import type {
   AvailableCalendar,
+  BaseCalendarAccountWebSignIn,
   CalendarAccount,
   CalendarAccountAuthorization,
   CalendarAccountReauthorization,
+  CalendarAccountWebSignInCallback,
+  CalendarAccountWebSignInResult,
 } from "../../model/calendarAccounts";
 import type { CalendarAccountStatus } from "../types";
 import { CalendarAuthService } from "./CalendarAuthService";
@@ -50,6 +53,29 @@ export class CalendarAccountService {
     provider?: CalendarProviderName,
   ): Promise<CalendarAccountReauthorization> {
     return this.calendarAuth.startReauth(accountLabel, provider);
+  }
+
+  startWebSignIn(start: BaseCalendarAccountWebSignIn): Promise<string> {
+    return this.calendarAuth.startWebSignIn(start.provider, {
+      redirectUri: start.redirectUri,
+      state: start.state,
+      codeChallenge: start.codeChallenge,
+      loginHint: start.accountLabel,
+    });
+  }
+
+  async completeWebSignIn(
+    callback: CalendarAccountWebSignInCallback,
+  ): Promise<CalendarAccountWebSignInResult> {
+    const result = await this.calendarAuth.completeWebSignIn(
+      callback.provider,
+      callback,
+    );
+    return { provider: callback.provider, ...result };
+  }
+
+  remove(accountLabel: string, provider: CalendarProviderName): Promise<void> {
+    return this.calendarAuth.removeAccount(accountLabel, provider);
   }
 
   listAvailableCalendars(

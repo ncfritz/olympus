@@ -1473,6 +1473,204 @@
         ]
       }
     },
+    "/v1/calendar-account/{accountLabel}": {
+      "delete": {
+        "description": "Stops syncing every calendar of the account and deletes its stored credential; its events stay stored.",
+        "operationId": "DeleteCalendarAccount",
+        "parameters": [
+          {
+            "name": "accountLabel",
+            "required": true,
+            "in": "path",
+            "description": "The account's label",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "description": "The account's provider",
+            "schema": {
+              "$ref": "#/components/schemas/CalendarProviderName"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The account is no longer held."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deletes a calendar account",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/v1/calendar-account-web-sign-ins": {
+      "post": {
+        "description": "Returns the provider's sign-in URL for a sign-in the Olympus API started for one of its users, with the API's callback, state and PKCE challenge (ADR 0028). With accountLabel, signs a stored account in again. Only the Olympus API, by its client certificate, may call it.",
+        "operationId": "StartCalendarAccountWebSignIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The sign-in to start.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartCalendarAccountWebSignInRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The provider's sign-in URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartCalendarAccountWebSignInResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Starts a calendar account web sign-in",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
+    "/v1/calendar-account-web-sign-ins/complete": {
+      "post": {
+        "description": "Redeems the provider's redirect of a web sign-in and stores the account's credential, returning who signed in. Signing a stored account in again as a different account is a conflict, and changes nothing (ADR 0028). Only the Olympus API, by its client certificate, may call it.",
+        "operationId": "CompleteCalendarAccountWebSignIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The provider's redirect.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteCalendarAccountWebSignInRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account signed in, and its credential is stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteCalendarAccountWebSignInResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Completes a calendar account web sign-in",
+        "tags": [
+          "Calendar Accounts"
+        ]
+      }
+    },
     "/v1/calendar-colors": {
       "get": {
         "description": "Returns every display color the viewer has chosen, keyed by source label.",
@@ -3471,6 +3669,171 @@
         },
         "required": [
           "availableCalendars"
+        ]
+      },
+      "BaseCalendarAccountWebSignIn": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "description": "The provider to sign in at",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProviderName"
+              }
+            ]
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "The Olympus API's callback URL, registered with the provider"
+          },
+          "state": {
+            "type": "string",
+            "description": "The state the callback must carry back"
+          },
+          "codeChallenge": {
+            "type": "string",
+            "description": "The PKCE challenge (S256) of the verifier the API keeps"
+          },
+          "accountLabel": {
+            "type": "string",
+            "description": "The label of a stored account to sign in again; none connects a new one"
+          }
+        },
+        "required": [
+          "provider",
+          "redirectUri",
+          "state",
+          "codeChallenge"
+        ]
+      },
+      "StartCalendarAccountWebSignInRequest": {
+        "type": "object",
+        "properties": {
+          "webSignIn": {
+            "description": "The sign-in to start.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseCalendarAccountWebSignIn"
+              }
+            ]
+          }
+        },
+        "required": [
+          "webSignIn"
+        ]
+      },
+      "StartCalendarAccountWebSignInResponse": {
+        "type": "object",
+        "properties": {
+          "authUrl": {
+            "type": "string",
+            "description": "The provider's URL to send the browser to."
+          }
+        },
+        "required": [
+          "authUrl"
+        ]
+      },
+      "CalendarAccountWebSignInCallback": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "description": "The provider signed in at",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProviderName"
+              }
+            ]
+          },
+          "callbackUrl": {
+            "type": "string",
+            "description": "The whole URL the provider redirected to"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "The callback URL the sign-in was started with"
+          },
+          "state": {
+            "type": "string",
+            "description": "The state the sign-in was started with"
+          },
+          "codeVerifier": {
+            "type": "string",
+            "description": "The PKCE verifier of the sign-in's challenge"
+          },
+          "accountLabel": {
+            "type": "string",
+            "description": "The label of the stored account being signed in again; another account signing in is refused"
+          }
+        },
+        "required": [
+          "provider",
+          "callbackUrl",
+          "redirectUri",
+          "state",
+          "codeVerifier"
+        ]
+      },
+      "CompleteCalendarAccountWebSignInRequest": {
+        "type": "object",
+        "properties": {
+          "callback": {
+            "description": "The provider's redirect.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountWebSignInCallback"
+              }
+            ]
+          }
+        },
+        "required": [
+          "callback"
+        ]
+      },
+      "CalendarAccountWebSignInResult": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "description": "The account's provider",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarProviderName"
+              }
+            ]
+          },
+          "accountLabel": {
+            "type": "string",
+            "description": "The account's label: its verified email"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The account's subject at the provider"
+          },
+          "created": {
+            "type": "boolean",
+            "description": "Whether the agent held no credential for the account before this sign-in"
+          }
+        },
+        "required": [
+          "provider",
+          "accountLabel",
+          "created"
+        ]
+      },
+      "CompleteCalendarAccountWebSignInResponse": {
+        "type": "object",
+        "properties": {
+          "calendarAccount": {
+            "description": "The account that signed in.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarAccountWebSignInResult"
+              }
+            ]
+          }
+        },
+        "required": [
+          "calendarAccount"
         ]
       },
       "ListCalendarColorsResponse": {

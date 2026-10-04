@@ -21,6 +21,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { AppModule } from "../../src/AppModule";
 import { IS_PUBLIC_KEY } from "../../src/auth/public";
+import { SERVICES_ONLY_KEY } from "../../src/auth/servicesOnly";
 
 export type ApiOperationMetadata = {
   operationId?: string;
@@ -48,6 +49,8 @@ export type ControllerInfo = {
   excluded: boolean;
   /** Marked @Public() (no access token), on the class or the route. */
   public: boolean;
+  /** Marked @ServicesOnly() (a client certificate, no access token). */
+  servicesOnly: boolean;
   /** Names of the constructor's injected types. */
   injects: string[];
   routes: RouteInfo[];
@@ -188,6 +191,10 @@ export const loadControllers = async (): Promise<ControllerInfo[]> =>
               Reflect.getMetadata(IS_PUBLIC_KEY, cls) === true ||
               (handler !== undefined &&
                 Reflect.getMetadata(IS_PUBLIC_KEY, handler) === true),
+            servicesOnly:
+              Reflect.getMetadata(SERVICES_ONLY_KEY, cls) === true ||
+              (handler !== undefined &&
+                Reflect.getMetadata(SERVICES_ONLY_KEY, handler) === true),
             injects: (
               (Reflect.getMetadata("design:paramtypes", cls) ?? []) as {
                 name?: string;

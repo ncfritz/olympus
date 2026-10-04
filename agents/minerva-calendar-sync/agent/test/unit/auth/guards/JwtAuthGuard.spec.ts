@@ -180,4 +180,19 @@ describe("JwtAuthGuard", () => {
       );
     });
   });
+
+  it("refuses a signed-in user on a route only a service may call", () => {
+    tokens.verifyAccessToken.mockReturnValue("me@example.com");
+    reflector.getAllAndOverride.mockImplementation((key: string) =>
+      key === "servicesOnly" ? true : false,
+    );
+    const req = {
+      headers: { authorization: "Bearer good-token" },
+      cookies: {},
+    };
+
+    expect(() => guard.canActivate(contextFor(req))).toThrow(
+      /Only the Olympus API/,
+    );
+  });
 });

@@ -38,7 +38,8 @@
  *   standard-errors    @ApiStandardErrorResponses()
  *   access-token       operations behind the access token have
  *                      @ApiBearerAuth() and document 401; @Public() ones
- *                      have no @ApiBearerAuth()
+ *                      have no @ApiBearerAuth(); @ServicesOnly() ones
+ *                      (a client certificate) document 401 without it
  *   success-response   at least one 2xx response documented
  *   status-sent        every documented 2xx status is sent
  *   location           Location is set with setLocation() (utils/location),
@@ -176,7 +177,17 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     if (c.public && bearer) {
       report("access-token", "@Public() but documents @ApiBearerAuth()");
     }
-    if (!c.public && (!bearer || !codes.includes(401))) {
+    if (c.servicesOnly) {
+      if (bearer) {
+        report(
+          "access-token",
+          "@ServicesOnly() but documents @ApiBearerAuth()",
+        );
+      }
+      if (!codes.includes(401)) {
+        report("access-token", "@ServicesOnly() needs a documented 401");
+      }
+    } else if (!c.public && (!bearer || !codes.includes(401))) {
       report("access-token", "needs @ApiBearerAuth() and a documented 401");
     }
 

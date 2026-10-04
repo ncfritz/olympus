@@ -1,11 +1,21 @@
 import { randomUUID } from "crypto";
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
+import { AccountMismatchError } from "../AccountMismatchError";
 import { CalendarProviderRegistry } from "../../providers/services/CalendarProviderRegistry";
 import { SyncConfigService } from "../../sync/services/SyncConfigService";
 import { SyncedCalendarConfig } from "../../sync/syncedCalendarConfig";
 import {
   CalendarAuthStrategy,
   LoopbackFlow,
+  type WebSignInCallback,
+  type WebSignInResult,
+  type WebSignInStart,
 } from "../strategies/calendarAuthStrategy";
 import { GoogleAuthStrategy } from "../strategies/GoogleAuthStrategy";
 import { MicrosoftAuthStrategy } from "../strategies/MicrosoftAuthStrategy";
@@ -305,6 +315,78 @@ export class CalendarAuthService {
         error: message,
       });
     }
+  }
+
+  /**
+   * The provider's sign-in URL for a sign-in the Olympus API started
+   * (ADR 0028). Signing an account in again needs its stored credential.
+   */
+  async startWebSignIn(
+    provider: CalendarProviderName,
+    start: WebSignInStart,
+  ): Promise<string> {
+    const strategy = this.strategies[provider];
+    if (
+      start.loginHint !== undefined &&
+      !strategy.tryLoadCredential(start.loginHint)
+    ) {
+      throw new NotFoundException(
+        `No stored ${provider} account "${start.loginHint}"`,
+      );
+    }
+    return strategy.startWebSignIn(start);
+  }
+
+  /**
+   * Redeems the provider's redirect of a web sign-in. Another account
+   * signing in again is a 409, keeping the stored credential; a redirect
+   * that cannot be redeemed is a 400.
+   */
+  async completeWebSignIn(
+    provider: CalendarProviderName,
+    callback: WebSignInCallback,
+  ): Promise<WebSignInResult> {
+    const strategy = this.strategies[provider];
+    if (
+      callback.accountLabel !== undefined &&
+      !strategy.tryLoadCredential(callback.accountLabel)
+    ) {
+      throw new NotFoundException(
+        `No stored ${provider} account "${callback.accountLabel}"`,
+      );
+    }
+    try {
+      const result = await strategy.completeWebSignIn(callback);
+      if (callback.accountLabel !== undefined) {
+        this.reauth.delete(reauthKey(provider, callback.accountLabel));
+      }
+      return result;
+    } catch (error) {
+      if (error instanceof AccountMismatchError) {
+        throw new ConflictException(error.message);
+      }
+      const message = strategy.errorMessage(error);
+      this.logger.warn(`A ${provider} web sign-in failed: ${message}`);
+      throw new BadRequestException(
+        `The sign-in could not be completed: ${message}`,
+      );
+    }
+  }
+
+  /**
+   * Stops syncing every calendar of the account and deletes its credential.
+   * Its events stay stored, as when a calendar is deleted.
+   */
+  async removeAccount(
+    accountLabel: string,
+    provider: CalendarProviderName,
+  ): Promise<void> {
+    const strategy = await this.resolveStrategy(accountLabel, provider);
+    for (const calendar of await this.calendarsFor(accountLabel, provider)) {
+      await this.config.remove(calendar.calendarId);
+    }
+    strategy.removeCredential(accountLabel);
+    this.reauth.delete(reauthKey(provider, accountLabel));
   }
 
   /**

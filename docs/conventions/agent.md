@@ -170,6 +170,10 @@ to `agent/`, plus:
   `@Public()` (provider callbacks, sign-in, `/metrics`). Operations
   behind it carry `@ApiBearerAuth()` and document `401`.
   **[checked]**
+- An agent with a services listener (the calendar sync agent, ADR 0028)
+  takes the caller from the client certificate there. Operations only a
+  service may call are marked `@ServicesOnly()`: no `@ApiBearerAuth()`,
+  and `401` documented for a refused certificate. **[checked]**
 - `Location` headers come from `setLocation()` (`src/utils/location.ts`),
   built from the Describe controller's route. **[checked]**
 - The management API's requests are recorded as

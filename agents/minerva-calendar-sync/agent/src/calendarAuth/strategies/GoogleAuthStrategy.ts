@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { OAuth2Client } from "google-auth-library";
+import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import { GoogleCredentialStore } from "../../providers/google/GoogleCredentialStore";
 import {
   createLoopbackClient,
@@ -11,6 +11,9 @@ import {
   CalendarAuthStrategy,
   LoopbackFlow,
   LoopbackFlowRequest,
+  type WebSignInCallback,
+  type WebSignInResult,
+  type WebSignInStart,
 } from "./calendarAuthStrategy";
 
 @Injectable()
@@ -117,6 +120,75 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     return { accountLabel, scope };
   }
 
+  async startWebSignIn(start: WebSignInStart): Promise<string> {
+    const client = this.webClient(start.redirectUri);
+    return client.generateAuthUrl({
+      access_type: "offline",
+      prompt: "consent",
+      scope: GOOGLE_NEW_ACCOUNT_SCOPES,
+      state: start.state,
+      code_challenge: start.codeChallenge,
+      code_challenge_method: CodeChallengeMethod.S256,
+      ...(start.loginHint ? { login_hint: start.loginHint } : {}),
+    });
+  }
+
+  async completeWebSignIn(
+    callback: WebSignInCallback,
+  ): Promise<WebSignInResult> {
+    const code = codeFrom(callback);
+    const client = this.webClient(callback.redirectUri);
+    const { tokens } = await client.getToken({
+      code,
+      codeVerifier: callback.codeVerifier,
+      redirect_uri: callback.redirectUri,
+    });
+    if (!tokens.refresh_token) {
+      throw new Error("Google did not return a refresh token");
+    }
+    if (!tokens.access_token) {
+      throw new Error("Google did not return an access token");
+    }
+    const identity = await readIdentity(client, tokens.access_token);
+
+    let accountLabel: string;
+    if (callback.accountLabel === undefined) {
+      if (!identity.email) {
+        throw new Error(
+          "Google did not return a verified email address for this account",
+        );
+      }
+      accountLabel = identity.email;
+    } else {
+      confirmSameAccount(
+        callback.accountLabel,
+        this.credentials.tryLoad(callback.accountLabel)?.subject,
+        identity,
+      );
+      accountLabel = callback.accountLabel;
+    }
+
+    const created = this.credentials.tryLoad(accountLabel) === undefined;
+    this.credentials.save({
+      accountLabel,
+      refreshToken: tokens.refresh_token,
+      scope: tokens.scope ?? GOOGLE_NEW_ACCOUNT_SCOPES.join(" "),
+      obtainedAt: new Date().toISOString(),
+      subject: identity.subject,
+      client: "web",
+    });
+    return { accountLabel, subject: identity.subject, created };
+  }
+
+  removeCredential(accountLabel: string): void {
+    this.credentials.remove(accountLabel);
+  }
+
+  private webClient(redirectUri: string): OAuth2Client {
+    const { clientId, clientSecret } = this.credentials.oauthClient("web");
+    return new OAuth2Client(clientId, clientSecret, redirectUri);
+  }
+
   isInvalidGrantError(error: unknown): boolean {
     return googleErrorCode(error) === "invalid_grant";
   }
@@ -134,6 +206,22 @@ export class GoogleAuthStrategy implements CalendarAuthStrategy {
     }
     return error instanceof Error ? error.message : String(error);
   }
+}
+
+/**
+ * The code of a provider's redirect, once its state is the one the sign-in
+ * started with and it carries no error.
+ */
+function codeFrom(callback: WebSignInCallback): string {
+  const url = new URL(callback.callbackUrl);
+  const error = url.searchParams.get("error");
+  if (error) throw new Error(`The sign-in was not completed: ${error}`);
+  if (url.searchParams.get("state") !== callback.state) {
+    throw new Error("The sign-in's state does not match");
+  }
+  const code = url.searchParams.get("code");
+  if (!code) throw new Error("The sign-in's redirect carried no code");
+  return code;
 }
 
 /** The account behind an access token: its subject, and its email when Google has verified it. */

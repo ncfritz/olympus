@@ -26,6 +26,14 @@ export type GoogleConfig = {
   /** From a Google Cloud "Desktop app" OAuth client; needed to connect or sync a Google account. */
   clientId?: string;
   clientSecret?: string;
+  /**
+   * From a Google Cloud "Web application" OAuth client, with the Olympus
+   * API's callback registered as a redirect URI: for accounts connected
+   * from the Olympus site (ADR 0028). An account syncs with the client it
+   * was connected through.
+   */
+  webClientId?: string;
+  webClientSecret?: string;
   /** Where the connected accounts' refresh tokens are stored (one JSON file each). */
   credentialsDir: string;
 };
@@ -33,6 +41,13 @@ export type GoogleConfig = {
 export type MicrosoftConfig = {
   /** From an Entra ID "Mobile and desktop applications" registration (a public client: no secret). */
   clientId?: string;
+  /**
+   * A secret of the same registration, which also has a "Web" platform
+   * with the Olympus API's callback as a redirect URI: for accounts
+   * connected from the Olympus site (ADR 0028). The web platform is a
+   * confidential client, so its tokens are redeemed with the secret.
+   */
+  clientSecret?: string;
   tenantId: string;
   credentialsDir: string;
 };
@@ -167,6 +182,8 @@ export const readConfig = (
     google: {
       clientId: read.optional("GOOGLE_OAUTH_CLIENT_ID"),
       clientSecret: read.optional("GOOGLE_OAUTH_CLIENT_SECRET"),
+      webClientId: read.optional("GOOGLE_WEB_OAUTH_CLIENT_ID"),
+      webClientSecret: read.optional("GOOGLE_WEB_OAUTH_CLIENT_SECRET"),
       credentialsDir: read.string(
         "GOOGLE_CREDENTIALS_DIR",
         join(AGENT_ROOT, ".credentials"),
@@ -174,6 +191,7 @@ export const readConfig = (
     },
     microsoft: {
       clientId: read.optional("MICROSOFT_OAUTH_CLIENT_ID"),
+      clientSecret: read.optional("MICROSOFT_OAUTH_CLIENT_SECRET"),
       tenantId: read.string("MICROSOFT_OAUTH_TENANT_ID", "common"),
       credentialsDir: read.string(
         "MICROSOFT_CREDENTIALS_DIR",
