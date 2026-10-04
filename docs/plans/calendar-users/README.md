@@ -506,31 +506,30 @@ and its metadata first).
 
 **Sign-off:** C9 on PROD.
 
-## Phase 9 — Availability in Minerva (ADR 0029, proposed)
+## Phase 9 — Availability in Minerva (ADR 0029)
 
 Decided with Neil (2026-10-04): overrides move to Minerva, per user; the
-agent's are deleted; they are set from a meeting on the calendar pages and
-in the OnAir drawer, which moves from the legacy OnAir service to Minerva;
-the console signs in through Olympus and sees the same availability.
+agent's are deleted; the OnAir drawer moves from the legacy OnAir service
+to Minerva with its UX unchanged (reworked later, so no canvas now); the
+console signs in through Olympus and sees the same availability.
 
-1. **Canvas first**: the OnAir drawer on Minerva (the day, its meetings,
-   the availability strip, a new block, a meeting's availability), the
-   availability control on the day view's meeting details, and the
-   console's sign-in through Olympus.
-2. **Schema**: `minerva.availability_blocks` and
+1. **Schema**: `minerva.availability_blocks` and
    `minerva.meeting_availability`, per user, audit columns, check scripts.
-3. **API**: the availability rules as pure functions, ported from the
+2. **API**: the availability rules as pure functions, ported from the
    agent with its tests; `GetAvailability`, the block operations,
    `SetMeetingAvailability` and `ClearMeetingAvailability`.
-4. **Site**: the OnAir drawer rebuilt on the API (the legacy `onairApi`
-   goes); the meeting details' availability control.
-5. **Console and agent**: a `minerva-calendar-console` client in the API's
+3. **Site**: the OnAir drawer and the header's ON AIR button read and write
+   Minerva through an adapter that keeps the shapes and words they use
+   today (`dnd`, `interrupt`, `free`, `clear`); the legacy `onairApi`
+   goes. No change to what the drawer looks like or does.
+4. **Console and agent**: a `minerva-calendar-console` client in the API's
    sign-in; the agent verifies Olympus tokens (JWKS, `admin`); the
-   console signs in through Olympus and calls the API for availability;
-   the agent's override and availability operations, tables and rows go,
-   with its OIDC sign-in and allow-list.
-6. **Tests**: the rules (precedence, blocks over meetings, working day,
+   console signs in through Olympus and its availability views call the
+   API, looking as they do now; the agent's override and availability
+   operations, tables and rows go, with its OIDC sign-in and allow-list.
+5. **Tests**: the rules (precedence, blocks over meetings, working day,
    time zones, excluded calendars, cancelled and deleted); every operation
-   scoped to its caller; the drawer's helpers; the agent's token check.
+   scoped to its caller; the site's adapter (levels both ways, signals,
+   overrides); the agent's token check.
 
 **Sign-off:** C10 on DEV, then PROD.

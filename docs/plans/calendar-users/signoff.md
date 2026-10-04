@@ -127,12 +127,15 @@ recorded exception.
 
 ## C10 — Availability
 
-1. Overriding a meeting's availability from the day view changes the
-   drawer's strip for its time; clearing it puts the meeting's own back.
-2. A block made in the drawer by selecting a range wins over the meetings
-   in it; moved, resized and removed, the strip follows.
-3. `user-b` sees none of `neil`'s availability, blocks or meeting
+1. The OnAir drawer looks and works as before, on Minerva: setting a
+   meeting's status changes the shading for its time; choosing Clear puts
+   the meeting's own back.
+2. A block made by selecting a range wins over the meetings in it; moved,
+   resized and removed, the shading follows.
+3. The header's ON AIR button lights while the drawer's now is Do Not
+   Disturb or Interruptable.
+4. `user-b` sees none of `neil`'s availability, blocks or meeting
    statuses.
-4. The console signs in through Olympus (refused without `admin`) and
+5. The console signs in through Olympus (refused without `admin`) and
    shows the same availability as the drawer.
-5. The agent has no override tables or availability operations left.
+6. The agent has no override tables or availability operations left.

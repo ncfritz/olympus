@@ -1,6 +1,6 @@
 # 0029. Availability per user in Minerva; the console signs in through Olympus
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-04
 
 ## Context
@@ -48,9 +48,10 @@ this lands (Neil, 2026-10-04). The console stays as an operator's view
     meeting; nothing overlapping is `free`.
   - Outside the working day (by default 08:00 to 18:00 on weekdays, in the
     time zone the caller names) only overrides count; the rest is `none`.
-- **One vocabulary**, the agent's: `none`, `free`, `interruptable`,
-  `busy`. OnAir's `clear`, `free`, `interrupt`, `dnd` are the same four
-  levels; the site and the rewritten OnAir service show them as they like.
+- **One vocabulary in the API**, the agent's: `none`, `free`,
+  `interruptable`, `busy`. OnAir's `clear`, `free`, `interrupt`, `dnd` are
+  the same four levels; the site and the rewritten OnAir service show them
+  in their own words.
 - **Operations**, all scoped to the caller: `GetAvailability` (the
   timeline of a range, with each meeting's own and effective status and
   the blocks in it), `ListAvailabilityBlocks`,
@@ -58,15 +59,21 @@ this lands (Neil, 2026-10-04). The console stays as an operator's view
   `DeleteAvailabilityBlock`, `SetMeetingAvailability` and
   `ClearMeetingAvailability`.
 
-### Where it is set
+### Where it is set: the drawer, as it is
 
-- **On the calendar pages**: a meeting's availability can be overridden
-  from where it is shown (the day view's meeting details now; anywhere a
-  meeting is rendered later).
-- **In the OnAir drawer**, which moves from the OnAir service to Minerva:
-  the day's meetings over the availability strip; selecting a range makes
-  a block; a block can be moved, resized, relabelled or removed; a
-  meeting's availability is set from it.
+- **The OnAir drawer keeps its UX** (Neil, 2026-10-04: it is reworked
+  later, not now). Its day calendar, the 15-minute status shading, override
+  blocks made by selecting a range and moved or resized by dragging, a
+  meeting's status set from it, and its four buttons (Do Not Disturb,
+  Interruptable, Free, Clear) stay as they are. Only its source changes:
+  it reads and writes Minerva through the API instead of the OnAir service.
+- **The header's ON AIR button** shows the user's current availability from
+  the API the same way (active when busy or interruptable).
+- The site maps the API's levels onto the drawer's words: `busy` is
+  `dnd`, `interruptable` is `interrupt`, `free` is `free`, `none` is
+  `clear`.
+- Setting a meeting's availability from the calendar pages, and anywhere
+  else meetings render, comes with that later rework.
 
 ### The agent's availability goes
 
@@ -87,7 +94,8 @@ this lands (Neil, 2026-10-04). The console stays as an operator's view
   `AUTH_ALLOWED_EMAILS` are retired.
 - The console's availability views call the Olympus API with the same
   token, so it shows and sets the signed-in user's availability: one set,
-  seen the same from the site and the console. What else it shows (every
+  seen the same from the site and the console. Its pages look as they do
+  now; only their source changes. What else it shows (every
   account's events, sync runs, the outbox) stays the agent's.
 
 ## Consequences
