@@ -183,9 +183,9 @@ the only Hasura client (queue `olympus-api.calendar-events`).
     `(id, user_id)`, an index on `(user_id, start_time)`.
   - `notes`: unique `(id, user_id)`. `author` is dropped once the site no
     longer sends it.
-  - `meeting_notes`: composite foreign keys `(meeting_id, user_id)` to the
-    meeting and `(note_id, user_id)` to the note, so a note links only to
-    its owner's meeting.
+  - `meeting_notes`: a composite foreign key `(note_id, user_id)` to the
+    note, and none to the meeting: a link outlives its meeting, so a
+    meeting synced or imported again under the same ID finds its notes.
   - `note_associations`: `(note_id, user_id)` to the note.
   - `meeting_attendees`: `(meeting_id, user_id)` to the meeting,
     cascade.
@@ -196,9 +196,15 @@ the only Hasura client (queue `olympus-api.calendar-events`).
 - The five statistics functions take a `user_id` and count only that
   user's rows.
 
-### Existing rows are Neil's
+### Existing rows are Neil's; the old sync's meetings are cleared out
 
-The migration gives every existing row to the user whose email is
+The migration deletes every meeting and attendee the old sync wrote
+(Neil, 2026-10-03): their raw records are archived, and a one-time import
+brings them back later under their same IDs, as Neil's. Notes, meeting
+links and note associations are kept, so the imported meetings find their
+notes again.
+
+The migration gives every remaining row to the user whose email is
 `ncfritz@ncfritz.net`, and fails, changing nothing, if there are rows and
 no such user. An empty database (a new laptop) needs no user. Accounts
 already connected to the agent are linked to Neil when he first signs in
@@ -213,8 +219,8 @@ reviews. A meeting created through the API belongs to its caller.
 ### Removing an account
 
 Removing an account stops its calendars' sync, deletes its credential
-and its meetings, and keeps the user's notes; a note's link to a deleted
-meeting goes with the meeting.
+and its meetings, and keeps the user's notes, their meeting links and
+their associations.
 
 ## Consequences
 

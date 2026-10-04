@@ -76,15 +76,17 @@ migration test checks that an update moves `updated_at` and leaves
 
    **Run 2026-10-03 (Neil):** 6,260 attendees without their meeting, none
    of the other three; sources `amzn` (5,363) and `unknown` (71). Decided:
-   the migration deletes the attendees without a meeting and touches no
-   meeting, note, note link or note association. The raw records are
-   archived; a one-time import of the historic meetings comes later.
+   the migration clears out every meeting and attendee of the old sync
+   and touches no note, meeting link or note association. The raw records
+   are archived; a one-time import of the historic meetings, under their
+   same IDs, comes later and finds their notes again.
 
 ## Phase 1 — Minerva per user — built 2026-10-03, not signed off
 
 1. **Migration** `<ts>_minerva_calendar_users`:
-   - Deletes the attendees whose meeting no longer exists (phase 0's
-     decision), saying how many, and nothing else.
+   - Clears out every meeting and attendee (phase 0's decision), saying
+     how many; keeps notes, meeting links, note associations and the
+     people met (`meeting_user`).
    - Finds the user with `lower(email) = 'ncfritz@ncfritz.net'`. If any
      of the six tables has rows and there is no such user, it raises and
      changes nothing.
@@ -96,8 +98,8 @@ migration test checks that an update moves `updated_at` and leaves
      `created_at` and `updated_at` (existing rows get the migration's
      time), the trigger.
    - `notes`: unique `(id, user_id)`; index `(user_id, created_at)`.
-   - `meeting_notes`: foreign keys `(meeting_id, user_id)` to meetings
-     and `(note_id, user_id)` to notes, both cascade.
+   - `meeting_notes`: a foreign key `(note_id, user_id)` to notes,
+     cascade, and none to meetings: a link outlives its meeting.
    - `note_associations`: `(note_id, user_id)` to notes, replacing the
      single-column key; `updated_at` and the trigger.
    - `meeting_attendees`: `(meeting_id, user_id)` to meetings, cascade;

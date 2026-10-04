@@ -9,22 +9,13 @@
 -- Rows the new foreign keys would refuse are refused here too, by count,
 -- rather than deleted: what to do with them is decided by a person.
 --
--- One such decision is made here (Neil, 2026-10-03): attendees whose meeting
--- no longer exists are deleted. The old sync replaced meetings without
--- their attendees (6,260 rows in prod); nothing could reach them, and the
--- raw records are archived for a one-time import later. Only those rows go:
--- no meeting, note, note link or note association is touched.
-
-DO $$
-DECLARE
-    removed integer;
-BEGIN
-    DELETE FROM minerva.meeting_attendees a
-        WHERE NOT EXISTS (SELECT 1 FROM minerva.meetings m WHERE m.id = a.meeting_id);
-    GET DIAGNOSTICS removed = ROW_COUNT;
-    RAISE NOTICE 'minerva_calendar_users: deleted % attendees whose meeting no longer exists', removed;
-END;
-$$;
+-- The old sync's meetings are cleared out here (Neil, 2026-10-03): every
+-- meeting and attendee goes. Prod held 5,434 meetings from the old sync and
+-- 6,260 attendees of meetings it had already replaced; the raw records are
+-- archived for a one-time import later, which recreates the meetings under
+-- their same IDs. No note, note link (meeting_notes) or note association is
+-- touched: they keep the meeting IDs, so the imported meetings find their
+-- notes again. That is also why meeting_notes has no key to meetings.
 
 DO $$
 DECLARE
@@ -33,15 +24,7 @@ DECLARE
     orphans text;
 BEGIN
     SELECT string_agg(label || ': ' || n, ', ') INTO orphans FROM (
-        SELECT 'meeting_attendees without their meeting' AS label, count(*) AS n
-            FROM minerva.meeting_attendees a
-            WHERE NOT EXISTS (SELECT 1 FROM minerva.meetings m WHERE m.id = a.meeting_id)
-        UNION ALL
-        SELECT 'meeting_notes without their meeting', count(*)
-            FROM minerva.meeting_notes mn
-            WHERE NOT EXISTS (SELECT 1 FROM minerva.meetings m WHERE m.id = mn.meeting_id)
-        UNION ALL
-        SELECT 'meeting_notes without their note', count(*)
+        SELECT 'meeting_notes without their note' AS label, count(*) AS n
             FROM minerva.meeting_notes mn
             WHERE NOT EXISTS (SELECT 1 FROM minerva.notes n WHERE n.id = mn.note_id)
         UNION ALL
@@ -68,6 +51,22 @@ BEGIN
 
     -- Kept for the statements below; dropped at the end of the migration.
     CREATE TEMPORARY TABLE minerva_calendar_users_owner AS SELECT owner AS id;
+END;
+$$;
+
+-- The clear-out: every meeting of the old sync, and its attendees.
+
+DO $$
+DECLARE
+    attendees integer;
+    meetings integer;
+BEGIN
+    DELETE FROM minerva.meeting_attendees;
+    GET DIAGNOSTICS attendees = ROW_COUNT;
+    DELETE FROM minerva.meetings;
+    GET DIAGNOSTICS meetings = ROW_COUNT;
+    RAISE NOTICE 'minerva_calendar_users: cleared out % meetings and % attendees; notes, note links and associations kept',
+        meetings, attendees;
 END;
 $$;
 
@@ -127,11 +126,10 @@ ALTER TABLE ONLY minerva.notes
     ADD CONSTRAINT notes_parent_id_user_id_fkey FOREIGN KEY (parent_id, user_id)
     REFERENCES minerva.notes(id, user_id) ON UPDATE CASCADE ON DELETE NO ACTION;
 
--- A note is linked only to its own user's meeting.
+-- A meeting link is its note's user's. It has no key to meetings: a link
+-- outlives its meeting, so a meeting synced or imported again under the
+-- same ID finds its notes again.
 
-ALTER TABLE ONLY minerva.meeting_notes
-    ADD CONSTRAINT meeting_notes_meeting_id_user_id_fkey FOREIGN KEY (meeting_id, user_id)
-    REFERENCES minerva.meetings(id, user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 ALTER TABLE ONLY minerva.meeting_notes
     ADD CONSTRAINT meeting_notes_note_id_user_id_fkey FOREIGN KEY (note_id, user_id)
     REFERENCES minerva.notes(id, user_id) ON UPDATE CASCADE ON DELETE CASCADE;

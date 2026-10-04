@@ -1,6 +1,6 @@
 -- Reverses 1791100000000_minerva_calendar_users. Refused once a second user
 -- owns Minerva rows: without user_id their rows would merge into one
--- person's.
+-- person's. The meetings it cleared out stay cleared out.
 
 DO $$
 DECLARE
@@ -141,7 +141,6 @@ ALTER TABLE minerva.note_associations DROP COLUMN updated_at;
 ALTER TABLE ONLY minerva.note_associations DROP CONSTRAINT note_associations_note_id_user_id_fkey;
 
 ALTER TABLE ONLY minerva.meeting_notes DROP CONSTRAINT meeting_notes_note_id_user_id_fkey;
-ALTER TABLE ONLY minerva.meeting_notes DROP CONSTRAINT meeting_notes_meeting_id_user_id_fkey;
 
 ALTER TABLE ONLY minerva.notes DROP CONSTRAINT notes_parent_id_user_id_fkey;
 DROP INDEX minerva.notes_user_id_created_at_idx;

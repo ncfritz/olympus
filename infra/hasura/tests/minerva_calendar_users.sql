@@ -5,9 +5,9 @@
 --
 --   psql -v ON_ERROR_STOP=1 -f infra/hasura/tests/minerva_calendar_users.sql <database>
 --
--- The migration's backfill (every existing row to ncfritz@ncfritz.net, and
--- its refusals) is checked by applying it to a database seeded before it;
--- see the plan's phase 1.
+-- The migration's clear-out of the old meetings, its backfill (every
+-- remaining row to ncfritz@ncfritz.net) and its refusals are checked by
+-- applying it to a database seeded before it; see the plan's phase 1.
 
 \set ON_ERROR_STOP 1
 BEGIN;
@@ -67,11 +67,11 @@ SELECT pg_temp.expect_refused('child of another user''s note',
 SELECT pg_temp.expect_refused('deleting a note that has children',
     $q$DELETE FROM minerva.notes WHERE id = '6a2b0c6e-1000-4000-8000-000000000001'$q$, '23503');
 
--- A note links only to its own user's meeting.
+-- A meeting link is its note's user's. It has no key to meetings, so it
+-- may name a meeting not (yet) there: one cleared out and imported again.
 INSERT INTO minerva.meeting_notes (meeting_id, note_id, user_id) VALUES
-    ('check:a1', '6a2b0c6e-1000-4000-8000-000000000001', '6a2b0c6e-0000-4000-8000-000000000001');
-SELECT pg_temp.expect_refused('own note on another user''s meeting',
-    $q$INSERT INTO minerva.meeting_notes (meeting_id, note_id, user_id) VALUES ('check:b1', '6a2b0c6e-1000-4000-8000-000000000001', '6a2b0c6e-0000-4000-8000-000000000001')$q$, '23503');
+    ('check:a1', '6a2b0c6e-1000-4000-8000-000000000001', '6a2b0c6e-0000-4000-8000-000000000001'),
+    ('check:not-yet-imported', '6a2b0c6e-1000-4000-8000-000000000001', '6a2b0c6e-0000-4000-8000-000000000001');
 SELECT pg_temp.expect_refused('another user''s note on own meeting',
     $q$INSERT INTO minerva.meeting_notes (meeting_id, note_id, user_id) VALUES ('check:a1', '6a2b0c6e-1000-4000-8000-0000000000ff', '6a2b0c6e-0000-4000-8000-000000000001')$q$, '23503');
 
@@ -148,16 +148,18 @@ BEGIN
 END;
 $$;
 
--- Deleting a meeting takes its attendees and note links, not the notes.
+-- Deleting a meeting takes its attendees, not its notes, note links or
+-- note associations: a meeting synced or imported again finds them.
 DELETE FROM minerva.meetings WHERE id = 'check:a1';
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM minerva.meeting_attendees WHERE meeting_id = 'check:a1')
-        OR EXISTS (SELECT 1 FROM minerva.meeting_notes WHERE meeting_id = 'check:a1') THEN
-        RAISE EXCEPTION 'a deleted meeting left attendees or note links';
+    IF EXISTS (SELECT 1 FROM minerva.meeting_attendees WHERE meeting_id = 'check:a1') THEN
+        RAISE EXCEPTION 'a deleted meeting left attendees';
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM minerva.notes WHERE id = '6a2b0c6e-1000-4000-8000-000000000001') THEN
-        RAISE EXCEPTION 'deleting a meeting deleted its note';
+    IF NOT EXISTS (SELECT 1 FROM minerva.notes WHERE id = '6a2b0c6e-1000-4000-8000-000000000001')
+        OR NOT EXISTS (SELECT 1 FROM minerva.meeting_notes WHERE meeting_id = 'check:a1')
+        OR NOT EXISTS (SELECT 1 FROM minerva.note_associations WHERE item_id = 'check:a1') THEN
+        RAISE EXCEPTION 'deleting a meeting took a note, note link or association';
     END IF;
 END;
 $$;
