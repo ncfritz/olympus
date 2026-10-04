@@ -73,6 +73,11 @@ export type AuthConfig = {
     /** Where the site is served, for exact redirect-URI matching. */
     clientOrigins: string[];
     /**
+     * Where the Minerva calendar console's agent is published, for the same
+     * (ADR 0029). e.g. https://control.olympus.ncfritz.net/minerva/calendar/api
+     */
+    consoleBaseUrls: string[];
+    /**
      * Where a browser reaches the API, for the redirect URI the providers
      * are registered with — one canonical origin, not whichever the person
      * arrived on. e.g. https://olympus.ncfritz.net/api
@@ -281,6 +286,7 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
     users: {
       signingKeys: read.optional("AUTH_SIGNING_KEYS"),
       clientOrigins: read.list("AUTH_CLIENT_ORIGINS", []),
+      consoleBaseUrls: read.list("AUTH_CONSOLE_BASE_URLS", []),
       publicBaseUrl: read.optional("AUTH_PUBLIC_BASE_URL"),
       providers:
         providersRaw === undefined

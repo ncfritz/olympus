@@ -365,3 +365,14 @@ export class SingleMeetingAvailabilityResponse {
   })
   meeting: MeetingAvailability;
 }
+
+export class ListMeetingAvailabilitiesResponse {
+  @ApiProperty({
+    type: () => MeetingAvailability,
+    isArray: true,
+    required: true,
+    description:
+      "The caller's meetings among those asked for, each with the level it counts for. Another user's meeting is left out.",
+  })
+  meetings: MeetingAvailability[];
+}

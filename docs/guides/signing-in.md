@@ -112,6 +112,9 @@ AUTH_OIDC_PROVIDERS_FILE=/Users/you/olympus-secrets/oidc-providers.json
 # Where the site is served, for exact redirect-URI matching. Only the site
 # needs it, so it can wait until there is one.
 # AUTH_CLIENT_ORIGINS=https://olympus.ncfritz.net,https://olympus.internal.ncfritz.net
+# Where the Minerva calendar console's agent is published (ADR 0029), for
+# its redirect URI, <url>/auth/callback.
+# AUTH_CONSOLE_BASE_URLS=http://localhost:4432
 ```
 
 `AUTH_PUBLIC_BASE_URL` is one canonical base, including any path the API is
@@ -230,7 +233,7 @@ restart drops sign-ins that are mid-flight.
 
 The same five things, wired differently. The paths are in
 `infra/docker/compose/olympus.yml` because they are wiring;
-`AUTH_PUBLIC_BASE_URL` and `AUTH_CLIENT_ORIGINS` are in
+`AUTH_PUBLIC_BASE_URL`, `AUTH_CLIENT_ORIGINS` and `AUTH_CONSOLE_BASE_URLS` are in
 `infra/docker/env/prod/olympus-api.env` because they are not.
 
 | Piece         | How                                                             |

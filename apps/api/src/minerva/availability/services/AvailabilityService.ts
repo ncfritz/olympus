@@ -49,6 +49,9 @@ type Range = { start: number; end: number };
 
 const LABEL_MAX = 200;
 
+/** How many meetings one ListMeetingAvailabilities may name. */
+export const MEETING_IDS_MAX = 500;
+
 const blockNotFound = (blockId: string) =>
   new NotFoundException(`Availability block with id ${blockId} not found`);
 
@@ -388,6 +391,61 @@ export class AvailabilityService {
     });
     const excluded = await this.calendars.excludedFromBusy(userId);
     return toMeetingAvailability(meeting, level, excluded);
+  }
+
+  /**
+   * These meetings of the user's, each with the level it counts for, in
+   * the order asked. An ID that is not one of the user's meetings is left
+   * out rather than refused: whose a meeting is, is not the caller's to
+   * learn. @throws BadRequestException
+   */
+  async listMeetings(
+    userId: string,
+    meetingIds: unknown,
+  ): Promise<MeetingAvailability[]> {
+    const ids =
+      typeof meetingIds === "string"
+        ? [
+            ...new Set(
+              meetingIds
+                .split(",")
+                .map((id) => id.trim())
+                .filter((id) => id !== ""),
+            ),
+          ]
+        : [];
+    if (!ids.length) {
+      throw new BadRequestException(["meetingIds must name a meeting"]);
+    }
+    if (ids.length > MEETING_IDS_MAX) {
+      throw new BadRequestException([
+        `meetingIds must name at most ${MEETING_IDS_MAX} meetings`,
+      ]);
+    }
+
+    const query = gql`
+      query ListMeetingsForAvailability($ids: [String!]!, $userId: uuid!) {
+        minerva_meetings(
+          where: { id: { _in: $ids }, user_id: { _eq: $userId } }
+        ) {
+          ${AVAILABILITY_MEETING}
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      minerva_meetings: GraphQlAvailabilityMeeting[];
+    }>(query, { ids, userId });
+    const found = new Map(response.minerva_meetings.map((m) => [m.id, m]));
+    const mine = ids.filter((id) => found.has(id));
+    if (!mine.length) return [];
+
+    const [levels, excluded] = await Promise.all([
+      this.meetingLevels(userId, mine),
+      this.calendars.excludedFromBusy(userId),
+    ]);
+    return mine.map((id) =>
+      toMeetingAvailability(found.get(id)!, levels.get(id), excluded),
+    );
   }
 
   /**

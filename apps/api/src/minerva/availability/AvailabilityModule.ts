@@ -7,6 +7,7 @@ import { DeleteAvailabilityBlockController } from "./controllers/DeleteAvailabil
 import { DescribeAvailabilityBlockController } from "./controllers/DescribeAvailabilityBlockController";
 import { GetAvailabilityController } from "./controllers/GetAvailabilityController";
 import { ListAvailabilityBlocksController } from "./controllers/ListAvailabilityBlocksController";
+import { ListMeetingAvailabilitiesController } from "./controllers/ListMeetingAvailabilitiesController";
 import { SetMeetingAvailabilityController } from "./controllers/SetMeetingAvailabilityController";
 import { UpdateAvailabilityBlockController } from "./controllers/UpdateAvailabilityBlockController";
 import { AvailabilityService } from "./services/AvailabilityService";
@@ -24,6 +25,7 @@ import { AvailabilityService } from "./services/AvailabilityService";
     DescribeAvailabilityBlockController,
     UpdateAvailabilityBlockController,
     DeleteAvailabilityBlockController,
+    ListMeetingAvailabilitiesController,
     SetMeetingAvailabilityController,
     ClearMeetingAvailabilityController,
   ],

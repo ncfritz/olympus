@@ -97,6 +97,7 @@ describe("Availability API", () => {
       ["get", `${BASE}/availability-block/${BLOCK_ID}`],
       ["put", `${BASE}/availability-block/${BLOCK_ID}`],
       ["delete", `${BASE}/availability-block/${BLOCK_ID}`],
+      ["get", `${BASE}/meeting-availabilities?meetingIds=m-1`],
       ["put", `${BASE}/meeting/m-1/availability`],
       ["delete", `${BASE}/meeting/m-1/availability`],
     ] as const)("%s %s answers 401 and asks no one", async (method, path) => {
@@ -551,6 +552,72 @@ describe("Availability API", () => {
 
     it("answers 400 for a level it does not know", async () => {
       const res = await put({ availability: { status: "dnd" } });
+      expect(res.status).toBe(400);
+      expect(ctx.t.graphql.request).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("ListMeetingAvailabilities", () => {
+    const list = (query: string) =>
+      ctx.as(ctx.t.http().get(`${BASE}/meeting-availabilities?${query}`));
+
+    it("lists the caller's meetings among those named, in order", async () => {
+      owned();
+      ctx.t.graphql.on("ListMeetingsForAvailability", {
+        minerva_meetings: [
+          meetingRow(),
+          meetingRow({ id: "m-2", status: "Tentative", source: "holidays" }),
+        ],
+      });
+      ctx.t.graphql.on("ListMeetingAvailability", {
+        minerva_meeting_availability: [{ meetingId: "m-1", status: "free" }],
+      });
+
+      const res = await list("meetingIds=m-2,theirs,m-1,m-2");
+
+      expect(res.status).toBe(200);
+      expect(
+        res.body.meetings.map(
+          (m: {
+            meetingId: string;
+            status: string;
+            overridden: boolean;
+            counted: boolean;
+          }) => [m.meetingId, m.status, m.overridden, m.counted],
+        ),
+      ).toEqual([
+        ["m-2", "interruptable", false, false],
+        ["m-1", "free", true, true],
+      ]);
+      expect(
+        ctx.t.graphql.calls("ListMeetingsForAvailability")[0]?.variables,
+      ).toEqual({ ids: ["m-2", "theirs", "m-1"], userId: USER });
+      expect(
+        ctx.t.graphql.calls("ListMeetingAvailability")[0]?.variables,
+      ).toEqual({ userId: USER, meetingIds: ["m-2", "m-1"] });
+    });
+
+    it("answers an empty list when none is the caller's", async () => {
+      ctx.t.graphql.on("ListMeetingsForAvailability", {
+        minerva_meetings: [],
+      });
+
+      const res = await list("meetingIds=theirs");
+
+      expect(res.status).toBe(200);
+      expect(res.body.meetings).toEqual([]);
+      expect(ctx.t.graphql.calls("ListMeetingAvailability")).toHaveLength(0);
+    });
+
+    it.each([
+      ["no meetings", ""],
+      ["only commas", "meetingIds=,,"],
+      [
+        "too many meetings",
+        `meetingIds=${Array.from({ length: 501 }, (_, i) => `m-${i}`).join(",")}`,
+      ],
+    ])("answers 400 for %s", async (_what, query) => {
+      const res = await list(query);
       expect(res.status).toBe(400);
       expect(ctx.t.graphql.request).not.toHaveBeenCalled();
     });

@@ -7068,6 +7068,62 @@
         ]
       }
     },
+    "/minerva/meeting-availabilities": {
+      "get": {
+        "description": "The caller's meetings among those named, in the order named, each with its calendar status and the level it counts for. A meeting that is not the caller's is left out. At most 500 meetings.",
+        "operationId": "ListMeetingAvailabilities",
+        "parameters": [
+          {
+            "name": "meetingIds",
+            "required": true,
+            "in": "query",
+            "description": "The IDs of the meetings, comma-separated",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's meetings among those named.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMeetingAvailabilitiesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the level each of some of the signed-in user's meetings counts for",
+        "tags": [
+          "Availability"
+        ]
+      }
+    },
     "/minerva/meeting/{meetingId}/availability": {
       "put": {
         "description": "The meeting counts for this level whatever its calendar says, outside the working day too. Another user's meeting is not found.",
@@ -12903,6 +12959,21 @@
         },
         "required": [
           "block"
+        ]
+      },
+      "ListMeetingAvailabilitiesResponse": {
+        "type": "object",
+        "properties": {
+          "meetings": {
+            "description": "The caller's meetings among those asked for, each with the level it counts for. Another user's meeting is left out.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingAvailability"
+            }
+          }
+        },
+        "required": [
+          "meetings"
         ]
       },
       "MeetingAvailabilityChange": {

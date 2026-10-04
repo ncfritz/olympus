@@ -49,7 +49,7 @@ const config = (modes: Partial<Record<"users" | "services", AuthMode>> = {}) =>
     modes: { users: "report", services: "report", ...modes },
     rateLimits: "on",
     serviceRoles: {},
-    users: { clientOrigins: [], providers: [] },
+    users: { clientOrigins: [], consoleBaseUrls: [], providers: [] },
     services: {
       enabled: false,
       port: 3443,

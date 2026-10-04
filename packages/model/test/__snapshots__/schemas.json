@@ -9693,6 +9693,21 @@
     ],
     "type": "object"
   },
+  "ListMeetingAvailabilitiesResponse": {
+    "properties": {
+      "meetings": {
+        "description": "The caller's meetings among those asked for, each with the level it counts for. Another user's meeting is left out.",
+        "items": {
+          "$ref": "#/components/schemas/MeetingAvailability"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "meetings"
+    ],
+    "type": "object"
+  },
   "ListMetadataFetchJobsResponse": {
     "properties": {
       "count": {

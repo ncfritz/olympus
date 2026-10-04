@@ -18,7 +18,12 @@ const config = (signingKeys?: string) =>
     modes: { users: "report", services: "report" },
     rateLimits: "on",
     serviceRoles: {},
-    users: { signingKeys, clientOrigins: [], providers: [] },
+    users: {
+      signingKeys,
+      clientOrigins: [],
+      consoleBaseUrls: [],
+      providers: [],
+    },
     services: {
       enabled: false,
       port: 3443,
