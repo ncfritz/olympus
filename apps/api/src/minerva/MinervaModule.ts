@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { CalendarsModule } from "./calendars/CalendarsModule";
 import { GoalsModule } from "./goals/GoalsModule";
 import { MeetingsModule } from "./meetings/MeetingsModule";
 import { NotesModule } from "./notes/NotesModule";
@@ -12,6 +13,7 @@ export const MINERVA_MODULES = [
   TagsModule,
   GoalsModule,
   ReviewsModule,
+  CalendarsModule,
 ];
 
 @Module({ imports: MINERVA_MODULES })

@@ -145,6 +145,20 @@ export type WeatherConfig = {
   };
 };
 
+/**
+ * How the API reaches the calendar sync agent's management API, on the
+ * agent's services listener with the API's own client certificate
+ * (ADR 0028). Unset, the calendar account operations answer 503.
+ */
+export type MinervaConfig = {
+  calendarAgent?: {
+    /** Including the version: https://minerva-calendar-agent:4433/v1 */
+    baseUrl: string;
+    tls?: { certificate: string; key: string; ca?: string };
+    timeoutMs: number;
+  };
+};
+
 export type AppConfig = {
   server: ServerConfig;
   auth: AuthConfig;
@@ -153,6 +167,7 @@ export type AppConfig = {
   logging: LoggingConfig;
   dionysus: DionysusConfig;
   weather: WeatherConfig;
+  minerva: MinervaConfig;
 };
 
 /**
@@ -197,9 +212,10 @@ export const readConfig = (
   };
 
   const weather = readWeatherConfig(read);
+  const minerva = readMinervaConfig(read);
 
   if (read.problems.length) throw new ConfigValidationError(read.problems);
-  return { server, auth, hasura, amqp, logging, dionysus, weather };
+  return { server, auth, hasura, amqp, logging, dionysus, weather, minerva };
 };
 
 /**
@@ -304,6 +320,40 @@ export const isCidr = (value: string): boolean => {
   return /^\d+$/.test(prefix) && bits >= 0 && bits <= (family === 4 ? 32 : 128);
 };
 
+/**
+ * MINERVA_CALENDAR_AGENT_URL, with MINERVA_CALENDAR_AGENT_CLIENT_CERT and
+ * _CLIENT_KEY (and the optional _CA_CERT), which an https URL requires.
+ */
+const readMinervaConfig = (read: EnvReader): MinervaConfig => {
+  const baseUrl = read.optional("MINERVA_CALENDAR_AGENT_URL");
+  const certificate = read.optional("MINERVA_CALENDAR_AGENT_CLIENT_CERT");
+  const key = read.optional("MINERVA_CALENDAR_AGENT_CLIENT_KEY");
+  const ca = read.optional("MINERVA_CALENDAR_AGENT_CA_CERT");
+  const timeoutMs = readInteger(
+    read,
+    "MINERVA_CALENDAR_AGENT_TIMEOUT_MS",
+    10000,
+  );
+  if (Boolean(certificate) !== Boolean(key)) {
+    read.problems.push(
+      "MINERVA_CALENDAR_AGENT_CLIENT_CERT and MINERVA_CALENDAR_AGENT_CLIENT_KEY are set together",
+    );
+  }
+  if (!baseUrl) return {};
+  if (baseUrl.startsWith("https:") && !(certificate && key)) {
+    read.problems.push(
+      "MINERVA_CALENDAR_AGENT_CLIENT_CERT and MINERVA_CALENDAR_AGENT_CLIENT_KEY are required for an https MINERVA_CALENDAR_AGENT_URL",
+    );
+  }
+  return {
+    calendarAgent: {
+      baseUrl,
+      tls: certificate && key ? { certificate, key, ca } : undefined,
+      timeoutMs,
+    },
+  };
+};
+
 const readWeatherConfig = (read: EnvReader): WeatherConfig => {
   const applicationKey = read.optional("AMBIENT_APPLICATION_KEY");
   const apiKey = read.optional("AMBIENT_API_KEY");
@@ -397,6 +447,12 @@ export type AmqpConfigType = ConfigType<typeof amqpConfig>;
 export type DionysusConfigType = ConfigType<typeof dionysusConfig>;
 export type WeatherConfigType = ConfigType<typeof weatherConfig>;
 
+export const minervaConfig = registerAs(
+  "minerva",
+  () => readConfig(process.env).minerva,
+);
+export type MinervaConfigType = ConfigType<typeof minervaConfig>;
+
 export const ALL_CONFIG = [
   serverConfig,
   authConfig,
@@ -405,4 +461,5 @@ export const ALL_CONFIG = [
   loggingConfig,
   dionysusConfig,
   weatherConfig,
+  minervaConfig,
 ];

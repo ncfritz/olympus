@@ -188,26 +188,43 @@ after Neil applies the migration.
 
 **Sign-off:** C2 on DEV.
 
-## Phase 3 — The API calls the agent
+## Phase 3 — The API calls the agent — built 2026-10-03, not signed off
 
-1. **Service listener**: the agent serves its management API on a second
-   HTTPS port that requires a client certificate issued by Olympus
-   Services and accepts only the CNs in its configuration
-   (`MANAGEMENT_CLIENTS=olympus-api`), as the API's `3443` does (ADR 0018,
-   0023). The code the API uses for `3443` moves to `packages/nest` if it
-   is not already shared, rather than being copied. The existing listener
-   keeps the console's sign-in until phase 8.
-2. **Client certificate**: the API gets a client certificate
-   (CN `olympus-api`, OU the deployment) from Olympus Services, issued by
-   Neil, mounted as a secret (`~/Docker/secrets/olympus-api/`), and a
-   `MinervaCalendarAgentClient` built on the shared API client (ADR
-   0017), generated from the agent's OpenAPI document.
-3. **Configuration**: `MINERVA_CALENDAR_AGENT_URL` and the certificate
-   paths in the API's `*.env.example`; the compose files; the agent's
-   listener port, published only on the Docker network.
-4. **Tests**: the agent's e2e tests for a request with no certificate, a
-   certificate from the wrong issuer, an unlisted CN; the API's client
-   against a stub.
+1. **Shared listener**: **done**, as its own behaviour-preserving commit —
+   the API's services listener, its revocation-list check and the reading
+   of a client certificate's service and issuer moved to
+   `@ncfritz/olympus-nest` (`createClientCertificateListener`,
+   `identifyPeerCertificate`, `revocationCoverage`).
+2. **Agent's services listener**: **done** — with the API's variable names
+   (`SERVICES_LISTEN_PORT`, default 4433; `TLS_CERT`, `TLS_KEY`,
+   `TLS_CA_SERVICES`, `TLS_CRL_SERVICES`, `AUTH_SERVICES_ISSUER`) and
+   `AUTH_SERVICE_CLIENTS` (default `olympus-api`); off until the first three
+   are set. `JwtAuthGuard` takes the caller from the certificate there and
+   from the token on the HTTP listener, never the other way round; a
+   service has no signed-in user (`DescribeCurrentUser` refuses it). The
+   console's listener and sign-in are unchanged until phase 8.
+3. **API's client**: **done** — `MinervaCalendarAgentClient` in the new
+   `minerva/calendars` feature, axios with a keep-alive HTTPS agent
+   presenting the API's certificate and `X-Olympus-Client: olympus-api`;
+   503 when unconfigured, 502 when the agent fails or cannot be reached.
+   Hand-written rather than generated: the SDK is generated from the API's
+   own documents and depends on the API, so the API cannot depend on it.
+   Its one operation so far is `ListCalendarAccounts`; phase 4 adds what it
+   needs.
+4. **Configuration**: **done** — `MINERVA_CALENDAR_AGENT_URL`,
+   `_CLIENT_CERT`, `_CLIENT_KEY`, `_CA_CERT` and `_TIMEOUT_MS` for the API;
+   the env examples; in prod, commented blocks in both env files and the
+   agent's `/run/secrets/tls` mount, reached only over the backend network.
+   `scripts/dev-ca.sh` mints `minerva-calendar-sync.crt` (the agent's
+   server certificate, from the service issuer) and `agents/olympus-api.*`
+   (the API's client certificate); an existing dev CA needs `--force`.
+5. **Tests**: **done** — the agent over real mTLS with the dev CA (the
+   API's certificate in, another service's 403, the device issuer, no
+   certificate and a revoked one refused in the handshake), the guard,
+   both configurations, and the API's client against a stand-in listener
+   (its certificate and header, 502, 503). Verified 2026-10-03: the API's
+   tests (2,091), the agent's (778) and the nest package's pass, with
+   typecheck, lint and convention checks.
 
 **Sign-off:** C3 on DEV, then PROD after Neil issues the certificate.
 

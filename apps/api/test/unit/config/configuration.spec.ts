@@ -81,6 +81,43 @@ describe("readConfig", () => {
     );
   });
 
+  describe("the calendar sync agent (ADR 0028)", () => {
+    it("is unset by default", () => {
+      expect(readConfig(REQUIRED).minerva).toEqual({});
+    });
+
+    it("reads the URL and the API's client certificate", () => {
+      expect(
+        readConfig({
+          ...REQUIRED,
+          MINERVA_CALENDAR_AGENT_URL: "https://minerva-calendar-agent:4433/v1",
+          MINERVA_CALENDAR_AGENT_CLIENT_CERT: "/run/secrets/tls/client.crt",
+          MINERVA_CALENDAR_AGENT_CLIENT_KEY: "/run/secrets/tls/client.key",
+          MINERVA_CALENDAR_AGENT_CA_CERT: "/run/secrets/tls/services-ca.crt",
+        }).minerva,
+      ).toEqual({
+        calendarAgent: {
+          baseUrl: "https://minerva-calendar-agent:4433/v1",
+          tls: {
+            certificate: "/run/secrets/tls/client.crt",
+            key: "/run/secrets/tls/client.key",
+            ca: "/run/secrets/tls/services-ca.crt",
+          },
+          timeoutMs: 10000,
+        },
+      });
+    });
+
+    it("refuses an https URL without a client certificate", () => {
+      expect(() =>
+        readConfig({
+          ...REQUIRED,
+          MINERVA_CALENDAR_AGENT_URL: "https://minerva-calendar-agent:4433/v1",
+        }),
+      ).toThrow(/required for an https MINERVA_CALENDAR_AGENT_URL/);
+    });
+  });
+
   it("reports every problem at once", () => {
     let error: unknown;
     try {
