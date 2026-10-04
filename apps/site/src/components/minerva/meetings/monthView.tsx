@@ -121,6 +121,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
             plugins={[dayGridPlugin, interactionPlugin]}
             events={events}
             initialView="dayGridMonth"
+            initialDate={startDate.toJSDate()}
             headerToolbar={{
               start: "title",
               center: "",
