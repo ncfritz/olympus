@@ -22,3 +22,12 @@ export const recordCalendarEvent = (
 ): void => {
   consumed.inc({ action, result });
 };
+
+const redriven = new Counter({
+  name: "calendar_events_redriven_total",
+  help: "Dead-lettered calendar events put back on the events queue",
+});
+
+export const recordCalendarEventRedrive = (count: number): void => {
+  redriven.inc(count);
+};

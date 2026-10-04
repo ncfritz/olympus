@@ -2522,6 +2522,71 @@
     ],
     "type": "string"
   },
+  "CalendarEventDeadLetter": {
+    "properties": {
+      "action": {
+        "description": "What the agent published it as: upsert, delete or backfill",
+        "type": "string"
+      },
+      "attempts": {
+        "description": "How many times writing it failed before it was dead-lettered",
+        "type": "number"
+      },
+      "deadTime": {
+        "description": "An ISO-8601 formatted string indicating when it was dead-lettered",
+        "type": "string"
+      },
+      "eventId": {
+        "description": "The event's ID, `<source>:<uid>`, when the message names one",
+        "type": "string"
+      },
+      "reason": {
+        "description": "Why it was dead-lettered; absent for one RabbitMQ rejected without the consumer saying",
+        "type": "string"
+      }
+    },
+    "required": [
+      "attempts"
+    ],
+    "type": "object"
+  },
+  "CalendarEventDeadLetters": {
+    "properties": {
+      "count": {
+        "description": "How many calendar events wait in the dead-letter queue",
+        "type": "number"
+      },
+      "sample": {
+        "description": "The first of them, at most twenty, oldest first",
+        "items": {
+          "$ref": "#/components/schemas/CalendarEventDeadLetter"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "count",
+      "sample"
+    ],
+    "type": "object"
+  },
+  "CalendarEventRedrive": {
+    "properties": {
+      "redriven": {
+        "description": "How many dead-lettered events went back onto the events queue",
+        "type": "number"
+      },
+      "remaining": {
+        "description": "How many wait in the dead-letter queue now: those that arrived during the redrive, or failed again",
+        "type": "number"
+      }
+    },
+    "required": [
+      "redriven",
+      "remaining"
+    ],
+    "type": "object"
+  },
   "CalendarProvider": {
     "description": "The provider a calendar account signs in with",
     "enum": [
@@ -5614,6 +5679,22 @@
     },
     "required": [
       "calendarAccount"
+    ],
+    "type": "object"
+  },
+  "DescribeCalendarEventDeadLettersResponse": {
+    "properties": {
+      "deadLetters": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarEventDeadLetters"
+          }
+        ],
+        "description": "What waits in the calendar events' dead-letter queue."
+      }
+    },
+    "required": [
+      "deadLetters"
     ],
     "type": "object"
   },
@@ -16902,6 +16983,22 @@
     },
     "required": [
       "reauthorization"
+    ],
+    "type": "object"
+  },
+  "RedriveCalendarEventDeadLettersResponse": {
+    "properties": {
+      "redrive": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CalendarEventRedrive"
+          }
+        ],
+        "description": "What the redrive moved."
+      }
+    },
+    "required": [
+      "redrive"
     ],
     "type": "object"
   },

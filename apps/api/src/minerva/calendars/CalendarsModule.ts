@@ -16,7 +16,10 @@ import { ReauthorizeCalendarAccountController } from "./controllers/ReauthorizeC
 import { RemoveCalendarAccountController } from "./controllers/RemoveCalendarAccountController";
 import { RemoveCalendarController } from "./controllers/RemoveCalendarController";
 import { UpdateCalendarController } from "./controllers/UpdateCalendarController";
+import { DescribeCalendarEventDeadLettersController } from "./controllers/DescribeCalendarEventDeadLettersController";
+import { RedriveCalendarEventDeadLettersController } from "./controllers/RedriveCalendarEventDeadLettersController";
 import { CalendarEventHandler } from "./handlers/CalendarEventHandler";
+import { CalendarEventDeadLetterService } from "./services/CalendarEventDeadLetterService";
 import { CalendarEventQueues } from "./services/CalendarEventQueues";
 import { CalendarAccountClaimService } from "./services/CalendarAccountClaimService";
 import { CalendarAccountService } from "./services/CalendarAccountService";
@@ -46,6 +49,8 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
     DescribeCalendarAccountClaimController,
     ConfirmCalendarAccountClaimController,
     ReleaseCalendarAccountController,
+    DescribeCalendarEventDeadLettersController,
+    RedriveCalendarEventDeadLettersController,
   ],
   providers: [
     CalendarAccountService,
@@ -53,6 +58,7 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
     CalendarService,
     CalendarEventService,
     CalendarEventQueues,
+    CalendarEventDeadLetterService,
     CalendarEventHandler,
     MinervaCalendarAgentClient,
   ],

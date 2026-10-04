@@ -234,6 +234,79 @@ export class CalendarAccountClaimReceipt {
   email: string;
 }
 
+export class CalendarEventDeadLetter {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The event's ID, `<source>:<uid>`, when the message names one",
+  })
+  eventId?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "What the agent published it as: upsert, delete or backfill",
+  })
+  action?: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How many times writing it failed before it was dead-lettered",
+  })
+  attempts: number;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Why it was dead-lettered; absent for one RabbitMQ rejected without the consumer saying",
+  })
+  reason?: string;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string indicating when it was dead-lettered",
+  })
+  deadTime?: Moment;
+}
+
+export class CalendarEventDeadLetters {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How many calendar events wait in the dead-letter queue",
+  })
+  count: number;
+
+  @ApiProperty({
+    type: () => CalendarEventDeadLetter,
+    isArray: true,
+    required: true,
+    description: "The first of them, at most twenty, oldest first",
+  })
+  sample: CalendarEventDeadLetter[];
+}
+
+export class CalendarEventRedrive {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "How many dead-lettered events went back onto the events queue",
+  })
+  redriven: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "How many wait in the dead-letter queue now: those that arrived during the redrive, or failed again",
+  })
+  remaining: number;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Partial and Derived Types                                                                                          */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -470,4 +543,22 @@ export class DescribeCalendarAccountClaimResponse {
     description: "The claim.",
   })
   claim: CalendarAccountClaim;
+}
+
+export class DescribeCalendarEventDeadLettersResponse {
+  @ApiProperty({
+    type: () => CalendarEventDeadLetters,
+    required: true,
+    description: "What waits in the calendar events' dead-letter queue.",
+  })
+  deadLetters: CalendarEventDeadLetters;
+}
+
+export class RedriveCalendarEventDeadLettersResponse {
+  @ApiProperty({
+    type: () => CalendarEventRedrive,
+    required: true,
+    description: "What the redrive moved.",
+  })
+  redrive: CalendarEventRedrive;
 }
