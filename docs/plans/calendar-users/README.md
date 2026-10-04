@@ -74,9 +74,17 @@ migration test checks that an update moves `updated_at` and leaves
    select 'source ' || source, count(*) from minerva.meetings group by source;
    ```
 
+   **Run 2026-10-03 (Neil):** 6,260 attendees without their meeting, none
+   of the other three; sources `amzn` (5,363) and `unknown` (71). Decided:
+   the migration deletes the attendees without a meeting and touches no
+   meeting, note, note link or note association. The raw records are
+   archived; a one-time import of the historic meetings comes later.
+
 ## Phase 1 — Minerva per user — built 2026-10-03, not signed off
 
 1. **Migration** `<ts>_minerva_calendar_users`:
+   - Deletes the attendees whose meeting no longer exists (phase 0's
+     decision), saying how many, and nothing else.
    - Finds the user with `lower(email) = 'ncfritz@ncfritz.net'`. If any
      of the six tables has rows and there is no such user, it raises and
      changes nothing.

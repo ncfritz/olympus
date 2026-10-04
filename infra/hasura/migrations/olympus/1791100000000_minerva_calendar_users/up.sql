@@ -8,6 +8,23 @@
 -- is refused, changing nothing; an empty one (a new laptop) needs no user.
 -- Rows the new foreign keys would refuse are refused here too, by count,
 -- rather than deleted: what to do with them is decided by a person.
+--
+-- One such decision is made here (Neil, 2026-10-03): attendees whose meeting
+-- no longer exists are deleted. The old sync replaced meetings without
+-- their attendees (6,260 rows in prod); nothing could reach them, and the
+-- raw records are archived for a one-time import later. Only those rows go:
+-- no meeting, note, note link or note association is touched.
+
+DO $$
+DECLARE
+    removed integer;
+BEGIN
+    DELETE FROM minerva.meeting_attendees a
+        WHERE NOT EXISTS (SELECT 1 FROM minerva.meetings m WHERE m.id = a.meeting_id);
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    RAISE NOTICE 'minerva_calendar_users: deleted % attendees whose meeting no longer exists', removed;
+END;
+$$;
 
 DO $$
 DECLARE
