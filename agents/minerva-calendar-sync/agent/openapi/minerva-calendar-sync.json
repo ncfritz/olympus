@@ -41,7 +41,7 @@
     },
     "/v1/auth/logout": {
       "post": {
-        "description": "Signs the browser out: ends its Olympus session when its access token still verifies, and clears the session cookies either way. Bearer tokens simply stop being sent.",
+        "description": "Signs the browser out: ends its Olympus session when its access token still verifies, and clears the session cookies either way. Refused to a page that is not the console's. Bearer tokens simply stop being sent.",
         "operationId": "EndSession",
         "parameters": [],
         "responses": {

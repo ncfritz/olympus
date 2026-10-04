@@ -50,11 +50,17 @@ export class LoginCallbackController {
     setSessionCookies(response, this.auth, tokens);
 
     // The console: back into it, signed in. A caller with no returnTo gets
-    // the tokens, for a Bearer header, and refreshes with the API itself.
+    // the access token, for a Bearer header. Not the refresh token: the
+    // agent refreshes with it from the cookie, and two holders of one
+    // refresh token end its session (ADR 0018).
     if (returnTo) {
       response.redirect(returnTo);
       return;
     }
-    response.json({ ...tokens, tokenType: "Bearer" });
+    response.json({
+      accessToken: tokens.accessToken,
+      expiresIn: tokens.expiresIn,
+      tokenType: "Bearer",
+    });
   }
 }

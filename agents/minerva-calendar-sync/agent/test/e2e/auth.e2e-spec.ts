@@ -289,6 +289,47 @@ describe("Auth (e2e)", () => {
       );
     });
 
+    it("keeps the cookies, and remembers nothing, when Olympus cannot refresh just now", async () => {
+      olympus.answer(
+        "POST /v1/auth/token",
+        { status: 503, body: { error: "temporarily_unavailable" } },
+        {
+          status: 200,
+          body: { ...ISSUED, access_token: issueE2eAccessToken() },
+        },
+      );
+      const cookie = "minerva_refresh_token=refresh-1";
+
+      const first = await http()
+        .get("/v1/calendars")
+        .set("Cookie", cookie)
+        .expect(503);
+      expect(first.headers["set-cookie"]).toBeUndefined();
+
+      await http().get("/v1/calendars").set("Cookie", cookie).expect(200);
+      expect(olympus.requests("POST /v1/auth/token")).toHaveLength(2);
+    });
+
+    it("refuses a change from another page on the same site", async () => {
+      const token = issueE2eAccessToken();
+
+      await http()
+        .post("/olympus/v1/minerva/availability-blocks")
+        .set("Cookie", `minerva_access_token=${token}`)
+        .set("Origin", "https://evil.ncfritz.net")
+        .type("form")
+        .send({ "block[status]": "busy" })
+        .expect(403);
+      await http()
+        .post("/v1/auth/logout")
+        .set("Cookie", `minerva_access_token=${token}`)
+        .set("Origin", "https://evil.ncfritz.net")
+        .expect(403);
+      expect(
+        olympus.received.filter((r) => r.url.startsWith("/v1/")),
+      ).toHaveLength(0);
+    });
+
     it("POST /v1/auth/logout ends the Olympus session and clears the cookies", async () => {
       olympus.answer("POST /v1/auth/logout", {
         status: 200,
@@ -299,6 +340,7 @@ describe("Auth (e2e)", () => {
       const res = await http()
         .post("/v1/auth/logout")
         .set("Cookie", `minerva_access_token=${token}; minerva_refresh_token=r`)
+        .set("Origin", "http://console.test")
         .expect(204);
 
       const [signOut] = olympus.requests("POST /v1/auth/logout");

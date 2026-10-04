@@ -35,7 +35,7 @@ export interface paths {
     put?: never;
     /**
      * Ends the session
-     * @description Signs the browser out: ends its Olympus session when its access token still verifies, and clears the session cookies either way. Bearer tokens simply stop being sent.
+     * @description Signs the browser out: ends its Olympus session when its access token still verifies, and clears the session cookies either way. Refused to a page that is not the console's. Bearer tokens simply stop being sent.
      */
     post: operations["EndSession"];
     delete?: never;

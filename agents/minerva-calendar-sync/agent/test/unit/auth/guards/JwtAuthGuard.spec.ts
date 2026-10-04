@@ -1,6 +1,7 @@
 import {
   ExecutionContext,
   ForbiddenException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -209,7 +210,7 @@ describe("JwtAuthGuard", () => {
       verifier.verify.mockImplementation(async (token: string) =>
         token === "good-new"
           ? { claims: { userId: "u-1", roles: [] } }
-          : { reason: "ERR_JWT_EXPIRED" },
+          : { reason: "ERR_JWT_EXPIRED", transient: false },
       );
       const req = {
         headers: {},
@@ -219,6 +220,122 @@ describe("JwtAuthGuard", () => {
       await expect(guard.canActivate(contextFor(req))).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe("when Olympus cannot be asked", () => {
+    const keysDown = { reason: "ERR_JWKS_TIMEOUT", transient: true };
+
+    it("answers 503 for a Bearer token, not 401", async () => {
+      verifier.verify.mockResolvedValue(keysDown);
+      const req = { headers: { authorization: "Bearer good" }, cookies: {} };
+
+      await expect(guard.canActivate(contextFor(req))).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+    });
+
+    it("neither refreshes nor clears the cookies while the keys are out of reach", async () => {
+      verifier.verify.mockResolvedValue(keysDown);
+      const req = {
+        headers: {},
+        cookies: {
+          [ACCESS_TOKEN_COOKIE]: "good-cookie",
+          [REFRESH_TOKEN_COOKIE]: "refresh",
+        },
+      };
+
+      await expect(guard.canActivate(contextFor(req))).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+      expect(signIn.refresh).not.toHaveBeenCalled();
+      expect(res.clearCookie).not.toHaveBeenCalled();
+    });
+
+    it("keeps the cookies when the refresh cannot be made", async () => {
+      signIn.refresh.mockRejectedValue(new ServiceUnavailableException());
+      const req = {
+        headers: {},
+        cookies: {
+          [ACCESS_TOKEN_COOKIE]: "stale",
+          [REFRESH_TOKEN_COOKIE]: "refresh",
+        },
+      };
+
+      await expect(guard.canActivate(contextFor(req))).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+      expect(res.clearCookie).not.toHaveBeenCalled();
+    });
+
+    it("keeps the refreshed cookies when the new token cannot be checked yet", async () => {
+      signIn.refresh.mockResolvedValue({
+        accessToken: "new",
+        expiresIn: 600,
+        refreshToken: "refresh-2",
+      });
+      verifier.verify.mockImplementation(async (token: string) =>
+        token === "new"
+          ? keysDown
+          : { reason: "ERR_JWT_EXPIRED", transient: false },
+      );
+      const req = {
+        headers: {},
+        cookies: {
+          [ACCESS_TOKEN_COOKIE]: "stale",
+          [REFRESH_TOKEN_COOKIE]: "refresh-1",
+        },
+      };
+
+      await expect(guard.canActivate(contextFor(req))).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+      expect(cookieNames(res.cookie)).toEqual([
+        ACCESS_TOKEN_COOKIE,
+        REFRESH_TOKEN_COOKIE,
+      ]);
+      expect(res.clearCookie).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("a change riding on the cookies", () => {
+    const cookieRequest = (headers: Record<string, string>) => ({
+      method: "POST",
+      headers,
+      cookies: { [ACCESS_TOKEN_COOKIE]: "good-cookie" },
+    });
+
+    it.each([
+      ["the console", { origin: "https://control.example" }],
+      ["a client that is not a browser", {}],
+      ["a browser on the same origin", { "sec-fetch-site": "same-origin" }],
+    ])("is allowed from %s", async (_who, headers) => {
+      await expect(
+        guard.canActivate(contextFor(cookieRequest(headers))),
+      ).resolves.toBe(true);
+    });
+
+    it.each([
+      ["another origin on the same site", { origin: "https://evil.example" }],
+      ["an opaque origin", { origin: "null" }],
+      ["a same-site page without an origin", { "sec-fetch-site": "same-site" }],
+    ])("is refused from %s", async (_who, headers) => {
+      await expect(
+        guard.canActivate(contextFor(cookieRequest(headers))),
+      ).rejects.toThrow(ForbiddenException);
+      expect(verifier.verify).not.toHaveBeenCalled();
+    });
+
+    it("is not asked of a Bearer token, which no other page can send", async () => {
+      const req = {
+        method: "POST",
+        headers: {
+          origin: "https://evil.example",
+          authorization: "Bearer good",
+        },
+        cookies: {},
+      };
+      await expect(guard.canActivate(contextFor(req))).resolves.toBe(true);
     });
   });
 

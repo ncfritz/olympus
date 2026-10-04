@@ -12,7 +12,24 @@ export interface OlympusClaims {
   roles: string[];
 }
 
-export type VerifiedToken = { claims: OlympusClaims } | { reason: string };
+export type VerifiedToken =
+  | { claims: OlympusClaims }
+  | {
+      reason: string;
+      /**
+       * The keys could not be had (the API down, slow or answering
+       * nonsense): the token may be fine, and nothing should be concluded
+       * about the session from it.
+       */
+      transient: boolean;
+    };
+
+/** jose's codes for not getting the keys, as opposed to a token that fails with them. */
+const TRANSIENT = new Set([
+  "ERR_JWKS_TIMEOUT",
+  "ERR_JWKS_INVALID",
+  "ERR_JOSE_GENERIC",
+]);
 
 /**
  * Checks Olympus access tokens with the keys the API publishes at
@@ -44,16 +61,19 @@ export class OlympusTokenVerifier {
         !Array.isArray(roles) ||
         !roles.every((role): role is string => typeof role === "string")
       ) {
-        return { reason: "claims are not the shape Olympus issues" };
+        return {
+          reason: "claims are not the shape Olympus issues",
+          transient: false,
+        };
       }
       return { claims: { userId: payload.sub, roles } };
     } catch (error: unknown) {
-      return {
-        reason:
-          error instanceof jose.errors.JOSEError
-            ? error.code
-            : "verification failed",
-      };
+      if (error instanceof jose.errors.JOSEError) {
+        return { reason: error.code, transient: TRANSIENT.has(error.code) };
+      }
+      // Not jose's own: fetching the keys failed (a refused connection, a
+      // name that does not resolve).
+      return { reason: "the keys could not be fetched", transient: true };
     }
   }
 }

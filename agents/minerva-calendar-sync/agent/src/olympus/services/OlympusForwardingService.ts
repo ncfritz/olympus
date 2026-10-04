@@ -86,10 +86,26 @@ export const forwardedPath = (
   const target = url.slice(FORWARD_PREFIX.length);
   const queryAt = target.indexOf("?");
   const path = queryAt === -1 ? target : target.slice(0, queryAt);
-  // A dot segment, plain or encoded, is resolved before the request is
-  // sent and could walk out of the path the pattern checks. An encoded
-  // slash stays encoded, inside its segment: a meeting's ID may have one.
-  if (/%2e|\/\.\.?(\/|$)/i.test(path)) return undefined;
+  // The path the API will be sent is the one the URL parser makes of it:
+  // it resolves dot segments, plain or encoded, reads a backslash as a
+  // slash and stops at a fragment. Anything it would change is refused, so
+  // the pattern below checks what is actually sent; it drops or encodes a
+  // control character too. An encoded slash stays encoded, inside its
+  // segment: a meeting's ID may have one.
+  let parsed: URL;
+  try {
+    parsed = new URL(target, "http://olympus.invalid");
+  } catch {
+    return undefined;
+  }
+  if (
+    parsed.origin !== "http://olympus.invalid" ||
+    parsed.pathname !== path ||
+    parsed.hash !== "" ||
+    /[\\#]/.test(target)
+  ) {
+    return undefined;
+  }
   const allowed = FORWARDED.some(
     (entry) => entry.path.test(path) && entry.methods.includes(method),
   );

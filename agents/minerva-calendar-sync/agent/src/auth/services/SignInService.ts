@@ -1,9 +1,11 @@
 import {
   AuthFlowError,
+  attemptRefresh,
   authorizeUrl,
   createPkce,
   exchangeCode,
-  refreshTokens,
+  oauthError,
+  type FormAnswer,
   type IssuedTokens,
 } from "@ncfritz/olympus-auth-flow";
 import {
@@ -11,6 +13,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { createHash, randomBytes } from "node:crypto";
@@ -38,9 +41,18 @@ const DEVICE_NAME = "Minerva calendar console";
  * until the first answer's cookies arrive every one of them carries the
  * old token: presented twice, the API takes it for a stolen one and ends
  * the session (ADR 0018). So the agent refreshes once and gives them all
- * the same answer.
+ * the same answer — for as long as that race lasts and no longer, since
+ * for that long the old token is as good as the new one.
  */
-const REFRESH_REUSE_MS = 30_000;
+const REFRESH_REUSE_MS = 10_000;
+
+/** The API's refusals that mean the refresh token is no good, as opposed to the API being unable to say. */
+const SESSION_ENDED = new Set([
+  "invalid_grant",
+  "invalid_client",
+  "invalid_request",
+  "unauthorized_client",
+]);
 
 const base64Url = (bytes: Buffer) => bytes.toString("base64url");
 const pkce = createPkce({
@@ -140,7 +152,9 @@ export class SignInService {
 
   /**
    * New tokens for a refresh token, once however many requests present it
-   * together. @throws UnauthorizedException when the API will not refresh
+   * together. @throws UnauthorizedException when the API says the session
+   * has ended, ServiceUnavailableException when it cannot say (unreachable,
+   * failing, rate limiting), which is not remembered
    */
   refresh(refreshToken: string): Promise<SessionTokens> {
     const now = Date.now();
@@ -158,25 +172,65 @@ export class SignInService {
     if (pending) return pending.answer;
 
     const entry: { answer: Promise<SessionTokens>; settledAt?: number } = {
-      answer: refreshTokens(this.api.postForm, {
-        clientId: OLYMPUS_CLIENT_ID,
-        refreshToken,
-      })
-        .then(session)
-        .catch((error: unknown) => {
-          this.logger.warn(
-            `refresh refused: ${error instanceof Error ? error.message : String(error)}`,
-          );
-          throw new UnauthorizedException(
-            "The session has ended: sign in again",
-          );
-        })
-        .finally(() => {
+      answer: this.attempt(refreshToken).then(
+        (tokens) => {
           entry.settledAt = Date.now();
-        }),
+          return tokens;
+        },
+        (error: unknown) => {
+          if (error instanceof UnauthorizedException) {
+            entry.settledAt = Date.now();
+          } else {
+            this.refreshes.delete(key);
+          }
+          throw error;
+        },
+      ),
     };
     this.refreshes.set(key, entry);
     return entry.answer;
+  }
+
+  private async attempt(refreshToken: string): Promise<SessionTokens> {
+    let answer: FormAnswer;
+    try {
+      answer = await attemptRefresh(this.api.postForm, {
+        clientId: OLYMPUS_CLIENT_ID,
+        refreshToken,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `refresh failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw new ServiceUnavailableException(
+        "The Olympus API cannot be reached",
+      );
+    }
+
+    const refused = oauthError(answer);
+    if (refused && SESSION_ENDED.has(refused.error)) {
+      this.logger.log(`refresh refused: ${refused.error}`);
+      throw new UnauthorizedException("The session has ended: sign in again");
+    }
+    const body = (answer.body ?? {}) as Record<string, unknown>;
+    if (
+      answer.status !== 200 ||
+      typeof body.access_token !== "string" ||
+      typeof body.expires_in !== "number" ||
+      typeof body.refresh_token !== "string"
+    ) {
+      this.logger.warn(
+        `refresh answered ${answer.status}${refused ? ` (${refused.error})` : ""}`,
+      );
+      throw new ServiceUnavailableException(
+        "The Olympus API could not refresh the session just now",
+      );
+    }
+    return {
+      accessToken: body.access_token,
+      expiresIn: body.expires_in,
+      refreshToken: body.refresh_token,
+    };
   }
 
   /** Registered with the API's client registry; nginx publishes it under the console. */
