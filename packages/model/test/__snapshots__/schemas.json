@@ -11388,7 +11388,11 @@
             "$ref": "#/components/schemas/MeetingUser"
           }
         ],
-        "description": "Indicates who organized the meeting"
+        "description": "Who organized the meeting, when Minerva knows them; a synced calendar's meeting often names only an address (organizerEmail)"
+      },
+      "organizerEmail": {
+        "description": "The organizer's email address, when the calendar gave one",
+        "type": "string"
       },
       "recurrenceId": {
         "description": "A secondary identifier from the calendar provider denoting which recurrence of the parent meeting this is",
@@ -11452,7 +11456,6 @@
       "isCancelled",
       "isDeleted",
       "occurrenceType",
-      "organizer",
       "reminder",
       "response",
       "sensitivity",
@@ -14608,7 +14611,11 @@
             "$ref": "#/components/schemas/MeetingUser"
           }
         ],
-        "description": "Indicates who organized the meeting"
+        "description": "Who organized the meeting, when Minerva knows them; a synced calendar's meeting often names only an address (organizerEmail)"
+      },
+      "organizerEmail": {
+        "description": "The organizer's email address, when the calendar gave one",
+        "type": "string"
       },
       "recurrenceId": {
         "description": "A secondary identifier from the calendar provider denoting which recurrence of the parent meeting this is",

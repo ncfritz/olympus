@@ -213,7 +213,10 @@ export class MeetingService {
     // One row per address: the organizer may also be an attendee, and an
     // upsert cannot touch the same row twice.
     const people = new Map<string, Record<string, unknown>>();
-    for (const person of [item.organizer, ...item.attendees]) {
+    for (const person of [
+      ...(item.organizer ? [item.organizer] : []),
+      ...item.attendees,
+    ]) {
       people.set(person.email, {
         user_id: userId,
         alias: person.alias,
@@ -244,7 +247,8 @@ export class MeetingService {
             importance: item.importance,
             location: item.location,
             occurrence_type: item.occurrenceType,
-            organizer_email: item.organizer.email,
+            organizer_email:
+              item.organizer?.email ?? item.organizerEmail ?? null,
             reminder: item.reminder,
             response: item.response,
             sensitivity: item.sensitivity,

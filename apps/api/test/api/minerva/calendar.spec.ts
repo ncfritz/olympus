@@ -329,6 +329,24 @@ describe("Minerva calendar API", () => {
       });
     });
 
+    it("lists a synced meeting whose organizer Minerva knows only by address", async () => {
+      t().graphql.on("ListCalendarItems", {
+        minerva_meetings: [
+          graphQlMeeting({
+            organizer: null,
+            organizer_email: "someone@example.com",
+            attendees: [],
+          }),
+        ],
+      });
+
+      const res = await list("/v1/minerva/meetings/2026-09-18");
+
+      expect(res.status).toBe(200);
+      expect(res.body.items[0].organizer).toBeUndefined();
+      expect(res.body.items[0].organizerEmail).toBe("someone@example.com");
+    });
+
     it("reads the days in the caller's timezone", async () => {
       t().graphql.on("ListCalendarItems", { minerva_meetings: [] });
 

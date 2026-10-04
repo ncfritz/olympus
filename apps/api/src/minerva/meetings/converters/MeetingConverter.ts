@@ -23,7 +23,9 @@ export type GraphQlMeeting = {
   sensitivity: MeetingSensitivity;
   response: string;
   reminder: string;
-  organizer: GraphQlMeetingUser;
+  organizer_email?: string | null;
+  /** Null when no person row has the organizer's address: a synced meeting. */
+  organizer: GraphQlMeetingUser | null;
   occurrence_type: MeetingOccurrenceType;
   location: string;
   importance: MeetingImportance;
@@ -88,7 +90,9 @@ export const toDomainObject = (input: GraphQlMeeting): Meeting => {
     sensitivity: input.sensitivity,
     response: input.response,
     reminder: input.reminder,
-    organizer: buildMeetingUser(input.organizer),
+    organizer: input.organizer ? buildMeetingUser(input.organizer) : undefined,
+    organizerEmail:
+      input.organizer_email ?? input.organizer?.email ?? undefined,
     occurrenceType: input.occurrence_type,
     location: input.location,
     importance: input.importance,

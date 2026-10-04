@@ -445,14 +445,14 @@
     },
     "/minerva/meetings/{start}": {
       "get": {
-        "description": "Lists the calendar items starting on the given day and continuing for the requested number of days.",
+        "description": "Lists the calendar items that overlap the given days, from the start of the first to the end of the last in the caller's timezone. A deleted item is not listed; a cancelled one is.",
         "operationId": "ListCalendarItems",
         "parameters": [
           {
             "name": "start",
             "required": true,
             "in": "path",
-            "description": "The timestamp to start from",
+            "description": "The first day, YYYY-MM-DD",
             "schema": {
               "type": "string"
             }
@@ -461,9 +461,17 @@
             "name": "days",
             "required": false,
             "in": "query",
-            "description": "The number of days to fetch",
+            "description": "The number of days to list, 1 to 92; 1 when absent",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "x-ncfritz-tz",
+            "in": "header",
+            "description": "The IANA timezone the days are read in; Etc/UTC when absent",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -7513,12 +7521,16 @@
             "description": "`true` if the meeting has been canceled, `false` otherwise"
           },
           "organizer": {
-            "description": "Indicates who organized the meeting",
+            "description": "Who organized the meeting, when Minerva knows them; a synced calendar's meeting often names only an address (organizerEmail)",
             "allOf": [
               {
                 "$ref": "#/components/schemas/MeetingUser"
               }
             ]
+          },
+          "organizerEmail": {
+            "type": "string",
+            "description": "The organizer's email address, when the calendar gave one"
           },
           "attendees": {
             "description": "A list of users who have been invited to the meeting",
@@ -7544,7 +7556,6 @@
           "source",
           "status",
           "isCancelled",
-          "organizer",
           "attendees"
         ]
       },
@@ -7816,12 +7827,16 @@
             "description": "`true` if the meeting has been canceled, `false` otherwise"
           },
           "organizer": {
-            "description": "Indicates who organized the meeting",
+            "description": "Who organized the meeting, when Minerva knows them; a synced calendar's meeting often names only an address (organizerEmail)",
             "allOf": [
               {
                 "$ref": "#/components/schemas/MeetingUser"
               }
             ]
+          },
+          "organizerEmail": {
+            "type": "string",
+            "description": "The organizer's email address, when the calendar gave one"
           },
           "attendees": {
             "description": "A list of users who have been invited to the meeting",

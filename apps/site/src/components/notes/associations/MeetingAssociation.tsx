@@ -1,8 +1,9 @@
 import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
-import { ReloadOutlined } from "@ant-design/icons";
+import { ReloadOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Avatar, Button, Space, Spin, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
+import { organizerOf } from "../../../utils/meetings";
 import type { NoteAssociation } from "../../../utils/notes";
 
 export interface AssociatedItemProps {
@@ -116,12 +117,13 @@ const MeetingNoteAssociation: React.FunctionComponent<AssociatedItemProps> = ({
               <Typography.Text
                 style={{ paddingBottom: 2, margin: 0, fontSize: 13 }}
               >
-                {`${meeting.organizer.givenName} ${meeting.organizer.surname}`}
+                {organizerOf(meeting).name}
               </Typography.Text>
               <Avatar
                 shape={"circle"}
                 size={"small"}
-                src={`https://cdn.internal.ncfritz.net/amzn/avatar/${meeting.organizer.alias}.jpg`}
+                src={organizerOf(meeting).avatar}
+                icon={<UserOutlined />}
               />
             </Space>
           </Space>

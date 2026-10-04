@@ -4,6 +4,7 @@ import {
   CaretRightOutlined,
   HomeOutlined,
   RadarChartOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import type { EventInput } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
@@ -28,6 +29,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
+import { organizerOf } from "../../../utils/meetings";
 import { DayPicker } from "react-day-picker";
 import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
@@ -397,17 +399,18 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               <Avatar
                 shape={"circle"}
                 size={"large"}
-                src={`https://cdn.internal.ncfritz.net/amzn/avatar/${event.organizer.alias}.jpg`}
+                src={organizerOf(event).avatar}
+                icon={<UserOutlined />}
               />
               <Space orientation={"vertical"} size={0}>
                 <Typography.Title
                   level={5}
                   style={{ paddingBottom: 2, margin: 0 }}
                 >
-                  {`${event.organizer.givenName} ${event.organizer.surname}`}
+                  {organizerOf(event).name}
                 </Typography.Title>
                 <Typography.Text strong={true}>
-                  {event.organizer.email}
+                  {organizerOf(event).email}
                 </Typography.Text>
               </Space>
             </Space>
