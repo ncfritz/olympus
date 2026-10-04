@@ -63,7 +63,6 @@ const TimelineEntry: React.FunctionComponent<TimelineEntryProps> = ({
 
   const { handleSubmit, control, reset } = useForm<NotesFormInput>({
     defaultValues: {
-      author: item.author,
       type: item.type,
       flagged: item.flagged,
       title: item.title,

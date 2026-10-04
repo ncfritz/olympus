@@ -131,7 +131,6 @@ export class NoteService {
     const request = gql`
       mutation CreateNote(
         $userId: uuid!
-        $author: String!
         $flagged: Boolean!
         $type: numeric!
         $value: String!
@@ -143,7 +142,6 @@ export class NoteService {
         insert_minerva_notes_one(
           object: {
             userId: $userId
-            author: $author
             flagged: $flagged
             type: $type
             value: $value
@@ -168,7 +166,6 @@ export class NoteService {
     const response =
       await this.graphQLClient.request<GraphQlCreateNoteResponse>(request, {
         userId,
-        author: note.author,
         type: note.type,
         flagged: note.flagged,
         value: note.value,

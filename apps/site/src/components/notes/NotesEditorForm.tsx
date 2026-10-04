@@ -63,7 +63,6 @@ export interface NotesEditorFormProps {
 }
 
 export interface NotesFormInput {
-  author: string;
   type: NoteType;
   flagged: boolean;
   title?: string;
@@ -73,7 +72,6 @@ export interface NotesFormInput {
 }
 
 export const NEW_NOTE: NotesFormInput = {
-  author: "ncfritz",
   type: 0,
   flagged: false,
   title: undefined,

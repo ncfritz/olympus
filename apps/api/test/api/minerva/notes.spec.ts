@@ -39,7 +39,6 @@ describe("Minerva notes API", () => {
   describe("POST /v1/minerva/notes (CreateNote)", () => {
     const body = {
       note: {
-        author: "ncfritz",
         flagged: false,
         type: 1,
         value: "Remember the milk",
@@ -65,7 +64,6 @@ describe("Minerva notes API", () => {
       expect(res.headers.location).toBe(`/v1/minerva/note/${NOTE_ID}`);
       expect(t().graphql.calls("CreateNote")[0].variables).toMatchObject({
         userId: USER,
-        author: "ncfritz",
         value: "Remember the milk",
         associations: [
           { itemId: "movie:603", itemType: "movie", userId: USER },
@@ -73,6 +71,25 @@ describe("Minerva notes API", () => {
         parentId: undefined,
       });
       expect(t().graphql.calls("GetOwnNote")).toHaveLength(0);
+    });
+
+    it("ignores an author an older client still sends", async () => {
+      t().graphql.on("CreateNote", {
+        insert_minerva_notes_one: graphQlNote(),
+      });
+
+      const res = await ctx.as(
+        t()
+          .http()
+          .post("/v1/minerva/notes")
+          .send({ note: { ...body.note, author: "ncfritz" } }),
+      );
+
+      expect(res.status).toBe(201);
+      expect(res.body.note).not.toHaveProperty("author");
+      const call = t().graphql.calls("CreateNote")[0];
+      expect(call.variables).not.toHaveProperty("author");
+      expect(call.document).not.toMatch(/\bauthor\b/);
     });
 
     it("creates a child note under the caller's own parent", async () => {

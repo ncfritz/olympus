@@ -55,15 +55,15 @@ INSERT INTO minerva.meeting_attendees (meeting_id, user_id, attendee_email, atte
 SELECT pg_temp.expect_refused('attendee on another user''s meeting',
     $q$INSERT INTO minerva.meeting_attendees (meeting_id, user_id, attendee_email, attendance, response) VALUES ('check:a1', '6a2b0c6e-0000-4000-8000-0000000000ff', 'other@example.test', 'required', 'accepted')$q$, '23503');
 
-INSERT INTO minerva.notes (id, user_id, author, type, value) VALUES
-    ('6a2b0c6e-1000-4000-8000-000000000001', '6a2b0c6e-0000-4000-8000-000000000001', 'a', 0, 'A note'),
-    ('6a2b0c6e-1000-4000-8000-0000000000ff', '6a2b0c6e-0000-4000-8000-0000000000ff', 'b', 0, 'B note');
+INSERT INTO minerva.notes (id, user_id, type, value) VALUES
+    ('6a2b0c6e-1000-4000-8000-000000000001', '6a2b0c6e-0000-4000-8000-000000000001', 0, 'A note'),
+    ('6a2b0c6e-1000-4000-8000-0000000000ff', '6a2b0c6e-0000-4000-8000-0000000000ff', 0, 'B note');
 
 -- A child note is its parent's user's.
-INSERT INTO minerva.notes (user_id, author, type, value, parent_id) VALUES
-    ('6a2b0c6e-0000-4000-8000-000000000001', 'a', 0, 'A child', '6a2b0c6e-1000-4000-8000-000000000001');
+INSERT INTO minerva.notes (user_id, type, value, parent_id) VALUES
+    ('6a2b0c6e-0000-4000-8000-000000000001', 0, 'A child', '6a2b0c6e-1000-4000-8000-000000000001');
 SELECT pg_temp.expect_refused('child of another user''s note',
-    $q$INSERT INTO minerva.notes (user_id, author, type, value, parent_id) VALUES ('6a2b0c6e-0000-4000-8000-0000000000ff', 'b', 0, 'x', '6a2b0c6e-1000-4000-8000-000000000001')$q$, '23503');
+    $q$INSERT INTO minerva.notes (user_id, type, value, parent_id) VALUES ('6a2b0c6e-0000-4000-8000-0000000000ff', 0, 'x', '6a2b0c6e-1000-4000-8000-000000000001')$q$, '23503');
 SELECT pg_temp.expect_refused('deleting a note that has children',
     $q$DELETE FROM minerva.notes WHERE id = '6a2b0c6e-1000-4000-8000-000000000001'$q$, '23503');
 

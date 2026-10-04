@@ -7296,10 +7296,6 @@
       "BaseNoteWithAssociations": {
         "type": "object",
         "properties": {
-          "author": {
-            "type": "string",
-            "description": "The author of the note.  This should be a user ID that can be traced back to a registered user"
-          },
           "type": {
             "description": "The type of then note",
             "allOf": [
@@ -7333,7 +7329,6 @@
           }
         },
         "required": [
-          "author",
           "type",
           "flagged",
           "value",
@@ -7381,10 +7376,6 @@
       "Note": {
         "type": "object",
         "properties": {
-          "author": {
-            "type": "string",
-            "description": "The author of the note.  This should be a user ID that can be traced back to a registered user"
-          },
           "type": {
             "description": "The type of then note",
             "allOf": [
@@ -7442,7 +7433,6 @@
           }
         },
         "required": [
-          "author",
           "type",
           "flagged",
           "value",

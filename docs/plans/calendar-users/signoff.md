@@ -121,6 +121,6 @@ recorded exception.
 
 ## C9 — Clean-up
 
-1. Notes create and read with no `author`.
-2. The console no longer offers account or calendar pages, and its old
-   sign-in is closed.
+1. Notes create and read with no `author`; an older client that still
+   sends one creates its note all the same.
+2. The console is unchanged: its pages and its sign-in work as before.

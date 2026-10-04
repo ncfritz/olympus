@@ -102,7 +102,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
   const { handleSubmit, control, reset } = useForm<NotesFormInput>({
     defaultValues: {
-      author: "ncfritz",
       type: 1,
       flagged: false,
       value: "",

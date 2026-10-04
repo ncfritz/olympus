@@ -1287,10 +1287,6 @@
   },
   "BaseNote": {
     "properties": {
-      "author": {
-        "description": "The author of the note.  This should be a user ID that can be traced back to a registered user",
-        "type": "string"
-      },
       "flagged": {
         "description": "`true` if the note has been flagged, `false` otherwise",
         "type": "boolean"
@@ -1317,7 +1313,6 @@
       }
     },
     "required": [
-      "author",
       "flagged",
       "type",
       "value"
@@ -1332,10 +1327,6 @@
           "$ref": "#/components/schemas/PartialNoteAssociation"
         },
         "type": "array"
-      },
-      "author": {
-        "description": "The author of the note.  This should be a user ID that can be traced back to a registered user",
-        "type": "string"
       },
       "flagged": {
         "description": "`true` if the note has been flagged, `false` otherwise",
@@ -1364,7 +1355,6 @@
     },
     "required": [
       "associations",
-      "author",
       "flagged",
       "type",
       "value"
@@ -12674,10 +12664,6 @@
         },
         "type": "array"
       },
-      "author": {
-        "description": "The author of the note.  This should be a user ID that can be traced back to a registered user",
-        "type": "string"
-      },
       "childCount": {
         "description": "The number of children this note has.  This value only represents the direct children and does no account for a nested child note structure.",
         "type": "number"
@@ -12728,7 +12714,6 @@
       }
     },
     "required": [
-      "author",
       "childCount",
       "createdTime",
       "flagged",

@@ -10,7 +10,6 @@ export type GraphQlNoteAssociation = {
 export type GraphQlNote = {
   id: string;
   type: NoteType;
-  author: string;
   flagged: boolean;
   value: string;
   title?: string;
@@ -48,7 +47,6 @@ export const toDomainObject = (input: GraphQlNote): Note => {
 
   return {
     id: input.id,
-    author: input.author,
     flagged: input.flagged,
     type: input.type,
     title: input.title,

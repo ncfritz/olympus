@@ -139,9 +139,12 @@ user sees and changes only their own accounts and calendars.
   the Olympus API calls it with its own client certificate
   (`olympus-api`). Users never reach the agent; the API checks ownership
   and then calls it.
-- The console's OIDC sign-in and `AUTH_ALLOWED_EMAILS` are retired once
-  the site covers what users do. Whether the console stays as an
-  operations view (sync runs, the outbox, backfill) is decided then.
+- The console's OIDC sign-in and `AUTH_ALLOWED_EMAILS` were to be retired
+  once the site covered what users do. **Amended (Neil, 2026-10-03):** the
+  console stays as it is, its sign-in and pages included, as an operator's
+  view (events and availability, sync runs, the outbox). Availability
+  overrides, which only the console offers, move into the site in a phase
+  of their own; until then the console is where they are set.
 
 ### The message names the account
 
@@ -240,5 +243,5 @@ their associations.
 - Events from an unowned account are not stored anywhere in Olympus until
   it is linked; the backfill fills them in then.
 - Shared calendars synced by two users are stored twice, once each.
-- The console loses its user-facing pages. What remains of it is decided
-  when the site's calendar pages land.
+- The console keeps its pages (amended above); the site is where users
+  manage accounts and calendars.

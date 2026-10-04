@@ -22,7 +22,6 @@ export const graphQlNote = (
 ): GraphQlNote => ({
   id: "8f7d2c1e-0000-4000-8000-000000000001",
   type: 1 as GraphQlNote["type"],
-  author: "ncfritz",
   flagged: false,
   value: "Remember the milk",
   title: "Shopping",

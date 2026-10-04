@@ -6,6 +6,13 @@ RabbitMQ for Olympus (ADR 0013). Imported from the minerva-calendar-sync
 repository with its history; laid out as an agent with a management
 console (ADR 0016).
 
+Calendar accounts belong to Olympus users (ADR 0028). Users connect,
+claim and manage their accounts and calendars on the Olympus site, through
+the Olympus API, which calls the agent on its services listener and
+consumes `calendar.events` into each owner's Minerva. The console stays as
+an operator's view: events and availability (where overrides are set until
+the site has them), sync runs and the outbox.
+
 | Package                                  | Directory  | Port | What it is                                                          |
 | ---------------------------------------- | ---------- | ---- | ------------------------------------------------------------------- |
 | `@ncfritz/minerva-calendar-sync-agent`   | `agent/`   | 4432 | Sync engine, provider webhooks, outbox publisher and management API |
@@ -22,11 +29,16 @@ Microsoft Graph ─┴─────────────────▶ │
 
 ## The agent's HTTP surface
 
-- **Management API** under `/v1`, for the console: on the API conventions
-  (`docs/conventions/api.md`), one `<OperationId>Controller.ts` per
-  operation, request and response shapes in `agent/src/model`. Every
-  operation needs the agent's access token (sign-in through the OIDC
-  providers in `AUTH_OIDC_PROVIDERS`, limited to `AUTH_ALLOWED_EMAILS`).
+- **Management API** under `/v1`, for the console and the Olympus API: on
+  the API conventions (`docs/conventions/api.md`), one
+  `<OperationId>Controller.ts` per operation, request and response shapes
+  in `agent/src/model`. On the HTTP listener every operation needs the
+  agent's access token (sign-in through the OIDC providers in
+  `AUTH_OIDC_PROVIDERS`, limited to `AUTH_ALLOWED_EMAILS`). On the services
+  listener (`SERVICES_LISTEN_PORT`, ADR 0028) the caller is the client
+  certificate's service, `olympus-api` by default; operations marked
+  `@ServicesOnly()` (the web sign-ins and account removal) answer only
+  there.
 - **OpenAPI document**: `pnpm openapi` writes
   `agent/openapi/minerva-calendar-sync.json` (committed; `check:openapi`
   and `lint:openapi` guard it, and the console generates its client from

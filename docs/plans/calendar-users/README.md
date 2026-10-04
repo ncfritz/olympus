@@ -18,7 +18,8 @@ ends in a working, deployable state and a functional sign-off against
 | 5     | The API consumes `calendar.events`; backfill on link                                                | 4          | C6             |
 | 6     | Claims: the email, the landing page, release                                                        | 4          | C7             |
 | 7     | The site: the Calendars pages (canvas first)                                                        | 4, 5, 6    | C8             |
-| 8     | Clean-up: `notes.author` dropped, the console's user pages and sign-in retired                      | 7          | C9             |
+| 8     | Clean-up: `notes.author` dropped, the docs brought up to date; the console kept as it is            | 7          | C9             |
+| 9     | Availability overrides in the site (to design: who an override belongs to)                          | 7          | to come        |
 | Later | Ordering and version guard; attendees in the message; the console as an operations view; iOS        |            |                |
 
 Phases 1 and 2 are independent and can run in either order. Phase 6 can
@@ -481,12 +482,43 @@ after Neil applies the migration.
 **Sign-off:** C8 on PROD (apply `1791120000000_minerva_calendar_colors`
 and its metadata first).
 
-## Phase 8 — Clean-up
+## Phase 8 — Clean-up — built 2026-10-03, not signed off
 
-1. `notes.author` dropped (migration), and from the model and the site.
-2. The console's account and calendar pages removed; its OIDC sign-in and
-   `AUTH_ALLOWED_EMAILS` retired, the old listener closed. What the
-   console keeps, if anything, decided with Neil and recorded in ADR 0028.
-3. The agent's README and ADR 0013's deferred list updated.
+1. **`notes.author`**: **done** — migration
+   `1791130000000_minerva_notes_drop_author` drops the column (its
+   `down.sql` brings it back filled with each owner's email). Gone from the
+   model (`BaseNote`, so from creating and reading a note), the API's
+   query, converter and create mutation, and the site's note forms. The API
+   does not refuse unknown fields, so an older client that still sends
+   `author` is ignored, not refused (tested). The database check scripts
+   for calendar users and review pins no longer insert it.
+2. **The console, changed from the plan (Neil, 2026-10-03)**: it stays as
+   it is, its pages, OIDC sign-in and `AUTH_ALLOWED_EMAILS` included, as an
+   operator's view. Availability overrides, which only the console offers,
+   move into the site as phase 9. Recorded in ADR 0028.
+3. **Docs**: **done** — ADR 0013's deferred list marks what ADR 0028
+   settled (ordering and version guards stay deferred); ADR 0028 amended
+   for the console; the agent's README says who manages accounts now and
+   what the services listener serves. Verified 2026-10-03: the API's tests
+   (2,276), the model's and the site's, with typecheck, lint and the
+   convention checks; the migration up, down and up again with the check
+   scripts.
 
 **Sign-off:** C9 on PROD.
+
+## Phase 9 — Availability overrides in the site (to design)
+
+The agent's overrides belong to no one: blocks of time with a status
+(`OverrideBlock`) and a status per event (`EventOverride`), and the
+free/busy and status timeline it works out from every calendar it syncs.
+Only the console reads or sets them. In the site they need an owner; to
+settle before building, with a canvas first:
+
+- Who an override belongs to (the user; the agent keys them by user, or
+  the API keeps them in Minerva and the agent only computes), and whose
+  calendars a user's availability is made of.
+- What the site shows: a timeline of the user's availability with its
+  blocks and per-event statuses, and where it lives (Meetings, or the
+  Calendars page).
+- What becomes of the console's overrides and of anything else reading
+  availability (nothing outside the console today).
