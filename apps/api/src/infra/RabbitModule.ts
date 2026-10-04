@@ -18,6 +18,8 @@ import {
   CALENDAR_EVENTS_CHANNEL,
   CALENDAR_EVENTS_DEAD_LETTER_QUEUE,
   CALENDAR_EVENTS_PREFETCH,
+  CALENDAR_EVENTS_QUEUE,
+  CALENDAR_EVENTS_RETRY_QUEUES,
 } from "../minerva/calendars/messaging";
 
 @Module({
@@ -49,13 +51,24 @@ import {
               prefetchCount: CALENDAR_EVENTS_PREFETCH,
             },
           },
-          // Where the calendar events consumer rejects what it can never
-          // write (ADR 0028).
+          // Where the calendar events consumer puts what it can never
+          // write (ADR 0028), and the delay queues it retries through,
+          // each returning a message to the events queue when its time is
+          // up.
           queues: [
             {
               name: CALENDAR_EVENTS_DEAD_LETTER_QUEUE,
               options: { durable: true },
             },
+            ...CALENDAR_EVENTS_RETRY_QUEUES.map((retry) => ({
+              name: retry.name,
+              options: {
+                durable: true,
+                messageTtl: retry.delayMs,
+                deadLetterExchange: "",
+                deadLetterRoutingKey: CALENDAR_EVENTS_QUEUE,
+              },
+            })),
           ],
           connectionInitOptions: { wait: true },
           enableControllerDiscovery: true,

@@ -4,7 +4,8 @@ import { Counter } from "prom-client";
  * Calendar events consumed (ADR 0028), by action and what became of them:
  * `written` to Minerva, `unowned` (no user owns the account, acknowledged
  * and dropped), `invalid` (a message that can never be written,
- * dead-lettered) or `failed` (Hasura did not answer; requeued).
+ * dead-lettered), `retried` (Hasura failed; sent to a delay queue) or
+ * `gave_up` (failed for the last time; dead-lettered).
  */
 const consumed = new Counter({
   name: "calendar_events_consumed_total",
@@ -12,7 +13,8 @@ const consumed = new Counter({
   labelNames: ["action", "result"],
 });
 
-export type CalendarEventResult = "written" | "unowned" | "invalid" | "failed";
+export type CalendarEventResult =
+  "written" | "unowned" | "invalid" | "retried" | "gave_up";
 
 export const recordCalendarEvent = (
   action: string,

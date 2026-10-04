@@ -17,6 +17,7 @@ import { RemoveCalendarAccountController } from "./controllers/RemoveCalendarAcc
 import { RemoveCalendarController } from "./controllers/RemoveCalendarController";
 import { UpdateCalendarController } from "./controllers/UpdateCalendarController";
 import { CalendarEventHandler } from "./handlers/CalendarEventHandler";
+import { CalendarEventQueues } from "./services/CalendarEventQueues";
 import { CalendarAccountClaimService } from "./services/CalendarAccountClaimService";
 import { CalendarAccountService } from "./services/CalendarAccountService";
 import { CalendarEventService } from "./services/CalendarEventService";
@@ -51,6 +52,7 @@ import { MinervaCalendarAgentClient } from "./services/MinervaCalendarAgentClien
     CalendarAccountClaimService,
     CalendarService,
     CalendarEventService,
+    CalendarEventQueues,
     CalendarEventHandler,
     MinervaCalendarAgentClient,
   ],

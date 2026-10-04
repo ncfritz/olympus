@@ -1,15 +1,6 @@
-import { Nack } from "@golevelup/nestjs-rabbitmq";
 import type { ConsumeMessage } from "amqplib";
 import { register } from "prom-client";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { CalendarEventHandler } from "../../../src/minerva/calendars/handlers/CalendarEventHandler";
 import { calendarEvent } from "../../fixtures/calendarEvents";
 import { uniqueViolation, USER } from "../../support/signedInApp";
@@ -17,8 +8,14 @@ import { createTestApp, type TestApp } from "../../support/testApp";
 
 const ACCOUNT_ID = "ca000000-0000-4000-8000-000000000001";
 
-const delivery = (routingKey: string) =>
-  ({ fields: { routingKey } }) as unknown as ConsumeMessage;
+const QUEUE = "olympus-api.calendar-events";
+const DEAD = `${QUEUE}.dead`;
+
+const delivery = (routingKey: string, headers: Record<string, unknown> = {}) =>
+  ({
+    fields: { routingKey },
+    properties: { headers },
+  }) as unknown as ConsumeMessage;
 
 /** How many events the counter has seen with these labels. */
 const consumed = async (action: string, result: string): Promise<number> => {
@@ -37,7 +34,6 @@ const consumed = async (action: string, result: string): Promise<number> => {
 describe("Calendar events consumer", () => {
   let t: TestApp;
   let handler: CalendarEventHandler;
-  let waits: number[];
 
   beforeAll(async () => {
     t = await createTestApp();
@@ -46,14 +42,19 @@ describe("Calendar events consumer", () => {
   afterAll(async () => t.close());
   beforeEach(() => {
     t.reset();
-    waits = [];
-    vi.spyOn(
-      handler as unknown as { wait: (ms: number) => Promise<void> },
-      "wait",
-    ).mockImplementation(async (ms) => {
-      waits.push(ms);
-    });
   });
+
+  /** Where the handler sent messages: [queue, message, headers]. */
+  const sent = () =>
+    t.amqp.publish.mock.calls.map(([exchange, queue, message, options]) => {
+      expect(exchange).toBe("");
+      expect(options).toMatchObject({ persistent: true });
+      return [
+        queue,
+        message,
+        (options as { headers: Record<string, unknown> }).headers,
+      ];
+    });
 
   const owned = (owner: boolean) =>
     t.graphql.on("DescribeCalendarEventOwner", {
@@ -181,16 +182,26 @@ describe("Calendar events consumer", () => {
     expect(t.graphql.request).not.toHaveBeenCalled();
   });
 
-  it("dead-letters a malformed event", async () => {
+  it("dead-letters a malformed event with why", async () => {
     const before = await consumed("upsert", "invalid");
+    const event = calendarEvent({ startTime: "soon" });
 
-    const result = await handler.handle(
-      calendarEvent({ startTime: "soon" }),
-      delivery("event.upsert"),
-    );
+    const result = await handler.handle(event, delivery("event.upsert"));
 
-    expect(result).toEqual(new Nack(false));
+    expect(result).toBeUndefined();
     expect(t.graphql.request).not.toHaveBeenCalled();
+    expect(sent()).toEqual([
+      [
+        DEAD,
+        event,
+        {
+          "x-olympus-attempts": 0,
+          "x-olympus-routing-key": "event.upsert",
+          "x-olympus-dead-reason": expect.stringMatching(/startTime/),
+          "x-olympus-dead-at": expect.any(String),
+        },
+      ],
+    ]);
     expect(await consumed("upsert", "invalid")).toBe(before + 1);
   });
 
@@ -200,44 +211,111 @@ describe("Calendar events consumer", () => {
       delivery("event.rename"),
     );
 
-    expect(result).toEqual(new Nack(false));
+    expect(result).toBeUndefined();
     expect(t.graphql.request).not.toHaveBeenCalled();
+    expect(sent()[0]?.[0]).toBe(DEAD);
+    expect(sent()[0]?.[2]).toMatchObject({
+      "x-olympus-dead-reason": "unknown routing key event.rename",
+    });
   });
 
-  it("dead-letters an event Hasura refuses for its data", async () => {
+  it("dead-letters an event Hasura refuses for its data, without retrying", async () => {
     owned(true);
     t.graphql.on("WriteCalendarEvent", uniqueViolation);
 
-    const result = await handler.handle(
-      calendarEvent(),
-      delivery("event.upsert"),
-    );
+    await handler.handle(calendarEvent(), delivery("event.upsert"));
 
-    expect(result).toEqual(new Nack(false));
-    expect(waits).toEqual([]);
+    expect(sent().map(([queue]) => queue)).toEqual([DEAD]);
+    expect(sent()[0]?.[2]).toMatchObject({
+      "x-olympus-dead-reason": expect.stringMatching(/^Hasura refused it/),
+    });
   });
 
-  it("requeues while Hasura does not answer, waiting longer each time", async () => {
+  it("retries through the delay queues while Hasura does not answer, counting", async () => {
     t.graphql.fail("DescribeCalendarEventOwner", "fetch failed");
-    const before = await consumed("upsert", "failed");
+    const event = calendarEvent();
+    const before = await consumed("upsert", "retried");
 
-    const results = [];
-    for (let i = 0; i < 6; i++) {
-      results.push(
-        await handler.handle(calendarEvent(), delivery("event.upsert")),
+    // As the event comes back from each delay queue: through the events
+    // queue, its first routing key and its count in the headers.
+    const queues = [];
+    for (let failed = 0; failed < 9; failed++) {
+      t.amqp.publish.mockClear();
+      const headers =
+        failed === 0
+          ? {}
+          : {
+              "x-olympus-attempts": failed,
+              "x-olympus-routing-key": "event.upsert",
+            };
+      await handler.handle(
+        event,
+        delivery(failed === 0 ? "event.upsert" : QUEUE, headers),
       );
+      const [[queue, message, sentHeaders]] = sent();
+      expect(message).toEqual(event);
+      expect(sentHeaders).toMatchObject({
+        "x-olympus-attempts": failed + 1,
+        "x-olympus-routing-key": "event.upsert",
+      });
+      queues.push(queue);
     }
 
-    expect(results).toEqual(Array(6).fill(new Nack(true)));
-    expect(waits).toEqual([5_000, 10_000, 20_000, 40_000, 60_000, 60_000]);
-    expect(await consumed("upsert", "failed")).toBe(before + 6);
+    expect(queues).toEqual([
+      `${QUEUE}.retry.5s`,
+      `${QUEUE}.retry.5s`,
+      `${QUEUE}.retry.30s`,
+      `${QUEUE}.retry.30s`,
+      `${QUEUE}.retry.30s`,
+      `${QUEUE}.retry.5m`,
+      `${QUEUE}.retry.5m`,
+      `${QUEUE}.retry.5m`,
+      `${QUEUE}.retry.5m`,
+    ]);
+    expect(await consumed("upsert", "retried")).toBe(before + 9);
+  });
 
-    // Once Hasura answers, the waits start over.
+  it("dead-letters an event on its tenth failure", async () => {
+    t.graphql.fail("DescribeCalendarEventOwner", "fetch failed");
+    const before = await consumed("backfill", "gave_up");
+
+    await handler.handle(
+      calendarEvent(),
+      delivery(QUEUE, {
+        "x-olympus-attempts": 9,
+        "x-olympus-routing-key": "event.backfill",
+      }),
+    );
+
+    expect(sent()).toEqual([
+      [
+        DEAD,
+        calendarEvent(),
+        expect.objectContaining({
+          "x-olympus-attempts": 10,
+          "x-olympus-routing-key": "event.backfill",
+          "x-olympus-dead-reason": expect.stringMatching(
+            /^gave up after 10 attempts: .*fetch failed/,
+          ),
+        }),
+      ],
+    ]);
+    expect(await consumed("backfill", "gave_up")).toBe(before + 1);
+  });
+
+  it("writes an event that came back from a delay queue, by its first routing key", async () => {
     owned(true);
     written();
-    await handler.handle(calendarEvent(), delivery("event.upsert"));
-    t.graphql.fail("WriteCalendarEvent", "fetch failed");
-    await handler.handle(calendarEvent(), delivery("event.upsert"));
-    expect(waits.at(-1)).toBe(5_000);
+
+    await handler.handle(
+      calendarEvent(),
+      delivery(QUEUE, {
+        "x-olympus-attempts": 3,
+        "x-olympus-routing-key": "event.delete",
+      }),
+    );
+
+    expect(t.graphql.calls("WriteCalendarEvent")).toHaveLength(1);
+    expect(sent()).toEqual([]);
   });
 });
