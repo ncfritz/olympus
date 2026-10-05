@@ -3,11 +3,15 @@ import {
   BarChartOutlined,
   CalendarOutlined,
   CarryOutOutlined,
+  DotChartOutlined,
   EditOutlined,
   HomeOutlined,
+  InboxOutlined,
+  MailOutlined,
   ProjectOutlined,
   ScheduleOutlined,
   SettingOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { DateTime } from "luxon";
@@ -25,9 +29,14 @@ const SUB_MENUS = {
   "/meetings": "meetings-container",
   "/calendars": "meetings-container",
   "/review": "review-container",
+  "/mail": "mail-container",
 };
 
 const MATCHERS = {
+  "^/minerva/mail/reclassification(/.*)?$": "/minerva/mail/reclassification",
+  "^/minerva/mail/statistics([/?].*)?$": "/minerva/mail/statistics",
+  "^/minerva/mail/clusters([/?].*)?$": "/minerva/mail/clusters",
+  "^/minerva/mail([/?].*)?$": "/minerva/mail",
   "^/minerva/goals(/.*)?$": "/minerva/goals",
   "^/minerva/calendars([/?].*)?$": "/minerva/calendars",
   "^/minerva/review/daily(/.*)?$": "review-day",
@@ -206,6 +215,34 @@ const MinervaMenu: React.FunctionComponent = () => {
           key: `/${BASE_PATH}/meetings/insights`,
           icon: <BarChartOutlined />,
           label: "Meeting Insights",
+        },
+        {
+          key: "mail-container",
+          icon: <MailOutlined />,
+          label: "Mail",
+          onTitleClick: updateSubMenus,
+          children: [
+            {
+              key: `/${BASE_PATH}/mail`,
+              icon: <InboxOutlined />,
+              label: "Inbox",
+            },
+            {
+              key: `/${BASE_PATH}/mail/reclassification`,
+              icon: <TagsOutlined />,
+              label: "Re-classification",
+            },
+            {
+              key: `/${BASE_PATH}/mail/statistics`,
+              icon: <BarChartOutlined />,
+              label: "Statistics",
+            },
+            {
+              key: `/${BASE_PATH}/mail/clusters`,
+              icon: <DotChartOutlined />,
+              label: "Clusters",
+            },
+          ],
         },
       ]}
     />
