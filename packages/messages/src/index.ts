@@ -2,6 +2,7 @@ export * from "./batchJobs";
 export * from "./calendarEvents";
 export * from "./content";
 export * from "./downloads";
+export * from "./mail";
 export * from "./media";
 export * from "./metadataJobs";
 export * from "./notifications";
