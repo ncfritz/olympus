@@ -254,24 +254,6 @@ const ForecastView = ({
               utcOffsetSeconds={shown?.utcOffsetSeconds ?? 0}
             />
           )}
-          <div className={styles.attribution}>
-            Forecast and map layers ©{" "}
-            <a
-              href="https://openweathermap.org"
-              target="_blank"
-              rel="noreferrer"
-            >
-              OpenWeather
-            </a>{" "}
-            · Radar ©{" "}
-            <a
-              href="https://www.rainviewer.com"
-              target="_blank"
-              rel="noreferrer"
-            >
-              RainViewer
-            </a>
-          </div>
         </>
       )}
     </>
