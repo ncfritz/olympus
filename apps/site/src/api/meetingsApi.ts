@@ -43,7 +43,7 @@ class MeetingsApi {
   async getMeeting(id: string) {
     return await describeCalendarItem({
       path: {
-        meetingId: encodeURIComponent(id),
+        meetingId: id,
       },
       ...this.buildHeaders(),
     });
@@ -52,7 +52,7 @@ class MeetingsApi {
   async getNextMeetingInSeries(id: string) {
     return await getNextCalendarItemOccurrence({
       path: {
-        meetingId: encodeURIComponent(id),
+        meetingId: id,
       },
       ...this.buildHeaders(),
     });
@@ -61,7 +61,7 @@ class MeetingsApi {
   async getPreviousMeetingInSeries(id: string, limit = 5) {
     return await listPreviousCalendarItemOccurrences({
       path: {
-        meetingId: encodeURIComponent(id),
+        meetingId: id,
       },
       query: {
         limit: limit,

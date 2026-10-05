@@ -106,7 +106,7 @@ class NotesApi {
   async getNotesForEntity(entityType: string, entityId: string) {
     return await getNotesForEntity({
       path: {
-        entityId: encodeURIComponent(entityId),
+        entityId: entityId,
         entityType: entityType,
       },
       ...this.buildHeaders(),
