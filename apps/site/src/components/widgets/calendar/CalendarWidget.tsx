@@ -26,6 +26,7 @@ import {
   loadFromLocalStorage,
   storeToLocalStorage,
 } from "../../../utils/storage";
+import CalendarsDropdown from "./CalendarsDropdown";
 import styles from "./CalendarWidget.module.css";
 
 /** Checks now and then for midnight, so the widget moves on to the new day. */
@@ -188,6 +189,7 @@ const SignedInCalendar = () => {
           </Link>
         </div>
         <div className={styles.controls}>
+          <CalendarsDropdown />
           <Segmented<WeekDays>
             size={"small"}
             value={settings.days}

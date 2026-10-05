@@ -69,3 +69,22 @@
   border-bottom-color: #004673;
   outline: none;
 }
+
+/* The calendars dropdown: each calendar's box, its color and its name. */
+.calendarItem {
+  width: 100%;
+}
+
+.calendarItem :global(.ant-checkbox-label) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
