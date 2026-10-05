@@ -4,6 +4,7 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   CalendarOutlined,
+  FilterOutlined,
   HomeOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
@@ -212,7 +213,6 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
               />
             </Space>
           </Space>
-          <MeetingsFilterPanel />
           <Tabs
             defaultActiveKey={"week"}
             items={[
@@ -240,6 +240,11 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
           />
         </Space>
       ),
+    },
+    {
+      key: "t-filters",
+      label: <FilterOutlined />,
+      children: <MeetingsFilterPanel />,
     },
   ];
 

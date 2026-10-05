@@ -1,5 +1,6 @@
 import {
   CalendarOutlined,
+  FilterOutlined,
   HomeOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
@@ -125,9 +126,13 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
               />
             </Space>
           </Space>
-          <MeetingsFilterPanel />
         </Space>
       ),
+    },
+    {
+      key: "t-filters",
+      label: <FilterOutlined />,
+      children: <MeetingsFilterPanel />,
     },
   ];
 

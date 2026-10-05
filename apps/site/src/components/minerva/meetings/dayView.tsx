@@ -1,6 +1,7 @@
 import type { GetMeetingSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
 import {
   CalendarOutlined,
+  FilterOutlined,
   CaretDownOutlined,
   CaretRightOutlined,
   HomeOutlined,
@@ -558,7 +559,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               />
             </Space>
           </Space>
-          <MeetingsFilterPanel />
           {nextEventInSeries && (
             <Space
               orientation={"vertical"}
@@ -634,6 +634,11 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           />
         </Space>
       ),
+    },
+    {
+      key: "t-filters",
+      label: <FilterOutlined />,
+      children: <MeetingsFilterPanel />,
     },
   ];
 

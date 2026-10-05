@@ -30,6 +30,9 @@
   border-radius: 50%;
 }
 
+/* An event's lines, after the OnAir drawer's (components/onair/OnAirEvent):
+   the dot 4px in, the time at 10px, the title at 12px and bold, set 18px in
+   so it starts under the time. */
 .event {
   display: flex;
   align-items: center;
@@ -38,28 +41,35 @@
   overflow: hidden;
   padding-left: 4px;
 }
-/* In a time grid, the title goes under the dot and time, as FullCalendar's
-   own layout has it. */
 .stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
   overflow: hidden;
+}
+.eventTime {
+  flex: none;
+  font-size: 10px;
+  white-space: nowrap;
 }
 .eventTitle {
-  padding-left: 4px;
   font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.eventText {
-  min-width: 0;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.eventTitleBelow {
+  padding-left: 18px;
+}
+.eventTitleInline {
+  min-width: 0;
   white-space: nowrap;
-  font-size: 12px;
 }
 
 .filters {
   width: 100%;
-  padding: 0 16px 16px 16px;
+  padding: 16px;
   border-bottom: 1px solid #f6f6f6;
 }
 .swatch {

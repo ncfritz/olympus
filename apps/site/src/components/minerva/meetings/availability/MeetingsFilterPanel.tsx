@@ -13,7 +13,8 @@ import styles from "./Availability.module.css";
 
 /**
  * Which meetings and overrides the meetings pages show: by calendar, and by
- * override status (or none). Kept across the pages and across visits.
+ * override status (or none). Kept across the pages and across visits. The
+ * side panel's filters tab, laid out as Notes' is.
  */
 const MeetingsFilterPanel: React.FunctionComponent = () => {
   const dispatch = useAppDispatch();
@@ -34,8 +35,9 @@ const MeetingsFilterPanel: React.FunctionComponent = () => {
 
   return (
     <Flex vertical={true} gap={16} className={styles.filters}>
+      <Typography.Title level={5}>Filters</Typography.Title>
       <Flex vertical={true} gap={8}>
-        <Typography.Title level={5}>Calendars</Typography.Title>
+        <Typography.Text>Calendars</Typography.Text>
         {calendars?.length === 0 && (
           <Typography.Text type={"secondary"}>No calendars</Typography.Text>
         )}
@@ -58,7 +60,7 @@ const MeetingsFilterPanel: React.FunctionComponent = () => {
         ))}
       </Flex>
       <Flex vertical={true} gap={8}>
-        <Typography.Title level={5}>Override status</Typography.Title>
+        <Typography.Text>Override status</Typography.Text>
         {OVERRIDE_FILTERS.map((filter) => (
           <Checkbox
             key={filter.key}

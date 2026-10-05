@@ -25,6 +25,9 @@ export interface AvailabilityEventContentProps {
  * whose `eventClick` passes over it (`isDotClick`), and React, whose
  * popover opens.
  */
+/** An event this short has its title beside its time, as in the drawer. */
+const SHORT_MS = 15 * 60 * 1000;
+
 const KEPT_FROM_CALENDAR = ["pointerdown", "mousedown", "touchstart"];
 
 /**
@@ -49,25 +52,36 @@ const AvailabilityEventContent: React.FunctionComponent<
       KEPT_FROM_CALENDAR.forEach((type) => dot.removeEventListener(type, stop));
   }, []);
 
-  // A month's day lists its events one line each; a time grid has room for
-  // the title under the time.
+  // As the OnAir drawer's events: the dot and the time (small) on the first
+  // line, and the title (bold) under them, indented past the dot; a short
+  // event's title follows its time. A month's day lists its events one
+  // line each.
   const stacked = !arg.view.type.startsWith("dayGrid");
-  const time = arg.timeText ? <b>{arg.timeText}</b> : null;
-  const text = stacked ? (
-    <span className={styles.eventText}>{time}</span>
-  ) : (
-    <span className={styles.eventText}>
-      {time} {arg.event.title}
-    </span>
+  const short =
+    arg.event.start !== null &&
+    arg.event.end !== null &&
+    arg.event.end.getTime() - arg.event.start.getTime() <= SHORT_MS;
+  const inline = !stacked || short;
+  const text = (
+    <>
+      {arg.timeText && <span className={styles.eventTime}>{arg.timeText}</span>}
+      {inline && (
+        <span className={`${styles.eventTitle} ${styles.eventTitleInline}`}>
+          {arg.event.title}
+        </span>
+      )}
+    </>
   );
   const wrap = (line: React.ReactNode) =>
-    stacked ? (
+    inline ? (
+      <div className={styles.event}>{line}</div>
+    ) : (
       <div className={styles.stacked}>
         <div className={styles.event}>{line}</div>
-        <div className={styles.eventTitle}>{arg.event.title}</div>
+        <div className={`${styles.eventTitle} ${styles.eventTitleBelow}`}>
+          {arg.event.title}
+        </div>
       </div>
-    ) : (
-      <div className={styles.event}>{line}</div>
     );
 
   if (!props.kind) {
