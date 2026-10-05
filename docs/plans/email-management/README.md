@@ -11,18 +11,20 @@ decision in the site.
 
 | Phase | Delivers                                                                                        | Depends on | Sign-off flows |
 | ----- | ----------------------------------------------------------------------------------------------- | ---------- | -------------- |
-| 0     | ADR accepted; OAuth client; empty feature in the model, API and site; the two agents' skeletons | —          | —              |
-| 1     | The account linked; labels and message metadata synced: backfill, then history polling          | 0          | M1, M2         |
-| 2     | The audit on metadata (read-only reports); the Statistics page                                  | 1          | M3, M4         |
-| 3     | The classifier: features, sender history and linear model, offline evaluation; label kinds      | 1          | M5             |
-| 4     | Re-classification: suggestions over the mailbox; review and bulk apply to Gmail; merges, splits | 2, 3       | M6–M8          |
+| 0     | ADR accepted; empty feature in the model, API and site; the two agents' skeletons               | —          | —              |
+| 1a    | A Takeout archive imported: labels and message metadata, no Gmail API calls                     | 0          | M0             |
+| 1b    | The account linked; reconciled with Gmail; history polling; star icons                          | 1a         | M1, M2         |
+| 2     | The audit on metadata (read-only reports); the Statistics page                                  | 1a         | M3, M4         |
+| 3     | The classifier: features, sender history and linear model, offline evaluation; label kinds      | 1a         | M5             |
+| 4     | Re-classification: suggestions over the mailbox; review and bulk apply to Gmail; merges, splits | 1b, 2, 3   | M6–M8          |
 | 5     | The Mail inbox, the home page widget, the label picker; online learning from every decision     | 3, 4       | M9, M10        |
 | 6     | Embeddings, the Clusters page, new-label suggestions                                            | 3          | M11            |
 | 7     | Workflow transitions (Payable → Paid), stars, Gmail filter proposals                            | 5          | M12            |
 | Later | A local LLM for cluster names and cold-start labels; iOS; other mail accounts                   |            |                |
 
-Phases 2 and 3 are independent of each other once phase 1 is in. Phase
-6 can start any time after 3.
+Phases 2 and 3 need only the archive (1a), and are independent of each
+other; the Gmail API is first needed in 1b, and for writes in 4. Phase 6
+can start any time after 3.
 
 ## Settled 2026-10-05
 
@@ -110,17 +112,14 @@ README table and `infra/docker/env/<env>/`.
 ## Phase 0 — Decision and scaffolding
 
 1. **ADR 0030 accepted**: **done** 2026-10-05.
-2. **OAuth**: a new client for mail in the calendar agent's Google
-   project, on its Internal consent screen, with `gmail.readonly`; the
-   client secret as a file secret.
-3. **Model and API**: `minerva/mail/index.ts`; `MailModule` in
+2. **Model and API**: `minerva/mail/index.ts`; `MailModule` in
    `MINERVA_MODULES`, no operations.
-4. **Agents**: `agents/mail` from the agent template, metrics listener,
+3. **Agents**: `agents/mail` from the agent template, metrics listener,
    no handlers; `agents/mail-ml` with `pyproject.toml`, ruff, pytest, a
    health route and a Dockerfile in the central build.
-5. **Conventions**: `docs/conventions/python.md` and its line in
+4. **Conventions**: `docs/conventions/python.md` and its line in
    `CLAUDE.md`.
-6. **Site**: a Mail sub-menu in Minerva's menu (`mail-container`, after
+5. **Site**: a Mail sub-menu in Minerva's menu (`mail-container`, after
    Meetings, with its path matchers) holding Inbox, Re-classification,
    Statistics and Clusters, each an empty page under
    `pages/minerva/mail/` behind sign-in.
@@ -128,33 +127,67 @@ README table and `infra/docker/env/<env>/`.
 **Sign-off:** both agents and the API boot; the menu opens the pages;
 the Turbo tasks and the classifier's checks pass.
 
-## Phase 1 — Account and sync
+## Phase 1a — Import from Takeout
 
-1. **Migration**: `mail_accounts`, `mail_labels`, `mail_messages` and
-   its recipient, attachment and label tables.
-2. **Linking**: Connect mail account in the site, the consent flow of
-   ADR 0028 (API starts it, checks `state`, hands the code to the agent);
-   re-authorization must return the stored subject.
-3. **Labels**: the agent lists Gmail's labels and the API mirrors them,
-   parents derived from the `/` path.
-4. **Backfill**: list, then get with `format=full`, throttled, resumable
-   from the stored page token. Headers and attachment metadata are kept;
-   the body is dropped (until phase 3 sends it to the classifier).
-   `mail.messages` carries metadata only; the API consumes it into the
+No Gmail API calls (ADR 0030, as amended 2026-10-05).
+
+1. **The archive checked first**: on Neil's export, confirm the `From `
+   line's ID and `X-GM-THRID` convert to the API's IDs (spot-checked
+   against a few messages opened in Gmail), how `X-Gmail-Labels` names
+   nested, system and category labels and quotes commas, and how Spam,
+   Trash and chats appear. What is found goes into this plan before the
+   reader is written.
+2. **Migration**: `mail_accounts` (`subject` nullable until linked),
+   `mail_labels` (Gmail's label ID nullable until linked), `mail_messages`
+   and its recipient, attachment and label tables.
+3. **Reader**: an mbox stream parser in `agents/mail` (`sources/takeout/`)
+   that yields the same normalized message a Gmail fetch will: headers,
+   recipients, attachment types and sizes (parts measured, not decoded),
+   labels by name, plain text in memory, and a snippet made from it.
+4. **Command**: `pnpm --filter @ncfritz/mail-agent takeout:import --
+<mbox> --account <email> --user <olympus email>`, against the
+   environment in the workspace's configuration. Labels are created from
+   the names (parents from the `/` path); messages are published to
+   `mail.messages` (metadata only) and the API consumes them into the
    tables, with the retry and dead-letter handling of the calendar
-   consumer.
-5. **Incremental**: `history.list` polling from the last `historyId`;
-   added and removed labels, new and deleted messages. A `historyId` too
-   old (404) starts a resync of the changed window.
-6. **Stars**: for each star icon, a `messages.list` with its search
+   consumer. Resumable from a byte offset; idempotent by message ID.
+5. **Tests**: the parser on fixture mbox files (nested labels, quoted
+   commas, multipart and attachments, odd encodings, a broken message),
+   ID conversion, a fixture that proves no body text other than the
+   snippet reaches a table, and none reaches a queue message or a log.
+
+**Sign-off:** M0.
+
+## Phase 1b — Linking and live sync
+
+0. **OAuth**: a new client for mail in the calendar agent's Google
+   project, on its Internal consent screen, with `gmail.readonly`; the
+   client secret as a file secret. Neil creates it in the Google Cloud
+   console.
+1. **Linking**: Connect mail account in the site, the consent flow of
+   ADR 0028 (API starts it, checks `state`, hands the code to the agent).
+   The verified email must match an imported account's; the subject is
+   recorded then, and re-authorization must return it.
+2. **Reconcile**: `getProfile` for the starting `historyId`;
+   `labels.list` to give each label its ID (labels made in Gmail since
+   the export are added); each label's message IDs by `messages.list`,
+   and All Mail's, to bring labels and deletions up to date;
+   `messages.get` only for mail after the archive's last message.
+   Throttled and resumable.
+3. **Incremental**: `history.list` polling from the `historyId`; added
+   and removed labels, new and deleted messages; new messages fetched,
+   with Gmail's snippet. A `historyId` too old (404) runs the reconcile
+   again.
+4. **Stars**: for each star icon, a `messages.list` with its search
    operator (`has:yellow-star`, `has:red-bang`, `has:green-check`, …)
-   records which icon each starred message has, during backfill and again
-   on each poll for starred messages that changed. The counts per icon
-   show which are in use. Also checked: whether any write can set a
-   particular icon, or only `STARRED`.
-7. **Tests**: converters, the throttle, cursor resume, history handling,
-   a fixture that proves no body text other than the snippet reaches a
-   table, and none reaches a queue message or a log.
+   records which icon each starred message has, and again on each poll
+   for starred messages that changed. The counts per icon show which are
+   in use. Also checked: whether any write can set a particular icon, or
+   only `STARRED`.
+5. **Full backfill from the API** stays available (list, then get,
+   throttled, resumable) for an account with no archive.
+6. **Tests**: the throttle, cursor resume, reconciliation diffs, history
+   handling.
 
 **Sign-off:** M1, M2.
 
@@ -185,10 +218,10 @@ Read-only, over metadata alone.
 ## Phase 3 — The classifier
 
 1. **Feature store** as decided; feature version on every row.
-2. **Featurize**: the agent sends each message's subject, body text and
-   header features to `mail-ml` during a second pass over the mailbox
-   (the text pull); hashed word counts are kept, the text is not. The pass
-   is resumable and can run beside incremental sync.
+2. **Featurize**: subject, body text and header features go to `mail-ml`
+   from a pass over the Takeout archive (from Gmail only for mail newer
+   than it, or with no archive); hashed word counts are kept, the text is
+   not. The pass is resumable and can run beside incremental sync.
 3. **Label kinds**: operations to set a label's kind, family and merge
    target, and each star icon's meaning; the families seeded with `Bills`
    (`Payable` initial and open, then `Paid`, closed). Training maps state

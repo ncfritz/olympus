@@ -95,6 +95,50 @@ Constraints Neil set:
   last `historyId`; push (`watch`) is not used because it needs Cloud
   Pub/Sub.
 
+### A Takeout archive spares the Gmail API
+
+**Amended (Neil, 2026-10-05).** Until the system is accepted, testing
+reads a Google Takeout export of the mailbox instead of the Gmail API, so
+the backfill, the audit, the classifier and every re-run of them cost no
+API quota. The API is used only to link the account, reconcile, follow
+new mail and write.
+
+- **What Takeout gives.** One mbox of all mail. As far as we know each
+  message's `From ` line carries its Gmail message ID in decimal
+  (`X-GM-MSGID`), whose hexadecimal form is the API's message ID; the
+  `X-GM-THRID` header is the thread ID the same way; and
+  `X-Gmail-Labels` lists the labels by name, system labels included
+  (Inbox, Unread, Starred, Important, the categories, Spam, Trash). Phase
+  1 confirms all of this on the real archive before anything is built
+  on it.
+- **What it lacks.** No `historyId`, no label IDs (names only), no star
+  icon (only Starred), no Gmail snippet. The importer makes a snippet of
+  its own from the plain text (the first 200 characters, whitespace
+  collapsed); a message that later arrives through the API carries
+  Gmail's.
+- **How it is read.** In place, read-only, streamed: the archive stays
+  where Neil keeps it and is never copied into Olympus. Each message goes
+  through the same path as a fetched one: metadata to `mail.messages`,
+  text to the classifier in memory. Attachment parts are measured, not
+  decoded. Spam and Trash are skipped. Importing again, or a newer
+  archive, updates by message ID.
+- **Who runs it.** An operator command in `agents/mail`, run from the
+  workspace against an environment, not a route a user can reach. The
+  account it fills is recorded with verification method `import` and
+  has no subject until it is linked by consent, which must return the
+  same address.
+- **Switching to the API** (once, when the account is linked):
+  `getProfile` for the `historyId` polling starts from; `labels.list` to
+  match label names to IDs; then the labels as they are now, by listing
+  each label's message IDs (and All Mail's, to find what was deleted)
+  rather than fetching messages; then `messages.get` only for mail newer
+  than the archive. About a thousand list calls against the roughly
+  250,000 gets a full backfill takes.
+- **Re-featurizing** (a new feature version or embedding model) reads the
+  archive again rather than Gmail while one is at hand.
+- A Workspace account can export with Takeout only when the domain's
+  admin allows it for the user.
+
 ### Where it runs
 
 | Component         | What it does                                                                                                                                                                                          |

@@ -11,10 +11,11 @@ site.
 
 | Id       | Where                                                            | Used from |
 | -------- | ---------------------------------------------------------------- | --------- |
-| **DEV**  | the API, site and agents from the workspace against `hasura-dev` | phase 1   |
+| **DEV**  | the API, site and agents from the workspace against `hasura-dev` | phase 1a  |
 | **PROD** | the Mac Mini's `olympus` stack                                   | phase 4   |
 
-Phases 1–3 run against Neil's real mailbox read-only. Before phase 4's
+Phases 1a, 2 and 3 run on a Takeout export of Neil's mailbox and make
+no Gmail API calls; 1b reads the real mailbox. Before phase 4's
 first write, every write case runs first against a test label set
 (`zz-test/*`) on a few hundred messages.
 
@@ -26,11 +27,26 @@ first write, every write case runs first against a test label set
 | `user-b`    | a second signed-in user with no mail account                            |
 | `test-set`  | about 300 messages labelled `zz-test/a`, `zz-test/b`, `zz-test/a/child` |
 | `bill-pair` | a bill and its payment confirmation from the same sender                |
+| `takeout`   | a Takeout export of the mailbox, and a small fixture mbox cut from it   |
 
 Every run records: date, environment, build (git commit), who ran it,
 and per case pass/fail with the evidence named in the case. A phase is
 signed off when every case listed for it passes, or a failure has an
 accepted, recorded exception.
+
+## M0 — Import from Takeout
+
+1. Ten messages opened in Gmail have the IDs, thread IDs and labels the
+   import recorded for them.
+2. The message and label counts match Gmail's, less Spam and Trash.
+3. Stopped halfway, the import resumes from its offset; run again, it
+   changes nothing.
+4. No body text beyond the snippet: a search of the dead-letter queue,
+   the logs and a database dump for a sentence from past a fixture
+   message's first 200 characters finds nothing.
+5. The archive file is unchanged (same size and checksum) and was not
+   copied.
+6. The Gmail API's quota page shows no calls from mail's client.
 
 ## M1 — Linking the account
 
@@ -42,16 +58,16 @@ accepted, recorded exception.
 4. The refresh token is in the agent's store only; the API's logs and
    Hasura hold none.
 
-## M2 — Sync
+## M2 — Reconcile and live sync
 
-1. Labels match Gmail's, with parents from the `/` path.
-2. Backfill stopped halfway resumes from its cursor without duplicates;
-   the message count matches Gmail's within the sync window.
-3. A label added in Gmail shows within two poll intervals; a message
+1. Every imported label has its Gmail ID; a label made in Gmail after
+   the export is added.
+2. A label changed and a message deleted in Gmail after the export are
+   up to date after reconciling; mail newer than the archive is fetched,
+   and nothing older is.
+3. The reconcile's calls are counted and stay near the plan's thousand.
+4. A label added in Gmail shows within two poll intervals; a message
    deleted in Gmail is marked deleted.
-4. No body text beyond the snippet: a search of the dead-letter queue,
-   the logs and a database dump for a known sentence from past the first
-   200 characters of a fixture message finds nothing.
 5. The database holds well under 1 GB for the mailbox.
 6. Messages starred with two different icons in Gmail are recorded with
    those icons; the counts per icon match Gmail's searches.
