@@ -53,6 +53,9 @@
 .stacked > * {
   flex: none;
 }
+.centered {
+  height: 100%;
+}
 .eventTime {
   flex: none;
   font-size: 10px;

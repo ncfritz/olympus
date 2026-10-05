@@ -80,7 +80,10 @@ const AvailabilityEventContent: React.FunctionComponent<
   );
   const wrap = (line: React.ReactNode) =>
     inline ? (
-      <div className={styles.event}>{line}</div>
+      // A time grid's one-row event: its line in the middle of its row.
+      <div className={`${styles.event} ${stacked ? styles.centered : ""}`}>
+        {line}
+      </div>
     ) : (
       <div className={styles.stacked}>
         <div className={styles.event}>{line}</div>
