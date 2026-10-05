@@ -1,0 +1,8 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/nest.json",
+  "compilerOptions": {
+    // Bundled by webpack (nest build); these match the pre-import settings.
+    "lib": ["ES2023", "DOM"],
+    "allowJs": true
+  }
+}

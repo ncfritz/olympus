@@ -70,7 +70,8 @@ group "default" {
 group "services" {
   targets = [
     "api", "notification-agent", "asset-agent", "metadata-agent", "search-agent",
-    "minerva-calendar-agent", "minerva-calendar-console", "control", "site",
+    "minerva-calendar-agent", "minerva-calendar-console", "minerva-mail-agent",
+    "control", "site",
   ]
 }
 
@@ -140,6 +141,15 @@ target "minerva-calendar-agent" {
 }
 
 # The Next.js apps share one Dockerfile, as the Node services share theirs.
+target "minerva-mail-agent" {
+  inherits = ["_node"]
+  args = {
+    APP            = "@ncfritz/minerva-mail-agent"
+    EXTRA_CA_CERTS = "/app/ca_roots.pem"
+  }
+  tags = image("minerva-mail-agent")
+}
+
 target "_next" {
   context    = "."
   dockerfile = "infra/docker/next/Dockerfile"
