@@ -9,6 +9,8 @@ code:
 - `docs/conventions/agent.md`: `agents/*`
 - `docs/conventions/ux.md`: `apps/site`, `packages/ui`, `packages/theme`
 - `docs/conventions/mobile.md`: `tools/auth-tester-mobile` (Expo/React Native)
+- `docs/conventions/python.md`: `agents/minerva-mail-ml`, the one Python
+  service (its checks are ruff and pytest, outside Turbo)
 - `docs/decisions/`: why things are the way they are. Don't contradict an
   Accepted ADR without proposing a new one.
 

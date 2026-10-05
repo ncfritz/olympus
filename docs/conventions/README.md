@@ -13,6 +13,7 @@ lists the existing deviations in [`../roadmap.md`](../roadmap.md).
 | Agent   | [agent.md](agent.md)     | `agents/*`                                     |
 | UX      | [ux.md](ux.md)           | `apps/site`, `packages/ui`, `packages/theme`   |
 | Mobile  | [mobile.md](mobile.md)   | `tools/auth-tester-mobile` (Expo/React Native) |
+| Python  | [python.md](python.md)   | `agents/minerva-mail-ml`                       |
 
 ## How the conventions are enforced
 

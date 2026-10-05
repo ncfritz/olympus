@@ -71,7 +71,7 @@ group "services" {
   targets = [
     "api", "notification-agent", "asset-agent", "metadata-agent", "search-agent",
     "minerva-calendar-agent", "minerva-calendar-console", "minerva-mail-agent",
-    "control", "site",
+    "minerva-mail-ml", "control", "site",
   ]
 }
 
@@ -148,6 +148,16 @@ target "minerva-mail-agent" {
     EXTRA_CA_CERTS = "/app/ca_roots.pem"
   }
   tags = image("minerva-mail-agent")
+}
+
+# The one Python service (docs/conventions/python.md): its own Dockerfile,
+# with its directory as the context.
+target "minerva-mail-ml" {
+  context    = "agents/minerva-mail-ml"
+  dockerfile = "Dockerfile"
+  platforms  = ["linux/arm64"]
+  args       = { GIT_REVISION = GIT_REVISION }
+  tags       = image("minerva-mail-ml")
 }
 
 target "_next" {

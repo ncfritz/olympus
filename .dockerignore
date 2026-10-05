@@ -12,6 +12,8 @@
 **/*.tsbuildinfo
 **/.DS_Store
 **/logs
+**/.venv
+**/__pycache__
 
 # Configuration and secrets stay on the host.
 **/*.env
