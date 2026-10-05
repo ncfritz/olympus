@@ -1,7 +1,7 @@
 # 0030. Email management: a local label audit and suggestion engine over Gmail
 
-- **Status:** Proposed
-- **Date:** 2026-10-05
+- **Status:** Accepted
+- **Date:** 2026-10-05 (accepted 2026-10-05)
 
 ## Context
 

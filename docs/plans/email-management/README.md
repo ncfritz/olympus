@@ -109,7 +109,7 @@ README table and `infra/docker/env/<env>/`.
 
 ## Phase 0 — Decision and scaffolding
 
-1. **ADR 0030 accepted**.
+1. **ADR 0030 accepted**: **done** 2026-10-05.
 2. **OAuth**: a new client for mail in the calendar agent's Google
    project, on its Internal consent screen, with `gmail.readonly`; the
    client secret as a file secret.

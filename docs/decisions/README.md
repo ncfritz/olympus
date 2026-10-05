@@ -38,6 +38,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0027](0027-minerva-activity-reviews.md)                   | Minerva reviews: per-user, what is written stored, activity read live      | Accepted                    |
 | [0028](0028-minerva-calendar-ownership.md)                 | Minerva calendars per user; accounts linked by sign-in, consent or claim   | Accepted                    |
 | [0029](0029-minerva-availability.md)                       | Availability per user in Minerva; the console signs in through Olympus     | Accepted                    |
-| [0030](0030-email-management.md)                           | Email management: a local label audit and suggestion engine over Gmail     | Proposed                    |
+| [0030](0030-email-management.md)                           | Email management: a local label audit and suggestion engine over Gmail     | Accepted                    |
 
 New records: copy [template.md](template.md), take the next number.
