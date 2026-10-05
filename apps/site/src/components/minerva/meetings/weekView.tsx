@@ -1,10 +1,14 @@
 import type { GetMeetingSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  HomeOutlined,
+  RadarChartOutlined,
+} from "@ant-design/icons";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { Layout, Space, Tabs } from "antd";
+import { Space, Tabs } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
@@ -13,11 +17,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { type DateRange, DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
 import { Events, publish } from "../../../utils/events";
+import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
-
-const { Sider, Content } = Layout;
 
 export interface WeekViewProps {
   startDate: DateTime;
@@ -29,7 +32,20 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
   breadcrumbs,
 }: WeekViewProps) => {
   const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<FullCalendar>(null);
+  // FullCalendar measures itself on window resizes only; opening the side
+  // panel narrows it without one, and it would run on under the panel. It
+  // is re-measured whenever its box changes size, as the review's is.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      calendarRef.current?.getApi().updateSize(),
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   const [dayPickerCurrent] = useState(startDate);
 
@@ -138,9 +154,89 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
     router.push(url, url, { shallow: true });
   };
 
+  const sideTabs = [
+    {
+      key: "t-calendar",
+      label: <CalendarOutlined />,
+      children: (
+        <Space orientation={"vertical"}>
+          <Space
+            size={8}
+            className={"date-picker"}
+            orientation={"vertical"}
+            style={{ width: 390 }}
+          >
+            <Space
+              style={{
+                borderBottom: "1px solid #f6f6f6",
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              <DayPicker
+                className={"minerva-standard"}
+                mode={"range"}
+                defaultMonth={startDate.startOf("month").toJSDate()}
+                selected={range}
+                weekStartsOn={1}
+                ISOWeek={true}
+                showWeekNumber={true}
+                showOutsideDays={true}
+                formatters={{
+                  formatDay: renderDay,
+                }}
+                onDayClick={(date) => {
+                  const start = DateTime.fromJSDate(date).startOf("week");
+
+                  const end = start.plus({ days: 6 });
+
+                  setRange({ from: start.toJSDate(), to: end.toJSDate() });
+
+                  if (calendarRef && calendarRef.current) {
+                    calendarRef.current.getApi().gotoDate(start.toJSDate());
+                  }
+                }}
+                onMonthChange={() => {}}
+                style={{
+                  minWidth: 250,
+                }}
+              />
+            </Space>
+          </Space>
+          <Tabs
+            defaultActiveKey={"week"}
+            items={[
+              {
+                key: "week",
+                label: "Week",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={startOfMonth}
+                    dayCount={7}
+                  />
+                ),
+              },
+              {
+                key: "month",
+                label: "Month",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={startOfMonth}
+                    dayCount={30}
+                  />
+                ),
+              },
+            ]}
+          />
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <Space>
+    <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -165,20 +261,18 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
           ...breadcrumbs,
         ]}
       />
-      <Layout
+      <CollapsibleTabPanel
+        panelId={"meetings.side"}
+        width={445}
+        tabs={sideTabs}
         style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          left: 380,
-          marginRight: 788,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
+          width: "100%",
         }}
       >
-        <Content style={{ width: "calc(100vw - 780px)" }}>
+        <div
+          ref={rootRef}
+          style={{ height: "calc(100vh - 102px)", paddingLeft: 16 }}
+        >
           <FullCalendar
             ref={calendarRef}
             viewClassNames={"minerva-cal minerva-cal-week"}
@@ -205,78 +299,9 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
             navLinkWeekClick={handleDayClick}
             eventClick={handleEventClick}
           />
-        </Content>
-        <Sider
-          width={400}
-          collapsible={false}
-          style={{
-            background: "#ffffff",
-            top: 102,
-            right: 0,
-            position: "fixed",
-            height: "calc(100vh - 104px)",
-            borderLeft: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <DayPicker
-            className={"minerva-standard"}
-            mode={"range"}
-            defaultMonth={startDate.startOf("month").toJSDate()}
-            selected={range}
-            weekStartsOn={1}
-            ISOWeek={true}
-            showWeekNumber={true}
-            showOutsideDays={true}
-            formatters={{
-              formatDay: renderDay,
-            }}
-            onDayClick={(date) => {
-              const start = DateTime.fromJSDate(date).startOf("week");
-
-              const end = start.plus({ days: 6 });
-
-              setRange({ from: start.toJSDate(), to: end.toJSDate() });
-
-              if (calendarRef && calendarRef.current) {
-                calendarRef.current.getApi().gotoDate(start.toJSDate());
-              }
-            }}
-            onMonthChange={() => {}}
-            style={{
-              minWidth: 250,
-            }}
-          />
-          <Tabs
-            defaultActiveKey={"week"}
-            items={[
-              {
-                key: "week",
-                label: "Week",
-                children: (
-                  <MeetingStatisticsPanel
-                    startDate={startOfMonth}
-                    dayCount={7}
-                  />
-                ),
-              },
-              {
-                key: "month",
-                label: "Month",
-                children: (
-                  <MeetingStatisticsPanel
-                    startDate={startOfMonth}
-                    dayCount={30}
-                  />
-                ),
-              },
-            ]}
-          />
-        </Sider>
-      </Layout>
-    </Space>
+        </div>
+      </CollapsibleTabPanel>
+    </>
   );
 };
 export default WeekView;
