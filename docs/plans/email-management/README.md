@@ -182,9 +182,13 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
    - Still to learn: what the 1,315 messages without `X-Gmail-Labels`
      are, and whether drafts are in the export.
 
-2. **Migration**: `mail_accounts` (`subject` nullable until linked),
-   `mail_labels` (Gmail's label ID nullable until linked), `mail_messages`
-   and its recipient, attachment and label tables.
+2. **Migration**: **done** 2026-10-05. `1791200000000_minerva_mail`:
+   `mail_accounts` (`subject` nullable until linked; verification
+   `import` or `consent`), `mail_labels` (Gmail's label ID nullable until
+   linked; parent from the `/` path), `mail_messages` (unique by account
+   and Gmail ID; `snapshot_time` orders writes; snippet at most 200
+   characters) and its recipient, attachment and label tables, with
+   `infra/hasura/tests/minerva_mail.sql`.
 3. **Reader**: **done** 2026-10-05. `sources/takeout/` in
    `agents/minerva-mail`: `MboxReader` streams the archive message by
    message from a byte offset, splitting only on Takeout's separator;
@@ -207,18 +211,35 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
    names them: updates, promotions, personal, social, purchases, bills,
    travel, forums.
 
-4. **Command**: `pnpm --filter @ncfritz/minerva-mail-agent takeout:import --
-<mbox> --account <email> --user <olympus email>`, against the
-   environment in the workspace's configuration. Labels are created from
-   the names (parents from the `/` path); messages are published to
-   `mail.messages` (metadata only) and the API consumes them into the
-   tables, with the retry and dead-letter handling of the calendar
-   consumer. Resumable from a byte offset; idempotent by message ID.
-5. **Tests**: the parser on small synthetic fixture mbox files, never real
-   mail (nested labels, quoted commas, multipart and attachments, odd
-   encodings, a broken message),
-   ID conversion, a fixture that proves no body text other than the
-   snippet reaches a table, and none reaches a queue message or a log.
+4. **Command**: **done** 2026-10-05, not yet run against DEV.
+   `takeout import <mbox> --account <email> --owner <olympus email>` (the
+   agent's README has the whole line), against the environment in the
+   agent's `dev.env`:
+   - The account is made the owner's by `POST /mail/accounts/import`
+     (agents only; verification `import`; 409 if it is another user's).
+   - Each kept message's metadata and snippet is published to
+     `mail.messages` as `message.upsert` (`MailMetadataMessage` in
+     `@ncfritz/olympus-messages`); chats, trash, spam and drafts are
+     skipped.
+   - The API's consumer (`olympus-api.mail-messages`) creates labels from
+     the names, upserts the message by account and Gmail ID unless a
+     newer snapshot is stored, and replaces its recipients, attachments
+     and labels. Retries and the dead-letter queue are the calendar
+     consumer's (5 s, 30 s, 5 min; ten attempts).
+   - `--max-seconds` and `--limit` stop a run and print `nextOffset`;
+     `--offset` resumes. A repeat rewrites the same rows.
+   - Wiring: the `minerva-mail-agent` broker user (prod), its dev
+     certificate in `scripts/dev-ca.sh`, and `minerva-mail-agent:agent` in
+     the `AUTH_SERVICE_ROLES` examples. Redrive operations for the
+     dead-letter queue, as the calendar's have, are deferred until one is
+     needed.
+5. **Tests**: **done** 2026-10-05 for the agent and the API; the GraphQL
+   against a real Hasura is proved by M0. The parser on small synthetic
+   fixture mbox files, never real mail (nested labels, quoted commas,
+   multipart and attachments, odd encodings, a broken message), ID
+   conversion, a fixture that proves no body text other than the snippet
+   reaches a queue message, and the consumer's validation of what reaches
+   a table.
 
 **Sign-off:** M0.
 

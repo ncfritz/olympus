@@ -275,7 +275,8 @@ server() {
 
 echo "agent certificates"
 # OU is the deployment, not the machine (ADR 0022).
-for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent olympus-notification-agent olympus-weather-relay-agent; do
+for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent \
+  minerva-mail-agent olympus-notification-agent olympus-weather-relay-agent; do
   client services agents "$agent" "/CN=$agent/OU=prod/O=Olympus Dev"
 done
 # The API calls the calendar sync agent's services listener (ADR 0028).
@@ -308,7 +309,8 @@ done
 # it with a device identity against the same listener is how it proves the
 # listener tells them apart (ADR 0023).
 for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent \
-  olympus-notification-agent olympus-weather-relay-agent dionysus-asset-agent-nas \
+  minerva-mail-agent olympus-notification-agent olympus-weather-relay-agent \
+  dionysus-asset-agent-nas \
   svc-revoked svc-expired \
   svc-wrong-ca; do
   openssl pkcs12 -export -macalg sha256 -out "$out/agents/$agent.p12" \

@@ -35,6 +35,10 @@
       "vhosts": ["/dionysus"]
     },
     {
+      "name": "minerva-mail-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
       "name": "olympus-dev",
       "vhosts": ["/dionysus-dev"]
     },

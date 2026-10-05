@@ -21,11 +21,15 @@
     "start": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file=dev.env dist/main.js",
     "start:local": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file=local.env dist/main.js",
     "dev": "NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --env-file dev.env --watch",
-    "takeout": "node dist/takeout.js",
+    "takeout": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file-if-exists=dev.env dist/takeout.js",
     "dev:local": "NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --env-file local.env --watch"
   },
   "dependencies": {
+    "@golevelup/nestjs-rabbitmq": "catalog:",
+    "@ncfritz/olympus-client": "workspace:*",
+    "@ncfritz/olympus-messages": "workspace:*",
     "@ncfritz/olympus-nest": "workspace:*",
+    "@ncfritz/olympus-sdk": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
