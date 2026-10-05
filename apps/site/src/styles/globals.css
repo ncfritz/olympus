@@ -232,6 +232,12 @@ img.electron-logo {
 .minerva-cal.hide-day-header .fc-scrollgrid-section-header {
   display: none;
 }
+/* All-day events, in a time grid's all-day row: 2px less above and below
+   than .oa-event's 4px, their dot and title on one line between. */
+.minerva-cal .fc-daygrid-body .oa-event .fc-event-main {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
 .sider-full .ant-layout-sider-children {
   width: 100%;
 }
