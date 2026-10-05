@@ -725,6 +725,14 @@ img.electron-logo {
 .collapsible-tab-panel .ant-tabs-nav-list {
   top: 23px;
 }
+/* The tabs run the panel's full height. Its trigger sits at the top, so the
+   room antd keeps for one at the bottom is given back. */
+.collapsible-tab-panel {
+  height: 100%;
+}
+.collapsible-tabs > .ant-layout-sider-has-trigger {
+  padding-bottom: 0;
+}
 
 .search-results-table tr.ant-table-row.downloaded {
   background: #27601411 !important;
