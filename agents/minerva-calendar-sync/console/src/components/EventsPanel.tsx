@@ -16,6 +16,7 @@ import {
   Typography,
 } from "antd";
 import Image from "next/image";
+import minervaIcon from "../../public/minerva.webp";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import {
@@ -491,7 +492,7 @@ export function EventsPanel({
                   <Space size={6} align="center">
                     {source === OVERRIDES_SOURCE ? (
                       <Image
-                        src="/minerva.webp"
+                        src={minervaIcon}
                         alt="Overrides"
                         width={16}
                         height={16}
