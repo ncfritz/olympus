@@ -1,7 +1,6 @@
 /*
- * Mail (ADR 0030): Gmail label audit and suggestions. The shapes arrive
- * with docs/plans/email-management phase 1a onwards (accounts, labels,
- * messages, then suggestions, reviews and changes), one file per area,
- * each exported from here.
+ * Mail (ADR 0030): Gmail label audit and suggestions, one file per area
+ * (accounts now; labels, messages, suggestions, reviews and changes with
+ * later phases of docs/plans/email-management), each exported from here.
  */
-export {};
+export * from "./accounts";

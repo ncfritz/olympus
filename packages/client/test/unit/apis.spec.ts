@@ -82,6 +82,8 @@ const ARGS: Record<string, unknown[]> = {
   // NotificationApi
   sendNotification: [{}],
   createNotification: [{}],
+  // MailApi
+  importMailAccount: ["owner@example.test", "neil@example.test"],
   // WeatherApi
   importWeatherStationReadings: [[]],
 };

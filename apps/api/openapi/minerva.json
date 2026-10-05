@@ -7343,6 +7343,69 @@
           "Availability"
         ]
       }
+    },
+    "/minerva/mail/accounts/import": {
+      "post": {
+        "description": "For the mail agent's Takeout import (ADR 0030, as amended): the mail account for the address, made the named user's with verification `import` if it is new. Importing the same mailbox for the same user again answers the same account. The archive's messages then arrive on the mail.messages queue under the account's ID.",
+        "operationId": "ImportMailAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ImportMailAccount operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportMailAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account the archive is imported into.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportMailAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The mailbox is already another user's."
+          }
+        },
+        "summary": "Makes a mailbox imported from Takeout a user's",
+        "tags": [
+          "Mail"
+        ]
+      }
     }
   },
   "info": {
@@ -7380,6 +7443,9 @@
     },
     {
       "name": "Goals"
+    },
+    {
+      "name": "Mail"
     },
     {
       "name": "Meetings"
@@ -13235,6 +13301,78 @@
         },
         "required": [
           "meeting"
+        ]
+      },
+      "ImportMailAccountRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "The address of the mailbox the Takeout archive was exported from."
+          },
+          "ownerEmail": {
+            "type": "string",
+            "description": "The email of the Olympus user the mailbox belongs to."
+          }
+        },
+        "required": [
+          "email",
+          "ownerEmail"
+        ]
+      },
+      "MailAccountVerification": {
+        "type": "string",
+        "description": "How the account came to be the user's",
+        "enum": [
+          "import",
+          "consent"
+        ]
+      },
+      "MailAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the account"
+          },
+          "email": {
+            "type": "string",
+            "description": "The mailbox's address, lower case"
+          },
+          "verification": {
+            "description": "How the account came to be the user's",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAccountVerification"
+              }
+            ]
+          },
+          "verifiedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the account became the user's"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "verification",
+          "verifiedTime"
+        ]
+      },
+      "ImportMailAccountResponse": {
+        "type": "object",
+        "properties": {
+          "mailAccount": {
+            "description": "The account the archive's messages are imported into.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAccount"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mailAccount"
         ]
       }
     }

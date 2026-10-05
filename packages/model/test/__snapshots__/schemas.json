@@ -8833,6 +8833,39 @@
     ],
     "type": "object"
   },
+  "ImportMailAccountRequest": {
+    "properties": {
+      "email": {
+        "description": "The address of the mailbox the Takeout archive was exported from.",
+        "type": "string"
+      },
+      "ownerEmail": {
+        "description": "The email of the Olympus user the mailbox belongs to.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "ownerEmail"
+    ],
+    "type": "object"
+  },
+  "ImportMailAccountResponse": {
+    "properties": {
+      "mailAccount": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAccount"
+          }
+        ],
+        "description": "The account the archive's messages are imported into."
+      }
+    },
+    "required": [
+      "mailAccount"
+    ],
+    "type": "object"
+  },
   "ImportWeatherStationReadingsRequest": {
     "properties": {
       "records": {
@@ -10569,6 +10602,45 @@
       "goalHabitLog"
     ],
     "type": "object"
+  },
+  "MailAccount": {
+    "properties": {
+      "email": {
+        "description": "The mailbox's address, lower case",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the account",
+        "type": "string"
+      },
+      "verification": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAccountVerification"
+          }
+        ],
+        "description": "How the account came to be the user's"
+      },
+      "verifiedTime": {
+        "description": "An ISO-8601 formatted string indicating when the account became the user's",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "id",
+      "verification",
+      "verifiedTime"
+    ],
+    "type": "object"
+  },
+  "MailAccountVerification": {
+    "description": "How a mail account came to be a user's",
+    "enum": [
+      "import",
+      "consent"
+    ],
+    "type": "string"
   },
   "MediaAsset": {
     "properties": {

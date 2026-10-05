@@ -38,7 +38,8 @@ them takes a user, because the endpoints read it from the token.
 
 - Wrappers, one per API area, constructed with those clients: `AuthApi` and
   `NotificationApi` (Olympus), `ContentApi`, `MediaApi`, `MediaSearchApi`,
-  `MetadataApi`, `JobApi` and `MetadataWorkflowApi` (Dionysus). A method is
+  `MetadataApi`, `JobApi` and `MetadataWorkflowApi` (Dionysus), `MailApi`
+  (Minerva). A method is
   named after the SDK function it calls, takes plain arguments and returns
   the unwrapped model. A `404` throws, unless the method returns
   `T | undefined` (see "Not-found handling" in `docs/roadmap.md`).

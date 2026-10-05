@@ -255,6 +255,10 @@
     "TV_SEASONS": "tv_seasons",
     "TV_SERIES": "tv_series"
   },
+  "MailAccountVerification": {
+    "Consent": "consent",
+    "Import": "import"
+  },
   "MediaAssetSearchConfigurationStatus": {
     "ERROR": "error",
     "OK": "ok",
