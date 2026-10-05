@@ -109,12 +109,12 @@ README table and `infra/docker/env/<env>/`.
 | `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, embeddings come from a bundled ONNX model |
 | `api`             | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked  |
 
-## Phase 0 — Decision and scaffolding
+## Phase 0 — Decision and scaffolding — done 2026-10-05
 
 1. **ADR 0030 accepted**: **done** 2026-10-05.
-2. **Model and API**: `minerva/mail/index.ts`; `MailModule` in
+2. **Model and API**: **done** — `minerva/mail/index.ts`; `MailModule` in
    `MINERVA_MODULES`, no operations.
-3. **Agents**: `agents/minerva-mail` (`@ncfritz/minerva-mail-agent`)
+3. **Agents**: **done** — `agents/minerva-mail` (`@ncfritz/minerva-mail-agent`)
    from the weather relay's layout: configuration, logging, `/metrics` on
    3105, no handlers; the broker and the API client come with 1a.
    `agents/minerva-mail-ml` with `pyproject.toml` and `uv.lock`, ruff,
@@ -122,15 +122,25 @@ README table and `infra/docker/env/<env>/`.
    services group. Neither joins a compose stack yet: the agent does in
    1b and the classifier in phase 3, when each first runs continuously
    (the 1a import runs from the workspace).
-4. **Conventions**: `docs/conventions/python.md` and its line in
+4. **Conventions**: **done** — `docs/conventions/python.md` and its line in
    `CLAUDE.md`.
-5. **Site**: a Mail sub-menu in Minerva's menu (`mail-container`, after
+5. **Site**: **done** — a Mail sub-menu in Minerva's menu (`mail-container`, after
    Meetings, with its path matchers) holding Inbox, Re-classification,
    Statistics and Clusters, each an empty page under
    `pages/minerva/mail/` behind sign-in.
 
 **Sign-off:** both agents and the API boot; the menu opens the pages;
 the Turbo tasks and the classifier's checks pass.
+
+Checked 2026-10-05 on Node 26.9 and pnpm 10.34.5: build, lint,
+typecheck, test and `check:conventions` pass for the model, the API, the
+mail agent and the site, and `check:openapi` for the API, except the
+site's typecheck, which fails on `main` too (`test/unit/triage.spec.ts`,
+its vitest mock types); the site builds with the four Mail pages. The mail
+agent boots and answers `/health` and `/metrics`. The classifier passes
+`ruff check`, `ruff format --check` and `pytest -W error`. Not yet run:
+the two images through `docker buildx bake`, and the API booted against a
+database.
 
 ## Phase 1a — Import from Takeout
 
