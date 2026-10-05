@@ -684,7 +684,10 @@ img.electron-logo {
   border-radius: 0px;
   width: calc(100% - 62px) !important;
 }
-.collapsible-tab-panel .ant-tabs-tabpane {
+.collapsible-tab-panel
+  > .ant-tabs-body-holder
+  > .ant-tabs-body
+  > .ant-tabs-tabpane {
   margin-top: 16px;
 }
 .collapsible-tabs.collapsed .ant-layout-sider-trigger {
@@ -719,10 +722,10 @@ img.electron-logo {
 }
 /* antd 6 calls the tabs' body .ant-tabs-body-holder (5 called it
    .ant-tabs-content-holder). */
-.collapsible-tab-panel.collapsed .ant-tabs-body-holder {
+.collapsible-tab-panel.collapsed > .ant-tabs-body-holder {
   display: none;
 }
-.collapsible-tab-panel .ant-tabs-nav-list {
+.collapsible-tab-panel > .ant-tabs-nav .ant-tabs-nav-list {
   top: 23px;
 }
 /* The tabs run the panel's full height. Its trigger sits at the top, so the
