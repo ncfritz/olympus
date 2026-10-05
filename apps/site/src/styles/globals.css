@@ -717,7 +717,9 @@ img.electron-logo {
   border-radius: 16px;
   position: relative;
 }
-.collapsible-tab-panel.collapsed .ant-tabs-content-holder {
+/* antd 6 calls the tabs' body .ant-tabs-body-holder (5 called it
+   .ant-tabs-content-holder). */
+.collapsible-tab-panel.collapsed .ant-tabs-body-holder {
   display: none;
 }
 .collapsible-tab-panel .ant-tabs-nav-list {
