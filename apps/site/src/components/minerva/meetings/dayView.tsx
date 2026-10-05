@@ -1,5 +1,6 @@
 import type { GetMeetingSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
 import {
+  CalendarOutlined,
   CaretDownOutlined,
   CaretRightOutlined,
   HomeOutlined,
@@ -15,7 +16,6 @@ import {
   Col,
   Collapse,
   Empty,
-  Layout,
   Row,
   Space,
   Spin,
@@ -36,6 +36,7 @@ import { v4 as uuidv4 } from "uuid";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
 import { Events, publish } from "../../../utils/events";
+import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
@@ -48,8 +49,6 @@ import EventChip from "./EventChip";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 import PreviousMeeting from "./PreviousMeeting";
 import { type Note } from "@ncfritz/olympus-sdk/minerva";
-
-const { Sider, Content } = Layout;
 
 export interface DayViewProps {
   startDate: DateTime;
@@ -71,7 +70,20 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<FullCalendar>(null);
+  // FullCalendar measures itself on window resizes only; opening the side
+  // panel narrows it without one, and it would run on under the panel. It
+  // is re-measured whenever its box changes size, as the review's is.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      calendarRef.current?.getApi().updateSize(),
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   const [selectedDate, setSelectedDate] = useState(startDate);
   const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
@@ -509,154 +521,57 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
     );
   }
 
-  return (
-    <Space>
-      <OlympusBreadcrumbs
-        items={[
-          {
-            title: (
-              <Link href={"/"}>
-                <Space size={4}>
-                  <HomeOutlined />
-                  <span>Home</span>
-                </Space>
-              </Link>
-            ),
-          },
-          {
-            title: (
-              <Link href={"/minerva"}>
-                <Space size={4}>
-                  <RadarChartOutlined />
-                  <span>Minerva</span>
-                </Space>
-              </Link>
-            ),
-          },
-          ...breadcrumbs,
-        ]}
-      />
-      <Layout
-        style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          left: 380,
-          marginRight: 788,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 102px)",
-          width: "100%",
-        }}
-      >
-        <Content
-          style={{
-            width: "calc(100vw - 780x)",
-          }}
-        >
-          <Row style={{ width: "calc(100% - 780px)" }}>
-            <Col span={7} style={{ height: "calc(100vh - 102px)" }}>
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[timeGridPlugin, listPlugin]}
-                viewClassNames={"minerva-cal hide-day-header"}
-                eventClassNames={(arg) => {
-                  if (targetEventId && arg.event.id === targetEventId) {
-                    return "selected";
-                  }
-
-                  return "";
-                }}
-                initialDate={selectedDate.toJSDate()}
-                events={events}
-                initialView="timeGridDay"
-                height={"100%"}
-                businessHours={{
-                  daysOfWeek: [1, 2, 3, 4, 5],
-                  startTime: "9:00",
-                  endTime: "17:00",
-                }}
-                headerToolbar={{
-                  start: "title",
-                  center: "",
-                  end: "",
-                }}
-                titleFormat={{
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  weekday: "long",
-                }}
-                nowIndicator={true}
-                slotDuration={{ minutes: 15 }}
-                eventClick={(arg) => {
-                  setTargetEventId(arg.event.id);
-                  /*router.push(
-                    `${pathName}?e=${arg.event.id}`,
-                    `${pathName}?e=${arg.event.id}`,
-                    { shallow: true },
-                  );*/
-                }}
-              />
-            </Col>
-            <Col
-              span={17}
+  const sideTabs = [
+    {
+      key: "t-calendar",
+      label: <CalendarOutlined />,
+      children: (
+        <Space orientation={"vertical"}>
+          <Space
+            size={8}
+            className={"date-picker"}
+            orientation={"vertical"}
+            style={{ width: 390 }}
+          >
+            <Space
               style={{
-                height: "calc(100vh - 102px)",
-                borderLeft: "1px solid #e6e6e6",
+                borderBottom: "1px solid #f6f6f6",
+                width: "100%",
+                justifyContent: "center",
               }}
             >
-              {eventContent}
-            </Col>
-          </Row>
-        </Content>
-        <Sider
-          width={400}
-          collapsible={false}
-          style={{
-            background: "#ffffff",
-            top: 102,
-            right: 0,
-            position: "fixed",
-            height: "calc(100vh - 104px)",
-            borderLeft: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-          className={"sider-full"}
-        >
-          <DayPicker
-            className={"minerva-standard"}
-            month={dayPickerCurrent.toJSDate()}
-            showWeekNumber={true}
-            showOutsideDays={true}
-            selected={selectedDate.toJSDate()}
-            formatters={{
-              formatDay: renderDay,
-            }}
-            onDayClick={(date) => {
-              const target = DateTime.fromJSDate(date);
+              <DayPicker
+                className={"minerva-standard"}
+                month={dayPickerCurrent.toJSDate()}
+                showWeekNumber={true}
+                showOutsideDays={true}
+                selected={selectedDate.toJSDate()}
+                formatters={{
+                  formatDay: renderDay,
+                }}
+                onDayClick={(date) => {
+                  const target = DateTime.fromJSDate(date);
 
-              router.push(
-                `/minerva/meetings/${target.toFormat("yyyy/MM/dd")}`,
-                `/minerva/meetings/${target.toFormat("yyyy/MM/dd")}`,
-                { shallow: true },
-              );
-              setSelectedDate(target);
+                  router.push(
+                    `/minerva/meetings/${target.toFormat("yyyy/MM/dd")}`,
+                    `/minerva/meetings/${target.toFormat("yyyy/MM/dd")}`,
+                    { shallow: true },
+                  );
+                  setSelectedDate(target);
 
-              if (calendarRef && calendarRef.current) {
-                calendarRef.current.getApi().gotoDate(date);
-              }
-            }}
-            onMonthChange={(date) => {
-              setDayPickerCurrent(DateTime.fromJSDate(date));
-            }}
-            style={{
-              minWidth: 250,
-            }}
-          />
+                  if (calendarRef && calendarRef.current) {
+                    calendarRef.current.getApi().gotoDate(date);
+                  }
+                }}
+                onMonthChange={(date) => {
+                  setDayPickerCurrent(DateTime.fromJSDate(date));
+                }}
+                style={{
+                  minWidth: 250,
+                }}
+              />
+            </Space>
+          </Space>
           {nextEventInSeries && (
             <Space
               orientation={"vertical"}
@@ -730,9 +645,109 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               },
             ]}
           />
-        </Sider>
-      </Layout>
-    </Space>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <OlympusBreadcrumbs
+        className={"dark"}
+        items={[
+          {
+            title: (
+              <Link href={"/"}>
+                <Space size={4}>
+                  <HomeOutlined />
+                  <span>Home</span>
+                </Space>
+              </Link>
+            ),
+          },
+          {
+            title: (
+              <Link href={"/minerva"}>
+                <Space size={4}>
+                  <RadarChartOutlined />
+                  <span>Minerva</span>
+                </Space>
+              </Link>
+            ),
+          },
+          ...breadcrumbs,
+        ]}
+      />
+      <CollapsibleTabPanel
+        panelId={"meetings.side"}
+        width={445}
+        tabs={sideTabs}
+        style={{
+          width: "100%",
+        }}
+      >
+        <div
+          ref={rootRef}
+          style={{ height: "calc(100vh - 102px)", paddingLeft: 16 }}
+        >
+          <Row style={{ width: "100%" }}>
+            <Col span={7} style={{ height: "calc(100vh - 102px)" }}>
+              <FullCalendar
+                ref={calendarRef}
+                plugins={[timeGridPlugin, listPlugin]}
+                viewClassNames={"minerva-cal hide-day-header"}
+                eventClassNames={(arg) => {
+                  if (targetEventId && arg.event.id === targetEventId) {
+                    return "selected";
+                  }
+
+                  return "";
+                }}
+                initialDate={selectedDate.toJSDate()}
+                events={events}
+                initialView="timeGridDay"
+                height={"100%"}
+                businessHours={{
+                  daysOfWeek: [1, 2, 3, 4, 5],
+                  startTime: "9:00",
+                  endTime: "17:00",
+                }}
+                headerToolbar={{
+                  start: "title",
+                  center: "",
+                  end: "",
+                }}
+                titleFormat={{
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  weekday: "long",
+                }}
+                nowIndicator={true}
+                slotDuration={{ minutes: 15 }}
+                eventClick={(arg) => {
+                  setTargetEventId(arg.event.id);
+                  /*router.push(
+                    `${pathName}?e=${arg.event.id}`,
+                    `${pathName}?e=${arg.event.id}`,
+                    { shallow: true },
+                  );*/
+                }}
+              />
+            </Col>
+            <Col
+              span={17}
+              style={{
+                height: "calc(100vh - 102px)",
+                borderLeft: "1px solid #e6e6e6",
+              }}
+            >
+              {eventContent}
+            </Col>
+          </Row>
+        </div>
+      </CollapsibleTabPanel>
+    </>
   );
 };
 export default DayView;
