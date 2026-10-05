@@ -272,6 +272,12 @@ services:
       GOOGLE_CREDENTIALS_DIR: /data/credentials/google
       MICROSOFT_CREDENTIALS_DIR: /data/credentials/microsoft
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
+      # Accounts connected from the Olympus site sign in through web clients
+      # (ADR 0028): Google's "Web application" client and Microsoft's web
+      # platform, each a confidential client with a secret. Empty until
+      # set; accounts connected through the desktop client sync without.
+      GOOGLE_WEB_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_web_oauth_client_secret
+      MICROSOFT_OAUTH_CLIENT_SECRET_FILE: /run/secrets/microsoft_oauth_client_secret
       # The console signs in through the Olympus API (ADR 0029): the agent
       # reaches it over the backend network, and the browser where the
       # site is.
@@ -286,6 +292,8 @@ services:
       - source: amqp_minerva
         target: amqp_password
       - google_oauth_client_secret
+      - google_web_oauth_client_secret
+      - microsoft_oauth_client_secret
     volumes:
       - ${DATA_DIR:?}/minerva:/data
       # The services listener's certificate, key, CA and revocation lists
@@ -368,3 +376,7 @@ secrets:
     file: ${SECRETS_DIR:?}/olympus_oidc_providers
   google_oauth_client_secret:
     file: ${SECRETS_DIR:?}/google_oauth_client_secret
+  google_web_oauth_client_secret:
+    file: ${SECRETS_DIR:?}/google_web_oauth_client_secret
+  microsoft_oauth_client_secret:
+    file: ${SECRETS_DIR:?}/microsoft_oauth_client_secret

@@ -496,10 +496,13 @@ key found there; it must be a key production's site may use.
 | `content_ssh_password`, `dionysus_cdn_ssh_password`, `dionysus_library_ssh_password` | olympus    | asset agent            | `CONTENT_SSH_PASSWORD_FILE`, `DIONYSUS_CDN_SSH_PASSWORD_FILE`, `..._LIBRARY_..._FILE`                                     |
 | `syno_smtp_password`                                                                 | olympus    | notification agent     | `SYNO_SMTP_PASSWORD_FILE`                                                                                                 |
 | `google_oauth_client_secret`                                                         | olympus    | Minerva agent          | `GOOGLE_OAUTH_CLIENT_SECRET_FILE`                                                                                         |
+| `google_web_oauth_client_secret`                                                     | olympus    | Minerva agent          | `GOOGLE_WEB_OAUTH_CLIENT_SECRET_FILE`: the Google "Web application" client, for accounts connected from the site          |
+| `microsoft_oauth_client_secret`                                                      | olympus    | Minerva agent          | `MICROSOFT_OAUTH_CLIENT_SECRET_FILE`: the Microsoft app's web platform, for the same                                      |
 
 `stack.sh bootstrap` creates the optional ones empty (the SSH, NZBGet,
-NZBGeek, TMDB, SMTP, proxy and Google client secrets): an empty file is
-"not configured", and `check` says which. The rest are required.
+NZBGeek, TMDB, SMTP, proxy, and Google and Microsoft client secrets): an
+empty file is "not configured", and `check` says which. The rest are
+required.
 
 The SOCKS proxy's username is here too: it is half of a NordVPN service
 credential. Certificates and CA chains are not secret but are mounted
