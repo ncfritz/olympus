@@ -25,6 +25,7 @@ import { Events, publish } from "../../../utils/events";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
+import styles from "./Meetings.module.css";
 import Day from "./DayDoughnut";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 
@@ -172,7 +173,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
         <Space orientation={"vertical"}>
           <Space
             size={8}
-            className={"date-picker"}
+            className={`date-picker ${styles.datePicker}`}
             orientation={"vertical"}
             style={{ width: 390 }}
           >
@@ -214,6 +215,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
             </Space>
           </Space>
           <Tabs
+            className={styles.statisticsTabs}
             defaultActiveKey={"week"}
             items={[
               {

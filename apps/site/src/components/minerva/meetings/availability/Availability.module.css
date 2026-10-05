@@ -69,7 +69,8 @@
 
 .filters {
   width: 100%;
-  padding: 16px;
+  /* Clear of the panel's collapse button, which sits over the top. */
+  padding: 24px 16px 16px 16px;
   border-bottom: 1px solid #f6f6f6;
 }
 .swatch {

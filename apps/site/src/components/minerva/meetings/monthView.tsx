@@ -21,6 +21,7 @@ import useAvailabilityCalendar from "../../../hooks/useAvailabilityCalendar";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
+import styles from "./Meetings.module.css";
 
 export interface MonthViewProps {
   startDate: DateTime;
@@ -101,7 +102,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
         <Space orientation={"vertical"}>
           <Space
             size={8}
-            className={"date-picker"}
+            className={`date-picker ${styles.datePicker}`}
             orientation={"vertical"}
             style={{ width: 390 }}
           >

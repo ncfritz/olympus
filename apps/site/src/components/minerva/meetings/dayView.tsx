@@ -41,6 +41,7 @@ import { Events, publish } from "../../../utils/events";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
+import styles from "./Meetings.module.css";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
   type NotesFormInput,
@@ -516,7 +517,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
         <Space orientation={"vertical"}>
           <Space
             size={8}
-            className={"date-picker"}
+            className={`date-picker ${styles.datePicker}`}
             orientation={"vertical"}
             style={{ width: 390 }}
           >
@@ -568,6 +569,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             </Space>
           )}
           <Tabs
+            className={styles.statisticsTabs}
             defaultActiveKey={"today"}
             items={[
               {

@@ -1,0 +1,13 @@
+/* The meetings pages' side panel: room above the date picker, and above
+   what the statistics tabs (Today, Week, Month, Configuration) show. */
+.datePicker {
+  padding-top: 16px;
+}
+/* antd 6 calls a tab's content .ant-tabs-content (5 called it
+   .ant-tabs-tabpane). */
+.statisticsTabs
+  > :global(.ant-tabs-body-holder)
+  > :global(.ant-tabs-body)
+  > :global(.ant-tabs-content) {
+  padding-top: 16px;
+}
