@@ -185,10 +185,28 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
 2. **Migration**: `mail_accounts` (`subject` nullable until linked),
    `mail_labels` (Gmail's label ID nullable until linked), `mail_messages`
    and its recipient, attachment and label tables.
-3. **Reader**: an mbox stream parser in `agents/minerva-mail` (`sources/takeout/`)
-   that yields the same normalized message a Gmail fetch will: headers,
-   recipients, attachment types and sizes (parts measured, not decoded),
-   labels by name, plain text in memory, and a snippet made from it.
+3. **Reader**: **done** 2026-10-05. `sources/takeout/` in
+   `agents/minerva-mail`: `MboxReader` streams the archive message by
+   message from a byte offset, splitting only on Takeout's separator;
+   `TakeoutParser` (on `postal-mime`) yields the same `MailSourceMessage`
+   a Gmail fetch will: IDs in hexadecimal, received and sent times,
+   addresses (lower case), `List-Id`, `List-Unsubscribe`, subject, labels
+   split into user labels, system flags and categories (Takeout's
+   `Archived` and `Opened` dropped), attachment types and sizes (decoded in
+   memory to be measured, then dropped), plain text (from HTML when there
+   is no text part) and the snippet. `takeout scan` runs both over an
+   archive and prints counts only.
+
+   **Run over the whole export 2026-10-05**, on Neil's machine in three
+   resumed slices (about six minutes, some 700 messages a second): all
+   277,751 messages parsed, none failed, all IDs distinct. Text for all
+   but 104. 8,605 messages carry 23,174 attachments. 6,118 have no user
+   label (the 1,315 without a label header, and those with only system
+   labels or categories). To skip: 2,390 chats and 3 in Trash. The
+   slowest message took 0.76 s; the largest is 29 MB. Categories as Gmail
+   names them: updates, promotions, personal, social, purchases, bills,
+   travel, forums.
+
 4. **Command**: `pnpm --filter @ncfritz/minerva-mail-agent takeout:import --
 <mbox> --account <email> --user <olympus email>`, against the
    environment in the workspace's configuration. Labels are created from

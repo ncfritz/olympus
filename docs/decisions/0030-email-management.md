@@ -119,8 +119,9 @@ new mail and write.
 - **How it is read.** In place, read-only, streamed: the archive stays
   where Neil keeps it and is never copied into Olympus. Each message goes
   through the same path as a fetched one: metadata to `mail.messages`,
-  text to the classifier in memory. Attachment parts are measured, not
-  decoded. Spam and Trash are skipped. Importing again, or a newer
+  text to the classifier in memory. Attachment parts are decoded in
+  memory only to be measured, then dropped. Spam, Trash and chats are
+  skipped. Importing again, or a newer
   archive, updates by message ID.
 - **Who runs it.** An operator command in `agents/minerva-mail`, run from the
   workspace against an environment, not a route a user can reach. The
