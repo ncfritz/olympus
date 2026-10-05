@@ -28,7 +28,20 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
   breadcrumbs,
 }: MonthViewProps) => {
   const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<FullCalendar>(null);
+  // FullCalendar measures itself on window resizes only; opening the side
+  // panel narrows it without one, and it would run on under the panel. It
+  // is re-measured whenever its box changes size, as the review's is.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      calendarRef.current?.getApi().updateSize(),
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   const [events, setEvents] = useState<EventInput[]>([]);
 
@@ -151,7 +164,12 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
           width: "100%",
         }}
       >
-        <div style={{ height: "calc(100vh - 102px)" }}>
+        {/* Room on the left for the weeks' ribbons, which hang past the
+            calendar's edge. */}
+        <div
+          ref={rootRef}
+          style={{ height: "calc(100vh - 102px)", paddingLeft: 48 }}
+        >
           <FullCalendar
             ref={calendarRef}
             viewClassNames={"minerva-cal minerva-cal-month"}
