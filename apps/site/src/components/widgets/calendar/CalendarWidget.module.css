@@ -1,0 +1,71 @@
+/*
+ * The calendar widget (home). Its card and heading match the other
+ * widgets', the heading on their blue rule; its calendar is the meetings
+ * pages' week, and its bottom edge drags to set its height.
+ */
+
+.card {
+  background: #ffffff;
+}
+
+/* The heading and the week beside it; the day count and collapse at the
+   right. */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 6px;
+  box-shadow: inset 0 -2px 0 #004673;
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.meta {
+  color: #8c8c8c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.body {
+  padding: 8px 0 0;
+  overflow: hidden;
+}
+
+.state {
+  padding: 16px 8px;
+  color: #8c8c8c;
+}
+
+/* The bottom edge: dragged, or moved with the arrow keys, to set the
+   calendar's height. */
+.resize {
+  height: 10px;
+  cursor: ns-resize;
+  touch-action: none;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.resize:hover,
+.resize:focus-visible,
+.resizing {
+  border-bottom-color: #004673;
+  outline: none;
+}
