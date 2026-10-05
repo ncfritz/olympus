@@ -168,7 +168,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
             calendar's edge. */}
         <div
           ref={rootRef}
-          style={{ height: "calc(100vh - 102px)", paddingLeft: 48 }}
+          style={{ height: "calc(100vh - 102px)", paddingLeft: 16 }}
         >
           <FullCalendar
             ref={calendarRef}
