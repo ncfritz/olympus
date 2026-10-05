@@ -49,9 +49,9 @@ Reviews and Meetings are.
 | Messages       | `packages/messages/src/mail.ts`: `MailMessageMessage` (metadata only), routing constants                                                                                            |
 | API            | `apps/api/src/minerva/mail/`: `MailModule`, `controllers/`, `services/`, `converters/`, `queries/`, `consumers/`                                                                    |
 | Schema         | `infra/hasura/migrations/olympus/<ts>_minerva_mail_*`, with metadata                                                                                                                |
-| Gmail agent    | `agents/mail/`: NestJS, `providers/gmail/`, `sync/`, `writes/`, `store/` (sync cursors only)                                                                                        |
-| Classifier     | `agents/mail-ml/`: Python, `pyproject.toml`, `src/mail_ml/` (`features/`, `store/`, `models/`, `audit/`, `api/`), `tests/`                                                          |
-| Feature store  | `agents/mail-ml`'s volume: a SQLite database, embeddings loaded into memory; not backed up (rebuilt from Gmail)                                                                     |
+| Gmail agent    | `agents/minerva-mail/`: NestJS, `providers/gmail/`, `sync/`, `writes/`, `store/` (sync cursors only)                                                                                |
+| Classifier     | `agents/minerva-mail-ml/`: Python, `pyproject.toml`, `src/minerva_mail_ml/` (`features/`, `store/`, `models/`, `audit/`, `api/`), `tests/`                                          |
+| Feature store  | `agents/minerva-mail-ml`'s volume: a SQLite database, embeddings loaded into memory; not backed up (rebuilt from Gmail)                                                             |
 | Scheduled runs | `infra/airflow/dags/mail_retrain.py`, `mail_audit.py`                                                                                                                               |
 | Site           | `apps/site/src/pages/minerva/mail/`, `src/components/minerva/mail/`, `src/components/widgets/mail/`, `src/api/mailApi.ts`, `mail-container` in `components/minerva/layout/menu.tsx` |
 | Conventions    | `docs/conventions/python.md` (new), linked from `CLAUDE.md`                                                                                                                         |
@@ -96,27 +96,32 @@ Secrets arrive as `NAME_FILE` (ADR 0019). Each variable goes into the
 service's `readConfig()` or `configuration.ts`, its `*.env.example`, its
 README table and `infra/docker/env/<env>/`.
 
-| Service   | Variable                      | Default                | What                                                            |
-| --------- | ----------------------------- | ---------------------- | --------------------------------------------------------------- |
-| `mail`    | `GOOGLE_CLIENT_ID`            | —                      | Mail's own OAuth client, not the calendar agent's               |
-| `mail`    | `GOOGLE_CLIENT_SECRET`        | —                      | Secret `google_mail_client_secret`                              |
-| `mail`    | `MAIL_QUOTA_UNITS_PER_SECOND` | `150`                  | Kept under Gmail's per-user limit                               |
-| `mail`    | `MAIL_HISTORY_POLL_SECONDS`   | `60`                   | Incremental sync interval                                       |
-| `mail`    | `MAIL_WRITES_ENABLED`         | `false`                | Until phase 4; without it, write requests answer 503            |
-| `mail`    | `MAIL_ML_URL`                 | —                      | The classifier                                                  |
-| `mail-ml` | `OLYMPUS_API_URL`             | —                      | Metadata and suggestions                                        |
-| `mail-ml` | `MAIL_ML_STORE`               | `/data/mail-ml.sqlite` | The feature store, on the service's volume                      |
-| `mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, embeddings come from a bundled ONNX model |
-| `api`     | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked  |
+| Service           | Variable                      | Default                | What                                                            |
+| ----------------- | ----------------------------- | ---------------------- | --------------------------------------------------------------- |
+| `minerva-mail`    | `GOOGLE_CLIENT_ID`            | —                      | Mail's own OAuth client, not the calendar agent's               |
+| `minerva-mail`    | `GOOGLE_CLIENT_SECRET`        | —                      | Secret `google_mail_client_secret`                              |
+| `minerva-mail`    | `MAIL_QUOTA_UNITS_PER_SECOND` | `150`                  | Kept under Gmail's per-user limit                               |
+| `minerva-mail`    | `MAIL_HISTORY_POLL_SECONDS`   | `60`                   | Incremental sync interval                                       |
+| `minerva-mail`    | `MAIL_WRITES_ENABLED`         | `false`                | Until phase 4; without it, write requests answer 503            |
+| `minerva-mail`    | `MAIL_ML_URL`                 | —                      | The classifier                                                  |
+| `minerva-mail-ml` | `OLYMPUS_API_URL`             | —                      | Metadata and suggestions                                        |
+| `minerva-mail-ml` | `MAIL_ML_STORE`               | `/data/mail-ml.sqlite` | The feature store, on the service's volume                      |
+| `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, embeddings come from a bundled ONNX model |
+| `api`             | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked  |
 
 ## Phase 0 — Decision and scaffolding
 
 1. **ADR 0030 accepted**: **done** 2026-10-05.
 2. **Model and API**: `minerva/mail/index.ts`; `MailModule` in
    `MINERVA_MODULES`, no operations.
-3. **Agents**: `agents/mail` from the agent template, metrics listener,
-   no handlers; `agents/mail-ml` with `pyproject.toml`, ruff, pytest, a
-   health route and a Dockerfile in the central build.
+3. **Agents**: `agents/minerva-mail` (`@ncfritz/minerva-mail-agent`)
+   from the weather relay's layout: configuration, logging, `/metrics` on
+   3105, no handlers; the broker and the API client come with 1a.
+   `agents/minerva-mail-ml` with `pyproject.toml` and `uv.lock`, ruff,
+   pytest, `/health` and `/metrics` on 3106. Both are bake targets in the
+   services group. Neither joins a compose stack yet: the agent does in
+   1b and the classifier in phase 3, when each first runs continuously
+   (the 1a import runs from the workspace).
 4. **Conventions**: `docs/conventions/python.md` and its line in
    `CLAUDE.md`.
 5. **Site**: a Mail sub-menu in Minerva's menu (`mail-container`, after
@@ -140,11 +145,11 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
 2. **Migration**: `mail_accounts` (`subject` nullable until linked),
    `mail_labels` (Gmail's label ID nullable until linked), `mail_messages`
    and its recipient, attachment and label tables.
-3. **Reader**: an mbox stream parser in `agents/mail` (`sources/takeout/`)
+3. **Reader**: an mbox stream parser in `agents/minerva-mail` (`sources/takeout/`)
    that yields the same normalized message a Gmail fetch will: headers,
    recipients, attachment types and sizes (parts measured, not decoded),
    labels by name, plain text in memory, and a snippet made from it.
-4. **Command**: `pnpm --filter @ncfritz/mail-agent takeout:import --
+4. **Command**: `pnpm --filter @ncfritz/minerva-mail-agent takeout:import --
 <mbox> --account <email> --user <olympus email>`, against the
    environment in the workspace's configuration. Labels are created from
    the names (parents from the `/` path); messages are published to
@@ -218,7 +223,7 @@ Read-only, over metadata alone.
 ## Phase 3 — The classifier
 
 1. **Feature store** as decided; feature version on every row.
-2. **Featurize**: subject, body text and header features go to `mail-ml`
+2. **Featurize**: subject, body text and header features go to `minerva-mail-ml`
    from a pass over the Takeout archive (from Gmail only for mail newer
    than it, or with no archive); hashed word counts are kept, the text is
    not. The pass is resumable and can run beside incremental sync.

@@ -122,7 +122,7 @@ new mail and write.
   text to the classifier in memory. Attachment parts are measured, not
   decoded. Spam and Trash are skipped. Importing again, or a newer
   archive, updates by message ID.
-- **Who runs it.** An operator command in `agents/mail`, run from the
+- **Who runs it.** An operator command in `agents/minerva-mail`, run from the
   workspace against an environment, not a route a user can reach. The
   account it fills is recorded with verification method `import` and
   has no subject until it is linked by consent, which must return the
@@ -141,17 +141,17 @@ new mail and write.
 
 ### Where it runs
 
-| Component         | What it does                                                                                                                                                                                          |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agents/mail`     | NestJS. Holds the Gmail credential. Backfill, history polling, label writes. Publishes message metadata to `mail.messages`; sends text to the classifier in memory.                                   |
-| `apps/api`        | Consumes `mail.messages` into Hasura (as it consumes `calendar.events`). Owns suggestions, reviews, the change log and every operation the site uses; asks the agent to write to Gmail.               |
-| `agents/mail-ml`  | Python (FastAPI). Featurizes text, keeps the feature store, trains, suggests, learns from decisions, runs the audit analyses. Calls the API for metadata and to post suggestions; never reads Hasura. |
-| `apps/site`       | The Mail section and the home page's Mail widget.                                                                                                                                                     |
-| Airflow           | The nightly retrain and audit runs (`infra/airflow/dags`).                                                                                                                                            |
-| Ollama (optional) | Local embeddings (`nomic-embed-text`) and, later, a local LLM for naming clusters and cold-start labels.                                                                                              |
+| Component                | What it does                                                                                                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agents/minerva-mail`    | NestJS. Holds the Gmail credential. Backfill, history polling, label writes. Publishes message metadata to `mail.messages`; sends text to the classifier in memory.                                   |
+| `apps/api`               | Consumes `mail.messages` into Hasura (as it consumes `calendar.events`). Owns suggestions, reviews, the change log and every operation the site uses; asks the agent to write to Gmail.               |
+| `agents/minerva-mail-ml` | Python (FastAPI). Featurizes text, keeps the feature store, trains, suggests, learns from decisions, runs the audit analyses. Calls the API for metadata and to post suggestions; never reads Hasura. |
+| `apps/site`              | The Mail section and the home page's Mail widget.                                                                                                                                                     |
+| Airflow                  | The nightly retrain and audit runs (`infra/airflow/dags`).                                                                                                                                            |
+| Ollama (optional)        | Local embeddings (`nomic-embed-text`) and, later, a local LLM for naming clusters and cold-start labels.                                                                                              |
 
 Queue messages carry IDs and metadata, never text. The agent sends a
-message's text to `agents/mail-ml` in the body of an HTTPS request on
+message's text to `agents/minerva-mail-ml` in the body of an HTTPS request on
 the internal network (service certificates, ADR 0018 and 0023), and the
 classifier answers with nothing it stores outside its own feature store.
 
@@ -172,7 +172,7 @@ Mail sub-menu in Minerva's menu (Neil, 2026-10-05).
 ### The classifier
 
 **Its features live with it** (Neil, 2026-10-05): a store inside
-`agents/mail-ml`, a SQLite database on the service's volume, with the
+`agents/minerva-mail-ml`, a SQLite database on the service's volume, with the
 embeddings loaded into memory for the neighbour search (250,000 vectors
 of 384 int8 values is under 100 MB). The platform's Postgres stays as it
 is (stock `postgres:16.3`, no pgvector). The store is derived data,
