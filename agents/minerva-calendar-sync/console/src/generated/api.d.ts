@@ -212,6 +212,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/calendar/{calendarId}/full-sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Syncs a calendar's whole history
+     * @description Starts a full sync of a calendar from its first event, in the background, rather than over the sync window's past days. Refused while the calendar is syncing.
+     */
+    post: operations["FullSyncCalendar"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/calendar/{calendarId}/backfill": {
     parameters: {
       query?: never;
@@ -1542,6 +1562,45 @@ export interface operations {
     requestBody?: never;
     responses: {
       /** @description The sync was started. */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  FullSyncCalendar: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The provider's ID of the calendar */
+        calendarId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The full sync was started. */
       202: {
         headers: {
           [name: string]: unknown;

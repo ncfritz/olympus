@@ -74,6 +74,24 @@ export async function triggerCalendarSync(
   return response.ok;
 }
 
+/**
+ * Starts a full sync of the calendar's whole history. Refused (409) while
+ * the calendar is syncing; the refusal's message is returned to show.
+ */
+export async function triggerFullCalendarSync(
+  calendarId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { response, error } = await apiClient.POST(
+    "/v1/calendar/{calendarId}/full-sync",
+    { params: { path: { calendarId } } },
+  );
+  if (response.ok) return { ok: true };
+  const message =
+    (error as { message?: string } | undefined)?.message ??
+    `Failed to start a full sync of "${calendarId}"`;
+  return { ok: false, message };
+}
+
 export async function setCalendarEnabled(
   calendarId: string,
   enabled: boolean,
