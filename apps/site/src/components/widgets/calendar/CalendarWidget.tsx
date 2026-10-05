@@ -31,7 +31,7 @@ import styles from "./CalendarWidget.module.css";
 
 /** Checks now and then for midnight, so the widget moves on to the new day. */
 const ROLLOVER_MS = 15 * 60 * 1000;
-/** Half-hour rows: a working day in the widget's default height. */
+/** Half-hour rows: most of a working day in the widget's default height. */
 const SLOT_MINUTES = 30;
 /** How far an arrow key moves the bottom edge. */
 const KEY_STEP = 40;
@@ -90,6 +90,13 @@ const SignedInCalendar = () => {
     const timer = setInterval(() => setDay(today()), ROLLOVER_MS);
     return () => clearInterval(timer);
   }, []);
+
+  // Opens on now: the current hour at the top, its now line just under it.
+  // Read once; scrolling after that is the reader's.
+  const scrollTime = useMemo(
+    () => DateTime.now().startOf("hour").toFormat("HH:mm:ss"),
+    [],
+  );
 
   const week = useMemo(
     () => weekOf(DateTime.fromISO(day), settings.days),
@@ -221,7 +228,7 @@ const SignedInCalendar = () => {
               headerToolbar={false}
               dayHeaderFormat={{ weekday: "short", day: "numeric" }}
               height={"100%"}
-              scrollTime={"08:00:00"}
+              scrollTime={scrollTime}
               slotDuration={{ minutes: SLOT_MINUTES }}
               nowIndicator={true}
               businessHours={{
