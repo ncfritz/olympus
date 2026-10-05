@@ -137,7 +137,7 @@ const IndexPage: React.FunctionComponent = () => {
               initialView="timeGridDay"
               height={"100%"}
               businessHours={{
-                days: [1, 2, 3, 4, 5],
+                daysOfWeek: [1, 2, 3, 4, 5],
                 startTime: "9:00",
                 endTime: "17:00",
               }}
