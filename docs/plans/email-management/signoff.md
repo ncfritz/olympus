@@ -21,13 +21,13 @@ first write, every write case runs first against a test label set
 
 ## Fixtures
 
-| Fixture     | What                                                                    |
-| ----------- | ----------------------------------------------------------------------- |
-| `user-a`    | Neil, signed in, with the Workspace account                             |
-| `user-b`    | a second signed-in user with no mail account                            |
-| `test-set`  | about 300 messages labelled `zz-test/a`, `zz-test/b`, `zz-test/a/child` |
-| `bill-pair` | a bill and its payment confirmation from the same sender                |
-| `takeout`   | a Takeout export of the mailbox, and a small fixture mbox cut from it   |
+| Fixture     | What                                                                                |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `user-a`    | Neil, signed in, with the Workspace account                                         |
+| `user-b`    | a second signed-in user with no mail account                                        |
+| `test-set`  | about 300 messages labelled `zz-test/a`, `zz-test/b`, `zz-test/a/child`             |
+| `bill-pair` | a bill and its payment confirmation from the same sender                            |
+| `takeout`   | the Takeout export of the mailbox, read in place on Neil's machine; never committed |
 
 Every run records: date, environment, build (git commit), who ran it,
 and per case pass/fail with the evidence named in the case. A phase is

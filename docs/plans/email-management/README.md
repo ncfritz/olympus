@@ -152,6 +152,36 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
    nested, system and category labels and quotes commas, and how Spam,
    Trash and chats appear. What is found goes into this plan before the
    reader is written.
+
+   **Found 2026-10-05**, from one streamed pass over the export (12.06 GB,
+   277,751 messages, 66 s on Neil's machine; only counts and header
+   names read):
+   - Every message starts `From <decimal id>@xxx <date>`; all 277,751 IDs
+     are decimal, and no other line after a blank one starts `From `.
+     There is no `X-GM-MSGID` header: the separator is the only source
+     of the message ID. Converting to hexadecimal is to be spot-checked
+     in Gmail (`#all/<hex>`).
+   - `X-GM-THRID` is on every message, always decimal.
+   - `X-Gmail-Labels` is on all but 1,315 messages, comma-separated, with
+     nested labels by `/` path (`Accounts/Utilities/FrontPoint`). No
+     label is quoted, so no label name has a comma. 499 distinct names.
+   - Pseudo-labels Takeout adds, which are not Gmail labels: `Archived`
+     (not in the inbox; 254,292) and `Opened` (read; 86,168). `Unread`
+     (464) and `Inbox` (57) appear too, so in-inbox is `Inbox` present,
+     and read is `Unread` absent.
+   - System labels by display name: `Important`, `Starred` (3,723; no
+     star icon), `Sent` (20,314), `Trash` (3), `Category Updates`,
+     `Category Promotions`, `Category Personal`, `Category Social`,
+     `Category Purchases`. No `Spam`.
+   - `Chat` (2,390) marks old Hangouts chats: skipped, like Trash.
+   - Sizes: median 23 KB, 99th percentile 223 KB, largest 29 MB.
+   - `List-Id` is on 14,093 messages and `List-Unsubscribe` on 66,423, so
+     `List-Unsubscribe` is the better newsletter signal.
+   - One label holds 43 % of all mail: `Accounts/Utilities/FrontPoint`
+     (118,475), worth its own look in the audit.
+   - Still to learn: what the 1,315 messages without `X-Gmail-Labels`
+     are, and whether drafts are in the export.
+
 2. **Migration**: `mail_accounts` (`subject` nullable until linked),
    `mail_labels` (Gmail's label ID nullable until linked), `mail_messages`
    and its recipient, attachment and label tables.
@@ -166,8 +196,9 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
    `mail.messages` (metadata only) and the API consumes them into the
    tables, with the retry and dead-letter handling of the calendar
    consumer. Resumable from a byte offset; idempotent by message ID.
-5. **Tests**: the parser on fixture mbox files (nested labels, quoted
-   commas, multipart and attachments, odd encodings, a broken message),
+5. **Tests**: the parser on small synthetic fixture mbox files, never real
+   mail (nested labels, quoted commas, multipart and attachments, odd
+   encodings, a broken message),
    ID conversion, a fixture that proves no body text other than the
    snippet reaches a table, and none reaches a queue message or a log.
 
