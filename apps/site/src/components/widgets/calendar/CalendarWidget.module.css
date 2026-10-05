@@ -8,8 +8,8 @@
   background: #ffffff;
 }
 
-/* The heading and the week beside it; the day count and collapse at the
-   right. */
+/* The collapse caret, the heading and the week beside it; the day count
+   at the right. */
 .header {
   display: flex;
   justify-content: space-between;
@@ -21,13 +21,13 @@
 
 .heading {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
 }
 
 .title {
-  margin: 0;
+  margin: 0 4px 0 0;
   font-size: 16px;
   font-weight: 600;
 }

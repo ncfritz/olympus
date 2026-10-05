@@ -1,4 +1,4 @@
-import { DownOutlined, UpOutlined } from "@ant-design/icons";
+import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
 import type { EventClickArg } from "@fullcalendar/core";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
@@ -159,6 +159,26 @@ const SignedInCalendar = () => {
     <section className={styles.card} aria-label={"Calendar"}>
       <div className={styles.header}>
         <div className={styles.heading}>
+          <Button
+            type={"text"}
+            size={"small"}
+            icon={
+              settings.collapsed ? (
+                <CaretRightOutlined />
+              ) : (
+                <CaretDownOutlined />
+              )
+            }
+            aria-label={
+              settings.collapsed
+                ? "Expand the calendar"
+                : "Collapse the calendar"
+            }
+            aria-expanded={!settings.collapsed}
+            onClick={() =>
+              save({ ...settings, collapsed: !settings.collapsed })
+            }
+          />
           <h2 className={styles.title}>Calendar</h2>
           <Link
             className={styles.meta}
@@ -176,20 +196,6 @@ const SignedInCalendar = () => {
               { label: "7 days", value: 7 },
             ]}
             onChange={(days) => save({ ...settings, days })}
-          />
-          <Button
-            type={"text"}
-            size={"small"}
-            icon={settings.collapsed ? <DownOutlined /> : <UpOutlined />}
-            aria-label={
-              settings.collapsed
-                ? "Expand the calendar"
-                : "Collapse the calendar"
-            }
-            aria-expanded={!settings.collapsed}
-            onClick={() =>
-              save({ ...settings, collapsed: !settings.collapsed })
-            }
           />
         </div>
       </div>
