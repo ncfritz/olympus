@@ -9,19 +9,20 @@ import FullCalendar from "@fullcalendar/react";
 import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Space } from "antd";
+import { Space, Tabs } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect, useRef, useState } from "react";
-import { DayPicker } from "react-day-picker";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import meetingsApi from "../../../api/meetingsApi";
 import useAvailabilityCalendar from "../../../hooks/useAvailabilityCalendar";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
 import styles from "./Meetings.module.css";
+import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
+import MonthPicker from "./MonthPicker";
 import { DATE_PICKER_WIDTH, SIDE_PANEL_WIDTH } from "./sidePanel";
 
 export interface MonthViewProps {
@@ -57,6 +58,15 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
   // Whole days: the interval ends at 23:59:59.999, and the API takes a
   // whole number of days (41.99… was a 400).
   const days = Math.ceil(interval.length("days"));
+
+  // A month picked from the panel changes the URL, and so this month; the
+  // calendar reads its initial date only once.
+  const monthKey = startDate.toISODate();
+  // One per month: the statistics load again whenever theirs changes.
+  const monthStart = useMemo(() => startDate.startOf("month"), [monthKey]);
+  useEffect(() => {
+    calendarRef.current?.getApi().gotoDate(startDate.toJSDate());
+  }, [monthKey]);
 
   useEffect(() => {
     (async () => {
@@ -114,20 +124,32 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
                 justifyContent: "center",
               }}
             >
-              <DayPicker
-                className={"minerva-standard"}
-                month={startDate.toJSDate()}
-                toMonth={startDate.toJSDate()}
-                showWeekNumber={true}
-                showOutsideDays={true}
-                onDayClick={() => {}}
-                onMonthChange={() => {}}
-                style={{
-                  minWidth: 250,
+              <MonthPicker
+                month={startDate}
+                width={DATE_PICKER_WIDTH}
+                onChange={(month) => {
+                  const url = `/minerva/meetings/${month.toFormat("yyyy/MM")}`;
+                  router.push(url, url, { shallow: true });
                 }}
               />
             </Space>
           </Space>
+          <Tabs
+            className={styles.statisticsTabs}
+            defaultActiveKey={"month"}
+            items={[
+              {
+                key: "month",
+                label: "Month",
+                children: (
+                  <MeetingStatisticsPanel
+                    startDate={monthStart}
+                    dayCount={monthStart.daysInMonth ?? 30}
+                  />
+                ),
+              },
+            ]}
+          />
         </Space>
       ),
     },
