@@ -1,0 +1,84 @@
+table:
+  name: mail_messages
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    created_at:
+      custom_name: createdTime
+    delivered_to:
+      custom_name: deliveredTo
+    from_address:
+      custom_name: fromAddress
+    from_domain:
+      custom_name: fromDomain
+    from_name:
+      custom_name: fromName
+    gmail_id:
+      custom_name: gmailId
+    has_list_unsubscribe:
+      custom_name: hasListUnsubscribe
+    in_inbox:
+      custom_name: inInbox
+    list_id:
+      custom_name: listId
+    message_id_header:
+      custom_name: messageIdHeader
+    received_at:
+      custom_name: receivedTime
+    sent_at:
+      custom_name: sentTime
+    size_bytes:
+      custom_name: sizeBytes
+    snapshot_time:
+      custom_name: snapshotTime
+    thread_id:
+      custom_name: threadId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    account_id: accountId
+    created_at: createdTime
+    delivered_to: deliveredTo
+    from_address: fromAddress
+    from_domain: fromDomain
+    from_name: fromName
+    gmail_id: gmailId
+    has_list_unsubscribe: hasListUnsubscribe
+    in_inbox: inInbox
+    list_id: listId
+    message_id_header: messageIdHeader
+    received_at: receivedTime
+    sent_at: sentTime
+    size_bytes: sizeBytes
+    snapshot_time: snapshotTime
+    thread_id: threadId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+array_relationships:
+  - name: attachments
+    using:
+      foreign_key_constraint_on:
+        column: message_id
+        table:
+          name: mail_message_attachments
+          schema: minerva
+  - name: messageLabels
+    using:
+      foreign_key_constraint_on:
+        column: message_id
+        table:
+          name: mail_message_labels
+          schema: minerva
+  - name: recipients
+    using:
+      foreign_key_constraint_on:
+        column: message_id
+        table:
+          name: mail_message_recipients
+          schema: minerva
