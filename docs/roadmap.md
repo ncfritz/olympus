@@ -36,8 +36,7 @@
 - Styles mechanism for the theme migration (`antd-style` vs. CSS modules).
 - Turning on full TypeScript `strict`.
 - How AI agents interact with the platform (API-backed tools / MCP).
-- Email management (ADR 0030): domain and menu placement, OAuth client,
-  feature store, Gmail snippet, what a star means.
+- Email management (ADR 0030): Mail's place in the site's menus.
 
 ## Backlog
 

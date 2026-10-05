@@ -49,10 +49,12 @@ accepted, recorded exception.
    the message count matches Gmail's within the sync window.
 3. A label added in Gmail shows within two poll intervals; a message
    deleted in Gmail is marked deleted.
-4. No body text in any queue message, log line or table: a search of the
-   dead-letter queue, the logs and a database dump for a known sentence
-   from a fixture message finds nothing.
+4. No body text beyond the snippet: a search of the dead-letter queue,
+   the logs and a database dump for a known sentence from past the first
+   200 characters of a fixture message finds nothing.
 5. The database holds well under 1 GB for the mailbox.
+6. Messages starred with two different icons in Gmail are recorded with
+   those icons; the counts per icon match Gmail's searches.
 
 ## M3 — Audit reports
 
@@ -124,7 +126,10 @@ accepted, recorded exception.
 ## M12 — Workflows, stars, filters
 
 1. `bill-pair`: the confirmation suggests moving the bill from `Payable`
-   to `Paid`.
+   to `Paid` and its star from attention to done, in one suggestion.
 2. A sender at the acceptance threshold gets a filter proposal; approving
    it creates the filter in Gmail.
-3. The star rule is applied to `test-set` as decided.
+3. A `Payable` bill without the attention star, and a `Paid` one still
+   carrying it, are both listed by the audit and fixed on approval (or,
+   where only `STARRED` can be written, the suggestion names the icon
+   and the next sync records it once set in Gmail).

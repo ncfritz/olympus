@@ -57,9 +57,13 @@ Constraints Neil set:
   category; unread, starred and in-inbox; the subject; attachment count,
   types and sizes; the labels. Subject lines take about 20 MB across
   250,000 messages.
-- Message bodies are never written to disk by any Olympus component:
-  not to a table, a queue, a log or a temporary file. The bodies are
-  fetched, featurized in memory and dropped. Changing the features or
+- Gmail's snippet (the first 200 or so characters, about 50 MB in all)
+  is stored too, so lists render without a live fetch (Neil,
+  2026-10-05). It is the one piece of body text kept, and can be dropped
+  later without changing anything else.
+- Beyond the snippet, message bodies are never written to disk by any
+  Olympus component: not to a table, a queue, a log or a temporary file.
+  The bodies are fetched, featurized in memory and dropped. Changing the features or
   the embedding model therefore means fetching the text again, a
   resumable job of a few hours.
 - Opening a message in the site fetches it live from Gmail, through the
@@ -74,6 +78,9 @@ Constraints Neil set:
   its refresh tokens do not expire after 7 days the way an External app's
   in testing do. The Google Cloud project is only an OAuth client; no
   data goes to it.
+- **A client of its own** (Neil, 2026-10-05), in the same project as the
+  calendar agent's but separate from it, so mail's broader scopes never
+  touch the calendar's consent or credentials.
 - Scopes: `gmail.readonly` until the first phase that writes, then
   `gmail.modify`. Label changes use `messages.batchModify` (1,000 IDs a
   call) and `messages.modify`; nothing is ever deleted.
@@ -111,7 +118,21 @@ its own `pyproject.toml`, ruff and pytest, a Dockerfile built on the Mac
 Mini with the rest, and a conventions page of its own. It is the only
 Python service; the rest of mail stays TypeScript.
 
+### Minerva
+
+Mail is part of Minerva (Neil, 2026-10-05): the `minerva` schema, the
+`/minerva` OpenAPI document, `apps/api/src/minerva/mail`, beside the
+calendar accounts it shares Google accounts with.
+
 ### The classifier
+
+**Its features live with it** (Neil, 2026-10-05): a store inside
+`agents/mail-ml`, a SQLite database on the service's volume, with the
+embeddings loaded into memory for the neighbour search (250,000 vectors
+of 384 int8 values is under 100 MB). The platform's Postgres stays as it
+is (stock `postgres:16.3`, no pgvector). The store is derived data,
+rebuilt from Gmail and the labels, so it is not backed up, as the
+weather tables are not.
 
 Layers, combined into a calibrated score per label, with a threshold per
 label:
@@ -147,6 +168,30 @@ Every label has a kind, stored in Olympus:
   trained on; read and written as flags.
 - **Retired**: a label being merged; picking it applies its target.
 
+### Stars are a state
+
+Neil uses Gmail's superstars to say a message **needs attention**, or
+that the thing it asked for **is done** (a bill paid) (2026-10-05). So
+stars are treated as a state family alongside the labels, not as a
+topic:
+
+- Each star icon in use is mapped to a meaning: attention or done.
+  Phase 1 counts the messages per icon to show which are in use.
+- A state family's open states call for the attention star and its
+  closed states for the done star: a `Bills/Payable` message should carry
+  the attention star, a `Bills/Paid` one the done star. The audit lists
+  messages that disagree, and a transition suggests both changes
+  together.
+- Starred messages are never trained on as a topic.
+
+As far as we know, the Gmail API's labels show only `STARRED`, but its
+search accepts the star operators (`has:red-bang`, `has:green-check`,
+and so on), so Olympus can read which star a message has, one query per
+icon. Setting a particular star may not be possible: `STARRED` applies
+the first star in Gmail's list. Phase 1 confirms both. If only `STARRED`
+can be written, Olympus suggests the star change and Neil sets the icon
+in Gmail, and the next sync picks it up.
+
 ### Changes are reviewed, logged and undoable
 
 Nothing reaches Gmail without a decision in the site: one message, a
@@ -156,29 +201,13 @@ change log, and checks the message's `historyId`: a message changed in
 Gmail since the suggestion is synced again first, so a manual change is
 never overwritten. Any batch can be undone from the log.
 
-## Open questions
+## Settled
 
-To settle before this record is accepted:
-
-1. **Domain.** Proposed: Minerva (`minerva` schema, the `/minerva`
-   document), beside the calendar accounts it shares Google accounts
-   with. The site design places Mail as its own entry in the main menu;
-   the other choice is a Mail entry inside Minerva's menu. A domain of its
-   own (named after a god, as the others are) is the third option.
-2. **The OAuth client.** The calendar agent's Google client with Gmail
-   scopes added by incremental consent, or a client of its own in the same
-   project.
-3. **Where the features live.** The platform's Postgres is stock
-   `postgres:16.3`, without pgvector. Options: a pgvector image for a
-   separate classifier database in the data stack; or a store inside
-   `agents/mail-ml` (SQLite and an in-memory index: 250,000 vectors of
-   384 int8 values is under 100 MB).
-4. **Gmail's snippet.** Storing the 200-character preview (about 50 MB)
-   lets lists render without a live fetch, but it is body text.
-5. **Stars.** What a star means (needs action, or important) decides
-   whether stars become a state family. As far as we know the API exposes
-   only `STARRED`, not which of Gmail's star icons is used; phase 1
-   checks.
+Neil answered the open questions on 2026-10-05: Minerva is the domain;
+mail has an OAuth client of its own; the features live with the
+classifier; the snippet is stored; stars are attention and done states.
+Still open: where Mail sits in the site's menus (its own main-menu entry,
+as drawn, or inside Minerva's menu).
 
 ## Consequences
 
@@ -188,7 +217,8 @@ To settle before this record is accepted:
   set.
 - A second runtime enters the repository, with its own toolchain, image
   and conventions, and nothing in the workspace checks it.
-- Olympus holds about a gigabyte for mail (metadata, subjects, features)
+- Olympus holds a few hundred megabytes for mail (metadata, subjects,
+  snippets), and the classifier about as much again for features,
   instead of 11 GB.
 - Re-featurizing needs Gmail and a few hours; it is a background job,
   with old and new feature versions side by side until it finishes.

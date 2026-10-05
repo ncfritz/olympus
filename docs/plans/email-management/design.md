@@ -115,15 +115,17 @@ clusters worth a look.
 ## Not drawn yet
 
 Connecting the mail account; label settings (kind, family, transitions,
-merge target, threshold); the change log and undo; open payables;
+merge target, threshold) and star meanings (which icon means attention,
+which done); stars on the rows, beside the labels, and star changes in
+suggestions; the change log and undo; open payables;
 filter proposals; the audit's star findings; empty, loading and error
 states.
 
 ## Open
 
-1. The section's name and place: Mail in the main menu, between Dionysus
-   and Tools, as drawn; inside Minerva's menu; or a god's name, as the
-   other sections have.
+1. Mail's place, now that it is part of Minerva (2026-10-05): its own
+   entry in the main menu, between Dionysus and Tools, as drawn, or an
+   entry inside Minerva's menu.
 2. The picker's two keys beyond AntD's own: Tab completes the path to
    the next `/`, and ⌘↵ applies. They need a key handler on the Select's
    input; without them the picker is stock AntD.
