@@ -67,7 +67,9 @@ const AvailabilityEventContent: React.FunctionComponent<
     arg.event.end !== null &&
     arg.event.end.getTime() - arg.event.start.getTime() <=
       slotMinutes * 60 * 1000;
-  const inline = !stacked || short;
+  // An all-day event, in a time grid's all-day row, has no time to sit
+  // beside: its title goes after its dot.
+  const inline = !stacked || short || arg.event.allDay;
   const text = (
     <>
       {arg.timeText && <span className={styles.eventTime}>{arg.timeText}</span>}
