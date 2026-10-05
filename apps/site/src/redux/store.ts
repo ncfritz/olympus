@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import blackCurtainReducer from "./slices/blackCurtainSlice";
 import layoutSliceReducer from "./slices/layoutSlice";
+import meetingsReducer from "./slices/meetingsSlice";
 import notificationsReducer from "./slices/notificationsSlice";
 
 export const store = configureStore({
@@ -8,6 +9,7 @@ export const store = configureStore({
     blackCurtain: blackCurtainReducer,
     notifications: notificationsReducer,
     layout: layoutSliceReducer,
+    meetings: meetingsReducer,
   },
 });
 

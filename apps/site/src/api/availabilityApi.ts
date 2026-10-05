@@ -1,13 +1,18 @@
 import {
+  type AvailabilityBlock,
   type AvailabilityLevel,
   clearMeetingAvailability,
   client,
   createAvailabilityBlock,
   deleteAvailabilityBlock,
   getAvailability,
+  listAvailabilityBlocks,
+  listMeetingAvailabilities,
+  type MeetingAvailability,
   setMeetingAvailability,
   updateAvailabilityBlock,
 } from "@ncfritz/olympus-sdk/minerva";
+import { inGroups } from "../utils/meetingAvailability";
 import { drawerRange, type OnAirEvents, toOnAirEvents } from "../utils/onair";
 
 const errorStatus = (error: unknown): number | undefined =>
@@ -77,6 +82,66 @@ class AvailabilityApi {
       if (errorStatus(error) !== 404) throw error;
       await createAvailabilityBlock({ body: { block } });
     }
+  }
+
+  /** The blocks that overlap a range. */
+  async listBlocks(start: Date, end: Date): Promise<AvailabilityBlock[]> {
+    const { data } = await listAvailabilityBlocks({
+      query: { start: start.toISOString(), end: end.toISOString() },
+    });
+    return data.blocks;
+  }
+
+  /** A new block, as the API made it. */
+  async createBlock(
+    status: AvailabilityLevel,
+    start: Date,
+    end: Date,
+  ): Promise<AvailabilityBlock> {
+    const { data } = await createAvailabilityBlock({
+      body: {
+        block: {
+          status,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+        },
+      },
+    });
+    return data.block;
+  }
+
+  /** Changes a block's status, or where it is. */
+  async updateBlock(
+    blockId: string,
+    change: { status?: AvailabilityLevel; start?: Date; end?: Date },
+  ): Promise<void> {
+    await updateAvailabilityBlock({
+      path: { blockId },
+      body: {
+        block: {
+          status: change.status,
+          startTime: change.start?.toISOString(),
+          endTime: change.end?.toISOString(),
+        },
+      },
+    });
+  }
+
+  /**
+   * The availability of these meetings: each one's status, and whether it
+   * is overridden. Asked for in groups the API takes; meetings that aren't
+   * the caller's are left out.
+   */
+  async listMeetings(meetingIds: string[]): Promise<MeetingAvailability[]> {
+    const groups = await Promise.all(
+      inGroups(meetingIds).map(async (group) => {
+        const { data } = await listMeetingAvailabilities({
+          query: { meetingIds: group.join(",") },
+        });
+        return data.meetings;
+      }),
+    );
+    return groups.flat();
   }
 
   async deleteBlock(blockId: string): Promise<void> {
