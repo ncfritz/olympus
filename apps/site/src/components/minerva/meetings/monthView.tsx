@@ -1,9 +1,13 @@
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  HomeOutlined,
+  RadarChartOutlined,
+} from "@ant-design/icons";
 import type { EventClickArg, EventInput } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Layout, Space } from "antd";
+import { Space } from "antd";
 import type { BreadcrumbItemType } from "antd/lib/breadcrumb/Breadcrumb";
 import { DateTime, Interval } from "luxon";
 import Link from "next/link";
@@ -11,9 +15,8 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
+import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
-
-const { Sider, Content } = Layout;
 
 export interface MonthViewProps {
   startDate: DateTime;
@@ -74,9 +77,48 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
     router.push(url, url, { shallow: true });
   };
 
+  const sideTabs = [
+    {
+      key: "t-calendar",
+      label: <CalendarOutlined />,
+      children: (
+        <Space orientation={"vertical"}>
+          <Space
+            size={8}
+            className={"date-picker"}
+            orientation={"vertical"}
+            style={{ width: 390 }}
+          >
+            <Space
+              style={{
+                borderBottom: "1px solid #f6f6f6",
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              <DayPicker
+                className={"minerva-standard"}
+                month={startDate.toJSDate()}
+                toMonth={startDate.toJSDate()}
+                showWeekNumber={true}
+                showOutsideDays={true}
+                onDayClick={() => {}}
+                onMonthChange={() => {}}
+                style={{
+                  minWidth: 250,
+                }}
+              />
+            </Space>
+          </Space>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <Space>
+    <>
       <OlympusBreadcrumbs
+        className={"dark"}
         items={[
           {
             title: (
@@ -101,20 +143,15 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
           ...breadcrumbs,
         ]}
       />
-      <Layout
+      <CollapsibleTabPanel
+        panelId={"meetings.side"}
+        width={445}
+        tabs={sideTabs}
         style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          left: 380,
-          marginRight: 788,
-          overflow: "visible",
-          height: "calc(100vh - 102px)",
-          zIndex: 400,
+          width: "100%",
         }}
       >
-        <Content style={{ width: "calc(100vw - 780px)" }}>
+        <div style={{ height: "calc(100vh - 102px)" }}>
           <FullCalendar
             ref={calendarRef}
             viewClassNames={"minerva-cal minerva-cal-month"}
@@ -145,37 +182,9 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
               endTime: "17:00",
             }}
           />
-        </Content>
-        <Sider
-          width={400}
-          collapsible={false}
-          style={{
-            background: "#ffffff",
-            top: 102,
-            right: 0,
-            position: "fixed",
-            height: "calc(100vh - 104px)",
-            borderLeft: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <DayPicker
-            className={"minerva-standard"}
-            month={startDate.toJSDate()}
-            toMonth={startDate.toJSDate()}
-            showWeekNumber={true}
-            showOutsideDays={true}
-            onDayClick={() => {}}
-            onMonthChange={() => {}}
-            style={{
-              minWidth: 250,
-            }}
-          />
-        </Sider>
-      </Layout>
-    </Space>
+        </div>
+      </CollapsibleTabPanel>
+    </>
   );
 };
 export default MonthView;
