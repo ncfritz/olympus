@@ -17,6 +17,8 @@ export interface AvailabilityEventContentProps {
   /** Whether this event's picker is open. */
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The calendar's row, in minutes: an event no longer has one line. */
+  slotMinutes?: number;
 }
 
 /**
@@ -25,9 +27,6 @@ export interface AvailabilityEventContentProps {
  * whose `eventClick` passes over it (`isDotClick`), and React, whose
  * popover opens.
  */
-/** An event this short has its title beside its time, as in the drawer. */
-const SHORT_MS = 15 * 60 * 1000;
-
 const KEPT_FROM_CALENDAR = ["pointerdown", "mousedown", "touchstart"];
 
 /**
@@ -37,7 +36,13 @@ const KEPT_FROM_CALENDAR = ["pointerdown", "mousedown", "touchstart"];
  */
 const AvailabilityEventContent: React.FunctionComponent<
   AvailabilityEventContentProps
-> = ({ arg, actions, open, onOpenChange }: AvailabilityEventContentProps) => {
+> = ({
+  arg,
+  actions,
+  open,
+  onOpenChange,
+  slotMinutes = 15,
+}: AvailabilityEventContentProps) => {
   const dotRef = useRef<HTMLButtonElement>(null);
   // Events without a dot (none, today) carry no kind.
   const props = arg.event.extendedProps as
@@ -53,14 +58,15 @@ const AvailabilityEventContent: React.FunctionComponent<
   }, []);
 
   // As the OnAir drawer's events: the dot and the time (small) on the first
-  // line, and the title (bold) under them, indented past the dot; a short
-  // event's title follows its time. A month's day lists its events one
-  // line each.
+  // line, and the title (bold) under them, indented past the dot; an event
+  // of one row (15 minutes in the drawer) has its title after its time. A
+  // month's day lists its events one line each.
   const stacked = !arg.view.type.startsWith("dayGrid");
   const short =
     arg.event.start !== null &&
     arg.event.end !== null &&
-    arg.event.end.getTime() - arg.event.start.getTime() <= SHORT_MS;
+    arg.event.end.getTime() - arg.event.start.getTime() <=
+      slotMinutes * 60 * 1000;
   const inline = !stacked || short;
   const text = (
     <>

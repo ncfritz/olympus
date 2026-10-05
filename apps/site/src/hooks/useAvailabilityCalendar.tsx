@@ -32,6 +32,8 @@ export interface AvailabilityCalendarOptions {
   include?: (meeting: Meeting) => boolean;
   /** A click on a meeting, other than on its dot. */
   onMeetingClick: (arg: EventClickArg) => void;
+  /** The calendar's row, in minutes (15 unless set). */
+  slotMinutes?: number;
 }
 
 /** What a meetings page's FullCalendar takes for availability. */
@@ -56,6 +58,7 @@ const useAvailabilityCalendar = ({
   end,
   include = () => true,
   onMeetingClick,
+  slotMinutes,
 }: AvailabilityCalendarOptions): AvailabilityCalendarProps => {
   const filters = useAppSelector((state) => state.meetings);
   const [pickerFor, setPickerFor] = useState<string>();
@@ -88,6 +91,7 @@ const useAvailabilityCalendar = ({
       <AvailabilityEventContent
         arg={arg}
         actions={actions}
+        slotMinutes={slotMinutes}
         open={pickerFor === arg.event.id}
         onOpenChange={(open) => setPickerFor(open ? arg.event.id : undefined)}
       />
