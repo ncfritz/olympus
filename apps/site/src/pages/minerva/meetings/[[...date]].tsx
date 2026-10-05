@@ -18,6 +18,9 @@ const IndexPage: React.FunctionComponent = () => {
   let targetDate: DateTime = DateTime.now().startOf("day");
   let startDate: DateTime = DateTime.now().startOf("day");
 
+  // The year the URL names, as Notes' breadcrumbs have it, not this one.
+  const year = params.date ? parseInt(params.date[0]) : targetDate.year;
+
   const breadcrumbs = [
     {
       title: (
@@ -31,10 +34,10 @@ const IndexPage: React.FunctionComponent = () => {
     },
     {
       title: (
-        <Link href={`/minerva/meetings/${targetDate.year}`}>
+        <Link href={`/minerva/meetings/${year}`}>
           <Space>
             <BarChartOutlined />
-            <span>{targetDate.year}</span>
+            <span>{year}</span>
           </Space>
         </Link>
       ),
