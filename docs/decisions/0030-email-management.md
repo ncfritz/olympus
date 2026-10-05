@@ -122,7 +122,8 @@ Python service; the rest of mail stays TypeScript.
 
 Mail is part of Minerva (Neil, 2026-10-05): the `minerva` schema, the
 `/minerva` OpenAPI document, `apps/api/src/minerva/mail`, beside the
-calendar accounts it shares Google accounts with.
+calendar accounts it shares Google accounts with. In the site it is a
+Mail sub-menu in Minerva's menu (Neil, 2026-10-05).
 
 ### The classifier
 
@@ -206,8 +207,8 @@ never overwritten. Any batch can be undone from the log.
 Neil answered the open questions on 2026-10-05: Minerva is the domain;
 mail has an OAuth client of its own; the features live with the
 classifier; the snippet is stored; stars are attention and done states.
-Still open: where Mail sits in the site's menus (its own main-menu entry,
-as drawn, or inside Minerva's menu).
+In the site, Mail is a sub-menu of Minerva's menu, as Reviews and
+Meetings are.
 
 ## Consequences
 

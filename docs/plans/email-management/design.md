@@ -4,11 +4,14 @@ The screens for [ADR 0030](../../decisions/0030-email-management.md),
 drawn on the [design canvas](https://claude.ai/artifact/5XvjMqxbvEEtCYA4dm8Qgt).
 Its **Olympus** page is the design; the **First draft** page is the
 earlier, unstyled pass, kept for reference. Senders, subjects and counts
-on the canvas are sample data.
+on the canvas are sample data. The canvas draws Mail as its own entry in
+the main menu; it is a sub-menu of Minerva's menu instead (Neil,
+2026-10-05), so the breadcrumbs start at Minerva.
 
 The look is the site's: the `#001529` header with the logo, the 80 px
-main menu, a collapsed `#324354` sub-menu for Mail (Inbox,
-Re-classification, Statistics, Clusters), the dark chevron breadcrumbs,
+main menu, Minerva's menu (`#324354` when collapsed) with a Mail
+sub-menu after Meetings (Inbox, Re-classification, Statistics,
+Clusters), the dark chevron breadcrumbs (Minerva › Mail › …),
 AntD 6 components in their standard style, and Highcharts for charts.
 
 ## How labels are shown
@@ -47,7 +50,7 @@ a side panel:
 Approving folds the labels into the row, marks it Approved and offers
 Undo. The footer links to the rest in Mail.
 
-## Mail › Inbox
+## Minerva › Mail › Inbox
 
 Title and subtitle, Mark read, Archive and Accept all ≥ 90 %; a statistics
 strip (in inbox, to review, high confidence, no suggestion, approved
@@ -77,7 +80,7 @@ An AntD Select in multiple mode, as the Goals tag picker is:
 states, with "on 7 of 12" or "adding to 5 · already on 7", and the
 changes say how many messages each affects.
 
-## Mail › Re-classification
+## Minerva › Mail › Re-classification
 
 Statistics strip (suggested changes, high confidence, processed, merge
 candidates, split suggestions), then the label tree as a table: messages,
@@ -88,7 +91,7 @@ messages moved, why; Preview merge, Dismiss).
 
 ### A label's review
 
-Breadcrumb Mail › Re-classification › the label. The processed bar; a
+Breadcrumb Minerva › Mail › Re-classification › the label. The processed bar; a
 split alert with the proposed sub-labels and their counts (Preview,
 Create sub-labels); filters (only proposed changes, change type, minimum
 confidence, status, search); the selection bar (Apply suggested changes,
@@ -96,7 +99,7 @@ Mark processed, no change); the table of messages with current labels,
 the suggested change, confidence and status. Applied rows become
 Processed.
 
-## Mail › Statistics
+## Minerva › Mail › Statistics
 
 Range (12 months, 3 years, all time) and scope; a statistics strip
 (messages, labels in use, distinct senders, unlabelled); top senders and
@@ -104,7 +107,7 @@ top labels as bar charts; sender activity by year as a line chart for the
 top senders; label activity by year as a heatmap, where a label fading
 as a similar one rises marks a change in practice.
 
-## Mail › Clusters
+## Minerva › Mail › Clusters
 
 A scatter of messages placed by similarity (a dot per about 50), coloured
 by current or suggested label, clusters named on the map. The side panel
@@ -123,11 +126,8 @@ states.
 
 ## Open
 
-1. Mail's place, now that it is part of Minerva (2026-10-05): its own
-   entry in the main menu, between Dionysus and Tools, as drawn, or an
-   entry inside Minerva's menu.
-2. The picker's two keys beyond AntD's own: Tab completes the path to
+1. The picker's two keys beyond AntD's own: Tab completes the path to
    the next `/`, and ⌘↵ applies. They need a key handler on the Select's
    input; without them the picker is stock AntD.
-3. Whether Enter should pick and close (one label is the usual case),
+2. Whether Enter should pick and close (one label is the usual case),
    with Shift+Enter to keep picking.

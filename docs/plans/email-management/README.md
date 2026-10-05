@@ -36,23 +36,23 @@ ADR 0030's open questions, as Neil answered them:
 5. **Stars** mark a message needing attention, or its action done: a
    state alongside the labels.
 
-Still open: where Mail sits in the site's menus, its own main-menu entry
-(as drawn) or inside Minerva's menu. Phase 0's site step waits on it.
+In the site, Mail is a sub-menu of Minerva's menu, after Meetings, as
+Reviews and Meetings are.
 
 ## Where the code goes
 
-| What           | Where                                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Model shapes   | `packages/model/src/minerva/mail/`: accounts, labels, messages, suggestions, reviews, changes, audit, stats                    |
-| Messages       | `packages/messages/src/mail.ts`: `MailMessageMessage` (metadata only), routing constants                                       |
-| API            | `apps/api/src/minerva/mail/`: `MailModule`, `controllers/`, `services/`, `converters/`, `queries/`, `consumers/`               |
-| Schema         | `infra/hasura/migrations/olympus/<ts>_minerva_mail_*`, with metadata                                                           |
-| Gmail agent    | `agents/mail/`: NestJS, `providers/gmail/`, `sync/`, `writes/`, `store/` (sync cursors only)                                   |
-| Classifier     | `agents/mail-ml/`: Python, `pyproject.toml`, `src/mail_ml/` (`features/`, `store/`, `models/`, `audit/`, `api/`), `tests/`     |
-| Feature store  | `agents/mail-ml`'s volume: a SQLite database, embeddings loaded into memory; not backed up (rebuilt from Gmail)                |
-| Scheduled runs | `infra/airflow/dags/mail_retrain.py`, `mail_audit.py`                                                                          |
-| Site           | `apps/site/src/pages/mail/`, `src/components/mail/`, `src/components/widgets/mail/`, `src/api/mailApi.ts`, the main menu entry |
-| Conventions    | `docs/conventions/python.md` (new), linked from `CLAUDE.md`                                                                    |
+| What           | Where                                                                                                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Model shapes   | `packages/model/src/minerva/mail/`: accounts, labels, messages, suggestions, reviews, changes, audit, stats                                                                         |
+| Messages       | `packages/messages/src/mail.ts`: `MailMessageMessage` (metadata only), routing constants                                                                                            |
+| API            | `apps/api/src/minerva/mail/`: `MailModule`, `controllers/`, `services/`, `converters/`, `queries/`, `consumers/`                                                                    |
+| Schema         | `infra/hasura/migrations/olympus/<ts>_minerva_mail_*`, with metadata                                                                                                                |
+| Gmail agent    | `agents/mail/`: NestJS, `providers/gmail/`, `sync/`, `writes/`, `store/` (sync cursors only)                                                                                        |
+| Classifier     | `agents/mail-ml/`: Python, `pyproject.toml`, `src/mail_ml/` (`features/`, `store/`, `models/`, `audit/`, `api/`), `tests/`                                                          |
+| Feature store  | `agents/mail-ml`'s volume: a SQLite database, embeddings loaded into memory; not backed up (rebuilt from Gmail)                                                                     |
+| Scheduled runs | `infra/airflow/dags/mail_retrain.py`, `mail_audit.py`                                                                                                                               |
+| Site           | `apps/site/src/pages/minerva/mail/`, `src/components/minerva/mail/`, `src/components/widgets/mail/`, `src/api/mailApi.ts`, `mail-container` in `components/minerva/layout/menu.tsx` |
+| Conventions    | `docs/conventions/python.md` (new), linked from `CLAUDE.md`                                                                                                                         |
 
 The API operations follow `docs/conventions/api.md` and start from
 `pnpm gen api-operation`. Every operation is `@RequiresIdentity()` and
@@ -109,7 +109,7 @@ README table and `infra/docker/env/<env>/`.
 
 ## Phase 0 — Decision and scaffolding
 
-1. **ADR 0030 accepted**, with Mail's place in the menus decided.
+1. **ADR 0030 accepted**.
 2. **OAuth**: a new client for mail in the calendar agent's Google
    project, on its Internal consent screen, with `gmail.readonly`; the
    client secret as a file secret.
@@ -120,9 +120,10 @@ README table and `infra/docker/env/<env>/`.
    health route and a Dockerfile in the central build.
 5. **Conventions**: `docs/conventions/python.md` and its line in
    `CLAUDE.md`.
-6. **Site**: the Mail entry in the main menu with its sub-menu (Inbox,
-   Re-classification, Statistics, Clusters), each an empty page behind
-   sign-in.
+6. **Site**: a Mail sub-menu in Minerva's menu (`mail-container`, after
+   Meetings, with its path matchers) holding Inbox, Re-classification,
+   Statistics and Clusters, each an empty page under
+   `pages/minerva/mail/` behind sign-in.
 
 **Sign-off:** both agents and the API boot; the menu opens the pages;
 the Turbo tasks and the classifier's checks pass.
