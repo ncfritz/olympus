@@ -1,28 +1,53 @@
-import { HomeOutlined, RadarChartOutlined } from "@ant-design/icons";
-import type { EventInput } from "@fullcalendar/core";
+import {
+  CalendarOutlined,
+  FilterOutlined,
+  HomeOutlined,
+  RadarChartOutlined,
+} from "@ant-design/icons";
+import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { Col, Collapse, Layout, Space } from "antd";
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
+import { Collapse, Space } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import meetingsApi from "../../api/meetingsApi";
+import CollapsibleTabPanel from "../../components/layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../components/layout/OlympusBreadcrumbs";
 import GoalsPanel from "../../components/minerva/home/GoalsPanel";
+import styles from "../../components/minerva/home/MinervaHome.module.css";
+import MeetingsFilterPanel from "../../components/minerva/meetings/availability/MeetingsFilterPanel";
 import NotesEditorForm, {
   NEW_NOTE,
   type NotesFormInput,
 } from "../../components/notes/NotesEditorForm";
+import useAvailabilityCalendar from "../../hooks/useAvailabilityCalendar";
 
-const { Sider, Content } = Layout;
+/** Today's calendar, as wide as it was beside the goals. */
+const CALENDAR_WIDTH = 600;
+/** The side panel open: its border, the calendar and the tab strip. */
+const SIDE_PANEL_WIDTH = 1 + CALENDAR_WIDTH + 62;
 
 const IndexPage: React.FunctionComponent = () => {
   const router = useRouter();
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<FullCalendar>(null);
+  // FullCalendar measures itself on window resizes only; the side panel
+  // opening, closing or first showing its tab changes its box without one.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      calendarRef.current?.getApi().updateSize(),
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   const { handleSubmit, control, reset } = useForm<NotesFormInput>({
     defaultValues: NEW_NOTE,
@@ -30,24 +55,76 @@ const IndexPage: React.FunctionComponent = () => {
     reValidateMode: "onChange",
   });
 
-  const [events, setEvents] = useState<EventInput[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
 
-  const startDate = DateTime.now().startOf("day");
+  const startDate = useMemo(() => DateTime.now().startOf("day"), []);
 
   useEffect(() => {
     (async () => {
       const rawEvents = await meetingsApi.getMeetings(startDate, 1);
-      const parsedEvents: EventInput[] = [];
-
-      rawEvents.data.items.forEach((rawEvent) => {
-        const event = meetingsApi.toEvent(rawEvent);
-
-        parsedEvents.push(event);
-      });
-
-      setEvents(parsedEvents);
+      setMeetings(rawEvents.data.items);
     })();
   }, []);
+
+  const calendar = useAvailabilityCalendar({
+    meetings,
+    start: startDate.toJSDate(),
+    end: startDate.plus({ days: 1 }).toJSDate(),
+    onMeetingClick: async (arg) => {
+      const target = `/minerva/meetings/${startDate.year}/${startDate.toFormat("MM")}/${startDate.toFormat("dd")}?e=${encodeURIComponent(arg.event.id)}`;
+      await router.push(target, target, { shallow: true });
+    },
+  });
+
+  const sideTabs = [
+    {
+      key: "t-calendar",
+      label: <CalendarOutlined />,
+      children: (
+        <div ref={rootRef} className={styles.calendar}>
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[timeGridPlugin, listPlugin, interactionPlugin]}
+            viewClassNames={"minerva-cal minerva-cal-home hide-day-header"}
+            initialDate={startDate.toJSDate()}
+            events={calendar.events}
+            eventContent={calendar.eventContent}
+            eventClick={calendar.eventClick}
+            selectable={true}
+            selectMirror={true}
+            select={calendar.select}
+            selectAllow={calendar.selectAllow}
+            eventChange={calendar.eventChange}
+            initialView="timeGridDay"
+            height={"100%"}
+            businessHours={{
+              daysOfWeek: [1, 2, 3, 4, 5],
+              startTime: "9:00",
+              endTime: "17:00",
+            }}
+            headerToolbar={{
+              start: "title",
+              center: "",
+              end: "",
+            }}
+            titleFormat={{
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              weekday: "long",
+            }}
+            nowIndicator={true}
+            slotDuration={{ minutes: 15 }}
+          />
+        </div>
+      ),
+    },
+    {
+      key: "t-filters",
+      label: <FilterOutlined />,
+      children: <MeetingsFilterPanel />,
+    },
+  ];
 
   return (
     <>
@@ -74,20 +151,20 @@ const IndexPage: React.FunctionComponent = () => {
           },
         ]}
       />
-      <Layout
+      <CollapsibleTabPanel
+        panelId={"minerva.home.side"}
+        width={SIDE_PANEL_WIDTH}
+        tabs={sideTabs}
+        defaultExpanded={true}
+        // The calendar runs up to the tab strip; AntD sets tabs on the right
+        // 24px in from it.
+        tabContentStyle={{ paddingInlineEnd: 0 }}
         style={{
-          position: "fixed",
-          background: "#ffffff",
-          gap: 16,
-          top: 102,
-          marginRight: 788,
-          overflowX: "hidden",
-          overflowY: "auto",
-          height: "calc(100vh - 202px)",
+          width: "100%",
         }}
       >
-        <Content style={{ width: "calc(100vw - 993px)" }}>
-          <div style={{ padding: "16px 16px 8px" }}>
+        <div className={styles.main}>
+          <div className={styles.goals}>
             <GoalsPanel />
           </div>
           <Collapse
@@ -111,57 +188,8 @@ const IndexPage: React.FunctionComponent = () => {
               },
             ]}
           />
-        </Content>
-        <Sider
-          width={600}
-          collapsible={false}
-          style={{
-            background: "#ffffff",
-            top: 102,
-            right: 0,
-            position: "fixed",
-            height: "calc(100vh - 104px)",
-            borderLeft: "1px solid #f0f0f0",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Col style={{ height: "calc(100vh - 102px)", width: 600 }}>
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[timeGridPlugin, listPlugin]}
-              viewClassNames={"minerva-cal minerva-cal-home hide-day-header"}
-              initialDate={startDate.toJSDate()}
-              events={events}
-              initialView="timeGridDay"
-              height={"100%"}
-              businessHours={{
-                daysOfWeek: [1, 2, 3, 4, 5],
-                startTime: "9:00",
-                endTime: "17:00",
-              }}
-              headerToolbar={{
-                start: "title",
-                center: "",
-                end: "",
-              }}
-              titleFormat={{
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                weekday: "long",
-              }}
-              nowIndicator={true}
-              slotDuration={{ minutes: 15 }}
-              eventClick={async (arg) => {
-                const target = `/minerva/meetings/${startDate.year}/${startDate.toFormat("MM")}/${startDate.toFormat("dd")}?e=${encodeURIComponent(arg.event.id)}`;
-                await router.push(target, target, { shallow: true });
-              }}
-            />
-          </Col>
-        </Sider>
-      </Layout>
+        </div>
+      </CollapsibleTabPanel>
     </>
   );
 };

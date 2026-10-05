@@ -1,0 +1,18 @@
+/* Minerva Home: the goals and the note editor, beside the collapsible
+   panel of icon tabs with today's calendar and the meetings' filters. */
+.main {
+  height: calc(100vh - 102px);
+  overflow-y: auto;
+}
+
+.goals {
+  padding: 16px 16px 8px;
+}
+
+/* Today's calendar fills its tab, clear of the panel's collapse button,
+   which sits over the top. */
+.calendar {
+  box-sizing: border-box;
+  height: calc(100vh - 102px);
+  padding-top: 24px;
+}

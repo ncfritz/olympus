@@ -2,10 +2,7 @@ import { Layout, Tabs, type TabsProps } from "antd";
 import React, { type CSSProperties, type ReactNode } from "react";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "../../redux/hooks";
-import {
-  setTabPanelExpanded,
-  toggleTabPanelExpanded,
-} from "../../redux/slices/layoutSlice";
+import { setTabPanelExpanded } from "../../redux/slices/layoutSlice";
 
 const { Content, Sider } = Layout;
 
@@ -16,6 +13,8 @@ export interface CollapsibleTabPanelProps {
   style?: CSSProperties;
   tabContentStyle?: CSSProperties;
   panelId?: string;
+  /** Open until it is first closed; otherwise closed until first opened. */
+  defaultExpanded?: boolean;
 }
 
 const CollapsibleTabPanel: React.FunctionComponent<
@@ -27,11 +26,14 @@ const CollapsibleTabPanel: React.FunctionComponent<
   style,
   tabContentStyle,
   panelId,
+  defaultExpanded = false,
 }: CollapsibleTabPanelProps) => {
   const dispatch = useDispatch();
 
   const expanded = useAppSelector((state) =>
-    panelId ? state.layout.expandedTabPanels[panelId] : false,
+    panelId
+      ? (state.layout.expandedTabPanels[panelId] ?? defaultExpanded)
+      : false,
   );
 
   return (
@@ -51,7 +53,8 @@ const CollapsibleTabPanel: React.FunctionComponent<
         reverseArrow={true}
         width={expanded ? width : 62}
         onCollapse={() => {
-          dispatch(toggleTabPanelExpanded(panelId));
+          // From what is shown, which may be the default, not yet stored.
+          dispatch(setTabPanelExpanded({ key: panelId, expanded: !expanded }));
         }}
         style={{
           borderLeft: "1px solid #f6f6f6",
