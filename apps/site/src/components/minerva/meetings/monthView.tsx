@@ -22,6 +22,7 @@ import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
 import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
 import styles from "./Meetings.module.css";
+import { DATE_PICKER_WIDTH, SIDE_PANEL_WIDTH } from "./sidePanel";
 
 export interface MonthViewProps {
   startDate: DateTime;
@@ -104,7 +105,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
             size={8}
             className={`date-picker ${styles.datePicker}`}
             orientation={"vertical"}
-            style={{ width: 390 }}
+            style={{ width: DATE_PICKER_WIDTH }}
           >
             <Space
               style={{
@@ -167,7 +168,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
       />
       <CollapsibleTabPanel
         panelId={"meetings.side"}
-        width={445}
+        width={SIDE_PANEL_WIDTH}
         tabs={sideTabs}
         style={{
           width: "100%",

@@ -11,3 +11,8 @@
   > :global(.ant-tabs-content) {
   padding-top: 16px;
 }
+/* The statistics tabs start 8px in, so the active tab's bar doesn't run
+   into the panel's border. */
+.statisticsTabs > :global(.ant-tabs-nav) :global(.ant-tabs-nav-list) {
+  margin-left: 8px;
+}
