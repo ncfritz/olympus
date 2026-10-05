@@ -3,8 +3,9 @@ import {
   HomeOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
-import type { EventClickArg, EventInput } from "@fullcalendar/core";
+import type { EventClickArg } from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
+import type { Meeting } from "@ncfritz/olympus-sdk/minerva";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { Space } from "antd";
@@ -15,8 +16,10 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
+import useAvailabilityCalendar from "../../../hooks/useAvailabilityCalendar";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
+import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
 
 export interface MonthViewProps {
   startDate: DateTime;
@@ -43,7 +46,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  const [events, setEvents] = useState<EventInput[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
 
   const start = startDate.startOf("week");
   const end = startDate.endOf("month").endOf("week");
@@ -55,17 +58,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
   useEffect(() => {
     (async () => {
       const rawEvents = await meetingsApi.getMeetings(start, days);
-      const parsedEvents: EventInput[] = [];
-
-      rawEvents.data.items.forEach((rawEvent) => {
-        const parsedEvent = meetingsApi.toEvent(rawEvent);
-
-        if (!parsedEvent.allDay) {
-          parsedEvents.push(parsedEvent);
-        }
-      });
-
-      setEvents(parsedEvents);
+      setMeetings(rawEvents.data.items);
     })();
   }, [startDate]);
 
@@ -89,6 +82,15 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
 
     router.push(url, url, { shallow: true });
   };
+
+  const calendar = useAvailabilityCalendar({
+    meetings,
+    start: start.toJSDate(),
+    end: end.toJSDate(),
+    // All-day meetings crowd a month's days; the day shows them.
+    include: (meeting) => !meeting.isAllDay,
+    onMeetingClick: handleEventClick,
+  });
 
   const sideTabs = [
     {
@@ -123,6 +125,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
               />
             </Space>
           </Space>
+          <MeetingsFilterPanel />
         </Space>
       ),
     },
@@ -174,7 +177,9 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
             ref={calendarRef}
             viewClassNames={"minerva-cal minerva-cal-month"}
             plugins={[dayGridPlugin, interactionPlugin]}
-            events={events}
+            events={calendar.events}
+            eventContent={calendar.eventContent}
+            eventChange={calendar.eventChange}
             initialView="dayGridMonth"
             initialDate={startDate.toJSDate()}
             firstDay={1}
@@ -193,7 +198,7 @@ const MonthView: React.FunctionComponent<MonthViewProps> = ({
             navLinks={true}
             navLinkDayClick={handleDayClick}
             navLinkWeekClick={handleWeekClick}
-            eventClick={handleEventClick}
+            eventClick={calendar.eventClick}
             businessHours={{
               daysOfWeek: [1, 2, 3, 4, 5],
               startTime: "9:00",

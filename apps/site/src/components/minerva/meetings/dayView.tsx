@@ -7,7 +7,7 @@ import {
   RadarChartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import type { EventInput } from "@fullcalendar/core";
+import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
@@ -35,9 +35,11 @@ import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import meetingsApi from "../../../api/meetingsApi";
 import notesApi from "../../../api/notestApi";
+import useAvailabilityCalendar from "../../../hooks/useAvailabilityCalendar";
 import { Events, publish } from "../../../utils/events";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
+import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
 import Day from "./DayDoughnut";
 import NotesEditorForm, {
   type NotesFormInput,
@@ -88,7 +90,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const [selectedDate, setSelectedDate] = useState(startDate);
   const [dayPickerCurrent, setDayPickerCurrent] = useState(startDate);
   const [rawEvents, setRawEvents] = useState<RawMeeting[]>([]);
-  const [events, setEvents] = useState<EventInput[]>([]);
   const [, setEventsLoading] = useState(false);
   const [, setEventsError] = useState(false);
   const [targetEventId, setTargetEventId] = useState<string | undefined>(
@@ -180,13 +181,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
 
         setEventsLoading(true);
         const getMeetingsResponse = await meetingsApi.getMeetings(start, 1);
-        const parsedEvents: EventInput[] = [];
-
-        getMeetingsResponse.data.items.forEach((rawEvent) => {
-          parsedEvents.push(meetingsApi.toEvent(rawEvent));
-        });
-
-        setEvents(parsedEvents);
         setRawEvents(getMeetingsResponse.data.items);
         await loadSummary();
       } catch {
@@ -225,22 +219,6 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
           const previousEventsResponse =
             await meetingsApi.getPreviousMeetingInSeries(targetEventId);
           setPreviousEventsInSeries(previousEventsResponse.data.items);
-
-          const newEvents = [];
-
-          for (const e of events) {
-            const classIndex = e.classNames?.indexOf("selected") || -1;
-
-            if (e.id !== targetEventId && classIndex > -1) {
-              (e.classNames! as string[]).splice(classIndex, 1);
-            } else if (e.id === targetEventId && classIndex < 0) {
-              ((e.classNames as string[]) || []).push("selected");
-            }
-
-            newEvents.push(e);
-          }
-
-          setEvents(newEvents);
         }
       } catch {
         publish(Events.NOTIFICATIONS_PUBLISH_EVENT, {
@@ -308,6 +286,14 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
   const afterNoteUpdate = async (_updated: Note) => {
     await updateNotes();
   };
+
+  const dayStart = selectedDate.startOf("day");
+  const calendar = useAvailabilityCalendar({
+    meetings: rawEvents,
+    start: dayStart.toJSDate(),
+    end: dayStart.plus({ days: 1 }).toJSDate(),
+    onMeetingClick: (arg) => setTargetEventId(arg.event.id),
+  });
 
   let previousOccurrencesContent = undefined;
 
@@ -572,6 +558,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
               />
             </Space>
           </Space>
+          <MeetingsFilterPanel />
           {nextEventInSeries && (
             <Space
               orientation={"vertical"}
@@ -694,7 +681,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
             <Col span={7} style={{ height: "calc(100vh - 102px)" }}>
               <FullCalendar
                 ref={calendarRef}
-                plugins={[timeGridPlugin, listPlugin]}
+                plugins={[timeGridPlugin, listPlugin, interactionPlugin]}
                 viewClassNames={"minerva-cal hide-day-header"}
                 eventClassNames={(arg) => {
                   if (targetEventId && arg.event.id === targetEventId) {
@@ -704,7 +691,13 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
                   return "";
                 }}
                 initialDate={selectedDate.toJSDate()}
-                events={events}
+                events={calendar.events}
+                eventContent={calendar.eventContent}
+                selectable={true}
+                selectMirror={true}
+                select={calendar.select}
+                selectAllow={calendar.selectAllow}
+                eventChange={calendar.eventChange}
                 initialView="timeGridDay"
                 height={"100%"}
                 businessHours={{
@@ -725,14 +718,7 @@ const DayView: React.FunctionComponent<DayViewProps> = ({
                 }}
                 nowIndicator={true}
                 slotDuration={{ minutes: 15 }}
-                eventClick={(arg) => {
-                  setTargetEventId(arg.event.id);
-                  /*router.push(
-                    `${pathName}?e=${arg.event.id}`,
-                    `${pathName}?e=${arg.event.id}`,
-                    { shallow: true },
-                  );*/
-                }}
+                eventClick={calendar.eventClick}
               />
             </Col>
             <Col

@@ -1,0 +1,71 @@
+/* The status dot on a meeting or block, and its picker. The dot's colors
+   are the OnAir drawer's (.oa-light-status-* in styles/onair.css). */
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+/* An override is ringed, so it isn't told apart by color alone. */
+.dot.overridden {
+  box-shadow:
+    0 0 0 1.5px #ffffff,
+    0 0 0 3px #1f1f1f;
+}
+.dot:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+}
+
+.picker {
+  width: 200px;
+}
+.pickerSwatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.event {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 4px;
+}
+/* In a time grid, the title goes under the dot and time, as FullCalendar's
+   own layout has it. */
+.stacked {
+  min-width: 0;
+  overflow: hidden;
+}
+.eventTitle {
+  padding-left: 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.eventText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.filters {
+  width: 100%;
+  padding: 0 16px 16px 16px;
+  border-bottom: 1px solid #f6f6f6;
+}
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}

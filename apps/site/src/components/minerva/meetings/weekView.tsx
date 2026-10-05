@@ -1,10 +1,13 @@
-import type { GetMeetingSummaryResponse } from "@ncfritz/olympus-sdk/minerva";
+import type {
+  GetMeetingSummaryResponse,
+  Meeting,
+} from "@ncfritz/olympus-sdk/minerva";
 import {
   CalendarOutlined,
   HomeOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
-import type { EventClickArg, EventInput } from "@fullcalendar/core";
+import type { EventClickArg } from "@fullcalendar/core";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -16,9 +19,11 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import { type DateRange, DayPicker } from "react-day-picker";
 import meetingsApi from "../../../api/meetingsApi";
+import useAvailabilityCalendar from "../../../hooks/useAvailabilityCalendar";
 import { Events, publish } from "../../../utils/events";
 import CollapsibleTabPanel from "../../layout/CollapsibleTabPanel";
 import OlympusBreadcrumbs from "../../layout/OlympusBreadcrumbs";
+import MeetingsFilterPanel from "./availability/MeetingsFilterPanel";
 import Day from "./DayDoughnut";
 import MeetingStatisticsPanel from "./MeetingsStatisticsPanel";
 
@@ -78,7 +83,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
     from: start.toJSDate(),
     to: end.toJSDate(),
   });
-  const [events, setEvents] = useState<EventInput[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [summary, setSummary] = useState<GetMeetingSummaryResponse | undefined>(
     undefined,
   );
@@ -108,13 +113,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
           DateTime.fromJSDate(range.from).startOf("day"),
           7,
         );
-        const parsedEvents: EventInput[] = [];
-
-        rawEvents.data.items.forEach((rawEvent) => {
-          parsedEvents.push(meetingsApi.toEvent(rawEvent));
-        });
-
-        setEvents(parsedEvents);
+        setMeetings(rawEvents.data.items);
         await loadSummary();
       }
     })();
@@ -153,6 +152,16 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
 
     router.push(url, url, { shallow: true });
   };
+
+  const weekStart = range?.from
+    ? DateTime.fromJSDate(range.from).startOf("day")
+    : undefined;
+  const calendar = useAvailabilityCalendar({
+    meetings,
+    start: weekStart?.toJSDate(),
+    end: weekStart?.plus({ days: 7 }).toJSDate(),
+    onMeetingClick: handleEventClick,
+  });
 
   const sideTabs = [
     {
@@ -203,6 +212,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
               />
             </Space>
           </Space>
+          <MeetingsFilterPanel />
           <Tabs
             defaultActiveKey={"week"}
             items={[
@@ -286,7 +296,13 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
               end: "",
             }}
             height={"100%"}
-            events={events}
+            events={calendar.events}
+            eventContent={calendar.eventContent}
+            selectable={true}
+            selectMirror={true}
+            select={calendar.select}
+            selectAllow={calendar.selectAllow}
+            eventChange={calendar.eventChange}
             businessHours={{
               daysOfWeek: [1, 2, 3, 4, 5],
               startTime: "9:00",
@@ -297,7 +313,7 @@ const WeekView: React.FunctionComponent<WeekViewProps> = ({
             navLinks={true}
             navLinkDayClick={handleDayClick}
             navLinkWeekClick={handleDayClick}
-            eventClick={handleEventClick}
+            eventClick={calendar.eventClick}
           />
         </div>
       </CollapsibleTabPanel>
