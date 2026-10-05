@@ -27,7 +27,10 @@ import { PrismaEventStore } from "../../../../src/store/prisma/PrismaEventStore"
 import { PrismaService } from "../../../../src/store/prisma/PrismaService";
 import { SyncRunStore } from "../../../../src/store/syncRunStore";
 import { testConfig } from "../../../support/config";
-import { SyncEngine } from "../../../../src/sync/services/SyncEngine";
+import {
+  HISTORY_START,
+  SyncEngine,
+} from "../../../../src/sync/services/SyncEngine";
 import { SyncedCalendarConfig } from "../../../../src/sync/syncedCalendarConfig";
 import {
   afterAll,
@@ -359,6 +362,88 @@ describe("SyncEngine", () => {
       false,
     );
     expect((await store.getEvent(CONFIG.source, "fresh"))?.deleted).toBe(false);
+  });
+
+  describe("a full sync of the history", () => {
+    it("reads from HISTORY_START to the window's future end, even with a fresh sync token", async () => {
+      await store.saveSyncState(CONFIG.calendarId, {
+        calendarId: CONFIG.calendarId,
+        syncToken: "token-1",
+        channelId: null,
+        resourceId: null,
+        channelExpiration: null,
+        channelToken: null,
+        lastFullSyncAt: new Date().toISOString(),
+      });
+      provider.fullSyncBatches = [
+        { events: [fixtureEvent({ uid: "a" })], nextSyncToken: "token-2" },
+      ];
+      provider.incrementalQueue = [
+        { events: [], nextSyncToken: "should-not-be-used" },
+      ];
+      const before = Date.now();
+
+      await engine.syncOne(CONFIG, "manual", { fullHistory: true });
+
+      expect(provider.fullSyncCallCount).toBe(1);
+      expect(provider.incrementalQueue).toHaveLength(1); // untouched
+      const window = provider.lastFullSyncWindow!;
+      expect(window.start).toBe(HISTORY_START);
+      expect(Date.parse(window.end)).toBeGreaterThan(
+        before + 179 * 24 * 60 * 60 * 1000,
+      );
+      const state = await store.getSyncState(CONFIG.calendarId);
+      expect(state?.syncToken).toBe("token-2");
+      expect(syncRuns.runs.at(-1)?.type).toBe("full");
+    });
+
+    it("stores events older than the window, which a later sync leaves alone", async () => {
+      const longAgo = new Date(
+        Date.now() - 3 * 365 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      provider.fullSyncBatches = [
+        {
+          events: [
+            fixtureEvent({ uid: "old", startTime: longAgo, endTime: longAgo }),
+            fixtureEvent({ uid: "now" }),
+          ],
+          nextSyncToken: "token-1",
+        },
+      ];
+      await engine.syncOne(CONFIG, "manual", { fullHistory: true });
+      expect((await store.getEvent(CONFIG.source, "old"))?.deleted).toBe(false);
+
+      // The daily window refresh: a bounded full sync that doesn't see it.
+      await store.saveSyncState(CONFIG.calendarId, {
+        ...(await store.getSyncState(CONFIG.calendarId))!,
+        lastFullSyncAt: new Date(
+          Date.now() - 25 * 60 * 60 * 1000,
+        ).toISOString(),
+      });
+      provider.fullSyncBatches = [
+        { events: [fixtureEvent({ uid: "now" })], nextSyncToken: "token-2" },
+      ];
+      await engine.syncOne(CONFIG, "poll");
+
+      expect(provider.lastFullSyncWindow!.start).not.toBe(HISTORY_START);
+      expect((await store.getEvent(CONFIG.source, "old"))?.deleted).toBe(false);
+    });
+
+    it("marks an event that vanished from the history as deleted, however old", async () => {
+      const longAgo = new Date(
+        Date.now() - 3 * 365 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      await store.upsertEvent(
+        fixtureEvent({ uid: "gone", startTime: longAgo, endTime: longAgo }),
+      );
+      provider.fullSyncBatches = [
+        { events: [fixtureEvent({ uid: "now" })], nextSyncToken: "token-1" },
+      ];
+
+      await engine.syncOne(CONFIG, "manual", { fullHistory: true });
+
+      expect((await store.getEvent(CONFIG.source, "gone"))?.deleted).toBe(true);
+    });
   });
 
   it("applies an incremental update to an existing event and advances the sync token", async () => {

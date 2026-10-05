@@ -5,6 +5,7 @@ import { SyncModule } from "../sync/SyncModule";
 import { BackfillCalendarController } from "./controllers/BackfillCalendarController";
 import { CreateCalendarController } from "./controllers/CreateCalendarController";
 import { DeleteCalendarController } from "./controllers/DeleteCalendarController";
+import { FullSyncCalendarController } from "./controllers/FullSyncCalendarController";
 import { ListCalendarsController } from "./controllers/ListCalendarsController";
 import { SyncCalendarController } from "./controllers/SyncCalendarController";
 import { UpdateCalendarController } from "./controllers/UpdateCalendarController";
@@ -18,6 +19,7 @@ import { CalendarService } from "./services/CalendarService";
     UpdateCalendarController,
     DeleteCalendarController,
     SyncCalendarController,
+    FullSyncCalendarController,
     BackfillCalendarController,
   ],
   providers: [CalendarService],

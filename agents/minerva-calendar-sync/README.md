@@ -42,6 +42,12 @@ Microsoft Graph ─┴─────────────────▶ │
   certificate's service, `olympus-api` by default; operations marked
   `@ServicesOnly()` (the web sign-ins and account removal) answer only
   there.
+- **Syncing**: a full sync covers a window, `SYNC_WINDOW_PAST_DAYS` back
+  (30) and `SYNC_WINDOW_FUTURE_DAYS` ahead (180), and runs again once a
+  day; between them, incremental syncs. `SyncCalendar` (the console's
+  Sync now) syncs a calendar now. `FullSyncCalendar` (Full sync) reads its
+  whole history, from 1970 to the window's end, refused while it is
+  syncing; later syncs go back to the window and leave older events alone.
 - **OpenAPI document**: `pnpm openapi` writes
   `agent/openapi/minerva-calendar-sync.json` (committed; `check:openapi`
   and `lint:openapi` guard it, and the console generates its client from

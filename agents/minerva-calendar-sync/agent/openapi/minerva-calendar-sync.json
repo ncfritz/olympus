@@ -792,6 +792,57 @@
         ]
       }
     },
+    "/v1/calendar/{calendarId}/full-sync": {
+      "post": {
+        "description": "Starts a full sync of a calendar from its first event, in the background, rather than over the sync window's past days. Refused while the calendar is syncing.",
+        "operationId": "FullSyncCalendar",
+        "parameters": [
+          {
+            "name": "calendarId",
+            "required": true,
+            "in": "path",
+            "description": "The provider's ID of the calendar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The full sync was started."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Syncs a calendar's whole history",
+        "tags": [
+          "Calendars"
+        ]
+      }
+    },
     "/v1/calendar/{calendarId}/backfill": {
       "post": {
         "description": "Enqueues a calendar's current events for publishing again, to seed or repair a downstream copy.",
