@@ -5,13 +5,14 @@ const mode =
   process.env.NODE_ENV === "production" ? "production" : "development";
 
 module.exports = {
-  entry: "./src/main.ts",
+  // The agent, and the Takeout command (docs/plans/email-management, 1a).
+  entry: { main: "./src/main.ts", takeout: "./src/takeout.ts" },
   mode,
   target: "node",
   devtool: "source-map",
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "main.js",
+    filename: "[name].js",
     chunkFormat: "commonjs",
     library: {
       type: "commonjs",

@@ -21,6 +21,7 @@
     "start": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file=dev.env dist/main.js",
     "start:local": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file=local.env dist/main.js",
     "dev": "NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --env-file dev.env --watch",
+    "takeout": "node dist/takeout.js",
     "dev:local": "NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --env-file local.env --watch"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "^11.1.23",
     "nest-winston": "catalog:",
+    "postal-mime": "^4.0.4",
     "prom-client": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",

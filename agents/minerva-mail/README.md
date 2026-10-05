@@ -11,7 +11,21 @@ or from the Gmail API (phase 1b), publishes each message's metadata to
 to the classifier (`agents/minerva-mail-ml`). Message bodies are never
 written anywhere; only Gmail's snippet is kept.
 
-Today (phase 0) it starts and serves `/metrics`, nothing else.
+As a service it does nothing yet beyond `/metrics`. Phase 1a has begun
+with the Takeout reader, and a command that runs it over an archive.
+
+## The Takeout command
+
+```sh
+pnpm --filter @ncfritz/minerva-mail-agent build
+pnpm --filter @ncfritz/minerva-mail-agent takeout scan ~/Downloads/Takeout/Mail/mail.mbox
+```
+
+`scan` reads and parses the archive exactly as the import will, then prints
+what it found as JSON: counts only, never content. It writes nothing,
+publishes nothing and leaves the archive as it is. `--max-seconds` stops
+after a time budget and prints `nextOffset`; `--offset` resumes from it.
+`--limit` stops after a number of messages.
 
 ## Running it
 
