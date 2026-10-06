@@ -569,7 +569,16 @@ left until phase 5 has decisions to measure them against.
    label's messages with filters (changes only, change type, confidence,
    status); apply, mark processed without change, undo a batch; preview
    and apply a merge (move messages, delete the source label, rename its
-   children); create sub-labels from a split.
+   children); create sub-labels from a split. **Built so far**: the
+   status filter (`status=open|processed` on ListMailAuditChanges and the
+   export, which gains a `decision` column); processed counts in the label
+   tree and the summary (`1791300000000_minerva_mail_processed`);
+   `ApplyMatchingMailProposals` and `DismissMatchingMailProposals`, the
+   review's "apply all" and "mark all processed" over what its filters
+   match (open proposals only; applying leaves the classifier's unticked
+   ones, and a label one proposal adds and another removes; one batch per
+   mailbox, more past 10,000 messages). Merges, splits and new labels are
+   still to come.
 4. **Site**: the Re-classification page and its label drill-down, as
    designed, with the bulk label picker. **Begun**: the label review
    selects proposals (decided ones show Applied or Processed and cannot

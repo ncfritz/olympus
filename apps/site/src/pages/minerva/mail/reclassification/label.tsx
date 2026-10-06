@@ -10,6 +10,8 @@ import type {
   MailAuditAction,
   MailAuditChange,
   MailAuditRule,
+  MailProposalFilter,
+  MailProposalStatus,
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   Alert,
@@ -50,12 +52,20 @@ const PAGE_SIZE = 50;
 type Query = Filters & { label?: string; ready: boolean };
 
 type Filters = {
+  /** Open by default: what is left to review. */
+  status?: MailProposalStatus;
   action?: MailAuditAction;
   rule?: MailAuditRule;
   minConfidence?: number;
   sortBy: MailAuditChangeSort;
   page: number;
 };
+
+const STATUSES = [
+  { label: "To review", value: "open" },
+  { label: "Processed", value: "processed" },
+  { label: "All", value: "all" },
+];
 
 const ACTIONS = [
   { label: "All changes", value: "all" },
@@ -94,6 +104,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
   const label =
     typeof router.query.name === "string" ? router.query.name : undefined;
   const [filters, setFilters] = useState<Filters>({
+    status: "open",
     sortBy: "confidence",
     page: 0,
   });
@@ -124,6 +135,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
           ...(f.action ? { action: f.action } : {}),
           ...(f.rule ? { rule: f.rule } : {}),
           ...(f.minConfidence ? { minConfidence: f.minConfidence } : {}),
+          ...(f.status ? { status: f.status } : {}),
           sortBy: f.sortBy,
           pageSize: PAGE_SIZE,
           startPage: f.page,
@@ -181,6 +193,60 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
     }
   };
 
+  /** What the bulk actions take: the filters as shown, open ones only. */
+  const matching: MailProposalFilter = {
+    ...(label ? { label } : {}),
+    ...(filters.action ? { action: filters.action } : {}),
+    ...(filters.rule ? { rule: filters.rule } : {}),
+    ...(filters.minConfidence ? { minConfidence: filters.minConfidence } : {}),
+  };
+
+  const applyAll = async () => {
+    setBusy(true);
+    try {
+      const { proposals, batches } = (await mailApi.applyMatching(matching))
+        .data;
+      const messages = batches.reduce((n, b) => n + b.messages, 0);
+      message.success(
+        batches.length ? (
+          <span>
+            Writing {proposals.toLocaleString()} proposed changes to{" "}
+            {messages.toLocaleString()} messages in Gmail.{" "}
+            <Link href={"/minerva/mail/changes"}>
+              Follow it in the change log
+            </Link>
+          </span>
+        ) : (
+          "Nothing to apply: the rest are unticked, or cancel each other out."
+        ),
+      );
+      setTimeout(() => void refetch(true), 5000);
+    } catch (error) {
+      message.error(apiProblems(error).join(" "));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const dismissAll = async () => {
+    setBusy(true);
+    try {
+      const dismissed = (await mailApi.dismissMatching(matching)).data
+        .dismissed;
+      message.success(
+        `${dismissed.toLocaleString()} marked processed, Gmail unchanged`,
+      );
+      await refetch(true);
+    } catch (error) {
+      message.error(apiProblems(error).join(" "));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openCount =
+    filters.status === "open" && result ? result.count : undefined;
+
   const messagesSelected = new Set(selected.map((c) => c.message.gmailId)).size;
 
   return (
@@ -219,7 +285,13 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
             </Title>
             <Text type={"secondary"} style={{ fontSize: 15 }}>
               {result
-                ? `${result.count.toLocaleString()} proposed changes`
+                ? `${result.count.toLocaleString()} ${
+                    filters.status === "open"
+                      ? "to review"
+                      : filters.status === "processed"
+                        ? "processed"
+                        : "proposed changes"
+                  }`
                 : ""}
             </Text>
           </Space>
@@ -232,6 +304,17 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
               action={filters.action}
               rule={filters.rule}
               minConfidence={filters.minConfidence}
+            />
+            <Segmented
+              options={STATUSES}
+              value={filters.status ?? "all"}
+              onChange={(v) =>
+                setFilters((f) => ({
+                  ...f,
+                  status: v === "all" ? undefined : (v as MailProposalStatus),
+                  page: 0,
+                }))
+              }
             />
             <Select
               style={{ width: 150 }}
@@ -285,6 +368,41 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
           </Space>
         </Flex>
         <div style={{ padding: "0 16px 16px" }}>
+          {selected.length === 0 && openCount ? (
+            <Flex
+              justify={"flex-end"}
+              align={"center"}
+              gap={8}
+              wrap={true}
+              style={{ marginBottom: 12 }}
+            >
+              <Text type={"secondary"}>
+                All {openCount.toLocaleString()} to review that match:
+              </Text>
+              <Popconfirm
+                title={`Apply all ${openCount.toLocaleString()} to Gmail?`}
+                description={
+                  "Every proposal to review that these filters match, except the classifier's unticked ones, is written to Gmail as batches. A message changed in Gmail since is left as it is. Each batch can be undone from the change log."
+                }
+                okText={"Apply all"}
+                onConfirm={applyAll}
+              >
+                <Button icon={<CloudUploadOutlined />} loading={busy}>
+                  Apply all to Gmail
+                </Button>
+              </Popconfirm>
+              <Popconfirm
+                title={`Mark all ${openCount.toLocaleString()} processed?`}
+                description={"Gmail is not changed."}
+                okText={"Mark processed"}
+                onConfirm={dismissAll}
+              >
+                <Button icon={<CheckOutlined />} loading={busy}>
+                  Mark all processed
+                </Button>
+              </Popconfirm>
+            </Flex>
+          ) : null}
           {selected.length > 0 && (
             <Alert
               type={"info"}

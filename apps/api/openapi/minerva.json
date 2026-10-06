@@ -7704,6 +7704,15 @@
         "operationId": "ExportMailAuditChanges",
         "parameters": [
           {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only those still to review (open), or only those decided (processed)",
+            "schema": {
+              "$ref": "#/components/schemas/MailProposalStatus"
+            }
+          },
+          {
             "name": "minConfidence",
             "required": false,
             "in": "query",
@@ -8208,6 +8217,126 @@
         ]
       }
     },
+    "/minerva/mail/proposals/apply": {
+      "post": {
+        "description": "The review's bulk action (docs/plans/email-management phase 4): every proposal still to review over the caller's mail that the filter matches (a label, an action, a rule, a minimum confidence), the classifier's unticked ones left out, written to Gmail as batches, one per mailbox (more past 10,000 messages). Each message's proposals are one change; a label one proposal adds and another removes is left as it is. Follow the batches in the change log.",
+        "operationId": "ApplyMatchingMailProposals",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ApplyMatchingMailProposals operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyMatchingMailProposalsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The proposals matched and the batches started for them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyMatchingMailProposalsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A mailbox is linked for reading only."
+          },
+          "503": {
+            "description": "Writes to Gmail are turned off, or the agent is not configured."
+          }
+        },
+        "summary": "Applies every open proposal a filter matches to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/proposals/dismiss": {
+      "post": {
+        "description": "The review's bulk action without a change (docs/plans/email-management phase 4): every proposal still to review over the caller's mail that the filter matches, unticked ones too, recorded as processed. Gmail is not changed.",
+        "operationId": "DismissMatchingMailProposals",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the DismissMatchingMailProposals operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissMatchingMailProposalsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How many were marked processed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissMailProposalsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Marks every open proposal a filter matches processed",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/change-batch/{batchId}": {
       "get": {
         "description": "One of the caller's batches (docs/plans/email-management phase 4): where it is, its changes counted by outcome, and a page of its changes by Gmail ID, each with the message's user labels when the batch was asked for and what it adds and removes.",
@@ -8501,6 +8630,15 @@
             "description": "The results page to start from",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Only those still to review (open), or only those decided (processed)",
+            "schema": {
+              "$ref": "#/components/schemas/MailProposalStatus"
             }
           },
           {
@@ -15394,6 +15532,14 @@
           "skipped"
         ]
       },
+      "MailProposalStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "processed"
+        ],
+        "description": "Whether a proposal is still to review or has been decided"
+      },
       "MailAuditRule": {
         "type": "string",
         "enum": [
@@ -15456,6 +15602,10 @@
           "classifierChanges": {
             "type": "number",
             "description": "Of the changes, those the classifier proposed"
+          },
+          "processed": {
+            "type": "number",
+            "description": "Of the changes, those decided: applied to Gmail or processed without change"
           }
         },
         "required": [
@@ -15470,7 +15620,8 @@
           "messagesAffected",
           "merges",
           "threads",
-          "classifierChanges"
+          "classifierChanges",
+          "processed"
         ]
       },
       "MailAuditLabel": {
@@ -15503,6 +15654,10 @@
           "mergeCandidate": {
             "type": "boolean",
             "description": "Whether the label is in a merge candidate"
+          },
+          "processed": {
+            "type": "number",
+            "description": "Of its proposed changes, those decided: applied or processed without change"
           }
         },
         "required": [
@@ -15511,7 +15666,8 @@
           "proposedIn",
           "proposedOut",
           "highConfidence",
-          "mergeCandidate"
+          "mergeCandidate",
+          "processed"
         ]
       },
       "MailAuditMergeReason": {
@@ -16431,6 +16587,99 @@
           "batch"
         ]
       },
+      "MailProposalFilter": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Only changes to this label, by full name"
+          },
+          "action": {
+            "description": "Only additions or only removals",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAuditAction"
+              }
+            ]
+          },
+          "rule": {
+            "description": "Only those one rule proposed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAuditRule"
+              }
+            ]
+          },
+          "minConfidence": {
+            "type": "number",
+            "description": "Only changes at least this confident, 0 to 1"
+          }
+        }
+      },
+      "ApplyMatchingMailProposalsRequest": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "Which open proposals to apply; the classifier's unticked ones never are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailProposalFilter"
+              }
+            ]
+          }
+        },
+        "required": [
+          "filter"
+        ]
+      },
+      "ApplyMatchingMailProposalsResponse": {
+        "type": "object",
+        "properties": {
+          "proposals": {
+            "type": "number",
+            "description": "Open proposals the filter matched and applied"
+          },
+          "batches": {
+            "description": "The batches written for them: one per mailbox, or more for over 10,000 messages; none when nothing matched",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailChangeBatch"
+            }
+          }
+        },
+        "required": [
+          "proposals",
+          "batches"
+        ]
+      },
+      "DismissMatchingMailProposalsRequest": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "Which open proposals to mark processed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailProposalFilter"
+              }
+            ]
+          }
+        },
+        "required": [
+          "filter"
+        ]
+      },
+      "DismissMailProposalsResponse": {
+        "type": "object",
+        "properties": {
+          "dismissed": {
+            "type": "number",
+            "description": "Proposals marked processed"
+          }
+        },
+        "required": [
+          "dismissed"
+        ]
+      },
       "MailChangeStatus": {
         "type": "string",
         "description": "What became of one message's change",
@@ -16559,18 +16808,6 @@
         },
         "required": [
           "proposals"
-        ]
-      },
-      "DismissMailProposalsResponse": {
-        "type": "object",
-        "properties": {
-          "dismissed": {
-            "type": "number",
-            "description": "Proposals marked processed"
-          }
-        },
-        "required": [
-          "dismissed"
         ]
       },
       "ListMailChangeBatchesResponse": {

@@ -46,6 +46,20 @@ const AuditStrip: React.FunctionComponent<{
     </Col>
     <Col flex={1} style={CELL}>
       <Statistic
+        title={"Processed"}
+        value={summary?.processed}
+        suffix={
+          summary && summary.changes > 0 ? (
+            <span style={SMALL}>
+              {percent(summary.processed / summary.changes)}
+            </span>
+          ) : undefined
+        }
+        loading={loading}
+      />
+    </Col>
+    <Col flex={1} style={CELL}>
+      <Statistic
         title={"Messages affected"}
         value={summary?.messagesAffected}
         loading={loading}

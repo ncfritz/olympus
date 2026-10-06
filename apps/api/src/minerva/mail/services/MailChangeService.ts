@@ -9,6 +9,12 @@ import {
 } from "@nestjs/common";
 import {
   ApplyMailChangesRequest,
+  ApplyMatchingMailProposalsRequest,
+  DismissMatchingMailProposalsRequest,
+  MailAuditRule,
+  MailLabelChange,
+  MailProposalFilter,
+  MailProposalRef,
   DismissMailProposalsRequest,
   MailAuditAction,
   MailChange,
@@ -25,6 +31,7 @@ import {
   minervaConfig,
   type MinervaConfigType,
 } from "../../../config/configuration";
+import { MailAuditService, type OpenMailProposal } from "./MailAuditService";
 import {
   type AgentGmailChange,
   MinervaMailAgentClient,
@@ -150,6 +157,76 @@ const toChange = (c: GraphQlChange): MailChange => ({
   remove: labelsOf(c, "remove"),
 });
 
+/** A bulk action's filter, checked; the audit checks the rest. */
+const filterOf = (filter: MailProposalFilter | undefined) => {
+  if (filter === null || typeof filter !== "object") {
+    throw new BadRequestException("filter is required");
+  }
+  if (filter.label !== undefined && typeof filter.label !== "string") {
+    throw new BadRequestException("filter.label must be a label name");
+  }
+  if (
+    filter.action !== undefined &&
+    !Object.values(MailAuditAction).includes(filter.action)
+  ) {
+    throw new BadRequestException("filter.action must be add or remove");
+  }
+  if (
+    filter.rule !== undefined &&
+    !Object.values(MailAuditRule).includes(filter.rule)
+  ) {
+    throw new BadRequestException("filter.rule must be a rule");
+  }
+  if (
+    filter.minConfidence !== undefined &&
+    typeof filter.minConfidence !== "number"
+  ) {
+    throw new BadRequestException("filter.minConfidence must be a number");
+  }
+  return {
+    label: filter.label,
+    action: filter.action,
+    rule: filter.rule,
+    minConfidence: filter.minConfidence,
+  };
+};
+
+/**
+ * Open proposals as changes, by account then message; a label both added
+ * and removed is left alone, and a message with nothing left is dropped.
+ */
+const gather = (
+  proposals: OpenMailProposal[],
+): Map<string, MailLabelChange[]> => {
+  const byAccount = new Map<
+    string,
+    Map<string, { add: Set<string>; remove: Set<string> }>
+  >();
+  for (const p of proposals) {
+    const messages = byAccount.get(p.accountId) ?? new Map();
+    byAccount.set(p.accountId, messages);
+    const change = messages.get(p.gmailId) ?? {
+      add: new Set<string>(),
+      remove: new Set<string>(),
+    };
+    messages.set(p.gmailId, change);
+    (p.action === MailAuditAction.Add ? change.add : change.remove).add(
+      p.label,
+    );
+  }
+  const result = new Map<string, MailLabelChange[]>();
+  for (const [accountId, messages] of byAccount) {
+    const changes: MailLabelChange[] = [];
+    for (const [gmailId, c] of messages) {
+      const add = [...c.add].filter((l) => !c.remove.has(l)).sort();
+      const remove = [...c.remove].filter((l) => !c.add.has(l)).sort();
+      if (add.length + remove.length) changes.push({ gmailId, add, remove });
+    }
+    if (changes.length) result.set(accountId, changes);
+  }
+  return result;
+};
+
 const chunks = <T>(items: T[], size = CHUNK): T[][] => {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) {
@@ -197,7 +274,72 @@ export class MailChangeService {
     private readonly graphQLClient: GraphQLClient,
     private readonly agent: MinervaMailAgentClient,
     @Inject(minervaConfig.KEY) private readonly minerva: MinervaConfigType,
+    private readonly audit: MailAuditService,
   ) {}
+
+  /**
+   * Applies every open proposal the filter matches over the user's mail,
+   * as the review's bulk action: one batch per mailbox (more past 10,000
+   * messages), each message's proposals gathered into one change. The
+   * classifier's unticked suggestions are left out; a label one proposal
+   * adds and another removes is left as it is.
+   *
+   * @throws ServiceUnavailableException writes are turned off
+   * @throws BadRequestException the filter is not what it should be
+   * @throws ConflictException a mailbox is linked for reading only
+   */
+  async applyMatching(
+    userId: string,
+    request: ApplyMatchingMailProposalsRequest,
+  ): Promise<{ proposals: number; batches: MailChangeBatch[] }> {
+    this.requireWrites();
+    const proposals = await this.audit.openProposals(
+      userId,
+      filterOf(request?.filter),
+      true,
+    );
+    const batches: MailChangeBatch[] = [];
+    for (const [accountId, changes] of gather(proposals)) {
+      for (let i = 0; i < changes.length; i += MAX_CHANGES) {
+        batches.push(
+          await this.applyChecked(
+            userId,
+            accountId,
+            changes.slice(i, i + MAX_CHANGES),
+          ),
+        );
+      }
+    }
+    return { proposals: proposals.length, batches };
+  }
+
+  /**
+   * Marks every open proposal the filter matches processed, unticked ones
+   * too.
+   *
+   * @throws BadRequestException the filter is not what it should be
+   */
+  async dismissMatching(
+    userId: string,
+    request: DismissMatchingMailProposalsRequest,
+  ): Promise<number> {
+    const proposals = await this.audit.openProposals(
+      userId,
+      filterOf(request?.filter),
+      false,
+    );
+    const byAccount = new Map<string, MailProposalRef[]>();
+    for (const p of proposals) {
+      const refs = byAccount.get(p.accountId) ?? [];
+      refs.push({ gmailId: p.gmailId, label: p.label, action: p.action });
+      byAccount.set(p.accountId, refs);
+    }
+    let dismissed = 0;
+    for (const [accountId, refs] of byAccount) {
+      dismissed += await this.dismissChecked(userId, accountId, refs);
+    }
+    return dismissed;
+  }
 
   /**
    * Records and starts a batch of label changes.
@@ -255,6 +397,15 @@ export class MailChangeService {
         );
       }
     });
+    return this.applyChecked(userId, accountId, changes);
+  }
+
+  /** An apply whose changes are known to be well formed. */
+  private async applyChecked(
+    userId: string,
+    accountId: string,
+    changes: MailLabelChange[],
+  ): Promise<MailChangeBatch> {
     const account = await this.writableAccount(userId, accountId);
     const labels = await this.writableLabels(
       accountId,
@@ -510,6 +661,15 @@ export class MailChangeService {
         );
       }
     });
+    return this.dismissChecked(userId, accountId, proposals);
+  }
+
+  /** A dismissal whose proposals are known to be well formed. */
+  private async dismissChecked(
+    userId: string,
+    accountId: string,
+    proposals: MailProposalRef[],
+  ): Promise<number> {
     await this.ownedAccount(userId, accountId);
     const labels = await this.labelsByName(
       accountId,

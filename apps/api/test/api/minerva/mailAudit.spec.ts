@@ -37,6 +37,7 @@ const audit = (overrides: Record<string, unknown> = {}) => ({
       threads: "9131",
       classifierFinishedTime: "2026-10-06T08:00:00+00:00",
       classifierChanges: "1200",
+      processed: "300",
     },
   ],
   minerva_mail_audit_labels: [
@@ -48,6 +49,7 @@ const audit = (overrides: Record<string, unknown> = {}) => ({
       proposedOut: "2",
       highConfidence: 2,
       mergeCandidate: true,
+      processed: "1",
     },
     {
       name: "Unused",
@@ -189,6 +191,7 @@ describe("Mail audit API", () => {
           threads: 9131,
           classifierFinishedTime: "2026-10-06T08:00:00.000Z",
           classifierChanges: 1200,
+          processed: 300,
         },
         labels: [
           {
@@ -196,8 +199,9 @@ describe("Mail audit API", () => {
             messages: 20,
             proposedOut: 2,
             mergeCandidate: true,
+            processed: 1,
           },
-          { name: "Unused", messages: 0, mergeCandidate: false },
+          { name: "Unused", messages: 0, mergeCandidate: false, processed: 0 },
         ],
         merges: [
           {
@@ -363,6 +367,24 @@ describe("Mail audit API", () => {
     });
 
     it.each([
+      ["open", true],
+      ["processed", false],
+    ])("filters to the %s", async (status, open) => {
+      t().graphql.on("ListMailAuditChanges", changes([]));
+      const res = await ctx.as(t().http().get(CHANGES).query({ status }));
+      expect(res.status).toBe(200);
+      expect(
+        t().graphql.calls("ListMailAuditChanges")[0].variables,
+      ).toMatchObject({
+        where: {
+          account: { userId: { _eq: USER } },
+          decision: { _is_null: open },
+        },
+      });
+    });
+
+    it.each([
+      ["an unknown status", { status: "maybe" }],
       ["an unknown action", { action: "move" }],
       ["an unknown rule", { rule: "magic" }],
       ["a confidence that is not a number", { minConfidence: "high" }],

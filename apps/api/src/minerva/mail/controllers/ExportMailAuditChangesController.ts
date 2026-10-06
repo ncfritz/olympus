@@ -1,4 +1,8 @@
-import { MailAuditAction, MailAuditRule } from "@ncfritz/olympus-model";
+import {
+  MailAuditAction,
+  MailAuditRule,
+  MailProposalStatus,
+} from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -82,6 +86,17 @@ export class ExportMailAuditChangesController {
     type: Number,
     required: false,
   })
+  @ApiQuery({
+    name: "status",
+    description:
+      "Only those still to review (open), or only those decided (processed)",
+    enum: MailProposalStatus,
+    enumName: "MailProposalStatus",
+    enumSchema: {
+      description: "Whether a proposal is still to review or has been decided",
+    },
+    required: false,
+  })
   @ApiOkResponse({
     description: "The changes as CSV, as an attachment.",
     schema: { type: "string" },
@@ -100,6 +115,8 @@ export class ExportMailAuditChangesController {
     rule: MailAuditRule | undefined,
     @Query("minConfidence", new ParseFloatPipe({ optional: true }))
     minConfidence: number | undefined,
+    @Query("status", new ParseEnumPipe(MailProposalStatus, { optional: true }))
+    status: MailProposalStatus | undefined,
     @Res() response: Response,
   ): Promise<void> {
     const user = requireUser(principal);
@@ -108,6 +125,7 @@ export class ExportMailAuditChangesController {
       action,
       rule,
       minConfidence,
+      status,
     });
     response
       .status(HttpStatus.OK)

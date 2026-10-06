@@ -155,6 +155,42 @@
     ],
     "type": "object"
   },
+  "ApplyMatchingMailProposalsRequest": {
+    "properties": {
+      "filter": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailProposalFilter"
+          }
+        ],
+        "description": "Which open proposals to apply; the classifier's unticked ones never are"
+      }
+    },
+    "required": [
+      "filter"
+    ],
+    "type": "object"
+  },
+  "ApplyMatchingMailProposalsResponse": {
+    "properties": {
+      "batches": {
+        "description": "The batches written for them: one per mailbox, or more for over 10,000 messages; none when nothing matched",
+        "items": {
+          "$ref": "#/components/schemas/MailChangeBatch"
+        },
+        "type": "array"
+      },
+      "proposals": {
+        "description": "Open proposals the filter matched and applied",
+        "type": "number"
+      }
+    },
+    "required": [
+      "batches",
+      "proposals"
+    ],
+    "type": "object"
+  },
   "ApproveMediaAssetTranscodeConfigurationRequest": {
     "properties": {
       "audioTrackIndex": {
@@ -6387,6 +6423,22 @@
     ],
     "type": "object"
   },
+  "DismissMatchingMailProposalsRequest": {
+    "properties": {
+      "filter": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailProposalFilter"
+          }
+        ],
+        "description": "Which open proposals to mark processed"
+      }
+    },
+    "required": [
+      "filter"
+    ],
+    "type": "object"
+  },
   "Dog": {
     "properties": {
       "createdTime": {
@@ -11314,6 +11366,10 @@
         "description": "The label's full name, as Gmail shows it",
         "type": "string"
       },
+      "processed": {
+        "description": "Of its proposed changes, those decided: applied or processed without change",
+        "type": "number"
+      },
       "proposedIn": {
         "description": "Messages proposed to gain the label",
         "type": "number"
@@ -11328,6 +11384,7 @@
       "mergeCandidate",
       "messages",
       "name",
+      "processed",
       "proposedIn",
       "proposedOut"
     ],
@@ -11539,6 +11596,10 @@
         "description": "Received messages with a sender, examined",
         "type": "number"
       },
+      "processed": {
+        "description": "Of the changes, those decided: applied to Gmail or processed without change",
+        "type": "number"
+      },
       "removals": {
         "description": "Labels proposed for removing",
         "type": "number"
@@ -11562,6 +11623,7 @@
       "merges",
       "messagesAffected",
       "messagesExamined",
+      "processed",
       "removals",
       "startedTime",
       "threads"
@@ -12123,6 +12185,35 @@
       "starred",
       "unread"
     ],
+    "type": "object"
+  },
+  "MailProposalFilter": {
+    "properties": {
+      "action": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditAction"
+          }
+        ],
+        "description": "Only additions or only removals"
+      },
+      "label": {
+        "description": "Only changes to this label, by full name",
+        "type": "string"
+      },
+      "minConfidence": {
+        "description": "Only changes at least this confident, 0 to 1",
+        "type": "number"
+      },
+      "rule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditRule"
+          }
+        ],
+        "description": "Only those one rule proposed"
+      }
+    },
     "type": "object"
   },
   "MailProposalRef": {

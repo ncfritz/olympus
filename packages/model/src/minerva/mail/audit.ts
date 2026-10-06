@@ -34,6 +34,14 @@ export enum MailAuditMergeReason {
   SenderOverlap = "sender_overlap",
 }
 
+/** Whether a proposal is still to review or has been decided. */
+export enum MailProposalStatus {
+  /** Not decided yet. */
+  Open = "open",
+  /** Applied to Gmail, or processed without change. */
+  Processed = "processed",
+}
+
 /** What was decided about a proposal. */
 export enum MailDecision {
   /** Written to Gmail by a batch. */
@@ -202,6 +210,14 @@ export class MailAuditSummary {
     description: "Of the changes, those the classifier proposed",
   })
   classifierChanges: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Of the changes, those decided: applied to Gmail or processed without change",
+  })
+  processed: number;
 }
 
 /** A user label with its messages and the latest audit's proposals into and out of it. */
@@ -255,6 +271,14 @@ export class MailAuditLabel {
     description: "Whether the label is in a merge candidate",
   })
   mergeCandidate: boolean;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Of its proposed changes, those decided: applied or processed without change",
+  })
+  processed: number;
 }
 
 /** Two labels the audit proposes as one, the smaller into the larger. */

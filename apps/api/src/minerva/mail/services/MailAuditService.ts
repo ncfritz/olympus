@@ -7,6 +7,7 @@ import {
   MailAuditRule,
   RunMailAuditResponse,
   SortDirection,
+  MailProposalStatus,
 } from "@ncfritz/olympus-model";
 import { gql, GraphQLClient } from "graphql-request";
 import { csvRow } from "../../../utils/csv";
@@ -75,13 +76,26 @@ export type MailAuditChangeFilters = {
   action?: MailAuditAction;
   rule?: MailAuditRule;
   minConfidence?: number;
+  status?: MailProposalStatus;
 };
+
+/** An open proposal, as a bulk action needs it. */
+export type OpenMailProposal = {
+  accountId: string;
+  gmailId: string;
+  label: string;
+  action: MailAuditAction;
+};
+
+/** Open proposals read at a time for a bulk action. */
+const OPEN_PAGE = 5000;
 
 export type MailAuditChangeQuery = {
   label?: string;
   action?: MailAuditAction;
   rule?: MailAuditRule;
   minConfidence?: number;
+  status?: MailProposalStatus;
   sortBy: MailAuditChangeSort;
   sort: SortDirection;
   pageSize: number;
@@ -149,6 +163,7 @@ export class MailAuditService {
           threads
           classifierFinishedTime
           classifierChanges
+          processed
         }
         minerva_mail_audit_labels(args: { for_user: $userId, high: $high }) {
           name
@@ -158,6 +173,7 @@ export class MailAuditService {
           proposedOut
           highConfidence
           mergeCandidate
+          processed
         }
         minerva_mail_audit_merges(
           where: { run: { account: { userId: { _eq: $userId } } } }
@@ -342,7 +358,87 @@ export class MailAuditService {
       ...(f.minConfidence !== undefined
         ? { confidence: { _gte: f.minConfidence } }
         : {}),
+      ...(f.status !== undefined
+        ? {
+            decision: {
+              _is_null: f.status === MailProposalStatus.Open,
+            },
+          }
+        : {}),
     };
+  }
+
+  /**
+   * Every open proposal over the user's mail that `filters` admit, for a
+   * bulk action: by account, message and label. With `tickedOnly`, the
+   * classifier's unticked suggestions are left out, as applying leaves
+   * them.
+   *
+   * @throws BadRequestException a filter is not what it should be
+   */
+  async openProposals(
+    userId: string,
+    filters: MailAuditChangeFilters,
+    tickedOnly: boolean,
+  ): Promise<OpenMailProposal[]> {
+    const where = {
+      ...this.changesWhere(userId, {
+        ...filters,
+        status: MailProposalStatus.Open,
+      }),
+      ...(tickedOnly
+        ? { _or: [{ ticked: { _is_null: true } }, { ticked: { _eq: true } }] }
+        : {}),
+    };
+    const query = gql`
+      query ListOpenMailProposals(
+        $where: minerva_mail_proposals_bool_exp!
+        $limit: Int!
+        $offset: Int!
+      ) {
+        minerva_mail_proposals(
+          where: $where
+          order_by: [
+            { messageId: asc }
+            { labelId: asc }
+            { action: asc }
+            { rule: asc }
+          ]
+          limit: $limit
+          offset: $offset
+        ) {
+          action
+          label {
+            name
+          }
+          message {
+            accountId
+            gmailId
+          }
+        }
+      }
+    `;
+    const found: OpenMailProposal[] = [];
+    for (let offset = 0; ; offset += OPEN_PAGE) {
+      const page = (
+        await this.graphQLClient.request<{
+          minerva_mail_proposals: {
+            action: string;
+            label: { name: string };
+            message: { accountId: string; gmailId: string };
+          }[];
+        }>(query, { where, limit: OPEN_PAGE, offset })
+      ).minerva_mail_proposals;
+      for (const p of page) {
+        found.push({
+          accountId: p.message.accountId,
+          gmailId: p.message.gmailId,
+          label: p.label.name,
+          action: p.action as MailAuditAction,
+        });
+      }
+      if (page.length < OPEN_PAGE) return found;
+    }
   }
 
   private changesOrder(

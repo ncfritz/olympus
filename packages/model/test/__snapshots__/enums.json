@@ -308,6 +308,10 @@
     "System": "system",
     "Topical": "topical"
   },
+  "MailProposalStatus": {
+    "Open": "open",
+    "Processed": "processed"
+  },
   "MailStarAge": {
     "Month": "month",
     "Older": "older",

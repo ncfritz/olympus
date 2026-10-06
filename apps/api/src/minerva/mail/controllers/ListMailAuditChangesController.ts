@@ -4,6 +4,7 @@ import {
   MailAuditRule,
   MailAuditChangeSort,
   SortDirection,
+  MailProposalStatus,
 } from "@ncfritz/olympus-model";
 import {
   Controller,
@@ -80,6 +81,17 @@ export class ListMailAuditChangesController {
     type: Number,
     required: false,
   })
+  @ApiQuery({
+    name: "status",
+    description:
+      "Only those still to review (open), or only those decided (processed)",
+    enum: MailProposalStatus,
+    enumName: "MailProposalStatus",
+    enumSchema: {
+      description: "Whether a proposal is still to review or has been decided",
+    },
+    required: false,
+  })
   @ApiPaginationParams()
   @ApiOkResponse({
     description: "A page of proposed changes.",
@@ -99,6 +111,8 @@ export class ListMailAuditChangesController {
     rule: MailAuditRule | undefined,
     @Query("minConfidence", new ParseFloatPipe({ optional: true }))
     minConfidence: number | undefined,
+    @Query("status", new ParseEnumPipe(MailProposalStatus, { optional: true }))
+    status: MailProposalStatus | undefined,
     @Query(
       "sortBy",
       new DefaultValuePipe(MailAuditChangeSort.Confidence),
@@ -125,6 +139,7 @@ export class ListMailAuditChangesController {
         action,
         rule,
         minConfidence,
+        status,
         sortBy,
         sort,
         pageSize,

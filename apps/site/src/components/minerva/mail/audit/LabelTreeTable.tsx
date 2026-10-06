@@ -1,5 +1,14 @@
 import type { MailAuditLabel } from "@ncfritz/olympus-sdk/minerva";
-import { Flex, Space, Switch, Table, Tag, Tooltip, Typography } from "antd";
+import {
+  Flex,
+  Progress,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 import React, { useMemo, useState } from "react";
@@ -117,6 +126,29 @@ const LabelTreeTable: React.FunctionComponent<{
       width: 130,
       sorter: (a, b) => a.highConfidence - b.highConfidence,
       render: (v: number) => (v > 0 ? v.toLocaleString() : ""),
+    },
+    {
+      title: "Processed",
+      key: "processed",
+      width: 150,
+      sorter: (a, b) => a.processed - b.processed,
+      render: (_, n) => {
+        const total = n.proposedIn + n.proposedOut;
+        if (!n.isLabel || total === 0) return "";
+        const done = Math.round((100 * n.processed) / total);
+        return (
+          <Tooltip
+            title={`${n.processed.toLocaleString()} of ${total.toLocaleString()} decided`}
+          >
+            <Progress
+              percent={done}
+              size={"small"}
+              showInfo={true}
+              style={{ margin: 0, width: 120 }}
+            />
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Flags",

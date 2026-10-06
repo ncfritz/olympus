@@ -61,6 +61,7 @@ export type GraphQlMailAuditSummary = {
   threads: Count;
   classifierFinishedTime: string | null;
   classifierChanges: Count;
+  processed?: Count;
 };
 
 export const toSummary = (
@@ -81,6 +82,7 @@ export const toSummary = (
     ? { classifierFinishedTime: moment(input.classifierFinishedTime) }
     : {}),
   classifierChanges: Number(input.classifierChanges ?? 0),
+  processed: Number(input.processed ?? 0),
 });
 
 export type GraphQlMailAuditLabel = {
@@ -91,6 +93,7 @@ export type GraphQlMailAuditLabel = {
   proposedOut: Count;
   highConfidence: Count;
   mergeCandidate: boolean;
+  processed?: Count;
 };
 
 export const toLabel = (input: GraphQlMailAuditLabel): MailAuditLabel => {
@@ -103,6 +106,7 @@ export const toLabel = (input: GraphQlMailAuditLabel): MailAuditLabel => {
     proposedOut: Number(input.proposedOut),
     highConfidence: Number(input.highConfidence),
     mergeCandidate: input.mergeCandidate,
+    processed: Number(input.processed ?? 0),
   };
 };
 

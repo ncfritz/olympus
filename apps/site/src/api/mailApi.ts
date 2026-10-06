@@ -18,7 +18,11 @@ import {
   listMailAuditChanges,
   listMailLabelFamilies,
   listMailLabels,
+  applyMatchingMailProposals,
+  dismissMatchingMailProposals,
   type MailAuditAction,
+  type MailProposalFilter,
+  type MailProposalStatus,
   type MailAuditRule,
   type MailStatisticsRange,
   type MailStatisticsScope,
@@ -57,6 +61,7 @@ class MailApi {
     action?: MailAuditAction;
     rule?: MailAuditRule;
     minConfidence?: number;
+    status?: MailProposalStatus;
     sortBy?: MailAuditChangeSort;
     sort?: SortDirection;
     pageSize: number;
@@ -99,6 +104,16 @@ class MailApi {
   /** Writes label changes to one mailbox in Gmail, as a batch. */
   async applyChanges(accountId: string, changes: MailLabelChange[]) {
     return await applyMailChanges({ path: { accountId }, body: { changes } });
+  }
+
+  /** Applies every open proposal the filter matches, as batches. */
+  async applyMatching(filter: MailProposalFilter) {
+    return await applyMatchingMailProposals({ body: { filter } });
+  }
+
+  /** Marks every open proposal the filter matches processed. */
+  async dismissMatching(filter: MailProposalFilter) {
+    return await dismissMatchingMailProposals({ body: { filter } });
   }
 
   /** Marks proposals processed without changing Gmail. */

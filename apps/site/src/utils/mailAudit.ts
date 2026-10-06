@@ -13,6 +13,8 @@ export type LabelNode = {
   proposedIn: number;
   proposedOut: number;
   highConfidence: number;
+  /** Of its proposals, those decided: applied or processed. */
+  processed: number;
   mergeCandidate: boolean;
   lastReceivedTime?: string;
   children?: LabelNode[];
@@ -36,6 +38,7 @@ export const labelTree = (labels: MailAuditLabel[]): LabelNode[] => {
         proposedIn: 0,
         proposedOut: 0,
         highConfidence: 0,
+        processed: 0,
         mergeCandidate: false,
       };
       nodes.set(name, found);
@@ -49,6 +52,7 @@ export const labelTree = (labels: MailAuditLabel[]): LabelNode[] => {
       proposedIn: label.proposedIn,
       proposedOut: label.proposedOut,
       highConfidence: label.highConfidence,
+      processed: label.processed ?? 0,
       mergeCandidate: label.mergeCandidate,
       ...(label.lastReceivedTime
         ? { lastReceivedTime: label.lastReceivedTime }

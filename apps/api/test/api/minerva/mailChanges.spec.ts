@@ -482,6 +482,132 @@ describe("Mail changes", () => {
     });
   });
 
+  describe("ApplyMatchingMailProposals and DismissMatchingMailProposals", () => {
+    const open = (rows: [string, string, string][]) =>
+      ctx.t.graphql.on("ListOpenMailProposals", (vars) => ({
+        minerva_mail_proposals:
+          (vars as { offset: number }).offset === 0
+            ? rows.map(([gmailId, label, action]) => ({
+                action,
+                label: { name: label },
+                message: { accountId: ACCOUNT_ID, gmailId },
+              }))
+            : [],
+      }));
+
+    it("applies every open, ticked proposal the filter matches, a change per message", async () => {
+      linked();
+      labels();
+      open([
+        ["a1", "Travel", "add"],
+        ["a1", "Accounts/A", "remove"],
+        ["a2", "Travel", "add"],
+        ["a3", "Travel", "add"],
+        ["a3", "Travel", "remove"],
+      ]);
+      ctx.t.graphql.on("ListMailMessagesForChanges", {
+        minerva_mail_messages: [
+          message("a1", ["Accounts/A"]),
+          message("a2", []),
+        ],
+      });
+      ctx.t.graphql.on("CreateMailChangeBatch", {
+        insert_minerva_mail_change_batches_one: { id: BATCH_ID },
+      });
+      ctx.t.graphql.on("CreateMailChanges", {
+        insert_minerva_mail_changes: { affected_rows: 2 },
+      });
+
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .post(`${BASE}/mail/proposals/apply`)
+          .send({
+            filter: { label: "Travel", rule: "classifier", minConfidence: 0.9 },
+          }),
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.proposals).toBe(5);
+      expect(res.body.batches).toHaveLength(1);
+      expect(
+        ctx.t.graphql.calls("ListOpenMailProposals")[0].variables,
+      ).toMatchObject({
+        where: {
+          account: { userId: { _eq: USER } },
+          label: { name: { _eq: "Travel" } },
+          rule: { _eq: "classifier" },
+          confidence: { _gte: 0.9 },
+          decision: { _is_null: true },
+          _or: [{ ticked: { _is_null: true } }, { ticked: { _eq: true } }],
+        },
+      });
+      // a3's add and remove cancel out.
+      expect(agent.startWrites.mock.calls[0][0].changes).toEqual([
+        {
+          gmailId: "a1",
+          expected: ["Accounts/A"],
+          add: [{ name: "Travel", gmailLabelId: "Label_2" }],
+          remove: [{ name: "Accounts/A", gmailLabelId: "Label_1" }],
+        },
+        {
+          gmailId: "a2",
+          expected: [],
+          add: [{ name: "Travel", gmailLabelId: "Label_2" }],
+          remove: [],
+        },
+      ]);
+    });
+
+    it("starts nothing when nothing matches", async () => {
+      open([]);
+      const res = await ctx.as(
+        ctx.t.http().post(`${BASE}/mail/proposals/apply`).send({ filter: {} }),
+      );
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ proposals: 0, batches: [] });
+      expect(agent.startWrites).not.toHaveBeenCalled();
+    });
+
+    it("dismisses every open proposal the filter matches, unticked too", async () => {
+      linked();
+      labels();
+      open([["a1", "Travel", "add"]]);
+      ctx.t.graphql.on("ListMailMessagesForChanges", {
+        minerva_mail_messages: [message("a1", [])],
+      });
+      ctx.t.graphql.on("DismissMailProposals", {
+        insert_minerva_mail_decisions: { affected_rows: 1 },
+      });
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .post(`${BASE}/mail/proposals/dismiss`)
+          .send({ filter: { label: "Travel" } }),
+      );
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ dismissed: 1 });
+      const where = (
+        ctx.t.graphql.calls("ListOpenMailProposals")[0].variables as {
+          where: Record<string, unknown>;
+        }
+      ).where;
+      expect(where).not.toHaveProperty("_or");
+      expect(agent.startWrites).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["no filter", {}],
+      ["an unknown action", { filter: { action: "move" } }],
+      ["a confidence above 1", { filter: { minConfidence: 2 } }],
+    ])("answers 400 to %s", async (_case, body) => {
+      const res = await ctx.as(
+        ctx.t.http().post(`${BASE}/mail/proposals/apply`).send(body),
+      );
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("DismissMailProposals", () => {
     it("records the decision for proposals the account has", async () => {
       linked();

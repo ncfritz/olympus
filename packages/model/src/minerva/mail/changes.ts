@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import type { Moment } from "moment";
 import { ApiTimestamp } from "../../decorators";
-import { MailAuditAction } from "./audit";
+import { MailAuditAction, MailAuditRule } from "./audit";
 
 /*
  * Writes to Gmail (docs/plans/email-management phase 4; ADR 0030, "Changes
@@ -292,9 +292,65 @@ export class MailChangeOutcome {
   status: MailChangeStatus;
 }
 
+/** Which open proposals a bulk action takes, as the review filters them. */
+export class MailProposalFilter {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Only changes to this label, by full name",
+  })
+  label?: string;
+
+  @ApiProperty({
+    enum: () => MailAuditAction,
+    enumName: "MailAuditAction",
+    enumSchema: { description: "What a proposed label change does" },
+    required: false,
+    description: "Only additions or only removals",
+  })
+  action?: MailAuditAction;
+
+  @ApiProperty({
+    enum: () => MailAuditRule,
+    enumName: "MailAuditRule",
+    enumSchema: {
+      description: "What proposed a change: an audit rule, or the classifier",
+    },
+    required: false,
+    description: "Only those one rule proposed",
+  })
+  rule?: MailAuditRule;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Only changes at least this confident, 0 to 1",
+  })
+  minConfidence?: number;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
+
+export class ApplyMatchingMailProposalsRequest {
+  @ApiProperty({
+    type: () => MailProposalFilter,
+    required: true,
+    description:
+      "Which open proposals to apply; the classifier's unticked ones never are",
+  })
+  filter: MailProposalFilter;
+}
+
+export class DismissMatchingMailProposalsRequest {
+  @ApiProperty({
+    type: () => MailProposalFilter,
+    required: true,
+    description: "Which open proposals to mark processed",
+  })
+  filter: MailProposalFilter;
+}
 
 export class ApplyMailChangesRequest {
   @ApiProperty({
@@ -346,6 +402,24 @@ export class UpdateMailChangeBatchRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
+
+export class ApplyMatchingMailProposalsResponse {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Open proposals the filter matched and applied",
+  })
+  proposals: number;
+
+  @ApiProperty({
+    type: () => MailChangeBatch,
+    isArray: true,
+    required: true,
+    description:
+      "The batches written for them: one per mailbox, or more for over 10,000 messages; none when nothing matched",
+  })
+  batches: MailChangeBatch[];
+}
 
 export class ApplyMailChangesResponse {
   @ApiProperty({
