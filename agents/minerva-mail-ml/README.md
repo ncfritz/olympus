@@ -60,6 +60,20 @@ in this image ([minerva_mail_retrain](../../infra/airflow/dags/minerva_mail_retr
   request. A failed run leaves the last one serving. Model files of all
   but the newest three ready runs are removed.
 
+`minerva-mail-ml-train suggest` (or `--account ID`) looks over the whole
+mailbox for labels that are wrong (docs/plans/email-management phase 4):
+every message is scored by layers fitted on the other four fifths of the
+mail (folds by Gmail ID) and combined by the serving model's combiner, and
+then, label by label, confident learning (`cleanlab`) finds where a
+message's label disagrees with what the rest of the mailbox says. Each
+disagreement is a suggestion to add or remove that label; a family is only
+ever added, as its initial state. Additions are ticked at the label's
+threshold, removals only from 0.9. The suggestions are posted to the API as
+a run (`CreateMailSuggestionRun`, `CreateMailSuggestions`,
+`PublishMailSuggestionRun`), which shows them on the Re-classification
+page beside the audit's. It needs a serving model trained on the labels as
+they are now; if they have changed since, train first.
+
 `minerva-mail-ml-train report` prints each account's newest run (or
 `--run ID`): its split, the overall and per-label-mean precision and
 recall, and each label with test mail (`--all` for every label).

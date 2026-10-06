@@ -1,6 +1,9 @@
 """`minerva-mail-ml-train`: training runs and their reports.
 
     minerva-mail-ml-train run [--account ID]   train every account, or one
+    minerva-mail-ml-train suggest [--account ID]
+                                               suggestions over the whole
+                                               mailbox, posted to the API
     minerva-mail-ml-train report [--run ID]    a run's evaluation (default:
                                                each account's newest run)
 
@@ -18,8 +21,13 @@ import sys
 from minerva_mail_ml.config import ConfigError, read_config
 from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import OlympusApi
-from minerva_mail_ml.training.pipeline import TrainingError, train_account
+from minerva_mail_ml.training.pipeline import (
+    TrainingError,
+    suggest_account,
+    train_account,
+)
 from minerva_mail_ml.training.registry import MACRO_MIN, ModelRegistry, Run
+from minerva_mail_ml.training.suggest import SuggestError
 
 logger = logging.getLogger("minerva_mail_ml.train")
 
@@ -83,6 +91,11 @@ def main(argv: list[str] | None = None) -> int:
     run = commands.add_parser("run", help="Train every account, or one")
     run.add_argument("--account", help="Only this mail account ID")
     run.add_argument("--jobs", type=int, default=-1, help="Threads (default: all)")
+    suggest = commands.add_parser(
+        "suggest", help="Suggestions over the whole mailbox, posted to the API"
+    )
+    suggest.add_argument("--account", help="Only this mail account ID")
+    suggest.add_argument("--jobs", type=int, default=-1, help="Threads (default: all)")
     shown = commands.add_parser("report", help="A run's evaluation")
     shown.add_argument("--run", help="This run (default: each account's newest)")
     shown.add_argument(
@@ -122,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if config.api is None:
             logger.error(
-                "Training needs the API: API_BASE_URL, API_CLIENT_CERT,"
+                "Training and suggesting need the API: API_BASE_URL, API_CLIENT_CERT,"
                 " API_CLIENT_KEY and API_CA_CERT"
             )
             return 1
@@ -135,12 +148,15 @@ def main(argv: list[str] | None = None) -> int:
             )
             for account in accounts:
                 try:
-                    train_account(store, registry, api, account, jobs=args.jobs)
-                except TrainingError as error:
+                    if args.command == "suggest":
+                        suggest_account(store, registry, api, account, jobs=args.jobs)
+                    else:
+                        train_account(store, registry, api, account, jobs=args.jobs)
+                except (TrainingError, SuggestError) as error:
                     # Not enough mail yet is not an outage; the run says why.
-                    logger.warning("Account %s not trained: %s", account, error)
+                    logger.warning("Account %s: nothing done: %s", account, error)
                 except Exception:
-                    logger.exception("Account %s failed to train", account)
+                    logger.exception("Account %s failed", account)
                     failed += 1
         finally:
             api.close()

@@ -228,5 +228,52 @@ def train_account(
     return run_id
 
 
+SUGGESTION_BATCH = 2000
+
+
+def suggest_account(
+    store: FeatureStore,
+    registry: ModelRegistry,
+    api: OlympusApi,
+    account_id: str,
+    jobs: int = -1,
+) -> tuple[str, int]:
+    """Suggestions over the account's whole mailbox from its serving model,
+    posted to the API and published; (suggestion run ID, suggestions)."""
+    from minerva_mail_ml.training.suggest import suggestions
+
+    run_id = registry.serving(account_id)
+    if run_id is None:
+        raise TrainingError("No model is trained for this account yet")
+    model = registry.load(run_id)
+    assert isinstance(model, TrainedModel)
+    labels = api.labels(account_id)
+    data = ds.build(
+        store, model.feature_version, account_id, api.examples(account_id), labels
+    )
+    found = suggestions(model, data, jobs=jobs)
+    suggestion_run = api.create_suggestion_run(
+        account_id, run_id, model.feature_version
+    )
+    stored = skipped = 0
+    for start in range(0, len(found), SUGGESTION_BATCH):
+        created, left_out = api.create_suggestions(
+            suggestion_run, found[start : start + SUGGESTION_BATCH]
+        )
+        stored += created
+        skipped += left_out
+    api.publish_suggestion_run(suggestion_run, len(data))
+    logger.info(
+        "Suggestion run %s published: %d suggestions over %d messages"
+        " (%d skipped by the API), from model run %s",
+        suggestion_run,
+        stored,
+        len(data),
+        skipped,
+        run_id,
+    )
+    return suggestion_run, stored
+
+
 def _fmt(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.3f}"

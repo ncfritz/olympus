@@ -1,6 +1,6 @@
 """The API, as the classifier calls it: its services listener, with the
-classifier's client certificate. Metadata and labels come from here; the
-service never reads Hasura (ADR 0030).
+classifier's client certificate. Metadata and labels come from here, and
+suggestions go back; the service never reads Hasura (ADR 0030).
 """
 
 from __future__ import annotations
@@ -45,6 +45,17 @@ class Family:
 
 
 @dataclass(frozen=True)
+class Suggestion:
+    """A label to add to or remove from a message, as posted."""
+
+    gmail_id: str
+    label: str
+    action: str  # "add" or "remove"
+    confidence: float
+    ticked: bool
+
+
+@dataclass(frozen=True)
 class Labels:
     topics: tuple[str, ...]
     families: tuple[Family, ...]
@@ -75,7 +86,7 @@ class OlympusApi:
             verify = ssl.create_default_context(cafile=str(config.ca))
             verify.load_cert_chain(str(config.cert), str(config.key))
         self._client = httpx.Client(
-            base_url=config.base_url + "/minerva/mail/training",
+            base_url=config.base_url + "/minerva/mail",
             verify=verify,
             timeout=timeout,
             transport=transport,
@@ -89,8 +100,13 @@ class OlympusApi:
         response.raise_for_status()
         return response.json()
 
+    def _post(self, path: str, body: dict) -> dict:
+        response = self._client.post(path, json=body)
+        response.raise_for_status()
+        return response.json()
+
     def accounts(self) -> list[Account]:
-        body = self._get("/accounts")
+        body = self._get("/training/accounts")
         return [Account(id=a["id"], email=a["email"]) for a in body["accounts"]]
 
     def examples(self, account_id: str, page: int = PAGE) -> Iterator[Example]:
@@ -100,7 +116,7 @@ class OlympusApi:
             params: dict = {"accountId": account_id, "limit": page}
             if after is not None:
                 params["after"] = after
-            body = self._get("/examples", params)
+            body = self._get("/training/examples", params)
             for raw in body["examples"]:
                 yield _example(raw)
             after = body.get("nextCursor")
@@ -108,7 +124,7 @@ class OlympusApi:
                 return
 
     def labels(self, account_id: str) -> Labels:
-        body = self._get("/labels", {"accountId": account_id})
+        body = self._get("/training/labels", {"accountId": account_id})
         return Labels(
             topics=tuple(body["topics"]),
             families=tuple(
@@ -119,4 +135,44 @@ class OlympusApi:
                 )
                 for f in body["families"]
             ),
+        )
+
+    def create_suggestion_run(
+        self, account_id: str, model_run: str, feature_version: str
+    ) -> str:
+        """Begins a building run of suggestions; its ID."""
+        body = self._post(
+            "/suggestion-runs",
+            {
+                "accountId": account_id,
+                "modelRun": model_run,
+                "featureVersion": feature_version,
+            },
+        )
+        return body["run"]["id"]
+
+    def create_suggestions(
+        self, run_id: str, suggestions: list[Suggestion]
+    ) -> tuple[int, int]:
+        """Posts a batch (up to 5,000); (stored, skipped)."""
+        body = self._post(
+            f"/suggestion-run/{run_id}/suggestions",
+            {
+                "suggestions": [
+                    {
+                        "gmailId": s.gmail_id,
+                        "label": s.label,
+                        "action": s.action,
+                        "confidence": round(s.confidence, 4),
+                        "ticked": s.ticked,
+                    }
+                    for s in suggestions
+                ]
+            },
+        )
+        return body["created"], body["skipped"]
+
+    def publish_suggestion_run(self, run_id: str, messages_scored: int) -> None:
+        self._post(
+            f"/suggestion-run/{run_id}/publish", {"messagesScored": messages_scored}
         )

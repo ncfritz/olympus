@@ -6,6 +6,7 @@ authors = [{ name = "Neil Fritz", email = "ncfritz@ncfritz.net" }]
 license = "Apache-2.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+  "cleanlab>=2.6",
   "fastapi>=0.115",
   "httpx>=0.27",
   "joblib>=1.4",

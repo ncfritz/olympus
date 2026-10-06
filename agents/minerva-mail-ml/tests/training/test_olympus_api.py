@@ -75,3 +75,43 @@ def test_reads_labels_and_accounts() -> None:
     labels = api.labels(ACCOUNT)
     assert labels.topics == ("Reading",)
     assert labels.families[0].initial_label == "Bills/*Payable"
+
+
+def test_posts_a_run_of_suggestions() -> None:
+    from minerva_mail_ml.olympus_api import Suggestion
+
+    seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json
+
+        seen.append((request.url.path, json.loads(request.content)))
+        if request.url.path.endswith("/suggestion-runs"):
+            return httpx.Response(201, json={"run": {"id": "run-1"}})
+        if request.url.path.endswith("/suggestions"):
+            return httpx.Response(201, json={"created": 1, "skipped": 0})
+        return httpx.Response(200, json={"run": {"id": "run-1"}})
+
+    api = _api(handler)
+    run_id = api.create_suggestion_run(ACCOUNT, "model-1", "v1")
+    stored = api.create_suggestions(
+        run_id, [Suggestion("a1", "Bills/*Payable", "add", 0.97123, True)]
+    )
+    api.publish_suggestion_run(run_id, 255056)
+    assert stored == (1, 0)
+    assert seen[0] == (
+        "/v1/minerva/mail/suggestion-runs",
+        {"accountId": ACCOUNT, "modelRun": "model-1", "featureVersion": "v1"},
+    )
+    assert seen[1][0] == "/v1/minerva/mail/suggestion-run/run-1/suggestions"
+    assert seen[1][1]["suggestions"][0] == {
+        "gmailId": "a1",
+        "label": "Bills/*Payable",
+        "action": "add",
+        "confidence": 0.9712,
+        "ticked": True,
+    }
+    assert seen[2] == (
+        "/v1/minerva/mail/suggestion-run/run-1/publish",
+        {"messagesScored": 255056},
+    )
