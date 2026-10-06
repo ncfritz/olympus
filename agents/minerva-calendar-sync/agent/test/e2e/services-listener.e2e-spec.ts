@@ -33,8 +33,8 @@ const hasAgentCertificates = () =>
 
 ensureDevCa();
 
-// A dev CA from before these certificates existed: `scripts/dev-ca.sh
-// --force` adds them (and mints every other dev certificate again).
+// A dev CA from before these certificates existed: `scripts/dev-ca.sh`
+// adds them, and keeps everything else.
 describe.skipIf(!hasAgentCertificates())("Services listener (e2e)", () => {
   let app: INestApplication;
   let server: https.Server;

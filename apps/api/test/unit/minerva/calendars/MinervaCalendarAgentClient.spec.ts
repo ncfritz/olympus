@@ -30,7 +30,7 @@ const ACCOUNT = {
  * The client against a stand-in for the agent's services listener, with
  * the certificates of scripts/dev-ca.sh: the API presents its own client
  * certificate (ADR 0028). A dev CA from before those certificates existed
- * needs `scripts/dev-ca.sh --force`.
+ * gets them from `scripts/dev-ca.sh`.
  */
 describe.skipIf(!hasAgentCertificates)("MinervaCalendarAgentClient", () => {
   let server: https.Server;

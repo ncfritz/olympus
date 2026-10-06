@@ -6,11 +6,19 @@
 #
 #   ./scripts/dev-ca.sh            # create what is missing
 #   ./scripts/dev-ca.sh --force    # start again from nothing
-#   ./scripts/dev-ca.sh --force --san IP:192.168.1.10
+#   ./scripts/dev-ca.sh --san IP:192.168.1.10
 #                                  # more names for the API's certificate: a
 #                                  # phone reaches this machine by address, and
 #                                  # a name the certificate does not carry fails
-#                                  # validation however well the CA is trusted
+#                                  # validation however well the CA is trusted.
+#                                  # Applies when api.crt is issued: delete it
+#                                  # first to reissue it with the new names
+#
+# Without --force an existing CA is kept and only what is missing is made:
+# a certificate added to this script (a new agent, say), or one deleted to
+# have it reissued. The authorities, and so everything already trusted, stay
+# as they are. --force makes a new root, which every device and keychain
+# that trusts the old one has to be given again.
 #
 #   Dev Root CA 1                     pathlen:2
 #   |- Dev Intermediate CA 1          pathlen:1
@@ -67,10 +75,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$force" ]] && rm -rf "$ca"
-if [[ -f "$out/api.crt" && -z "$force" ]]; then
-  echo "infra/dev-ca already exists; --force to recreate"
-  exit 0
-fi
+
+# What this run made, for the summary; empty when everything was there.
+made=
 
 mkdir -p "$out/agents" "$out/devices" "$out/tls" "$out/keys"
 
@@ -78,6 +85,13 @@ mkdir -p "$out/agents" "$out/devices" "$out/tls" "$out/keys"
 # index it records issued certificates in, and the serial counters.
 authority() {
   local name=$1
+  if [[ -f "$ca/$name/ca.crt" ]]; then
+    # Kept as it is; only its configuration's path follows the checkout,
+    # which openssl ca reads its index and serials from.
+    sed "s#^dir .*#dir               = $ca/$name#" "$ca/$name/openssl.cnf" \
+      >"$ca/$name/openssl.cnf.tmp" && mv "$ca/$name/openssl.cnf.tmp" "$ca/$name/openssl.cnf"
+    return
+  fi
   mkdir -p "$ca/$name/newcerts"
   : >"$ca/$name/index.txt"
   echo 1000 >"$ca/$name/serial"
@@ -190,7 +204,12 @@ issue() {
 # subordinate <parent> <id> <extensions> <common name>
 subordinate() {
   local parent=$1 id=$2 ext=$3 cn=$4
+  if [[ -f "$ca/$id/ca.crt" ]]; then
+    authority "$id"
+    return
+  fi
   authority "$id"
+  made="$made $id"
   key "$ca/$id/ca.key"
   csr "$ca/$id/ca.key" "$ca/$id/ca.csr" "/CN=$cn/O=Olympus Dev"
   issue "$parent" "$ext" "$ca/$id/ca.csr" "$ca/$id/ca.crt"
@@ -208,16 +227,22 @@ bundle() {
 # escrow <id> <file>: the authority's key as encrypted PKCS#8, which is what
 # the signer imports (internal-CA plan, phase 1).
 escrow() {
+  [[ -f "$out/keys/$2.p8" ]] && return
   openssl pkcs8 -topk8 -v2 aes-256-cbc -in "$ca/$1/ca.key" \
     -out "$out/keys/$2.p8" -passout "pass:$pass" 2>/dev/null
 }
 
 echo "root"
-authority root
-key "$ca/root/ca.key"
-openssl req -new -x509 -days $days -key "$ca/root/ca.key" -out "$ca/root/ca.crt" \
-  -subj "/CN=ncfritz.net Dev Root CA 1/O=Olympus Dev" \
-  -config "$ca/root/openssl.cnf" -extensions v3_root
+if [[ -f "$ca/root/ca.crt" ]]; then
+  authority root
+else
+  authority root
+  key "$ca/root/ca.key"
+  openssl req -new -x509 -days $days -key "$ca/root/ca.key" -out "$ca/root/ca.crt" \
+    -subj "/CN=ncfritz.net Dev Root CA 1/O=Olympus Dev" \
+    -config "$ca/root/openssl.cnf" -extensions v3_root
+  made="$made root"
+fi
 cp "$ca/root/ca.crt" "$out/root-ca.crt"
 
 echo "intermediates"
@@ -241,37 +266,57 @@ for pair in "root:root-1-g1" "int-1:intermediate-1-g1" "int-2:intermediate-2-g1"
   escrow "${pair%%:*}" "${pair##*:}"
 done
 
-echo "API server certificate"
-key "$out/api.key"
-csr "$out/api.key" "$ca/api.csr" "/CN=olympus-api/O=Olympus Dev"
-SAN="DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1$extra_san" \
-  issue services v3_server "$ca/api.csr" "$out/api.crt" -days "$server_days"
-
-echo "calendar sync agent server certificate"
-# Its services listener, which only the API calls (ADR 0028), presents a
-# certificate from the service issuer, as the API's does.
-key "$out/minerva-calendar-sync.key"
-csr "$out/minerva-calendar-sync.key" "$ca/minerva-calendar-sync.csr" "/CN=minerva-calendar-sync-agent/O=Olympus Dev"
-SAN="DNS:minerva-calendar-agent,DNS:localhost,IP:127.0.0.1$extra_san" \
-  issue services v3_server "$ca/minerva-calendar-sync.csr" "$out/minerva-calendar-sync.crt" -days "$server_days"
-
 # client <authority> <directory> <name> <subject> [openssl ca flags...]
+# Kept when its certificate exists; delete the .crt to have it reissued.
 client() {
   local authority=$1 dir=$2 name=$3 subject=$4
   shift 4
+  [[ -f "$out/$dir/$name.crt" ]] && return
   key "$out/$dir/$name.key"
   csr "$out/$dir/$name.key" "$ca/$name.csr" "$subject"
   issue "$authority" v3_client "$ca/$name.csr" "$out/$dir/$name.crt" "$@"
+  made="$made $dir/$name"
 }
 
 # server <authority> <directory> <name> <subject> <san>
+# Kept when its certificate exists, as client is. <directory> may be "."
 server() {
   local authority=$1 dir=$2 name=$3 subject=$4 san=$5
+  [[ -f "$out/$dir/$name.crt" ]] && return
   key "$out/$dir/$name.key"
   csr "$out/$dir/$name.key" "$ca/$name.csr" "$subject"
   SAN="$san" issue "$authority" v3_server "$ca/$name.csr" \
     "$out/$dir/$name.crt" -days "$server_days"
+  if [[ "$dir" == . ]]; then made="$made $name"; else made="$made $dir/$name"; fi
 }
+
+# p12 <issuing id> <directory> <name>: the identity as PKCS#12, once.
+p12() {
+  [[ -f "$out/$2/$3.p12" ]] && return
+  openssl pkcs12 -export -macalg sha256 -out "$out/$2/$3.p12" \
+    -inkey "$out/$2/$3.key" -in "$out/$2/$3.crt" \
+    -certfile "$ca/$1/ca.crt" -passout "pass:$pass" 2>/dev/null
+}
+
+# revoke <authority> <certificate>, unless the authority's index already
+# records it revoked.
+revoke() {
+  local serial
+  serial=$(openssl x509 -noout -serial -in "$2")
+  serial=${serial#serial=}
+  grep -q "^R.*[[:space:]]$serial[[:space:]]" "$ca/$1/index.txt" && return
+  openssl ca -batch -config "$ca/$1/openssl.cnf" -revoke "$2" >/dev/null 2>&1
+}
+
+echo "API server certificate"
+server services . api "/CN=olympus-api/O=Olympus Dev" \
+  "DNS:olympus-api,DNS:localhost,DNS:host.docker.internal,DNS:api.olympus.internal.localhost,IP:127.0.0.1$extra_san"
+
+echo "calendar sync agent server certificate"
+# Its services listener, which only the API calls (ADR 0028), presents a
+# certificate from the service issuer, as the API's does.
+server services . minerva-calendar-sync "/CN=minerva-calendar-sync-agent/O=Olympus Dev" \
+  "DNS:minerva-calendar-agent,DNS:localhost,IP:127.0.0.1$extra_san"
 
 echo "agent certificates"
 # OU is the deployment, not the machine (ADR 0022).
@@ -299,9 +344,7 @@ client services devices dev-wrong-ca "/CN=dev-user/O=Olympus Dev"
 # For iOS and macOS, which install identities as PKCS#12. The password is
 # "olympus"; these are throwaway keys.
 for device in dev-valid dev-revoked dev-expired dev-wrong-ca; do
-  openssl pkcs12 -export -macalg sha256 -out "$out/devices/$device.p12" \
-    -inkey "$out/devices/$device.key" -in "$out/devices/$device.crt" \
-    -certfile "$ca/devices/ca.crt" -passout "pass:$pass" 2>/dev/null
+  p12 devices devices "$device"
 done
 
 # The service identities as PKCS#12 as well: an app importing one is how the
@@ -313,9 +356,7 @@ for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent 
   dionysus-asset-agent-nas \
   svc-revoked svc-expired \
   svc-wrong-ca; do
-  openssl pkcs12 -export -macalg sha256 -out "$out/agents/$agent.p12" \
-    -inkey "$out/agents/$agent.key" -in "$out/agents/$agent.crt" \
-    -certfile "$ca/services/ca.crt" -passout "pass:$pass" 2>/dev/null
+  p12 services agents "$agent"
 done
 
 echo "TLS certificates"
@@ -327,8 +368,8 @@ server tls tls localhost "/CN=localhost/O=Olympus Dev" \
 server tls tls out-of-bounds "/CN=example.com/O=Olympus Dev" "DNS:example.com"
 
 echo "revocations and lists"
-openssl ca -batch -config "$ca/services/openssl.cnf" -revoke "$out/agents/svc-revoked.crt" >/dev/null 2>&1
-openssl ca -batch -config "$ca/devices/openssl.cnf" -revoke "$out/devices/dev-revoked.crt" >/dev/null 2>&1
+revoke services "$out/agents/svc-revoked.crt"
+revoke devices "$out/devices/dev-revoked.crt"
 
 # One list per authority, as separate files: a chain is checked against a list
 # from every authority in it, and Node reads only the first list in a file
@@ -349,6 +390,10 @@ cat "$out/tls.crl" "$out/intermediate-1.crl" "$out/root.crl" >"$out/tls-chain.cr
 cat >"$out/README.txt" <<TXT
 Throwaway certificates for development (scripts/dev-ca.sh). Not secret; the
 passphrase for the .p12 and .p8 files is "olympus".
+
+Running the script again makes only what is missing: delete a certificate
+to have it reissued from the same authorities. --force starts again from a
+new root, which everything that trusts this one has to be given again.
 
 The chain is three authorities deep, like the real one:
 
@@ -391,4 +436,9 @@ The chain is three authorities deep, like the real one:
 TXT
 
 echo
+if [[ -n "$made" ]]; then
+  echo "made:$made"
+else
+  echo "nothing missing"
+fi
 echo "done: infra/dev-ca/certs"

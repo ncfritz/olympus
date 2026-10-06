@@ -205,10 +205,11 @@ cause (`docs/guides/certificates.md`).
 **The name has to be in the certificate.** A phone reaches a laptop by address,
 and `api.crt` carries `localhost` and `127.0.0.1`, which on a phone mean the
 phone. Trusting the CA does not help: the evaluation still checks the name.
-Reissue with it:
+Reissue it with the address; the CA, and so the phone's trust in it, stays:
 
 ```sh
-./scripts/dev-ca.sh --force --san IP:192.168.1.10
+rm infra/dev-ca/certs/api.crt
+./scripts/dev-ca.sh --san IP:192.168.1.10
 ```
 
 Failing that, the error is a certificate one and reads like a broken CA import.
