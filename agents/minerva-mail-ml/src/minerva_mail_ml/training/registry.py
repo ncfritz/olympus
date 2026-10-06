@@ -18,6 +18,16 @@ from pathlib import Path
 import joblib
 
 KEEP_MODELS = 3
+MACRO_MIN = 5
+
+# Columns added after a registry was first made, added to an older one.
+ADDED_COLUMNS = {
+    "model_runs": [
+        ("macro_targets", "INTEGER"),
+        ("macro_precision", "REAL"),
+        ("macro_recall", "REAL"),
+    ],
+}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS model_runs (
@@ -41,7 +51,10 @@ CREATE TABLE IF NOT EXISTS model_runs (
     precision_default REAL,
     recall_default REAL,
     coverage REAL,
-    top_one REAL
+    top_one REAL,
+    macro_targets INTEGER,
+    macro_precision REAL,
+    macro_recall REAL
 );
 CREATE INDEX IF NOT EXISTS model_runs_account
     ON model_runs (account_id, status, finished_at);
@@ -90,6 +103,11 @@ class RunSummary:
     recall_default: float | None
     coverage: float | None
     top_one: float | None
+    # Means over targets with at least MACRO_MIN test positives, so one
+    # busy label does not stand for all of them.
+    macro_targets: int = 0
+    macro_precision: float | None = None
+    macro_recall: float | None = None
 
 
 @dataclass
@@ -139,6 +157,11 @@ class ModelRegistry:
         self._db.execute("PRAGMA journal_mode = WAL")
         self._db.execute("PRAGMA foreign_keys = ON")
         self._db.executescript(SCHEMA)
+        for table, columns in ADDED_COLUMNS.items():
+            have = {r[1] for r in self._db.execute(f"PRAGMA table_info({table})")}
+            for name, kind in columns:
+                if name not in have:
+                    self._db.execute(f"ALTER TABLE {table} ADD COLUMN {name} {kind}")
 
     def close(self) -> None:
         self._db.close()

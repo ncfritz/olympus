@@ -19,7 +19,7 @@ from minerva_mail_ml.config import ConfigError, read_config
 from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import OlympusApi
 from minerva_mail_ml.training.pipeline import TrainingError, train_account
-from minerva_mail_ml.training.registry import ModelRegistry, Run
+from minerva_mail_ml.training.registry import MACRO_MIN, ModelRegistry, Run
 
 logger = logging.getLogger("minerva_mail_ml.train")
 
@@ -28,7 +28,9 @@ def _pct(value: float | None) -> str:
     return "     - " if value is None else f"{value * 100:5.1f}%"
 
 
-def report(registry: ModelRegistry, run: Run, out=sys.stdout) -> None:
+def report(
+    registry: ModelRegistry, run: Run, out=sys.stdout, everything: bool = False
+) -> None:
     out.write(
         f"Run {run.id}  account {run.account_id}  features {run.feature_version}\n"
         f"  {run.status}, started {run.started_at}, finished {run.finished_at}\n"
@@ -48,19 +50,30 @@ def report(registry: ModelRegistry, run: Run, out=sys.stdout) -> None:
         f" {_pct(s.coverage)}\n"
         f"  At 0.5 (the baseline):      precision {_pct(s.precision_default)},"
         f" recall {_pct(s.recall_default)}\n"
+        f"  Per label ({s.macro_targets} with {MACRO_MIN}+ test messages):"
+        f" precision {_pct(s.macro_precision)}, recall {_pct(s.macro_recall)}\n"
         f"  Top suggestion right (labelled test mail): {_pct(s.top_one)}\n\n"
     )
     out.write(
         f"  {'Target':<44} {'train':>6} {'test':>5} {'thresh':>6}"
         f" {'prec':>6} {'recall':>6} {'prec@.5':>7} {'rec@.5':>6}\n"
     )
-    for t in registry.targets(run.id):
+    targets = registry.targets(run.id)
+    shown = [
+        t for t in targets if everything or t.test_positives or t.predicted_default
+    ]
+    for t in shown:
         name = t.target if t.kind == "topic" else f"{t.target} → {t.label}"
         threshold = "never" if t.threshold is None else f"{t.threshold:.3f}"
         out.write(
             f"  {name[:44]:<44} {t.train_positives:>6} {t.test_positives:>5}"
             f" {threshold:>6} {_pct(t.precision)} {_pct(t.recall)}"
             f" {_pct(t.precision_default):>7} {_pct(t.recall_default)}\n"
+        )
+    if len(shown) < len(targets):
+        out.write(
+            f"\n  {len(targets) - len(shown)} labels had no test mail and"
+            " suggested none; --all shows them.\n"
         )
 
 
@@ -72,6 +85,9 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--jobs", type=int, default=-1, help="Threads (default: all)")
     shown = commands.add_parser("report", help="A run's evaluation")
     shown.add_argument("--run", help="This run (default: each account's newest)")
+    shown.add_argument(
+        "--all", action="store_true", help="Every label, with test mail or not"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -101,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not runs:
                     sys.stdout.write("No training runs yet.\n")
             for r in runs:
-                report(registry, r)
+                report(registry, r, everything=args.all)
             return 0
 
         if config.api is None:

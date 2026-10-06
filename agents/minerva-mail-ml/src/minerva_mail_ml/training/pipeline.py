@@ -28,7 +28,12 @@ from minerva_mail_ml.training import dataset as ds
 from minerva_mail_ml.training.calibrate import DEFAULT_THRESHOLD, Combiner, thresholds
 from minerva_mail_ml.training.linear import LinearModel
 from minerva_mail_ml.training.model import TrainedModel
-from minerva_mail_ml.training.registry import ModelRegistry, RunSummary, TargetResult
+from minerva_mail_ml.training.registry import (
+    MACRO_MIN,
+    ModelRegistry,
+    RunSummary,
+    TargetResult,
+)
 from minerva_mail_ml.training.sender import SenderHistory
 
 logger = logging.getLogger(__name__)
@@ -149,6 +154,7 @@ def train_dataset(
         )
         for j, target in enumerate(data.targets)
     ]
+    macro = [r for r in results if r.test_positives >= MACRO_MIN]
     summary = RunSummary(
         examples=len(data),
         train_examples=len(tr),
@@ -164,6 +170,14 @@ def train_dataset(
         recall_default=_ratio(int(hits_d.sum()), int(positives.sum())),
         coverage=_ratio(int(ticked.any(axis=1).sum()), len(te)),
         top_one=_ratio(int((top_right & labelled).sum()), int(labelled.sum())),
+        macro_targets=len(macro),
+        # A label that suggested nothing has no precision; it counts as 0.
+        macro_precision=(
+            float(np.mean([r.precision or 0.0 for r in macro])) if macro else None
+        ),
+        macro_recall=(
+            float(np.mean([r.recall or 0.0 for r in macro])) if macro else None
+        ),
     )
 
     # 4. Serving: the layers again, on everything.

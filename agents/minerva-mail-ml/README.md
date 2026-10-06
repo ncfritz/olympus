@@ -48,10 +48,12 @@ in this image ([minerva_mail_retrain](../../infra/airflow/dags/minerva_mail_retr
   small logistic regression: the calibration.
 - **Split by time.** The last six months are the test set, the six before
   them validation, everything older training. The layers learn from
-  training; the combiner and each label's threshold (the highest score
-  that still finds what it can at 90% precision) from validation; the
+  training; the combiner and each label's threshold from validation (0.5,
+  raised only for a label below 90% precision there, to the lowest score
+  that reaches it); the
   test months are then scored and written to the run, per label, at its
-  threshold and at 0.5, the baseline. The serving model is refitted on
+  threshold and at 0.5, the baseline, with the mean over labels beside the
+  overall figures, which the busiest label otherwise dominates. The serving model is refitted on
   everything.
 - **Runs.** `MODEL_DIR/runs.sqlite3` records every run and its evaluation;
   the newest ready run of an account serves, picked up on the next
@@ -59,8 +61,8 @@ in this image ([minerva_mail_retrain](../../infra/airflow/dags/minerva_mail_retr
   but the newest three ready runs are removed.
 
 `minerva-mail-ml-train report` prints each account's newest run (or
-`--run ID`): its split, the overall precision and recall, and each
-label's.
+`--run ID`): its split, the overall and per-label-mean precision and
+recall, and each label with test mail (`--all` for every label).
 
 ## Working on it
 

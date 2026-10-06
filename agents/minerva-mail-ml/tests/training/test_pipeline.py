@@ -21,6 +21,8 @@ def test_records_precision_and_recall_per_target(trained) -> None:
     assert summary.precision is not None and summary.precision > 0.9
     assert summary.recall is not None and summary.recall > 0.8
     assert summary.precision_default is not None
+    assert summary.macro_targets == 4
+    assert summary.macro_precision is not None and summary.macro_precision > 0.9
     by_target = {r.target: r for r in results}
     assert by_target["topic:Travel"].precision > 0.9
     assert by_target["topic:Travel"].threshold is not None

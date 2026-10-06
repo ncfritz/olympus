@@ -7,10 +7,14 @@ history stood behind it, fitted on the validation months, which neither
 layer saw. A target with too few validation positives to fit its own uses
 one pooled over every target.
 
-A target's threshold is the highest score that still finds every
-validation positive it can at TARGET_PRECISION; a suggestion below it is listed but
-unticked (design.md). A target that never gets there has no threshold:
-its suggestions are never ticked.
+A target's threshold starts at 0.5: the scores are calibrated, and tuning
+each label on a few validation months chased noise (the first real run,
+2026-10-06: tuned thresholds came out at 0.001 or 0.95 and lost to 0.5 on
+both precision and recall). A threshold only rises above 0.5, to the
+lowest score at which validation precision reaches TARGET_PRECISION, when
+validation shows the label below it at 0.5; a label that never gets there
+has no threshold, and its suggestions are never ticked. A suggestion below
+its threshold is listed but unticked (design.md).
 """
 
 from __future__ import annotations
@@ -134,21 +138,29 @@ def thresholds(
     y: sparse.csr_matrix,
     target_precision: float = TARGET_PRECISION,
 ) -> np.ndarray:
-    """Each target's threshold; inf where precision never reaches the target."""
+    """Each target's threshold: 0.5, raised where validation precision at 0.5
+    falls short; inf where no score reaches the target precision."""
     yd = y.toarray().astype(bool)
-    out = np.full(probabilities.shape[1], np.inf)
+    out = np.full(probabilities.shape[1], DEFAULT_THRESHOLD)
     for j in range(probabilities.shape[1]):
         p = probabilities[:, j]
+        at_default = p >= DEFAULT_THRESHOLD
+        predicted = int(at_default.sum())
+        if predicted < MIN_PREDICTED:
+            continue  # too little evidence to move it
+        if yd[at_default, j].sum() / predicted >= target_precision:
+            continue
         order = np.argsort(-p, kind="stable")
+        scores = p[order]
         hits = np.cumsum(yd[order, j])
-        predicted = np.arange(1, len(p) + 1)
-        precision = hits / predicted
+        counts = np.arange(1, len(p) + 1)
+        # Cut only between distinct scores, so ties are all in or all out.
+        cut = np.append(scores[:-1] > scores[1:], True)
         ok = np.flatnonzero(
-            (precision >= target_precision) & (predicted >= MIN_PREDICTED)
+            cut
+            & (scores >= DEFAULT_THRESHOLD)
+            & (counts >= MIN_PREDICTED)
+            & (hits / counts >= target_precision)
         )
-        if ok.size:
-            # The most positives reachable at that precision, at the highest
-            # score that reaches them: going lower adds only negatives.
-            best = ok[np.argmax(hits[ok] == hits[ok].max())]
-            out[j] = max(p[order[best]], 1e-6)
+        out[j] = scores[ok[-1]] if ok.size else np.inf
     return out

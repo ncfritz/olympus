@@ -402,14 +402,17 @@ numbers come with the sign-off on DEV.
    domain; one-year half-life) and one-vs-rest logistic regression (SGD,
    older mail weighing less), combined per label by a small logistic
    regression fitted on the validation months: the calibration. Each
-   label's threshold is the highest score finding what it can at 90%
-   precision on validation; a label that never gets there is never
-   ticked. A predicted family suggests its initial label.
+   label's threshold is 0.5, raised only for a label below 90% precision
+   there on validation, to the lowest score that reaches it; a label that
+   never gets there is never ticked. (Thresholds tuned freely per label
+   lost to 0.5 on both precision and recall in the first real run,
+   2026-10-06.) A predicted family suggests its initial label.
    `POST /v1/suggestions` answers from the serving model.
 6. **Evaluation**: **built**. Test: the last six months; validation: the
    six before; training: everything older. Precision and recall per label,
    at its threshold and at 0.5, written to the run
-   (`MODEL_DIR/runs.sqlite3`), with coverage and top-suggestion accuracy;
+   (`MODEL_DIR/runs.sqlite3`), with the mean over labels with five or more
+   test messages, coverage and top-suggestion accuracy;
    `minerva-mail-ml-train report` prints it. The newest ready run serves;
    a failed run leaves the last.
 7. **Retrain**: **built**, paused. `minerva_mail_retrain`, nightly, runs
