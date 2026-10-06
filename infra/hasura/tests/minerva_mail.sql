@@ -48,11 +48,13 @@ SELECT pg_temp.expect_refused('unknown verification',
 SELECT pg_temp.expect_refused('another provider',
     $q$INSERT INTO minerva.mail_accounts (user_id, provider, email, verified_at, verification_method)
        VALUES ('6a1a0c6e-0000-4000-8000-0000000000ff', 'microsoft', 'b@example.test', now(), 'import')$q$, '23514');
-INSERT INTO minerva.mail_accounts (id, user_id, email, subject, verified_at, verification_method) VALUES
+-- A subject comes with its link (1791270000000_minerva_mail_sync).
+INSERT INTO minerva.mail_accounts (id, user_id, email, subject, linked_at, link_scope, verified_at, verification_method) VALUES
     ('7b2b0000-0000-4000-8000-0000000000ff', '6a1a0c6e-0000-4000-8000-0000000000ff',
-     'b@example.test', 'sub-1', now(), 'consent');
+     'b@example.test', 'sub-1', now(), 'openid email', now(), 'consent');
 SELECT pg_temp.expect_refused('same subject twice',
-    $q$UPDATE minerva.mail_accounts SET subject = 'sub-1' WHERE id = '7b2b0000-0000-4000-8000-000000000001'$q$, '23505');
+    $q$UPDATE minerva.mail_accounts SET subject = 'sub-1', linked_at = now(), link_scope = 'openid email'
+       WHERE id = '7b2b0000-0000-4000-8000-000000000001'$q$, '23505');
 
 -- Labels: unique per account by name; the parent from the path.
 INSERT INTO minerva.mail_labels (id, account_id, name) VALUES
