@@ -10,7 +10,7 @@
     "clean": "rm -rf .next",
     "dev": "env-cmd -f dev.env next dev",
     "dev:local": "env-cmd -f local.env next dev",
-    "build": "next build",
+    "build": "env-cmd --silent --no-override -f dev.env next build",
     "start": "next start",
     "start:local": "env-cmd -f local.env next start",
     "lint": "eslint ./src",
