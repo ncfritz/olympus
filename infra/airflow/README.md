@@ -232,8 +232,11 @@ the NAS.
 Nightly at 03:43, **created paused**: the classifier is not yet part of the
 deployed stack, and its first run belongs after the Takeout archive has been
 featurized ([the plan](../../docs/plans/email-management/README.md), phase 3).
-One task runs `minerva-mail-ml-train run` in the classifier's image
-(`${IMAGE_PREFIX}/minerva-mail-ml:${OLYMPUS_TAG}`) on `olympus-backend`, with:
+Two tasks run in the classifier's image
+(`${IMAGE_PREFIX}/minerva-mail-ml:${OLYMPUS_TAG}`) on `olympus-backend`:
+`train` (`minerva-mail-ml-train run`), then `suggest`
+(`minerva-mail-ml-train suggest`, suggestions over the whole mailbox for the
+Re-classification page), each with:
 
 - `${DATA_DIR}/minerva-mail-ml` at `/var/lib/minerva-mail-ml`: the feature
   store it reads and the model registry it writes, the same directory the
@@ -256,6 +259,7 @@ airflow dags test olympus_backup                # a whole run, today, no schedul
 airflow tasks test olympus_backup verify 2026-09-29
 airflow tasks test olympus_weather_archive copy 2026-09-29
 airflow tasks test minerva_mail_retrain train 2026-10-06
+airflow tasks test minerva_mail_retrain suggest 2026-10-06
 ```
 
 `retain` is the one to read twice before running with a date you care about.

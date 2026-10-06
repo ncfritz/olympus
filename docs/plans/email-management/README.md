@@ -450,10 +450,21 @@ left until phase 5 has decisions to measure them against.
 
 ## Phase 4 — Re-classification and writes to Gmail
 
-1. **Suggestions over the mailbox**: out-of-fold predictions; a
-   suggestion where the model is confident and disagrees with the label
-   (confident learning, `cleanlab`), with the audit's findings as further
-   sources.
+1. **Suggestions over the mailbox**: **built** 2026-10-06, before 1b, since
+   it needs only the archive. `minerva-mail-ml-train suggest` scores every
+   message by layers fitted on the other four fifths of the mail (folds by
+   Gmail ID) and the serving model's combiner; per label, confident
+   learning (`cleanlab`, its thresholds capped at 0.9 because the scores
+   are calibrated) finds where a label disagrees with the score. Each is a
+   suggestion to add or remove that label; a family is only added, as its
+   initial state. Additions are ticked at the label's threshold, removals
+   from 0.9. They are posted as a kept run per account
+   (`1791250000000_minerva_mail_suggestions`: `CreateMailSuggestionRun`,
+   `CreateMailSuggestions`, `PublishMailSuggestionRun`, agents only) and
+   read through `mail_proposals`, the view over the audit's changes and the
+   classifier's: the Re-classification page counts both, and a label's
+   review filters by source and fades what is unticked. The nightly DAG
+   suggests after it trains.
 2. **Writes**: `gmail.modify` added by a new consent; `MAIL_WRITES_ENABLED`
    on. The API records each batch before calling the agent; the agent
    checks `historyId` per message and resyncs a changed one instead of

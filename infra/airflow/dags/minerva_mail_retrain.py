@@ -1,12 +1,18 @@
 """The mail classifier, retrained nightly (ADR 0030; docs/plans/
 email-management phase 3).
 
-One task: `minerva-mail-ml-train run` in the classifier's own image, with
-the classifier's data directory, so it reads the same feature store and
-writes the same model registry the service serves from. It trains every
-mail account on the serving feature version, evaluates it on the last six
-months, and records the run; the service picks up the new model on its
-next request. A run that fails leaves the previous model serving.
+Two tasks, each a command in the classifier's own image with the
+classifier's data directory, so they read the same feature store and the
+same model registry the service serves from:
+
+1. `minerva-mail-ml-train run` trains every mail account on the serving
+   feature version, evaluates it on the last six months, and records the
+   run; the service picks up the new model on its next request. A run that
+   fails leaves the previous model serving.
+2. `minerva-mail-ml-train suggest` then scores the whole mailbox with
+   models that never saw each message and posts where it confidently
+   disagrees with the labels to the API, for the Re-classification page
+   (phase 4).
 
 The container calls the API's mTLS listener on the backend network with the
 classifier's client certificate (ADR 0018), from its TLS directory
@@ -91,17 +97,23 @@ with DAG(
     default_args={"retries": 0},
     tags=["olympus", "minerva", "mail"],
 ) as dag:
-    DockerOperator(
-        task_id="train",
-        task_display_name="Train and evaluate",
-        image=IMAGE,
-        command=["minerva-mail-ml-train", "run"],
-        environment=ENVIRONMENT_VARIABLES,
-        network_mode=BACKEND_NETWORK,
-        mounts=MOUNTS,
-        # DockerOperator otherwise bind-mounts a temporary directory of its own
-        # from inside the worker, a path the daemon cannot resolve.
-        mount_tmp_dir=False,
-        auto_remove="success",
-        execution_timeout=timedelta(hours=3),
+    def trainer(task_id: str, name: str, command: str) -> DockerOperator:
+        return DockerOperator(
+            task_id=task_id,
+            task_display_name=name,
+            image=IMAGE,
+            command=["minerva-mail-ml-train", command],
+            environment=ENVIRONMENT_VARIABLES,
+            network_mode=BACKEND_NETWORK,
+            mounts=MOUNTS,
+            # DockerOperator otherwise bind-mounts a temporary directory of its
+            # own from inside the worker, a path the daemon cannot resolve.
+            mount_tmp_dir=False,
+            auto_remove="success",
+            execution_timeout=timedelta(hours=3),
+        )
+
+    (
+        trainer("train", "Train and evaluate", "run")
+        >> trainer("suggest", "Suggest over the mailbox", "suggest")
     )

@@ -19,18 +19,23 @@ retrain = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(retrain)
 
 
-def test_one_paused_task_running_the_trainer() -> None:
+def test_trains_then_suggests_paused() -> None:
     dag = retrain.dag
     assert dag.is_paused_upon_creation is True
     assert dag.max_active_runs == 1
-    (task,) = dag.tasks
-    assert task.command == ["minerva-mail-ml-train", "run"]
-    assert task.image.endswith("/minerva-mail-ml:" + retrain.ENV["OLYMPUS_TAG"])
-    assert task.network_mode == "olympus-backend"
+    train, suggest = dag.get_task("train"), dag.get_task("suggest")
+    assert train.command == ["minerva-mail-ml-train", "run"]
+    assert suggest.command == ["minerva-mail-ml-train", "suggest"]
+    assert suggest.upstream_task_ids == {"train"}
+    for task in (train, suggest):
+        assert task.image.endswith(
+            "/minerva-mail-ml:" + retrain.ENV["OLYMPUS_TAG"]
+        )
+        assert task.network_mode == "olympus-backend"
 
 
 def test_the_service_data_and_its_own_certificate() -> None:
-    (task,) = retrain.dag.tasks
+    task = retrain.dag.get_task("suggest")
     targets = {m["Target"]: m for m in task.mounts}
     assert targets["/var/lib/minerva-mail-ml"]["Source"].endswith("/minerva-mail-ml")
     tls = targets["/run/secrets/tls"]
