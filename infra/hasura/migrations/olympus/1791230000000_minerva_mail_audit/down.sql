@@ -1,0 +1,17 @@
+DROP FUNCTION minerva.mail_star_mixed(uuid, integer);
+DROP FUNCTION minerva.mail_star_ages(uuid);
+DROP FUNCTION minerva.mail_star_senders(uuid, integer);
+DROP FUNCTION minerva.mail_star_labels(uuid, integer);
+DROP TABLE minerva.mail_star_mixed_type;
+DROP TABLE minerva.mail_star_age_type;
+DROP TABLE minerva.mail_star_sender_type;
+DROP TABLE minerva.mail_star_label_type;
+DROP FUNCTION minerva.mail_audit_labels(uuid, numeric);
+DROP TABLE minerva.mail_audit_label_type;
+DROP FUNCTION minerva.mail_audit_summary(uuid, numeric);
+DROP TABLE minerva.mail_audit_summary_type;
+DROP FUNCTION minerva.mail_run_audit(uuid);
+DROP TABLE minerva.mail_audit_threads;
+DROP TABLE minerva.mail_audit_merges;
+DROP TABLE minerva.mail_audit_changes;
+DROP TABLE minerva.mail_audit_runs;

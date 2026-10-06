@@ -7341,6 +7341,59 @@
     ],
     "type": "object"
   },
+  "GetMailAuditResponse": {
+    "properties": {
+      "highConfidence": {
+        "description": "The confidence at and above which a change counts as high confidence",
+        "type": "number"
+      },
+      "labels": {
+        "description": "Every user label, by name, with the latest audit's proposals",
+        "items": {
+          "$ref": "#/components/schemas/MailAuditLabel"
+        },
+        "type": "array"
+      },
+      "merges": {
+        "description": "Merge candidates, the closest overlap first",
+        "items": {
+          "$ref": "#/components/schemas/MailAuditMerge"
+        },
+        "type": "array"
+      },
+      "stars": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarStatistics"
+          }
+        ],
+        "description": "Stars over the caller's mail"
+      },
+      "summary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditSummary"
+          }
+        ],
+        "description": "The latest audit's totals; absent before the first run"
+      },
+      "threads": {
+        "description": "Threads whose messages disagree, the largest first (at most 50)",
+        "items": {
+          "$ref": "#/components/schemas/MailAuditThread"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "highConfidence",
+      "labels",
+      "merges",
+      "stars",
+      "threads"
+    ],
+    "type": "object"
+  },
   "GetMailStatisticsResponse": {
     "properties": {
       "labelActivity": {
@@ -9722,6 +9775,26 @@
     ],
     "type": "object"
   },
+  "ListMailAuditChangesResponse": {
+    "properties": {
+      "changes": {
+        "description": "A page of proposed changes",
+        "items": {
+          "$ref": "#/components/schemas/MailAuditChange"
+        },
+        "type": "array"
+      },
+      "count": {
+        "description": "The total number of matching items across all pages",
+        "type": "number"
+      }
+    },
+    "required": [
+      "changes",
+      "count"
+    ],
+    "type": "object"
+  },
   "ListMediaAssetDownloadsResponse": {
     "properties": {
       "count": {
@@ -10712,6 +10785,356 @@
     ],
     "type": "string"
   },
+  "MailAuditAction": {
+    "description": "What a proposed label change does",
+    "enum": [
+      "add",
+      "remove"
+    ],
+    "type": "string"
+  },
+  "MailAuditChange": {
+    "properties": {
+      "action": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditAction"
+          }
+        ],
+        "description": "Whether the label is added or removed"
+      },
+      "confidence": {
+        "description": "How sure the rule is, 0 to 1",
+        "type": "number"
+      },
+      "label": {
+        "description": "The label added or removed",
+        "type": "string"
+      },
+      "message": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditMessage"
+          }
+        ],
+        "description": "The message"
+      },
+      "rule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditRule"
+          }
+        ],
+        "description": "The rule that proposed it"
+      },
+      "senderLabelMessages": {
+        "description": "How many of them have the label",
+        "type": "number"
+      },
+      "senderMessages": {
+        "description": "The sender's received messages the rule looked at",
+        "type": "number"
+      }
+    },
+    "required": [
+      "action",
+      "confidence",
+      "label",
+      "message",
+      "rule",
+      "senderLabelMessages",
+      "senderMessages"
+    ],
+    "type": "object"
+  },
+  "MailAuditLabel": {
+    "properties": {
+      "highConfidence": {
+        "description": "Of those, the changes at or above the high-confidence threshold",
+        "type": "number"
+      },
+      "lastReceivedTime": {
+        "description": "When its latest message was received; absent when it has none",
+        "type": "string"
+      },
+      "mergeCandidate": {
+        "description": "Whether the label is in a merge candidate",
+        "type": "boolean"
+      },
+      "messages": {
+        "description": "Messages with the label",
+        "type": "number"
+      },
+      "name": {
+        "description": "The label's full name, as Gmail shows it",
+        "type": "string"
+      },
+      "proposedIn": {
+        "description": "Messages proposed to gain the label",
+        "type": "number"
+      },
+      "proposedOut": {
+        "description": "Messages proposed to lose the label",
+        "type": "number"
+      }
+    },
+    "required": [
+      "highConfidence",
+      "mergeCandidate",
+      "messages",
+      "name",
+      "proposedIn",
+      "proposedOut"
+    ],
+    "type": "object"
+  },
+  "MailAuditMerge": {
+    "properties": {
+      "fromLabel": {
+        "description": "The label to merge away",
+        "type": "string"
+      },
+      "fromLastReceivedTime": {
+        "description": "When the merged label's latest message was received",
+        "type": "string"
+      },
+      "fromMessages": {
+        "description": "The merged label's messages",
+        "type": "number"
+      },
+      "fromSenders": {
+        "description": "The merged label's senders (with two messages or more under it)",
+        "type": "number"
+      },
+      "intoLabel": {
+        "description": "The label to merge it into",
+        "type": "string"
+      },
+      "intoLastReceivedTime": {
+        "description": "When the other label's latest message was received",
+        "type": "string"
+      },
+      "intoMessages": {
+        "description": "The other label's messages",
+        "type": "number"
+      },
+      "reason": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditMergeReason"
+          }
+        ],
+        "description": "Why the two are proposed as one"
+      },
+      "senderOverlap": {
+        "description": "The share of the merged label's senders in common, 0 to 1",
+        "type": "number"
+      },
+      "sharedSenders": {
+        "description": "Senders the two have in common",
+        "type": "number"
+      }
+    },
+    "required": [
+      "fromLabel",
+      "fromMessages",
+      "fromSenders",
+      "intoLabel",
+      "intoMessages",
+      "reason",
+      "senderOverlap",
+      "sharedSenders"
+    ],
+    "type": "object"
+  },
+  "MailAuditMergeReason": {
+    "description": "Why two labels are proposed as one",
+    "enum": [
+      "same_leaf",
+      "sender_overlap"
+    ],
+    "type": "string"
+  },
+  "MailAuditMessage": {
+    "properties": {
+      "fromAddress": {
+        "description": "The sender's address",
+        "type": "string"
+      },
+      "fromName": {
+        "description": "The sender's display name",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID, hexadecimal",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Its user labels now, by full name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "receivedTime": {
+        "description": "When it was received",
+        "type": "string"
+      },
+      "subject": {
+        "description": "The subject",
+        "type": "string"
+      },
+      "threadId": {
+        "description": "Its thread's Gmail ID",
+        "type": "string"
+      }
+    },
+    "required": [
+      "gmailId",
+      "labels",
+      "receivedTime",
+      "threadId"
+    ],
+    "type": "object"
+  },
+  "MailAuditRule": {
+    "description": "The audit rule a change was proposed by",
+    "enum": [
+      "sender"
+    ],
+    "type": "string"
+  },
+  "MailAuditRun": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account audited",
+        "type": "string"
+      },
+      "consistentSenders": {
+        "description": "Senders with one usual label",
+        "type": "number"
+      },
+      "finishedTime": {
+        "description": "When the run finished",
+        "type": "string"
+      },
+      "id": {
+        "description": "The unique ID of the run",
+        "type": "string"
+      },
+      "messagesExamined": {
+        "description": "Received messages with a sender, examined",
+        "type": "number"
+      },
+      "sendersExamined": {
+        "description": "Senders with enough mail to judge",
+        "type": "number"
+      },
+      "startedTime": {
+        "description": "When the run started",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "consistentSenders",
+      "finishedTime",
+      "id",
+      "messagesExamined",
+      "sendersExamined",
+      "startedTime"
+    ],
+    "type": "object"
+  },
+  "MailAuditSummary": {
+    "properties": {
+      "additions": {
+        "description": "Labels proposed for adding",
+        "type": "number"
+      },
+      "changes": {
+        "description": "Label changes proposed",
+        "type": "number"
+      },
+      "consistentSenders": {
+        "description": "Senders with one usual label",
+        "type": "number"
+      },
+      "finishedTime": {
+        "description": "When the latest of the runs finished",
+        "type": "string"
+      },
+      "highConfidence": {
+        "description": "Changes at or above the high-confidence threshold",
+        "type": "number"
+      },
+      "merges": {
+        "description": "Merge candidates",
+        "type": "number"
+      },
+      "messagesAffected": {
+        "description": "Messages with at least one proposed change",
+        "type": "number"
+      },
+      "messagesExamined": {
+        "description": "Received messages with a sender, examined",
+        "type": "number"
+      },
+      "removals": {
+        "description": "Labels proposed for removing",
+        "type": "number"
+      },
+      "startedTime": {
+        "description": "When the earliest of the runs started",
+        "type": "string"
+      },
+      "threads": {
+        "description": "Threads whose messages disagree on their labels",
+        "type": "number"
+      }
+    },
+    "required": [
+      "additions",
+      "changes",
+      "consistentSenders",
+      "finishedTime",
+      "highConfidence",
+      "merges",
+      "messagesAffected",
+      "messagesExamined",
+      "removals",
+      "startedTime",
+      "threads"
+    ],
+    "type": "object"
+  },
+  "MailAuditThread": {
+    "properties": {
+      "labelSets": {
+        "description": "Different sets of user labels among them",
+        "type": "number"
+      },
+      "lastReceivedTime": {
+        "description": "When its latest message was received",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages in the thread",
+        "type": "number"
+      },
+      "threadId": {
+        "description": "The thread's Gmail ID, hexadecimal",
+        "type": "string"
+      }
+    },
+    "required": [
+      "labelSets",
+      "lastReceivedTime",
+      "messages",
+      "threadId"
+    ],
+    "type": "object"
+  },
   "MailLabelStatistics": {
     "properties": {
       "lastReceivedTime": {
@@ -10806,6 +11229,151 @@
       "address",
       "messages",
       "year"
+    ],
+    "type": "object"
+  },
+  "MailStarAge": {
+    "description": "How old starred messages are",
+    "enum": [
+      "month",
+      "year",
+      "older"
+    ],
+    "type": "string"
+  },
+  "MailStarAgeCount": {
+    "properties": {
+      "age": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarAge"
+          }
+        ],
+        "description": "How old the messages are"
+      },
+      "starred": {
+        "description": "Starred messages of that age",
+        "type": "number"
+      }
+    },
+    "required": [
+      "age",
+      "starred"
+    ],
+    "type": "object"
+  },
+  "MailStarLabel": {
+    "properties": {
+      "messages": {
+        "description": "Messages with the label",
+        "type": "number"
+      },
+      "name": {
+        "description": "The label",
+        "type": "string"
+      },
+      "starred": {
+        "description": "Of those, starred",
+        "type": "number"
+      }
+    },
+    "required": [
+      "messages",
+      "name",
+      "starred"
+    ],
+    "type": "object"
+  },
+  "MailStarMixed": {
+    "properties": {
+      "address": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "lastReceivedTime": {
+        "description": "When the latest was received",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages with that subject",
+        "type": "number"
+      },
+      "starred": {
+        "description": "Of those, starred",
+        "type": "number"
+      },
+      "subjectPattern": {
+        "description": "The subject, lower case, digits as #",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "lastReceivedTime",
+      "messages",
+      "starred",
+      "subjectPattern"
+    ],
+    "type": "object"
+  },
+  "MailStarSender": {
+    "properties": {
+      "address": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages from the sender",
+        "type": "number"
+      },
+      "starred": {
+        "description": "Of those, starred",
+        "type": "number"
+      }
+    },
+    "required": [
+      "address",
+      "messages",
+      "starred"
+    ],
+    "type": "object"
+  },
+  "MailStarStatistics": {
+    "properties": {
+      "ages": {
+        "description": "Starred messages by age, newest first",
+        "items": {
+          "$ref": "#/components/schemas/MailStarAgeCount"
+        },
+        "type": "array"
+      },
+      "labels": {
+        "description": "The labels with the most starred mail",
+        "items": {
+          "$ref": "#/components/schemas/MailStarLabel"
+        },
+        "type": "array"
+      },
+      "mixed": {
+        "description": "Near-identical mail starred and not, the largest groups first",
+        "items": {
+          "$ref": "#/components/schemas/MailStarMixed"
+        },
+        "type": "array"
+      },
+      "senders": {
+        "description": "The senders with the most starred mail",
+        "items": {
+          "$ref": "#/components/schemas/MailStarSender"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "ages",
+      "labels",
+      "mixed",
+      "senders"
     ],
     "type": "object"
   },
@@ -18155,6 +18723,21 @@
     "required": [
       "sessionId",
       "signedOutThisDevice"
+    ],
+    "type": "object"
+  },
+  "RunMailAuditResponse": {
+    "properties": {
+      "runs": {
+        "description": "The new runs, one per account of the caller's",
+        "items": {
+          "$ref": "#/components/schemas/MailAuditRun"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "runs"
     ],
     "type": "object"
   },

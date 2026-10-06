@@ -1,0 +1,5 @@
+function:
+  name: mail_run_audit
+  schema: minerva
+configuration:
+  exposed_as: mutation

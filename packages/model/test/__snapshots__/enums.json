@@ -259,6 +259,26 @@
     "Consent": "consent",
     "Import": "import"
   },
+  "MailAuditAction": {
+    "Add": "add",
+    "Remove": "remove"
+  },
+  "MailAuditChangeSort": {
+    "Confidence": "confidence",
+    "ReceivedTime": "receivedTime"
+  },
+  "MailAuditMergeReason": {
+    "SameLeaf": "same_leaf",
+    "SenderOverlap": "sender_overlap"
+  },
+  "MailAuditRule": {
+    "Sender": "sender"
+  },
+  "MailStarAge": {
+    "Month": "month",
+    "Older": "older",
+    "Year": "year"
+  },
   "MailStatisticsRange": {
     "AllTime": "all",
     "ThreeYears": "3y",

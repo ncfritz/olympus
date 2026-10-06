@@ -1,0 +1,29 @@
+table:
+  name: mail_audit_threads
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    label_sets:
+      custom_name: labelSets
+    last_received_at:
+      custom_name: lastReceivedTime
+    run_id:
+      custom_name: runId
+    thread_id:
+      custom_name: threadId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    label_sets: labelSets
+    last_received_at: lastReceivedTime
+    run_id: runId
+    thread_id: threadId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: run
+    using:
+      foreign_key_constraint_on: run_id
