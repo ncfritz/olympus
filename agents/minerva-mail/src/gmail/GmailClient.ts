@@ -134,6 +134,20 @@ export class GmailMailbox {
     }));
   }
 
+  /** A label's message and thread counts, as Gmail keeps them. */
+  async labelTotals(
+    id: string,
+  ): Promise<{ messagesTotal: number; threadsTotal: number }> {
+    const body = await this.get<{
+      messagesTotal?: number;
+      threadsTotal?: number;
+    }>(`/labels/${id}`);
+    return {
+      messagesTotal: body.messagesTotal ?? 0,
+      threadsTotal: body.threadsTotal ?? 0,
+    };
+  }
+
   /**
    * Every message ID with the label (or in the mailbox, without one),
    * Trash and Spam left out as Gmail leaves them out.

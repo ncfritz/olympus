@@ -105,6 +105,10 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
       historyId: "12345",
     })),
     labels: vi.fn(async () => LABELS),
+    labelTotals: vi.fn(async (id: string) => {
+      if (id === "CHAT") throw new Error("status 404");
+      return { messagesTotal: id === "DRAFT" ? 1 : 0, threadsTotal: 0 };
+    }),
     messageIds: vi.fn(async (label?: string) => BY_LABEL[label ?? ""] ?? []),
     raw: vi.fn(async (id: string) => {
       if (options.rawFails) throw new Error("status 500");
@@ -136,11 +140,30 @@ describe("GmailReconcile", () => {
     expect(report).toMatchObject({
       accountId: ACCOUNT_ID,
       historyId: "12345",
-      gmail: { messagesTotal: 4, threadsTotal: 3, kept: 3 },
+      gmail: {
+        messagesTotal: 4,
+        threadsTotal: 3,
+        kept: 3,
+        excluded: {
+          spam: { messages: 0, threads: 0 },
+          trash: { messages: 0, threads: 0 },
+          drafts: { messages: 1, threads: 0 },
+          chats: null,
+        },
+      },
       labels: { matched: 4, created: 1, notInGmail: ["Old"] },
       minerva: { messages: 4 },
       unchanged: 1,
       relabelled: 1,
+      differences: {
+        labels: 1,
+        categories: 0,
+        flags: { inbox: 0, unread: 1, starred: 0, important: 0, sent: 0 },
+      },
+      labelChanges: [
+        { label: "Accounts/A", added: 0, removed: 1 },
+        { label: "Travel", added: 1, removed: 0 },
+      ],
       deleted: 2,
       added: 1,
       failed: 0,

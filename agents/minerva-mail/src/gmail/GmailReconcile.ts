@@ -26,6 +26,19 @@ const CATEGORY = /^CATEGORY_([A-Z]+)$/;
 /** Not mail Minerva keeps, as the import skipped them. */
 const LEFT_OUT = ["DRAFT", "CHAT"];
 
+/** Outside All Mail or left out: counted, for comparing with the totals. */
+const EXCLUDED = {
+  spam: "SPAM",
+  trash: "TRASH",
+  drafts: "DRAFT",
+  chats: "CHAT",
+};
+
+/** How many label changes to name in the report, most frequent first. */
+const TOP_LABEL_CHANGES = 15;
+
+type Totals = { messages: number; threads: number };
+
 export type GmailReconcileOptions = {
   onProgress?: (stage: string, done: number, of?: number) => void;
 };
@@ -34,11 +47,25 @@ export type GmailReconcileOptions = {
 export type GmailReconcileReport = {
   accountId: string;
   historyId: string;
-  gmail: { messagesTotal: number; threadsTotal: number; kept: number };
+  gmail: {
+    messagesTotal: number;
+    threadsTotal: number;
+    kept: number;
+    /** Gmail's own counts for what Minerva leaves out (null: no such label). */
+    excluded: Record<keyof typeof EXCLUDED, Totals | null>;
+  };
   labels: { matched: number; created: number; notInGmail: string[] };
   minerva: { messages: number };
   unchanged: number;
   relabelled: number;
+  /** Of the relabelled, how many differed in each part. */
+  differences: {
+    labels: number;
+    categories: number;
+    flags: Record<string, number>;
+  };
+  /** The labels most often added or removed, with how many messages. */
+  labelChanges: { label: string; added: number; removed: number }[];
   deleted: number;
   added: number;
   failed: number;
@@ -99,6 +126,18 @@ export class GmailReconcile {
       );
     }
     const snapshotTime = new Date().toISOString();
+    const excluded = {} as Record<keyof typeof EXCLUDED, Totals | null>;
+    for (const [name, id] of Object.entries(EXCLUDED)) {
+      try {
+        const t = await mailbox.labelTotals(id);
+        excluded[name as keyof typeof EXCLUDED] = {
+          messages: t.messagesTotal,
+          threads: t.threadsTotal,
+        };
+      } catch {
+        excluded[name as keyof typeof EXCLUDED] = null;
+      }
+    }
 
     // Labels first, so every name a message carries is known.
     const labels = await mailbox.labels();
@@ -145,11 +184,14 @@ export class GmailReconcile {
         messagesTotal: profile.messagesTotal,
         threadsTotal: profile.threadsTotal,
         kept: kept.size,
+        excluded,
       },
       labels: synced,
       minerva: { messages: 0 },
       unchanged: 0,
       relabelled: 0,
+      differences: { labels: 0, categories: 0, flags: emptyCounts() },
+      labelChanges: [],
       deleted: 0,
       added: 0,
       failed: 0,
@@ -157,6 +199,7 @@ export class GmailReconcile {
     };
 
     // Minerva's state, compared message by message.
+    const changes = new Map<string, { added: number; removed: number }>();
     const seen = new Set<string>();
     let after: string | undefined;
     do {
@@ -179,17 +222,25 @@ export class GmailReconcile {
           categories: [],
           flags: emptyFlags(),
         };
-        const flagsSame = Object.keys(FLAG_NAMES).every(
-          (f) =>
-            g.flags[f] === (m.flags as unknown as Record<string, boolean>)[f],
+        const theirs = m.flags as unknown as Record<string, boolean>;
+        const flagsDiffering = Object.keys(FLAG_NAMES).filter(
+          (f) => g.flags[f] !== theirs[f],
         );
-        if (
-          flagsSame &&
-          sameList(g.labels, m.labels) &&
-          sameList(g.categories, m.categories)
-        ) {
+        const labelsSame = sameList(g.labels, m.labels);
+        const categoriesSame = sameList(g.categories, m.categories);
+        if (!flagsDiffering.length && labelsSame && categoriesSame) {
           report.unchanged++;
           continue;
+        }
+        for (const f of flagsDiffering) report.differences.flags[f]++;
+        if (!categoriesSame) report.differences.categories++;
+        if (!labelsSame) {
+          report.differences.labels++;
+          const before = new Set(m.labels);
+          const after = new Set(g.labels);
+          for (const l of after) if (!before.has(l)) count(changes, l).added++;
+          for (const l of before)
+            if (!after.has(l)) count(changes, l).removed++;
         }
         await this.publish("labels", {
           accountId: account.id,
@@ -205,6 +256,15 @@ export class GmailReconcile {
       after = page.nextCursor;
       progress("compared", report.minerva.messages);
     } while (after);
+
+    report.labelChanges = [...changes]
+      .map(([label, c]) => ({ label, ...c }))
+      .sort(
+        (a, b) =>
+          b.added + b.removed - (a.added + a.removed) ||
+          a.label.localeCompare(b.label),
+      )
+      .slice(0, TOP_LABEL_CHANGES);
 
     // What Minerva lacks: mail since the archive, fetched whole.
     const missing = [...kept].filter((id) => !seen.has(id));
@@ -277,6 +337,26 @@ const FLAG_NAMES: Record<string, true> = {
   starred: true,
   important: true,
   sent: true,
+};
+
+const emptyCounts = (): Record<string, number> => ({
+  inbox: 0,
+  unread: 0,
+  starred: 0,
+  important: 0,
+  sent: 0,
+});
+
+const count = (
+  changes: Map<string, { added: number; removed: number }>,
+  label: string,
+) => {
+  let c = changes.get(label);
+  if (!c) {
+    c = { added: 0, removed: 0 };
+    changes.set(label, c);
+  }
+  return c;
 };
 
 const emptyFlags = (): Record<string, boolean> => ({
