@@ -346,6 +346,22 @@ messages have no queue to land in.
 
 **Sign-off:** M1, M2.
 
+**M2 so far, 2026-10-06**, DEV, Neil and Claude (the remaining cases with
+steps 3 and 4):
+
+- **1. Pass.** All 484 labels have their Gmail IDs; the 4 made since the
+  export were added. The 7 `IMAP_*` labels of the export are not in
+  Gmail's API, and came off the messages that had them.
+- **2. Pass, for labels and new mail.** The first reconcile relabelled
+  6,228 messages and fetched the 376 newer than the archive (one failed
+  and was fetched by the second); no message was deleted in Gmail since
+  the export, so deletion is checked by the unit tests until step 3. The
+  second reconcile changed nothing and fetched the 2 that had arrived.
+- **3.** Waiting on the request count of a run.
+- **7. Pass.** Gmail's 278,125 messages and 267,404 threads, less 2,390
+  chats in 2,385 threads (Spam, Trash and drafts empty), are 275,735 and
+  265,019; Minerva holds exactly 275,735 messages in 265,019 threads.
+
 ## Phase 2 — Audit reports and statistics — built 2026-10-05, not signed off
 
 Read-only, over metadata alone. Measured on a synthetic mailbox the size
