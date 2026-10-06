@@ -1,5 +1,7 @@
 import {
   client,
+  connectMailAccount,
+  listMailAccounts,
   createMailLabelFamily,
   type CreateMailLabelFamilyRequest,
   deleteMailLabelFamily,
@@ -54,6 +56,17 @@ class MailApi {
     startPage: number;
   }) {
     return await listMailAuditChanges({ query });
+  }
+
+  async listAccounts() {
+    return await listMailAccounts();
+  }
+
+  async connectAccount(accountId: string, returnTo: string) {
+    return await connectMailAccount({
+      path: { accountId },
+      body: { returnTo },
+    });
   }
 
   async listLabels() {

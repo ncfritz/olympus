@@ -295,14 +295,22 @@ messages have no queue to land in.
 
 ## Phase 1b — Linking and live sync
 
-0. **OAuth**: a new client for mail in the calendar agent's Google
-   project, on its Internal consent screen, with `gmail.readonly`; the
-   client secret as a file secret. Neil creates it in the Google Cloud
-   console.
-1. **Linking**: Connect mail account in the site, the consent flow of
-   ADR 0028 (API starts it, checks `state`, hands the code to the agent).
-   The verified email must match an imported account's; the subject is
-   recorded then, and re-authorization must return it.
+0. **OAuth**: **done** 2026-10-06. A Web application client for mail in
+   the calendar agent's Google project, on its Internal consent screen,
+   with `gmail.readonly` (and `gmail.modify` registered for phase 4);
+   redirect URIs `https://olympus{.dev,}.ncfritz.net/api/v1/minerva/mail/accounts/callback`.
+   Client ID `MAIL_GOOGLE_OAUTH_CLIENT_ID`; the secret a file
+   (`MAIL_GOOGLE_OAUTH_CLIENT_SECRET_FILE`, in prod
+   `SECRETS_DIR/minerva_mail_google_oauth_client_secret`).
+1. **Linking**: **built**. The Inbox page lists the mailboxes with Link to
+   Gmail; `ConnectMailAccount` starts the consent flow of ADR 0028 (API
+   starts it with its state and PKCE, `CompleteMailAccountConnect` takes
+   the state once and hands the code to the mail agent), and the agent,
+   on a services listener of its own for the API alone, exchanges it and
+   keeps the refresh token, one file per mailbox. The verified address
+   must be the imported account's; the subject is recorded
+   (`1791260000000_minerva_mail_links`), and a later sign-in, or another
+   mail account, must not bring another.
 2. **Reconcile**: `getProfile` for the starting `historyId`;
    `labels.list` to give each label its ID (labels made in Gmail since
    the export are added); each label's message IDs by `messages.list`,
