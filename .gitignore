@@ -44,6 +44,8 @@ agents/dionysus-metadata/cache/
 # The mail classifier's feature store (FEATURE_STORE_PATH default):
 # derived data, never committed.
 agents/minerva-mail-ml/data/
+# The mail agent's Gmail refresh tokens, one file per linked mailbox.
+agents/minerva-mail/data/
 
 # A throwaway CA for development (scripts/dev-ca.sh).
 infra/dev-ca/

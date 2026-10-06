@@ -18,7 +18,7 @@ export { ConfigValidationError };
  * docs/plans/email-management: the broker and the API client from phase
  * 1a (the Takeout import publishes metadata and imports the account); the
  * classifier from phase 3 (featurizing sends it text); Gmail's OAuth client
- * arrives with phase 1b.
+ * and the services listener the API links accounts through, phase 1b.
  */
 /**
  * The classifier's services listener (agents/minerva-mail-ml), which the
@@ -32,12 +32,107 @@ export type ClassifierConfig = {
   timeoutMs: number;
 };
 
+/**
+ * Gmail's OAuth client (ADR 0030): a Web application client of its own, in
+ * the calendar agent's Google project, on its Internal consent screen. The
+ * agent holds the secret and the refresh tokens; the API never sees them.
+ */
+export type GmailConfig = {
+  clientId: string;
+  clientSecret: string;
+  /** One file per linked mailbox, holding its refresh token. */
+  credentialsDir: string;
+  /** What a new sign-in asks for. */
+  scopes: string[];
+};
+
+/** The scopes until the first phase that writes (ADR 0030). */
+export const GMAIL_READ_SCOPES = [
+  "openid",
+  "email",
+  "https://www.googleapis.com/auth/gmail.readonly",
+];
+
+/**
+ * The services listener (ADR 0028's, for this agent): its management API
+ * over HTTPS, for the Olympus API, which identifies itself with a client
+ * certificate from the services chain.
+ */
+export type ServicesListenerConfig = {
+  port: number;
+  certificate: string;
+  key: string;
+  ca: string;
+  revocationLists: string[];
+  /** The issuer's common name a client certificate must have (ADR 0023). */
+  issuer?: string;
+  /** The common names allowed to call: the Olympus API. */
+  clients: string[];
+};
+
 export type AgentConfig = {
   runtime: RuntimeConfig;
   amqp: AmqpConfig;
   logging: LoggingConfig;
   olympus: ApiClientConfig;
   classifier?: ClassifierConfig;
+  gmail?: GmailConfig;
+  services?: ServicesListenerConfig;
+};
+
+/**
+ * MAIL_GOOGLE_OAUTH_CLIENT_ID and MAIL_GOOGLE_OAUTH_CLIENT_SECRET (or
+ * _SECRET_FILE), together or not at all; MAIL_CREDENTIALS_DIR.
+ */
+const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
+  const clientId = read.optional("MAIL_GOOGLE_OAUTH_CLIENT_ID");
+  const clientSecret = read.optional("MAIL_GOOGLE_OAUTH_CLIENT_SECRET");
+  const credentialsDir = read.string(
+    "MAIL_CREDENTIALS_DIR",
+    "data/credentials",
+  );
+  if (!clientId && !clientSecret) return undefined;
+  if (!clientId || !clientSecret) {
+    read.problems.push(
+      "MAIL_GOOGLE_OAUTH_CLIENT_ID and MAIL_GOOGLE_OAUTH_CLIENT_SECRET (or _SECRET_FILE) are set together or not at all",
+    );
+    return undefined;
+  }
+  return { clientId, clientSecret, credentialsDir, scopes: GMAIL_READ_SCOPES };
+};
+
+/**
+ * The same variables as the API's and the calendar agent's services
+ * listeners: SERVICES_LISTEN_PORT, TLS_CERT, TLS_KEY, TLS_CA_SERVICES,
+ * TLS_CRL_SERVICES and AUTH_SERVICES_ISSUER; and AUTH_SERVICE_CLIENTS, the
+ * callers allowed.
+ */
+const readServicesListener = (
+  read: EnvReader,
+): ServicesListenerConfig | undefined => {
+  const certificate = read.optional("TLS_CERT");
+  const key = read.optional("TLS_KEY");
+  const ca = read.optional("TLS_CA_SERVICES");
+  const port = read.port("SERVICES_LISTEN_PORT", 4435);
+  const revocationLists = read.list("TLS_CRL_SERVICES", []);
+  const issuer = read.optional("AUTH_SERVICES_ISSUER");
+  const clients = read.list("AUTH_SERVICE_CLIENTS", ["olympus-api"]);
+  if (!certificate && !key && !ca) return undefined;
+  if (!certificate || !key || !ca) {
+    read.problems.push(
+      "TLS_CERT, TLS_KEY and TLS_CA_SERVICES are set together or not at all",
+    );
+    return undefined;
+  }
+  return {
+    port,
+    certificate,
+    key,
+    ca,
+    revocationLists,
+    ...(issuer ? { issuer } : {}),
+    clients,
+  };
 };
 
 /**
@@ -88,12 +183,16 @@ export const readConfig = (
   const runtime = readRuntimeConfig(read, "minerva-mail-agent", 3105);
   const olympus = readApiClientConfig(read, "http://localhost:3100/v1");
   const classifier = readClassifierConfig(read, olympus);
+  const gmail = readGmailConfig(read);
+  const services = readServicesListener(read);
   const config: AgentConfig = {
     runtime,
     amqp: readAmqpConfig(read, "/dionysus-dev"),
     logging: readLoggingConfig(read, runtime.isProduction),
     olympus,
     ...(classifier ? { classifier } : {}),
+    ...(gmail ? { gmail } : {}),
+    ...(services ? { services } : {}),
   };
   if (read.problems.length) throw new ConfigValidationError(read.problems);
   return config;
@@ -125,14 +224,28 @@ export const classifierConfig = registerAs(
   (): Partial<ClassifierConfig> => readConfig(process.env).classifier ?? {},
 );
 
+// Empty when Gmail's client is not configured; linking then answers 503.
+export const gmailConfig = registerAs(
+  "gmail",
+  (): Partial<GmailConfig> => readConfig(process.env).gmail ?? {},
+);
+export const servicesConfig = registerAs(
+  "services",
+  (): Partial<ServicesListenerConfig> => readConfig(process.env).services ?? {},
+);
+
 export type RuntimeConfigType = ConfigType<typeof runtimeConfig>;
 export type AmqpConfigType = ConfigType<typeof amqpConfig>;
 export type OlympusConfigType = ConfigType<typeof olympusConfig>;
 export type ClassifierConfigType = ConfigType<typeof classifierConfig>;
+export type GmailConfigType = ConfigType<typeof gmailConfig>;
+export type ServicesConfigType = ConfigType<typeof servicesConfig>;
 
 export const ALL_CONFIG = [
   runtimeConfig,
   amqpConfig,
   olympusConfig,
   classifierConfig,
+  gmailConfig,
+  servicesConfig,
 ];

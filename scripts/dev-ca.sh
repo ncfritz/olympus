@@ -324,6 +324,12 @@ echo "mail classifier server certificate"
 server services . minerva-mail-ml "/CN=minerva-mail-ml/O=Olympus Dev" \
   "DNS:minerva-mail-ml,DNS:localhost,IP:127.0.0.1$extra_san"
 
+echo "mail agent server certificate"
+# Its services listener, which only the API calls to link mailboxes to
+# Gmail (ADR 0030, as ADR 0028 for the calendar agent).
+server services . minerva-mail-agent "/CN=minerva-mail-agent/O=Olympus Dev" \
+  "DNS:minerva-mail-agent,DNS:localhost,IP:127.0.0.1$extra_san"
+
 echo "agent certificates"
 # OU is the deployment, not the machine (ADR 0022).
 for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent \
@@ -422,6 +428,10 @@ The chain is three authorities deep, like the real one:
   minerva-calendar-sync.crt / .key
                        the calendar sync agent's server certificate, for
                        its services listener; agents/olympus-api.* is the
+                       API's client certificate for calling it
+  minerva-mail-agent.crt / .key
+                       the mail agent's server certificate, for its
+                       services listener; agents/olympus-api.* is the
                        API's client certificate for calling it
   minerva-mail-ml.crt / .key
                        the mail classifier's server certificate, for its

@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { describe, expect, it } from "vitest";
 import {
   ConfigValidationError,
@@ -100,5 +103,64 @@ describe("readConfig", () => {
     expect(() => readConfig({ LISTEN_PORT: "mail" })).toThrow(
       ConfigValidationError,
     );
+  });
+});
+
+describe("Gmail and the services listener", () => {
+  it("has neither until they are configured", () => {
+    const config = readConfig({});
+    expect(config.gmail).toBeUndefined();
+    expect(config.services).toBeUndefined();
+  });
+
+  it("reads Gmail's client, the secret from a file", () => {
+    const file = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), "s-")),
+      "secret",
+    );
+    fs.writeFileSync(file, "the-secret\n");
+    const config = readConfig({
+      MAIL_GOOGLE_OAUTH_CLIENT_ID: "id.apps.googleusercontent.com",
+      MAIL_GOOGLE_OAUTH_CLIENT_SECRET_FILE: file,
+    });
+    expect(config.gmail).toMatchObject({
+      clientId: "id.apps.googleusercontent.com",
+      clientSecret: "the-secret",
+      credentialsDir: "data/credentials",
+      scopes: [
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/gmail.readonly",
+      ],
+    });
+  });
+
+  it("needs both halves of Gmail's client", () => {
+    expect(() => readConfig({ MAIL_GOOGLE_OAUTH_CLIENT_ID: "id" })).toThrow(
+      /together/,
+    );
+  });
+
+  it("reads the services listener, for the API alone by default", () => {
+    const config = readConfig({
+      TLS_CERT: "a.crt",
+      TLS_KEY: "a.key",
+      TLS_CA_SERVICES: "ca.crt",
+      TLS_CRL_SERVICES: "one.crl,two.crl",
+      AUTH_SERVICES_ISSUER: "Service Issuing CA",
+    });
+    expect(config.services).toEqual({
+      port: 4435,
+      certificate: "a.crt",
+      key: "a.key",
+      ca: "ca.crt",
+      revocationLists: ["one.crl", "two.crl"],
+      issuer: "Service Issuing CA",
+      clients: ["olympus-api"],
+    });
+  });
+
+  it("needs the listener's three files together", () => {
+    expect(() => readConfig({ TLS_CERT: "a.crt" })).toThrow(/together/);
   });
 });
