@@ -277,6 +277,7 @@
   },
   "MailChangeBatchKind": {
     "Apply": "apply",
+    "Merge": "merge",
     "Undo": "undo"
   },
   "MailChangeBatchReport": {
@@ -307,6 +308,17 @@
     "State": "state",
     "System": "system",
     "Topical": "topical"
+  },
+  "MailLabelOpKind": {
+    "Create": "create",
+    "Delete": "delete",
+    "Rename": "rename"
+  },
+  "MailLabelOpStatus": {
+    "Done": "done",
+    "Failed": "failed",
+    "Pending": "pending",
+    "Skipped": "skipped"
   },
   "MailProposalStatus": {
     "Open": "open",

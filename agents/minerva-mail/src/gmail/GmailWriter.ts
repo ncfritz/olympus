@@ -10,7 +10,11 @@ import {
   gmailConfig,
   type GmailConfigType,
 } from "../config/configuration";
-import type { GmailWriteChange, StartGmailWritesRequest } from "../model/gmail";
+import type {
+  GmailWriteChange,
+  GmailWriteLabelOp,
+  StartGmailWritesRequest,
+} from "../model/gmail";
 import {
   BATCH_MODIFY_IDS,
   GmailClient,
@@ -25,7 +29,8 @@ import { NOT_KEPT, stateOfLabelIds } from "./gmailState";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GMAIL_ID = /^[0-9a-f]{1,16}$/;
 const LABEL_ID = /^[A-Za-z0-9_-]{1,100}$/;
-export const MAX_WRITES = 10_000;
+/** As many as a merge moves at most. */
+export const MAX_WRITES = 50_000;
 /** Outcomes reported to the API at a time while a batch runs. */
 const REPORT_EVERY = 500;
 const REPORT_TRIES = 3;
@@ -34,11 +39,21 @@ const REPORT_TRIES = 3;
 export type GmailWriteOutcome =
   "written" | "unchanged" | "changed" | "gone" | "failed";
 
+/** What became of a label operation, as reported to the API. */
+type LabelOpOutcome = {
+  op: GmailWriteLabelOp["op"];
+  name: string;
+  status: "done" | "skipped" | "failed";
+  gmailLabelId?: string;
+  detail?: string;
+};
+
 /** What a batch did: counts only. */
 export type GmailWriteReport = {
   batchId: string;
   status: "done" | "failed";
   counts: Record<GmailWriteOutcome, number>;
+  labelOps: Record<LabelOpOutcome["status"], number>;
   error?: string;
 };
 
@@ -67,8 +82,23 @@ class Reporter {
       status: "running" | "done" | "failed";
       error?: string;
       changes?: { gmailId: string; status: GmailWriteOutcome }[];
+      labelOps?: LabelOpOutcome[];
     }) => Promise<void>,
   ) {}
+
+  readonly labelOps: Record<LabelOpOutcome["status"], number> = {
+    done: 0,
+    skipped: 0,
+    failed: 0,
+  };
+
+  /** Label operations' outcomes, sent at once with what is pending. */
+  async labels(outcomes: LabelOpOutcome[], status: "running" | "done") {
+    for (const o of outcomes) this.labelOps[o.status]++;
+    const changes = this.pending;
+    this.pending = [];
+    await this.send({ status, changes, labelOps: outcomes });
+  }
 
   async add(gmailId: string, status: GmailWriteOutcome): Promise<void> {
     this.counts[status]++;
@@ -158,15 +188,46 @@ export class GmailWriter {
         );
       }
       const mailbox = open(request.email);
-      const labels = new Map(
-        (await mailbox.labels()).map((l) => [l.id, l] as const),
+      const readLabels = async () =>
+        new Map((await mailbox.labels()).map((l) => [l.id, l] as const));
+      let labels = await readLabels();
+      const ops = request.labelOps ?? [];
+
+      // Creates and renames first, reported before any message is written,
+      // so Minerva has the names the messages arrive with.
+      const before = await this.labelsBefore(ops, mailbox, labels);
+      const renames = new Map(
+        before
+          .filter((o) => o.op === "rename" && o.status === "done")
+          .map((o) => [
+            o.name,
+            ops.find((x) => x.op === "rename" && x.name === o.name)
+              ?.newName as string,
+          ]),
       );
-      await this.writeChanges(request, mailbox, labels, reporter);
-      await reporter.flush("done");
+      if (before.length) {
+        labels = await readLabels();
+        await reporter.labels(before, "running");
+      }
+
+      await this.writeChanges(request, mailbox, labels, reporter, renames);
+
+      // Deletes last, once Gmail says the label is empty.
+      const after = await this.labelsAfter(ops, mailbox, labels, renames);
+      if (after.length) {
+        await reporter.labels(after, "done");
+      } else {
+        await reporter.flush("done");
+      }
       this.logger.log(
-        `Change batch ${batchId}: ${reporter.counts.written} written, ${reporter.counts.unchanged} unchanged, ${reporter.counts.changed} changed in Gmail, ${reporter.counts.gone} gone, ${reporter.counts.failed} failed`,
+        `Change batch ${batchId}: ${reporter.counts.written} written, ${reporter.counts.unchanged} unchanged, ${reporter.counts.changed} changed in Gmail, ${reporter.counts.gone} gone, ${reporter.counts.failed} failed; labels ${reporter.labelOps.done} changed, ${reporter.labelOps.skipped} skipped, ${reporter.labelOps.failed} failed`,
       );
-      return { batchId, status: "done", counts: reporter.counts };
+      return {
+        batchId,
+        status: "done",
+        counts: reporter.counts,
+        labelOps: reporter.labelOps,
+      };
     } catch (error) {
       const message = messageOf(error);
       this.logger.warn(`Change batch ${batchId} failed: ${message}`);
@@ -181,9 +242,125 @@ export class GmailWriter {
         batchId,
         status: "failed",
         counts: reporter.counts,
+        labelOps: reporter.labelOps,
         error: message,
       };
     }
+  }
+
+  /** The batch's creates, then its renames. */
+  private async labelsBefore(
+    ops: GmailWriteLabelOp[],
+    mailbox: GmailMailbox,
+    labels: Map<string, GmailLabelInfo>,
+  ): Promise<LabelOpOutcome[]> {
+    const outcomes: LabelOpOutcome[] = [];
+    const byName = (name: string) =>
+      [...labels.values()].find((l) => l.name === name);
+    for (const o of ops.filter((x) => x.op === "create")) {
+      const existing = byName(o.name);
+      if (existing) {
+        outcomes.push({
+          op: "create",
+          name: o.name,
+          status: "done",
+          gmailLabelId: existing.id,
+          detail: "Gmail had it already",
+        });
+        continue;
+      }
+      try {
+        const made = await mailbox.createLabel(o.name);
+        labels.set(made.id, made);
+        outcomes.push({
+          op: "create",
+          name: o.name,
+          status: "done",
+          gmailLabelId: made.id,
+        });
+      } catch (error) {
+        outcomes.push({
+          op: "create",
+          name: o.name,
+          status: "failed",
+          detail: messageOf(error),
+        });
+      }
+    }
+    for (const o of ops.filter((x) => x.op === "rename")) {
+      const label =
+        (o.gmailLabelId ? labels.get(o.gmailLabelId) : undefined) ??
+        byName(o.name);
+      const fail = (detail: string): LabelOpOutcome => ({
+        op: "rename",
+        name: o.name,
+        status: "failed",
+        detail,
+      });
+      if (!label || label.type !== "user") {
+        outcomes.push(fail(`Gmail has no label ${o.name}`));
+        continue;
+      }
+      if (!o.newName || byName(o.newName)) {
+        outcomes.push(fail(`Gmail has a label ${o.newName} already`));
+        continue;
+      }
+      try {
+        await mailbox.renameLabel(label.id, o.newName);
+        labels.set(label.id, { ...label, name: o.newName });
+        outcomes.push({ op: "rename", name: o.name, status: "done" });
+      } catch (error) {
+        outcomes.push(fail(messageOf(error)));
+      }
+    }
+    return outcomes;
+  }
+
+  /** The batch's deletes, each only once Gmail says its label is empty. */
+  private async labelsAfter(
+    ops: GmailWriteLabelOp[],
+    mailbox: GmailMailbox,
+    labels: Map<string, GmailLabelInfo>,
+    renames: Map<string, string>,
+  ): Promise<LabelOpOutcome[]> {
+    const outcomes: LabelOpOutcome[] = [];
+    for (const o of ops.filter((x) => x.op === "delete")) {
+      const name = renames.get(o.name) ?? o.name;
+      const label =
+        (o.gmailLabelId ? labels.get(o.gmailLabelId) : undefined) ??
+        [...labels.values()].find((l) => l.name === name);
+      if (!label || label.type !== "user") {
+        outcomes.push({
+          op: "delete",
+          name: o.name,
+          status: "skipped",
+          detail: `Gmail has no label ${name}`,
+        });
+        continue;
+      }
+      try {
+        const totals = await mailbox.labelTotals(label.id);
+        if (totals.messagesTotal > 0) {
+          outcomes.push({
+            op: "delete",
+            name: o.name,
+            status: "skipped",
+            detail: `Still has ${totals.messagesTotal} messages in Gmail`,
+          });
+          continue;
+        }
+        await mailbox.deleteLabel(label.id);
+        outcomes.push({ op: "delete", name: o.name, status: "done" });
+      } catch (error) {
+        outcomes.push({
+          op: "delete",
+          name: o.name,
+          status: "failed",
+          detail: messageOf(error),
+        });
+      }
+    }
+    return outcomes;
   }
 
   private async writeChanges(
@@ -191,8 +368,15 @@ export class GmailWriter {
     mailbox: GmailMailbox,
     labels: Map<string, GmailLabelInfo>,
     reporter: Reporter,
+    renames: Map<string, string> = new Map(),
   ): Promise<void> {
     const snapshotTime = new Date().toISOString();
+    // A label the batch created is found by name; one it could not make
+    // leaves its changes failed.
+    const idOf = (l: { name: string; gmailLabelId?: string }) =>
+      l.gmailLabelId ??
+      [...labels.values()].find((x) => x.name === l.name && x.type === "user")
+        ?.id;
     const userNames = (ids: string[]) =>
       ids
         .map((id) => labels.get(id))
@@ -226,16 +410,18 @@ export class GmailWriter {
           continue;
         }
         const now = userNames(labelIds);
+        // What the API recorded, in the names the batch's renames gave.
+        const expected = change.expected.map((n) => renames.get(n) ?? n);
         const removing = change.remove.map((l) => l.name);
         const wanted = [
-          ...change.expected.filter((n) => !removing.includes(n)),
+          ...expected.filter((n) => !removing.includes(n)),
           ...change.add.map((l) => l.name),
         ];
         if (sameSet(now, wanted)) {
           await reporter.add(change.gmailId, "unchanged");
           continue;
         }
-        if (!sameSet(now, change.expected)) {
+        if (!sameSet(now, expected)) {
           // Changed in Gmail since: Minerva is brought up to date instead.
           const state = stateOfLabelIds(labelIds, labels);
           if (state) {
@@ -249,8 +435,17 @@ export class GmailWriter {
           await reporter.add(change.gmailId, "changed");
           continue;
         }
-        const add = change.add.map((l) => l.gmailLabelId).sort();
-        const remove = change.remove.map((l) => l.gmailLabelId).sort();
+        const addIds = change.add.map(idOf);
+        const removeIds = change.remove.map(idOf);
+        if ([...addIds, ...removeIds].some((id) => !id)) {
+          this.logger.warn(
+            `Change batch ${request.batchId}: a label for message ${change.gmailId} is not in Gmail`,
+          );
+          await reporter.add(change.gmailId, "failed");
+          continue;
+        }
+        const add = (addIds as string[]).sort();
+        const remove = (removeIds as string[]).sort();
         const key = `${add.join(",")}|${remove.join(",")}`;
         const group = groups.get(key) ?? { add, remove, messages: [] };
         group.messages.push({ change, labelIds });
@@ -336,13 +531,37 @@ const validate = (request: StartGmailWritesRequest): void => {
     throw new BadRequestException("email must be the mailbox's address");
   }
   const changes = request.changes;
+  const ops = request.labelOps ?? [];
+  if (!Array.isArray(ops) || ops.length > 1000) {
+    throw new BadRequestException("labelOps must be at most 1,000 operations");
+  }
+  ops.forEach((o, i) => {
+    const ok =
+      o &&
+      ["create", "rename", "delete"].includes(o.op) &&
+      typeof o.name === "string" &&
+      o.name.length > 0 &&
+      (o.op === "rename") === (typeof o.newName === "string") &&
+      (o.gmailLabelId === undefined ||
+        (typeof o.gmailLabelId === "string" && LABEL_ID.test(o.gmailLabelId)));
+    if (!ok) {
+      throw new BadRequestException(
+        `labelOps[${i}] must be a create, rename (with its new name) or delete of a named label`,
+      );
+    }
+  });
   if (
     !Array.isArray(changes) ||
-    changes.length < 1 ||
+    changes.length + ops.length < 1 ||
     changes.length > MAX_WRITES
   ) {
-    throw new BadRequestException(`changes must be 1 to ${MAX_WRITES} changes`);
+    throw new BadRequestException(
+      `changes must be at most ${MAX_WRITES}, and a batch changes something`,
+    );
   }
+  const creating = new Set(
+    ops.filter((o) => o.op === "create").map((o) => o.name),
+  );
   changes.forEach((c, i) => {
     const ok =
       c &&
@@ -357,14 +576,15 @@ const validate = (request: StartGmailWritesRequest): void => {
             (l) =>
               l &&
               typeof l.name === "string" &&
-              typeof l.gmailLabelId === "string" &&
-              LABEL_ID.test(l.gmailLabelId),
+              (typeof l.gmailLabelId === "string"
+                ? LABEL_ID.test(l.gmailLabelId)
+                : creating.has(l.name)),
           ),
       ) &&
       c.add.length + c.remove.length > 0;
     if (!ok) {
       throw new BadRequestException(
-        `changes[${i}] must have a Gmail ID, the labels expected, and labels to add or remove with their Gmail IDs`,
+        `changes[${i}] must have a Gmail ID, the labels expected, and labels to add or remove with their Gmail IDs (or created by the batch)`,
       );
     }
   });

@@ -3,6 +3,7 @@ import {
   CloudUploadOutlined,
   ExportOutlined,
   HistoryOutlined,
+  PartitionOutlined,
   TagsOutlined,
 } from "@ant-design/icons";
 import type {
@@ -17,7 +18,9 @@ import {
   Alert,
   Button,
   Flex,
+  Input,
   message,
+  Modal,
   Popconfirm,
   Segmented,
   Select,
@@ -43,6 +46,7 @@ import {
   changesByAccount,
   proposalKey,
   proposalsByAccount,
+  subLabelChanges,
 } from "../../../../utils/mailChanges";
 
 const { Title, Text } = Typography;
@@ -117,6 +121,8 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
   // is ready: no request goes out before, so none goes out without it.
   const [selected, setSelected] = useState<MailAuditChange[]>([]);
   const [busy, setBusy] = useState(false);
+  /** The new sub-label's name while the split dialog is open. */
+  const [subLabel, setSubLabel] = useState<string>();
   // A new page or filter starts with nothing selected.
   useEffect(() => setSelected([]), [label, filters]);
 
@@ -166,6 +172,37 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
       setSelected([]);
       // The batch is written in the background; what it applied shows soon.
       setTimeout(() => void refetch(true), 5000);
+    } catch (error) {
+      message.error(apiProblems(error).join(" "));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** A split: the selected messages moved into a new sub-label. */
+  const moveToSubLabel = async () => {
+    if (!label || !subLabel) return;
+    setBusy(true);
+    try {
+      let messages = 0;
+      for (const [accountId, changes] of subLabelChanges(
+        selected,
+        label,
+        subLabel,
+      )) {
+        messages += (await mailApi.applyChanges(accountId, changes, [subLabel]))
+          .data.batch.messages;
+      }
+      message.success(
+        <span>
+          Moving {messages.toLocaleString()} messages to {subLabel} in Gmail.{" "}
+          <Link href={"/minerva/mail/changes"}>
+            Follow it in the change log
+          </Link>
+        </span>,
+      );
+      setSelected([]);
+      setSubLabel(undefined);
     } catch (error) {
       message.error(apiProblems(error).join(" "));
     } finally {
@@ -435,6 +472,14 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
                     >
                       Mark processed, no change
                     </Button>
+                    {label && (
+                      <Button
+                        icon={<PartitionOutlined />}
+                        onClick={() => setSubLabel(`${label}/`)}
+                      >
+                        Move to new sub-label…
+                      </Button>
+                    )}
                     <Button type={"text"} onClick={() => setSelected([])}>
                       Clear
                     </Button>
@@ -443,6 +488,35 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
               }
             />
           )}
+          <Modal
+            open={subLabel !== undefined}
+            title={"Move to a new sub-label"}
+            okText={"Create and move"}
+            okButtonProps={{
+              disabled:
+                !subLabel ||
+                !label ||
+                !subLabel.startsWith(`${label}/`) ||
+                subLabel.endsWith("/"),
+              loading: busy,
+            }}
+            onOk={moveToSubLabel}
+            onCancel={() => setSubLabel(undefined)}
+          >
+            <Space direction={"vertical"} style={{ width: "100%" }}>
+              <Text>
+                Creates the label in Gmail and moves the{" "}
+                {messagesSelected.toLocaleString()} selected messages into it,
+                out of {label}. The rest stay. It can be undone from the change
+                log.
+              </Text>
+              <Input
+                value={subLabel}
+                onChange={(e) => setSubLabel(e.target.value)}
+                onPressEnter={moveToSubLabel}
+              />
+            </Space>
+          </Modal>
           <Table<MailAuditChange>
             size={"small"}
             loading={loading}

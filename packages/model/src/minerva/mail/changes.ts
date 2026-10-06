@@ -20,6 +20,25 @@ export enum MailChangeBatchKind {
   Apply = "apply",
   /** The reverse of an earlier batch. */
   Undo = "undo",
+  /** One label merged into another, its children moved under it. */
+  Merge = "merge",
+}
+
+/** What a batch does to a label itself. */
+export enum MailLabelOpKind {
+  Create = "create",
+  Rename = "rename",
+  /** Only once Gmail says it is empty. */
+  Delete = "delete",
+}
+
+/** What became of a label operation. */
+export enum MailLabelOpStatus {
+  Pending = "pending",
+  Done = "done",
+  /** Not needed or not safe: a label to delete that still has mail. */
+  Skipped = "skipped",
+  Failed = "failed",
 }
 
 /** Where a batch is. */
@@ -83,6 +102,167 @@ export class MailLabelChange {
     description: "User labels to remove, by full name",
   })
   remove: string[];
+}
+
+/** A label created, renamed or deleted by a batch. */
+export class MailLabelOp {
+  @ApiProperty({
+    enum: () => MailLabelOpKind,
+    enumName: "MailLabelOpKind",
+    enumSchema: { description: "What a batch does to a label itself" },
+    required: true,
+    description: "Create, rename or delete",
+  })
+  op: MailLabelOpKind;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label, by full name as it is when the operation runs",
+  })
+  name: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "A rename's new name",
+  })
+  newName?: string;
+
+  @ApiProperty({
+    enum: () => MailLabelOpStatus,
+    enumName: "MailLabelOpStatus",
+    enumSchema: { description: "What became of a label operation" },
+    required: true,
+    description: "What became of it",
+  })
+  status: MailLabelOpStatus;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Why it was skipped or failed",
+  })
+  detail?: string;
+}
+
+/** The outcome of a label operation, as the agent reports it. */
+export class MailLabelOpOutcome {
+  @ApiProperty({
+    enum: () => MailLabelOpKind,
+    enumName: "MailLabelOpKind",
+    enumSchema: { description: "What a batch does to a label itself" },
+    required: true,
+    description: "The operation",
+  })
+  op: MailLabelOpKind;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label it was on, as the batch named it",
+  })
+  name: string;
+
+  @ApiProperty({
+    enum: () => MailLabelOpStatus,
+    enumName: "MailLabelOpStatus",
+    enumSchema: { description: "What became of a label operation" },
+    required: true,
+    description: "Done, skipped or failed",
+  })
+  status: MailLabelOpStatus;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "For a create, Gmail's ID for the label",
+  })
+  gmailLabelId?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Why it was skipped or failed; at most 500 characters",
+  })
+  detail?: string;
+}
+
+/** A label a merge renames, with no label of its new name to merge into. */
+export class MailLabelRename {
+  @ApiProperty({ type: String, required: true, description: "Its name now" })
+  from: string;
+
+  @ApiProperty({ type: String, required: true, description: "Its new name" })
+  to: string;
+}
+
+/** A label a merge empties into another. */
+export class MailLabelMergeStep {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label emptied",
+  })
+  from: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label its messages go to",
+  })
+  to: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its messages, as Minerva has them",
+  })
+  messages: number;
+}
+
+/** What merging one label into another would do. */
+export class MailLabelMergePreview {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label merged away",
+  })
+  from: string;
+
+  @ApiProperty({ type: String, required: true, description: "The label kept" })
+  into: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Messages whose labels change",
+  })
+  messages: number;
+
+  @ApiProperty({
+    type: () => MailLabelMergeStep,
+    isArray: true,
+    required: true,
+    description:
+      "Labels emptied into another: the label itself, and each child whose new name is a label already",
+  })
+  merges: MailLabelMergeStep[];
+
+  @ApiProperty({
+    type: () => MailLabelRename,
+    isArray: true,
+    required: true,
+    description: "Children renamed under the label kept",
+  })
+  renames: MailLabelRename[];
+
+  @ApiProperty({
+    type: [String],
+    required: true,
+    description: "Labels deleted once empty",
+  })
+  deletes: string[];
 }
 
 /** How many of a batch's changes have each outcome. */
@@ -195,6 +375,15 @@ export class MailChangeBatch {
     description: "Its changes by outcome",
   })
   counts: MailChangeCounts;
+
+  @ApiProperty({
+    type: () => MailLabelOp,
+    isArray: true,
+    required: true,
+    description:
+      "Labels it creates, renames and deletes: creates and renames before its messages are written, deletes after",
+  })
+  labelOps: MailLabelOp[];
 }
 
 /** One message's change in a batch, with its labels before. */
@@ -358,9 +547,33 @@ export class ApplyMailChangesRequest {
     isArray: true,
     required: true,
     description:
-      "Each message's change, up to 10,000; labels must be the account's user labels with Gmail IDs",
+      "Each message's change, up to 10,000; labels must be the account's user labels with Gmail IDs, or among newLabels",
   })
   changes: MailLabelChange[];
+
+  @ApiProperty({
+    type: [String],
+    required: false,
+    description:
+      "Labels to create in Gmail first, by full name, for changes to add (a new sub-label from a split, a label made in the picker)",
+  })
+  newLabels?: string[];
+}
+
+export class MergeMailLabelsRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label merged away, by full name",
+  })
+  from: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label kept, by full name",
+  })
+  into: string;
 }
 
 export class DismissMailProposalsRequest {
@@ -397,6 +610,15 @@ export class UpdateMailChangeBatchRequest {
     description: "Outcomes known since the last report",
   })
   changes?: MailChangeOutcome[];
+
+  @ApiProperty({
+    type: () => MailLabelOpOutcome,
+    isArray: true,
+    required: false,
+    description:
+      "Label operations done, skipped or failed since the last report",
+  })
+  labelOps?: MailLabelOpOutcome[];
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -419,6 +641,31 @@ export class ApplyMatchingMailProposalsResponse {
       "The batches written for them: one per mailbox, or more for over 10,000 messages; none when nothing matched",
   })
   batches: MailChangeBatch[];
+}
+
+export class PreviewMailLabelMergeResponse {
+  @ApiProperty({
+    type: () => MailLabelMergePreview,
+    required: true,
+    description: "What the merge would do",
+  })
+  preview: MailLabelMergePreview;
+}
+
+export class MergeMailLabelsResponse {
+  @ApiProperty({
+    type: () => MailChangeBatch,
+    required: true,
+    description: "The merge, a batch of its own",
+  })
+  batch: MailChangeBatch;
+
+  @ApiProperty({
+    type: () => MailLabelMergePreview,
+    required: true,
+    description: "What it does",
+  })
+  preview: MailLabelMergePreview;
 }
 
 export class ApplyMailChangesResponse {

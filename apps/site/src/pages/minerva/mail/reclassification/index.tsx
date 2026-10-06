@@ -146,7 +146,10 @@ const MailReclassificationPage: React.FunctionComponent = () => {
                 <LabelTreeTable labels={audit.labels} />
               </Card>
               <Card size={"small"} title={"Merge candidates"}>
-                <MergeCandidates merges={audit.merges} />
+                <MergeCandidates
+                  merges={audit.merges}
+                  labels={audit.labels.map((l) => l.name)}
+                />
               </Card>
               <Card
                 size={"small"}

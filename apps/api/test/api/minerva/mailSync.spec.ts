@@ -457,6 +457,78 @@ describe("Mail sync", () => {
       expect(t.graphql.calls("RecordMailDecisions")).toHaveLength(0);
     });
 
+    it("records label operations, and what they mean for Minerva's labels", async () => {
+      current({ kind: "merge" });
+      t.graphql.on("ListMailChangeLabelOps", {
+        minerva_mail_change_label_ops: [
+          { id: "op-1", op: "rename", name: "zz/b/x", newName: "zz/a/x" },
+          { id: "op-2", op: "create", name: "zz/c", newName: null },
+          { id: "op-3", op: "delete", name: "zz/b", newName: null },
+          { id: "op-4", op: "delete", name: "zz/b/y", newName: null },
+        ],
+      });
+      for (const op of [
+        "UpdateMailChangeLabelOp",
+        "RenameMailLabel",
+        "CreateMailLabelFromGmail",
+        "DeleteMailLabel",
+      ]) {
+        t.graphql.on(op, {});
+      }
+      const res = await asAgent(
+        "PUT",
+        `/v1/minerva/mail/change-batch/${BATCH}`,
+        {
+          status: "running",
+          labelOps: [
+            { op: "rename", name: "zz/b/x", status: "done" },
+            {
+              op: "create",
+              name: "zz/c",
+              status: "done",
+              gmailLabelId: "Label_9",
+            },
+            { op: "delete", name: "zz/b", status: "done" },
+            {
+              op: "delete",
+              name: "zz/b/y",
+              status: "skipped",
+              detail: "still has 2 messages",
+            },
+          ],
+        },
+      );
+      expect(res.status).toBe(200);
+      expect(
+        t.graphql.calls("UpdateMailChangeLabelOp").map((c) => c.variables),
+      ).toEqual([
+        { id: "op-1", set: { status: "done" } },
+        { id: "op-2", set: { status: "done", gmailLabelId: "Label_9" } },
+        { id: "op-3", set: { status: "done" } },
+        {
+          id: "op-4",
+          set: { status: "skipped", detail: "still has 2 messages" },
+        },
+      ]);
+      expect(t.graphql.calls("RenameMailLabel")[0].variables).toEqual({
+        accountId: ACCOUNT_ID,
+        name: "zz/b/x",
+        newName: "zz/a/x",
+      });
+      expect(t.graphql.calls("CreateMailLabelFromGmail")[0].variables).toEqual({
+        label: {
+          accountId: ACCOUNT_ID,
+          name: "zz/c",
+          type: "user",
+          gmailLabelId: "Label_9",
+        },
+      });
+      // Only the label Gmail deleted goes; the one it kept stays.
+      expect(
+        t.graphql.calls("DeleteMailLabel").map((c) => c.variables),
+      ).toEqual([{ accountId: ACCOUNT_ID, name: "zz/b" }]);
+    });
+
     it("records a failed batch with why", async () => {
       current();
       const res = await asAgent(

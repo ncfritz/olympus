@@ -29,8 +29,19 @@ export type AgentGmailSignIn = {
   created: boolean;
 };
 
-/** A label to write, by name and Gmail's ID. */
-export type AgentGmailLabel = { name: string; gmailLabelId: string };
+/**
+ * A label to write, by name and Gmail's ID; without one, a label the
+ * batch creates first.
+ */
+export type AgentGmailLabel = { name: string; gmailLabelId?: string };
+
+/** A label for the agent to create, rename or delete. */
+export type AgentGmailLabelOp = {
+  op: "create" | "rename" | "delete";
+  name: string;
+  newName?: string;
+  gmailLabelId?: string;
+};
 
 /** One message's change for the agent to write. */
 export type AgentGmailChange = {
@@ -117,6 +128,7 @@ export class MinervaMailAgentClient {
     accountId: string;
     email: string;
     changes: AgentGmailChange[];
+    labelOps?: AgentGmailLabelOp[];
   }): Promise<void> {
     await this.call("StartGmailWrites", (http) =>
       http.post("/gmail-writes", writes),

@@ -127,9 +127,16 @@
   "ApplyMailChangesRequest": {
     "properties": {
       "changes": {
-        "description": "Each message's change, up to 10,000; labels must be the account's user labels with Gmail IDs",
+        "description": "Each message's change, up to 10,000; labels must be the account's user labels with Gmail IDs, or among newLabels",
         "items": {
           "$ref": "#/components/schemas/MailLabelChange"
+        },
+        "type": "array"
+      },
+      "newLabels": {
+        "description": "Labels to create in Gmail first, by full name, for changes to add (a new sub-label from a split, a label made in the picker)",
+        "items": {
+          "type": "string"
         },
         "type": "array"
       }
@@ -11744,6 +11751,13 @@
         ],
         "description": "An apply or an undo"
       },
+      "labelOps": {
+        "description": "Labels it creates, renames and deletes: creates and renames before its messages are written, deletes after",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelOp"
+        },
+        "type": "array"
+      },
       "messages": {
         "description": "How many messages it changes",
         "type": "number"
@@ -11774,6 +11788,7 @@
       "counts",
       "id",
       "kind",
+      "labelOps",
       "messages",
       "requestedTime",
       "status"
@@ -11784,7 +11799,8 @@
     "description": "What a batch of changes does",
     "enum": [
       "apply",
-      "undo"
+      "undo",
+      "merge"
     ],
     "type": "string"
   },
@@ -12043,6 +12059,186 @@
       "retired"
     ],
     "type": "string"
+  },
+  "MailLabelMergePreview": {
+    "properties": {
+      "deletes": {
+        "description": "Labels deleted once empty",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "from": {
+        "description": "The label merged away",
+        "type": "string"
+      },
+      "into": {
+        "description": "The label kept",
+        "type": "string"
+      },
+      "merges": {
+        "description": "Labels emptied into another: the label itself, and each child whose new name is a label already",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelMergeStep"
+        },
+        "type": "array"
+      },
+      "messages": {
+        "description": "Messages whose labels change",
+        "type": "number"
+      },
+      "renames": {
+        "description": "Children renamed under the label kept",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelRename"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "deletes",
+      "from",
+      "into",
+      "merges",
+      "messages",
+      "renames"
+    ],
+    "type": "object"
+  },
+  "MailLabelMergeStep": {
+    "properties": {
+      "from": {
+        "description": "The label emptied",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Its messages, as Minerva has them",
+        "type": "number"
+      },
+      "to": {
+        "description": "The label its messages go to",
+        "type": "string"
+      }
+    },
+    "required": [
+      "from",
+      "messages",
+      "to"
+    ],
+    "type": "object"
+  },
+  "MailLabelOp": {
+    "properties": {
+      "detail": {
+        "description": "Why it was skipped or failed",
+        "type": "string"
+      },
+      "name": {
+        "description": "The label, by full name as it is when the operation runs",
+        "type": "string"
+      },
+      "newName": {
+        "description": "A rename's new name",
+        "type": "string"
+      },
+      "op": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelOpKind"
+          }
+        ],
+        "description": "Create, rename or delete"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelOpStatus"
+          }
+        ],
+        "description": "What became of it"
+      }
+    },
+    "required": [
+      "name",
+      "op",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailLabelOpKind": {
+    "description": "What a batch does to a label itself",
+    "enum": [
+      "create",
+      "rename",
+      "delete"
+    ],
+    "type": "string"
+  },
+  "MailLabelOpOutcome": {
+    "properties": {
+      "detail": {
+        "description": "Why it was skipped or failed; at most 500 characters",
+        "type": "string"
+      },
+      "gmailLabelId": {
+        "description": "For a create, Gmail's ID for the label",
+        "type": "string"
+      },
+      "name": {
+        "description": "The label it was on, as the batch named it",
+        "type": "string"
+      },
+      "op": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelOpKind"
+          }
+        ],
+        "description": "The operation"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelOpStatus"
+          }
+        ],
+        "description": "Done, skipped or failed"
+      }
+    },
+    "required": [
+      "name",
+      "op",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailLabelOpStatus": {
+    "description": "What became of a label operation",
+    "enum": [
+      "pending",
+      "done",
+      "skipped",
+      "failed"
+    ],
+    "type": "string"
+  },
+  "MailLabelRename": {
+    "properties": {
+      "from": {
+        "description": "Its name now",
+        "type": "string"
+      },
+      "to": {
+        "description": "Its new name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "from",
+      "to"
+    ],
+    "type": "object"
   },
   "MailLabelStatistics": {
     "properties": {
@@ -13915,6 +14111,48 @@
       "email",
       "givenName",
       "type"
+    ],
+    "type": "object"
+  },
+  "MergeMailLabelsRequest": {
+    "properties": {
+      "from": {
+        "description": "The label merged away, by full name",
+        "type": "string"
+      },
+      "into": {
+        "description": "The label kept, by full name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "from",
+      "into"
+    ],
+    "type": "object"
+  },
+  "MergeMailLabelsResponse": {
+    "properties": {
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The merge, a batch of its own"
+      },
+      "preview": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelMergePreview"
+          }
+        ],
+        "description": "What it does"
+      }
+    },
+    "required": [
+      "batch",
+      "preview"
     ],
     "type": "object"
   },
@@ -18953,6 +19191,22 @@
     ],
     "type": "object"
   },
+  "PreviewMailLabelMergeResponse": {
+    "properties": {
+      "preview": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelMergePreview"
+          }
+        ],
+        "description": "What the merge would do"
+      }
+    },
+    "required": [
+      "preview"
+    ],
+    "type": "object"
+  },
   "ProductionCompany": {
     "properties": {
       "alternativeNames": {
@@ -23284,6 +23538,13 @@
       "error": {
         "description": "Why it failed, for a failed batch; at most 500 characters",
         "type": "string"
+      },
+      "labelOps": {
+        "description": "Label operations done, skipped or failed since the last report",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelOpOutcome"
+        },
+        "type": "array"
       },
       "status": {
         "allOf": [

@@ -34,6 +34,13 @@ object_relationships:
     using:
       foreign_key_constraint_on: undoes_batch_id
 array_relationships:
+  - name: labelOps
+    using:
+      foreign_key_constraint_on:
+        column: batch_id
+        table:
+          name: mail_change_label_ops
+          schema: minerva
   - name: changes
     using:
       foreign_key_constraint_on:

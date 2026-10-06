@@ -577,8 +577,24 @@ left until phase 5 has decisions to measure them against.
    review's "apply all" and "mark all processed" over what its filters
    match (open proposals only; applying leaves the classifier's unticked
    ones, and a label one proposal adds and another removes; one batch per
-   mailbox, more past 10,000 messages). Merges, splits and new labels are
-   still to come.
+   mailbox, more past 10,000 messages). Then label operations
+   (`1791310000000_minerva_mail_label_ops`): a batch can create, rename and
+   delete labels as well as move messages; the agent creates and renames
+   first (reported before any message, so Minerva renames its label row,
+   keeping its messages, kind and family), writes the messages, then
+   deletes, and deletes a label only once Gmail says it is empty (else
+   "skipped"). `ApplyMailChanges` takes `newLabels` to create first (a
+   split's sub-label, later the picker's new labels). `PreviewMailLabelMerge`
+   and `MergeMailLabels`: every message with the label moves to the one
+   kept; each child is renamed under it, or, where the label kept has a
+   child of that name, emptied into it; the labels emptied are deleted; one
+   batch (kind `merge`, at most 50,000 messages). Undo reverses label
+   operations too (a delete by a create, a rename by its rename back, a
+   create by a delete once empty), comparing messages in today's names.
+   Site: Preview merge on each merge candidate and Merge labels for any
+   two; Move to new sub-label on a label's review (a split by hand: split
+   suggestions come with clustering, phase 6); the change log shows each
+   batch's label operations.
 4. **Site**: the Re-classification page and its label drill-down, as
    designed, with the bulk label picker. **Begun**: the label review
    selects proposals (decided ones show Applied or Processed and cannot

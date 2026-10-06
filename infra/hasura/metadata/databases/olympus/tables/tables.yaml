@@ -143,6 +143,7 @@
 - '!include minerva_mail_audit_summary_type.yaml'
 - '!include minerva_mail_audit_threads.yaml'
 - '!include minerva_mail_change_batches.yaml'
+- '!include minerva_mail_change_label_ops.yaml'
 - '!include minerva_mail_change_labels.yaml'
 - '!include minerva_mail_changes.yaml'
 - '!include minerva_mail_decisions.yaml'

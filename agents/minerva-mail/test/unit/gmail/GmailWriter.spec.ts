@@ -12,7 +12,10 @@ import type {
 import type { GmailCredentialStore } from "../../../src/gmail/GmailCredentialStore";
 import { GmailMessages } from "../../../src/gmail/GmailMessages";
 import { GmailWriter } from "../../../src/gmail/GmailWriter";
-import type { StartGmailWritesRequest } from "../../../src/model/gmail";
+import type {
+  GmailWriteChange,
+  StartGmailWritesRequest,
+} from "../../../src/model/gmail";
 
 /* A synthetic mailbox (never real mail). */
 const BATCH_ID = "3f0c8d4e-1a2b-4c3d-8e9f-0a1b2c3d4e00";
@@ -47,7 +50,7 @@ const change = (
 ) => ({ gmailId, expected, add, remove });
 
 const request = (
-  changes = [
+  changes: GmailWriteChange[] = [
     change("w1"),
     change("w2"),
     change("r1", [], [TRAVEL], ["Accounts/A", "Travel"]),
@@ -68,6 +71,8 @@ const setup = (
   options: { scope?: string; refuse?: boolean; writes?: boolean } = {},
 ) => {
   const published: { key: string; body: Record<string, unknown> }[] = [];
+  const calls: string[] = [];
+  let current: GmailLabelInfo[] = [...LABELS];
   const amqp = {
     publish: vi.fn(async (_exchange: string, key: string, body: never) => {
       published.push({ key, body });
@@ -75,7 +80,8 @@ const setup = (
   };
   const mail = { updateMailChangeBatch: vi.fn(async () => ({})) };
   const mailbox = {
-    labels: vi.fn(async () => LABELS),
+    // Gmail's labels as they are: creates and renames show.
+    labels: vi.fn(async () => [...current]),
     minimal: vi.fn(async (id: string) => {
       if (id === "f1") throw new Error("status 500");
       if (!GMAIL[id]) {
@@ -87,7 +93,25 @@ const setup = (
     }),
     batchModify: vi.fn(async () => {
       if (options.refuse) throw new Error("status 400");
+      calls.push("batchModify");
     }),
+    createLabel: vi.fn(async (name: string) => {
+      calls.push(`create ${name}`);
+      const made = { id: `Label_new_${name}`, name, type: "user" as const };
+      current.push(made);
+      return made;
+    }),
+    renameLabel: vi.fn(async (id: string, name: string) => {
+      calls.push(`rename ${id} ${name}`);
+      current = current.map((l) => (l.id === id ? { ...l, name } : l));
+    }),
+    deleteLabel: vi.fn(async (id: string) => {
+      calls.push(`delete ${id}`);
+    }),
+    labelTotals: vi.fn(async (id: string) => ({
+      messagesTotal: id === "Label_3" ? 4 : 0,
+      threadsTotal: 0,
+    })),
   };
   const credentials = {
     load: vi.fn(() => ({
@@ -114,7 +138,7 @@ const setup = (
     mail.updateMailChangeBatch.mock.calls.map(
       (c) => (c as unknown as [string, Record<string, unknown>])[1],
     );
-  return { writer, open, mail, mailbox, published, reports };
+  return { writer, open, mail, mailbox, published, reports, calls };
 };
 
 describe("GmailWriter", () => {
@@ -127,6 +151,7 @@ describe("GmailWriter", () => {
       batchId: BATCH_ID,
       status: "done",
       counts: { written: 3, unchanged: 1, changed: 1, gone: 2, failed: 1 },
+      labelOps: { done: 0, skipped: 0, failed: 0 },
     });
     // Messages with the same change are written together.
     expect(mailbox.batchModify.mock.calls).toEqual([
@@ -167,6 +192,104 @@ describe("GmailWriter", () => {
       ["Accounts/A"],
     );
     expect(byId("u1")).toEqual([]);
+  });
+
+  it("renames and creates first, writes the messages, then deletes what is empty", async () => {
+    const { writer, open, mailbox, calls, reports, published } = setup();
+    // w1 has Accounts/A, renamed by the batch to Accounts/Z; it gains a
+    // label the batch creates, and loses nothing. Bills (Label_3) still
+    // has mail, so stays; Travel is emptied and goes.
+    const report = await writer.write(
+      {
+        ...request([
+          {
+            gmailId: "w1",
+            expected: ["Accounts/A"],
+            add: [{ name: "Trips/New" }],
+            remove: [],
+          },
+        ]),
+        labelOps: [
+          {
+            op: "rename",
+            name: "Accounts/A",
+            newName: "Accounts/Z",
+            gmailLabelId: "Label_1",
+          },
+          { op: "create", name: "Trips/New" },
+          { op: "delete", name: "Travel", gmailLabelId: "Label_2" },
+          { op: "delete", name: "Bills", gmailLabelId: "Label_3" },
+        ],
+      },
+      open,
+    );
+
+    expect(calls).toEqual([
+      "create Trips/New",
+      "rename Label_1 Accounts/Z",
+      "batchModify",
+      "delete Label_2",
+    ]);
+    expect(mailbox.batchModify).toHaveBeenCalledWith(
+      ["w1"],
+      ["Label_new_Trips/New"],
+      [],
+    );
+    expect(report).toMatchObject({
+      status: "done",
+      counts: { written: 1 },
+      labelOps: { done: 3, skipped: 1, failed: 0 },
+    });
+    const [, before, after] = reports();
+    // Creates and renames are reported before any message is written.
+    expect(before).toEqual({
+      status: "running",
+      changes: [],
+      labelOps: [
+        {
+          op: "create",
+          name: "Trips/New",
+          status: "done",
+          gmailLabelId: "Label_new_Trips/New",
+        },
+        { op: "rename", name: "Accounts/A", status: "done" },
+      ],
+    });
+    expect(after).toEqual({
+      status: "done",
+      changes: [{ gmailId: "w1", status: "written" }],
+      labelOps: [
+        { op: "delete", name: "Travel", status: "done" },
+        {
+          op: "delete",
+          name: "Bills",
+          status: "skipped",
+          detail: "Still has 4 messages in Gmail",
+        },
+      ],
+    });
+    // Minerva hears of the message under the new names.
+    expect(published[0].body.labels).toEqual(["Accounts/Z", "Trips/New"]);
+  });
+
+  it("fails a rename onto a name Gmail has", async () => {
+    const { writer, open, mailbox, reports } = setup();
+    await writer.write(
+      {
+        ...request([]),
+        labelOps: [{ op: "rename", name: "Accounts/A", newName: "Travel" }],
+      },
+      open,
+    );
+    expect(mailbox.renameLabel).not.toHaveBeenCalled();
+    expect(reports()[1].labelOps).toEqual([
+      {
+        op: "rename",
+        name: "Accounts/A",
+        status: "failed",
+        detail: "Gmail has a label Travel already",
+      },
+    ]);
   });
 
   it("reports a change Gmail refuses as failed", async () => {
@@ -215,6 +338,7 @@ describe("GmailWriter", () => {
       batchId: r.batchId,
       status: "done",
       counts: { written: 0, unchanged: 0, changed: 0, gone: 0, failed: 0 },
+      labelOps: { done: 0, skipped: 0, failed: 0 },
     }));
 
     expect(writer.accept(request([change("a1")]))).toBe(1);

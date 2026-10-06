@@ -1,4 +1,6 @@
 import { ApplyMailChangesController } from "./controllers/ApplyMailChangesController";
+import { MergeMailLabelsController } from "./controllers/MergeMailLabelsController";
+import { PreviewMailLabelMergeController } from "./controllers/PreviewMailLabelMergeController";
 import { ApplyMatchingMailProposalsController } from "./controllers/ApplyMatchingMailProposalsController";
 import { DismissMatchingMailProposalsController } from "./controllers/DismissMatchingMailProposalsController";
 import { DescribeMailChangeBatchController } from "./controllers/DescribeMailChangeBatchController";
@@ -87,6 +89,8 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailAccountsController,
     ListMailMessageStatesController,
     ApplyMailChangesController,
+    MergeMailLabelsController,
+    PreviewMailLabelMergeController,
     ApplyMatchingMailProposalsController,
     DismissMatchingMailProposalsController,
     DescribeMailChangeBatchController,

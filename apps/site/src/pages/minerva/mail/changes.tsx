@@ -1,4 +1,8 @@
-import { HistoryOutlined, UndoOutlined } from "@ant-design/icons";
+import {
+  HistoryOutlined,
+  MergeOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import type {
   MailAccount,
   MailChangeBatch,
@@ -155,7 +159,35 @@ const MailChangeLogPage: React.FunctionComponent = () => {
             }}
             expandable={{
               expandedRowRender: (b) => (
-                <BatchChangesTable batchId={b.id} total={b.messages} />
+                <Space direction={"vertical"} style={{ width: "100%" }}>
+                  {b.labelOps.length > 0 && (
+                    <Space size={[6, 6]} wrap={true}>
+                      {b.labelOps.map((o) => (
+                        <Tooltip key={`${o.op}:${o.name}`} title={o.detail}>
+                          <Tag
+                            color={
+                              o.status === "done"
+                                ? "green"
+                                : o.status === "failed"
+                                  ? "red"
+                                  : undefined
+                            }
+                          >
+                            {o.op === "rename"
+                              ? `Rename ${o.name} → ${o.newName}`
+                              : o.op === "create"
+                                ? `Create ${o.name}`
+                                : `Delete ${o.name}`}
+                            {o.status === "done" ? "" : ` (${o.status})`}
+                          </Tag>
+                        </Tooltip>
+                      ))}
+                    </Space>
+                  )}
+                  {b.messages > 0 && (
+                    <BatchChangesTable batchId={b.id} total={b.messages} />
+                  )}
+                </Space>
               ),
             }}
             columns={[
@@ -177,6 +209,11 @@ const MailChangeLogPage: React.FunctionComponent = () => {
                     <Space size={4}>
                       <UndoOutlined />
                       <span>Undo</span>
+                    </Space>
+                  ) : b.kind === "merge" ? (
+                    <Space size={4}>
+                      <MergeOutlined />
+                      <span>Merge</span>
                     </Space>
                   ) : (
                     "Apply"
@@ -230,7 +267,7 @@ const MailChangeLogPage: React.FunctionComponent = () => {
                     <Popconfirm
                       title={"Undo this batch?"}
                       description={
-                        "Puts back the labels it changed, on messages still as it left them. One changed in Gmail since is left as it is."
+                        "Puts back the labels it changed, on messages still as it left them (one changed in Gmail since is left as it is), and reverses its renames, deletes and creates."
                       }
                       okText={"Undo"}
                       onConfirm={() => undo(b)}

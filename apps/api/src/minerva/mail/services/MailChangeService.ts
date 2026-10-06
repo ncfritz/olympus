@@ -23,6 +23,11 @@ import {
   MailChangeBatchReport,
   MailChangeBatchStatus,
   MailChangeStatus,
+  MailLabelMergePreview,
+  MailLabelOp,
+  MailLabelOpKind,
+  MailLabelOpStatus,
+  MergeMailLabelsRequest,
   UpdateMailChangeBatchRequest,
 } from "@ncfritz/olympus-model";
 import { gql, GraphQLClient } from "graphql-request";
@@ -34,10 +39,19 @@ import {
 import { MailAuditService, type OpenMailProposal } from "./MailAuditService";
 import {
   type AgentGmailChange,
+  type AgentGmailLabelOp,
   MinervaMailAgentClient,
 } from "./MinervaMailAgentClient";
 
 export const MAX_CHANGES = 10_000;
+/** Messages a merge moves at most, in one batch. */
+export const MAX_MERGE = 50_000;
+const LABEL_NAME_MAX = 225;
+const LABEL_OP_STATUSES: string[] = [
+  MailLabelOpStatus.Done,
+  MailLabelOpStatus.Skipped,
+  MailLabelOpStatus.Failed,
+];
 /** Rows a single insert carries. */
 const CHUNK = 1000;
 /** Changes a page of DescribeMailChangeBatch holds at most. */
@@ -71,6 +85,7 @@ const BATCH_FIELDS = `
   finishedTime
   error
   undoneBy { id }
+  labelOps(order_by: { createdTime: asc }) { op name newName status detail }
   total: changes_aggregate { aggregate { count } }
   ${COUNT_FIELDS}
 `;
@@ -87,8 +102,32 @@ type GraphQlBatch = {
   finishedTime: string | null;
   error: string | null;
   undoneBy: { id: string }[];
+  labelOps?: GraphQlLabelOp[];
   total: Count;
 } & Record<MailChangeStatus, Count>;
+
+type GraphQlLabelOp = {
+  op: string;
+  name: string;
+  newName: string | null;
+  status: string;
+  detail: string | null;
+};
+
+const toLabelOp = (o: GraphQlLabelOp): MailLabelOp => ({
+  op: o.op as MailLabelOpKind,
+  name: o.name,
+  ...(o.newName ? { newName: o.newName } : {}),
+  status: o.status as MailLabelOpStatus,
+  ...(o.detail ? { detail: o.detail } : {}),
+});
+
+/** A label operation a batch is to carry out. */
+type PlannedLabelOp = {
+  op: MailLabelOpKind;
+  name: string;
+  newName?: string;
+};
 
 type GraphQlChangeLabel = { role: string; name: string };
 
@@ -139,6 +178,7 @@ const toBatch = (b: GraphQlBatch): MailChangeBatch => ({
     gone: b.gone.aggregate.count,
     failed: b.failed.aggregate.count,
   },
+  labelOps: (b.labelOps ?? []).map(toLabelOp),
 });
 
 const labelsOf = (c: GraphQlChange, role: string): string[] =>
@@ -239,6 +279,22 @@ const requireId = (id: string, name: string): string => {
   if (!UUID.test(id)) throw new BadRequestException(`${name} must be an ID`);
   return id;
 };
+
+const labelName = (n: unknown): n is string =>
+  typeof n === "string" &&
+  n.length >= 1 &&
+  n.length <= LABEL_NAME_MAX &&
+  n === n.trim() &&
+  !n.startsWith("/") &&
+  !n.endsWith("/") &&
+  !n.includes("//");
+
+/**
+ * A name as it is after `renames`. A merge renames each child it moves by
+ * name, so a whole-name lookup is all a rename needs.
+ */
+const renamed = (name: string, renames: Map<string, string>): string =>
+  renames.get(name) ?? name;
 
 const userLabelsOf = (m: GraphQlMessage): string[] =>
   m.messageLabels
@@ -397,7 +453,25 @@ export class MailChangeService {
         );
       }
     });
-    return this.applyChecked(userId, accountId, changes);
+    const newLabels = request.newLabels ?? [];
+    if (
+      !Array.isArray(newLabels) ||
+      newLabels.length > 100 ||
+      !newLabels.every(labelName)
+    ) {
+      throw new BadRequestException(
+        "newLabels must be at most 100 label names, each a path of 1 to 225 characters",
+      );
+    }
+    const removingNew = changes.find((c) =>
+      c.remove.some((n) => newLabels.includes(n)),
+    );
+    if (removingNew) {
+      throw new BadRequestException(
+        `A label being created cannot be removed (${removingNew.gmailId})`,
+      );
+    }
+    return this.applyChecked(userId, accountId, changes, newLabels);
   }
 
   /** An apply whose changes are known to be well formed. */
@@ -405,11 +479,18 @@ export class MailChangeService {
     userId: string,
     accountId: string,
     changes: MailLabelChange[],
+    newLabels: string[] = [],
   ): Promise<MailChangeBatch> {
     const account = await this.writableAccount(userId, accountId);
+    const known = await this.labelsByName(accountId, newLabels);
+    // A label asked for that Gmail has already is simply used.
+    const creating = [...new Set(newLabels)].filter(
+      (n) => !known.get(n)?.gmailLabelId,
+    );
     const labels = await this.writableLabels(
       accountId,
       changes.flatMap((c) => [...c.add, ...c.remove]),
+      creating,
     );
     const messages = await this.messagesOf(
       accountId,
@@ -440,7 +521,233 @@ export class MailChangeService {
       MailChangeBatchKind.Apply,
       planned,
       labels,
+      undefined,
+      creating.map((name) => ({ op: MailLabelOpKind.Create, name })),
     );
+  }
+
+  /**
+   * What merging `from` into `into` would do: every message with `from`
+   * moved to `into`; each of `from`'s children renamed under `into`, or,
+   * where `into` has a child of that name already, emptied into it; and
+   * the labels emptied deleted once Gmail says they are.
+   *
+   * @throws BadRequestException a label is missing, or `into` is `from`
+   *   or under it
+   * @throws NotFoundException the account is not the user's
+   * @throws ConflictException the merge moves more than 50,000 messages
+   */
+  async previewMerge(
+    userId: string,
+    accountId: string,
+    from: unknown,
+    into: unknown,
+  ): Promise<MailLabelMergePreview> {
+    requireId(accountId, "accountId");
+    await this.ownedAccount(userId, accountId);
+    return (await this.planMerge(accountId, from, into)).preview;
+  }
+
+  /**
+   * Merges one label into another, as previewMerge says, as one batch of
+   * its own: renames first, then the messages, then the deletes. It can
+   * be undone like an apply.
+   *
+   * @throws ServiceUnavailableException writes are turned off
+   * @throws ConflictException the mailbox is linked for reading only, or
+   *   the merge is too large
+   */
+  async merge(
+    userId: string,
+    accountId: string,
+    request: MergeMailLabelsRequest,
+  ): Promise<{ batch: MailChangeBatch; preview: MailLabelMergePreview }> {
+    this.requireWrites();
+    requireId(accountId, "accountId");
+    const account = await this.writableAccount(userId, accountId);
+    const plan = await this.planMerge(accountId, request?.from, request?.into);
+    const batch = await this.start(
+      userId,
+      account,
+      MailChangeBatchKind.Merge,
+      plan.changes,
+      plan.labels,
+      undefined,
+      plan.ops,
+    );
+    return { batch, preview: plan.preview };
+  }
+
+  private async planMerge(
+    accountId: string,
+    from: unknown,
+    into: unknown,
+  ): Promise<{
+    preview: MailLabelMergePreview;
+    changes: PlannedChange[];
+    ops: PlannedLabelOp[];
+    labels: Map<string, GraphQlLabel>;
+  }> {
+    if (!labelName(from) || !labelName(into)) {
+      throw new BadRequestException("from and into must be label names");
+    }
+    if (from === into || into.startsWith(`${from}/`)) {
+      throw new BadRequestException(
+        "A label cannot be merged into itself or a label under it",
+      );
+    }
+    const query = gql`
+      query ListMailLabelsForMerge(
+        $accountId: uuid!
+        $from: String!
+        $fromChildren: String!
+      ) {
+        minerva_mail_labels(
+          where: {
+            accountId: { _eq: $accountId }
+            type: { _eq: "user" }
+            _or: [{ name: { _eq: $from } }, { name: { _like: $fromChildren } }]
+          }
+        ) {
+          id
+          name
+          type
+          gmailLabelId
+        }
+      }
+    `;
+    const sources = (
+      await this.graphQLClient.request<{ minerva_mail_labels: GraphQlLabel[] }>(
+        query,
+        {
+          accountId,
+          from,
+          fromChildren: `${from.replace(/[\\%_]/g, (c) => `\\${c}`)}/%`,
+        },
+      )
+    ).minerva_mail_labels.filter(
+      (l) => l.name === from || l.name.startsWith(`${from}/`),
+    );
+    if (!sources.some((l) => l.name === from && l.gmailLabelId)) {
+      throw new BadRequestException(`Not a user label Gmail has: ${from}`);
+    }
+    const targetOf = (name: string) => `${into}${name.slice(from.length)}`;
+    const labels = await this.labelsByName(accountId, [
+      ...sources.map((l) => l.name),
+      ...sources.map((l) => targetOf(l.name)),
+    ]);
+    const exists = (name: string) => {
+      const l = labels.get(name);
+      return Boolean(l && l.type === "user" && l.gmailLabelId);
+    };
+    if (!exists(into)) {
+      throw new BadRequestException(`Not a user label Gmail has: ${into}`);
+    }
+
+    const merging = new Map<string, string>();
+    const renames: { from: string; to: string }[] = [];
+    for (const l of sources.sort((a, b) => a.name.localeCompare(b.name))) {
+      const target = targetOf(l.name);
+      if (l.name === from || exists(target)) {
+        if (l.gmailLabelId) merging.set(l.name, target);
+      } else {
+        renames.push({ from: l.name, to: target });
+      }
+    }
+
+    const messages = await this.messagesWithLabels(accountId, [
+      ...merging.keys(),
+    ]);
+    if (messages.length > MAX_MERGE) {
+      throw new ConflictException(
+        `The merge would move ${messages.length.toLocaleString()} messages; at most ${MAX_MERGE.toLocaleString()} at once`,
+      );
+    }
+    const counts = new Map<string, number>();
+    const changes: PlannedChange[] = messages.map((m) => {
+      const had = userLabelsOf(m);
+      const remove = had.filter((n) => merging.has(n));
+      for (const n of remove) counts.set(n, (counts.get(n) ?? 0) + 1);
+      const add = [
+        ...new Set(remove.map((n) => merging.get(n) as string)),
+      ].filter((n) => !had.includes(n));
+      return {
+        gmailId: m.gmailId,
+        messageId: m.id,
+        had,
+        add: add.sort(),
+        remove: remove.sort(),
+      };
+    });
+    const deletes = [...merging.keys()];
+    const preview: MailLabelMergePreview = {
+      from,
+      into,
+      messages: changes.length,
+      merges: [...merging].map(([f, t]) => ({
+        from: f,
+        to: t,
+        messages: counts.get(f) ?? 0,
+      })),
+      renames,
+      deletes,
+    };
+    const ops: PlannedLabelOp[] = [
+      ...renames.map((r) => ({
+        op: MailLabelOpKind.Rename,
+        name: r.from,
+        newName: r.to,
+      })),
+      ...deletes.map((name) => ({ op: MailLabelOpKind.Delete, name })),
+    ];
+    return { preview, changes, ops, labels };
+  }
+
+  /** Every message with any of `names`, with its labels. */
+  private async messagesWithLabels(
+    accountId: string,
+    names: string[],
+  ): Promise<GraphQlMessage[]> {
+    if (names.length === 0) return [];
+    const query = gql`
+      query ListMailMessagesWithLabels(
+        $accountId: uuid!
+        $names: [String!]!
+        $after: String!
+        $limit: Int!
+      ) {
+        minerva_mail_messages(
+          where: {
+            accountId: { _eq: $accountId }
+            gmailId: { _gt: $after }
+            messageLabels: { label: { name: { _in: $names } } }
+          }
+          order_by: { gmailId: asc }
+          limit: $limit
+        ) {
+          id
+          gmailId
+          messageLabels {
+            label {
+              name
+              type
+            }
+          }
+        }
+      }
+    `;
+    const found: GraphQlMessage[] = [];
+    let after = "";
+    for (;;) {
+      const page = (
+        await this.graphQLClient.request<{
+          minerva_mail_messages: GraphQlMessage[];
+        }>(query, { accountId, names, after, limit: 5000 })
+      ).minerva_mail_messages;
+      found.push(...page);
+      if (page.length < 5000 || found.length > MAX_MERGE) return found;
+      after = page[page.length - 1].gmailId;
+    }
   }
 
   /**
@@ -467,6 +774,13 @@ export class MailChangeService {
           undoneBy {
             id
           }
+          labelOps(where: { status: { _eq: "done" } }) {
+            op
+            name
+            newName
+            status
+            detail
+          }
           changes(where: { status: { _eq: "written" } }) {
             gmailId
             messageId
@@ -490,13 +804,14 @@ export class MailChangeService {
         kind: string;
         status: string;
         undoneBy: { id: string }[];
+        labelOps: GraphQlLabelOp[];
         changes: GraphQlChange[];
       }[];
     }>(query, { id: batchId, userId });
     const batch = response.minerva_mail_change_batches[0];
     if (!batch) throw new NotFoundException(`No change batch ${batchId}`);
-    if (batch.kind !== MailChangeBatchKind.Apply) {
-      throw new ConflictException("Only an apply can be undone");
+    if (batch.kind === MailChangeBatchKind.Undo) {
+      throw new ConflictException("An undo cannot be undone");
     }
     if (batch.status !== MailChangeBatchStatus.Done) {
       throw new ConflictException("The batch has not finished");
@@ -504,17 +819,42 @@ export class MailChangeService {
     if (batch.undoneBy.length) {
       throw new ConflictException("The batch has been undone already");
     }
-    if (batch.changes.length === 0) {
+    if (batch.changes.length === 0 && batch.labelOps.length === 0) {
       throw new ConflictException("The batch wrote nothing to undo");
     }
     const account = await this.writableAccount(userId, batch.accountId);
+    // The batch's renames, which Minerva's names now follow.
+    const renames = new Map(
+      batch.labelOps
+        .filter((o) => o.op === MailLabelOpKind.Rename && o.newName)
+        .map((o) => [o.name, o.newName as string]),
+    );
+    // Labels come back before the messages go back to them, and labels the
+    // batch made go once empty: the agent orders creates and renames
+    // before the messages, deletes after.
+    const ops: PlannedLabelOp[] = batch.labelOps.map((o) =>
+      o.op === MailLabelOpKind.Create
+        ? { op: MailLabelOpKind.Delete, name: o.name }
+        : o.op === MailLabelOpKind.Delete
+          ? { op: MailLabelOpKind.Create, name: o.name }
+          : {
+              op: MailLabelOpKind.Rename,
+              name: o.newName as string,
+              newName: o.name,
+            },
+    );
     const planned: PlannedChange[] = batch.changes.map((c) => {
       const had = labelsOf(c, "had");
       const add = labelsOf(c, "add");
       const remove = labelsOf(c, "remove");
-      // What the apply left is what Gmail must still have.
+      // What the batch left, in Minerva's names now, is what Gmail must
+      // still have.
       const after = [
-        ...new Set([...had.filter((l) => !remove.includes(l)), ...add]),
+        ...new Set(
+          [...had.filter((l) => !remove.includes(l)), ...add].map((n) =>
+            renamed(n, renames),
+          ),
+        ),
       ].sort();
       return {
         gmailId: c.gmailId,
@@ -524,11 +864,15 @@ export class MailChangeService {
         remove: add,
       };
     });
+    const recreating = ops
+      .filter((o) => o.op === MailLabelOpKind.Create)
+      .map((o) => o.name);
     let labels: Map<string, GraphQlLabel>;
     try {
       labels = await this.writableLabels(
         batch.accountId,
         planned.flatMap((c) => [...c.add, ...c.remove]),
+        recreating,
       );
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -543,6 +887,7 @@ export class MailChangeService {
       planned,
       labels,
       batchId,
+      ops,
     );
   }
 
@@ -764,6 +1109,28 @@ export class MailChangeService {
       }
     });
 
+    const opOutcomes = request.labelOps ?? [];
+    if (!Array.isArray(opOutcomes) || opOutcomes.length > 1000) {
+      throw new BadRequestException("labelOps must be at most 1,000 outcomes");
+    }
+    opOutcomes.forEach((o, i) => {
+      if (
+        !o ||
+        !Object.values(MailLabelOpKind).includes(o.op) ||
+        !labelName(o.name) ||
+        !LABEL_OP_STATUSES.includes(o.status) ||
+        (o.detail !== undefined &&
+          (typeof o.detail !== "string" || o.detail.length > 500)) ||
+        (o.gmailLabelId !== undefined &&
+          (typeof o.gmailLabelId !== "string" ||
+            !/^[A-Za-z0-9_-]{1,100}$/.test(o.gmailLabelId)))
+      ) {
+        throw new BadRequestException(
+          `labelOps[${i}] must name an operation, its label and an outcome other than pending`,
+        );
+      }
+    });
+
     const query = gql`
       query DescribeMailChangeBatchForReport($id: uuid!) {
         minerva_mail_change_batches_by_pk(id: $id) {
@@ -794,6 +1161,10 @@ export class MailChangeService {
       current.status === MailChangeBatchStatus.Failed
     ) {
       throw new ConflictException("The batch has finished");
+    }
+
+    if (opOutcomes.length) {
+      await this.recordLabelOps(current.id, current.accountId, opOutcomes);
     }
 
     const byStatus = new Map<string, string[]>();
@@ -845,6 +1216,134 @@ export class MailChangeService {
       set: { status, ...finished, ...(error ? { error } : {}) },
     });
     return toBatch(response.update_minerva_mail_change_batches_by_pk);
+  }
+
+  /**
+   * Label operations' outcomes, and what a done one means for Minerva's
+   * labels: a created label is added with its Gmail ID, a renamed one
+   * renamed (its messages, kind and family kept), a deleted one dropped.
+   * The agent reports creates and renames before it writes any message,
+   * so the names messages arrive with are already Minerva's.
+   */
+  private async recordLabelOps(
+    batchId: string,
+    accountId: string,
+    outcomes: NonNullable<UpdateMailChangeBatchRequest["labelOps"]>,
+  ): Promise<void> {
+    const query = gql`
+      query ListMailChangeLabelOps($batchId: uuid!) {
+        minerva_mail_change_label_ops(where: { batchId: { _eq: $batchId } }) {
+          id
+          op
+          name
+          newName
+        }
+      }
+    `;
+    const ops = (
+      await this.graphQLClient.request<{
+        minerva_mail_change_label_ops: {
+          id: string;
+          op: string;
+          name: string;
+          newName: string | null;
+        }[];
+      }>(query, { batchId })
+    ).minerva_mail_change_label_ops;
+    const update = gql`
+      mutation UpdateMailChangeLabelOp(
+        $id: uuid!
+        $set: minerva_mail_change_label_ops_set_input!
+      ) {
+        update_minerva_mail_change_label_ops_by_pk(
+          pk_columns: { id: $id }
+          _set: $set
+        ) {
+          id
+        }
+      }
+    `;
+    const addLabel = gql`
+      mutation CreateMailLabelFromGmail(
+        $label: minerva_mail_labels_insert_input!
+      ) {
+        insert_minerva_mail_labels_one(
+          object: $label
+          on_conflict: {
+            constraint: mail_labels_account_id_name_key
+            update_columns: [gmailLabelId]
+          }
+        ) {
+          id
+        }
+      }
+    `;
+    const renameLabel = gql`
+      mutation RenameMailLabel(
+        $accountId: uuid!
+        $name: String!
+        $newName: String!
+      ) {
+        update_minerva_mail_labels(
+          where: { accountId: { _eq: $accountId }, name: { _eq: $name } }
+          _set: { name: $newName }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    const deleteLabel = gql`
+      mutation DeleteMailLabel($accountId: uuid!, $name: String!) {
+        delete_minerva_mail_labels(
+          where: { accountId: { _eq: $accountId }, name: { _eq: $name } }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    for (const o of outcomes) {
+      const op = ops.find((x) => x.op === o.op && x.name === o.name);
+      if (!op) {
+        throw new BadRequestException(`The batch has no ${o.op} of ${o.name}`);
+      }
+      await this.graphQLClient.request(update, {
+        id: op.id,
+        set: {
+          status: o.status,
+          ...(o.detail ? { detail: o.detail } : {}),
+          ...(o.gmailLabelId ? { gmailLabelId: o.gmailLabelId } : {}),
+        },
+      });
+      if (o.status !== MailLabelOpStatus.Done) continue;
+      try {
+        if (o.op === MailLabelOpKind.Create) {
+          await this.graphQLClient.request(addLabel, {
+            label: {
+              accountId,
+              name: o.name,
+              type: "user",
+              ...(o.gmailLabelId ? { gmailLabelId: o.gmailLabelId } : {}),
+            },
+          });
+        } else if (o.op === MailLabelOpKind.Rename && op.newName) {
+          await this.graphQLClient.request(renameLabel, {
+            accountId,
+            name: o.name,
+            newName: op.newName,
+          });
+        } else if (o.op === MailLabelOpKind.Delete) {
+          await this.graphQLClient.request(deleteLabel, {
+            accountId,
+            name: o.name,
+          });
+        }
+      } catch (error) {
+        // Gmail has it so; the next reconcile brings Minerva into line.
+        this.logger.warn(
+          `Could not ${o.op} label ${o.name} in Minerva: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
   }
 
   private requireWrites(): void {
@@ -918,13 +1417,18 @@ export class MailChangeService {
     return found;
   }
 
-  /** The labels by name, every one a user label Gmail has. */
+  /**
+   * The labels by name, every one a user label Gmail has, or one the batch
+   * creates first.
+   */
   private async writableLabels(
     accountId: string,
     names: string[],
+    creating: string[] = [],
   ): Promise<Map<string, GraphQlLabel>> {
     const labels = await this.labelsByName(accountId, names);
     const missing = [...new Set(names)].filter((n) => {
+      if (creating.includes(n)) return false;
       const l = labels.get(n);
       return !l || l.type !== "user" || !l.gmailLabelId;
     });
@@ -979,6 +1483,7 @@ export class MailChangeService {
     planned: PlannedChange[],
     labels: Map<string, GraphQlLabel>,
     undoesBatchId?: string,
+    ops: PlannedLabelOp[] = [],
   ): Promise<MailChangeBatch> {
     const create = gql`
       mutation CreateMailChangeBatch(
@@ -1000,6 +1505,17 @@ export class MailChangeService {
             userId,
             kind,
             ...(undoesBatchId ? { undoesBatchId } : {}),
+            ...(ops.length
+              ? {
+                  labelOps: {
+                    data: ops.map((o) => ({
+                      op: o.op,
+                      name: o.name,
+                      ...(o.newName ? { newName: o.newName } : {}),
+                    })),
+                  },
+                }
+              : {}),
           },
         })
       ).insert_minerva_mail_change_batches_one.id;
@@ -1039,9 +1555,22 @@ export class MailChangeService {
       });
     }
 
-    const label = (name: string) => ({
-      name,
-      gmailLabelId: labels.get(name)?.gmailLabelId as string,
+    // A label the batch creates has no Gmail ID yet; the agent finds it by
+    // name once made.
+    const label = (name: string) => {
+      const gmailLabelId = labels.get(name)?.gmailLabelId;
+      return gmailLabelId ? { name, gmailLabelId } : { name };
+    };
+    const labelOps: AgentGmailLabelOp[] = ops.map((o) => {
+      const gmailLabelId = labels.get(o.name)?.gmailLabelId;
+      return {
+        op: o.op,
+        name: o.name,
+        ...(o.newName ? { newName: o.newName } : {}),
+        ...(gmailLabelId && o.op !== MailLabelOpKind.Create
+          ? { gmailLabelId }
+          : {}),
+      };
     });
     const writes: AgentGmailChange[] = planned.map((c) => ({
       gmailId: c.gmailId,
@@ -1055,6 +1584,7 @@ export class MailChangeService {
         accountId: account.id,
         email: account.email,
         changes: writes,
+        labelOps,
       });
     } catch (error) {
       this.logger.warn(

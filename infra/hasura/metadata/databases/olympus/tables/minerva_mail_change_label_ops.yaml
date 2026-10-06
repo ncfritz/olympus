@@ -1,0 +1,26 @@
+table:
+  name: mail_change_label_ops
+  schema: minerva
+configuration:
+  column_config:
+    batch_id:
+      custom_name: batchId
+    created_at:
+      custom_name: createdTime
+    gmail_label_id:
+      custom_name: gmailLabelId
+    new_name:
+      custom_name: newName
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    batch_id: batchId
+    created_at: createdTime
+    gmail_label_id: gmailLabelId
+    new_name: newName
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: batch
+    using:
+      foreign_key_constraint_on: batch_id

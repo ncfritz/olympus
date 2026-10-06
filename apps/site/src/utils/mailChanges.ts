@@ -64,6 +64,9 @@ export const proposalKey = (c: MailAuditChange): string =>
 /** A batch's outcome in a few words, for the change log. */
 export const batchSummary = (b: MailChangeBatch): string => {
   const c = b.counts;
+  const ops = b.labelOps ?? [];
+  const labelsDone = ops.filter((o) => o.status === "done").length;
+  const labelsLeft = ops.filter((o) => o.status !== "done").length;
   const parts = [
     c.written ? `${c.written.toLocaleString()} written` : "",
     c.unchanged ? `${c.unchanged.toLocaleString()} already so` : "",
@@ -71,13 +74,41 @@ export const batchSummary = (b: MailChangeBatch): string => {
     c.gone ? `${c.gone.toLocaleString()} gone` : "",
     c.failed ? `${c.failed.toLocaleString()} failed` : "",
     c.pending ? `${c.pending.toLocaleString()} to go` : "",
+    labelsDone
+      ? `${labelsDone} label${labelsDone === 1 ? "" : "s"} changed`
+      : "",
+    labelsLeft
+      ? `${labelsLeft} label change${labelsLeft === 1 ? "" : "s"} not done`
+      : "",
   ].filter(Boolean);
   return parts.join(" · ") || "nothing yet";
 };
 
 /** Whether a batch can be undone from the change log. */
 export const canUndo = (b: MailChangeBatch): boolean =>
-  b.kind === "apply" &&
+  b.kind !== "undo" &&
   b.status === "done" &&
   !b.undoneByBatchId &&
-  b.counts.written > 0;
+  (b.counts.written > 0 || (b.labelOps ?? []).some((o) => o.status === "done"));
+
+/**
+ * A split: the selected proposals' messages moved from `label` into a new
+ * sub-label, by account; a message without `label` only gains it.
+ */
+export const subLabelChanges = (
+  proposals: MailAuditChange[],
+  label: string,
+  subLabel: string,
+): Map<string, MailLabelChange[]> => {
+  const result = new Map<string, Map<string, MailLabelChange>>();
+  for (const p of proposals) {
+    const messages = result.get(p.message.accountId) ?? new Map();
+    result.set(p.message.accountId, messages);
+    messages.set(p.message.gmailId, {
+      gmailId: p.message.gmailId,
+      add: [subLabel],
+      remove: p.message.labels.includes(label) ? [label] : [],
+    });
+  }
+  return new Map([...result].map(([a, m]) => [a, [...m.values()]]));
+};

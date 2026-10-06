@@ -52,10 +52,24 @@ export class ListGmailAccountsResponse {
   accounts: GmailAccount[];
 }
 
-/** A label to write, by name and Gmail's ID. */
+/**
+ * A label to write, by name and Gmail's ID; without an ID, a label the
+ * batch creates first, found by name once made.
+ */
 export class GmailWriteLabel {
   name: string;
-  gmailLabelId: string;
+  gmailLabelId?: string;
+}
+
+/** A label to create, rename or delete. */
+export class GmailWriteLabelOp {
+  op: "create" | "rename" | "delete";
+  /** The label as it is named before the batch runs. */
+  name: string;
+  /** A rename's new name. */
+  newName?: string;
+  /** Gmail's ID, for a label that exists. */
+  gmailLabelId?: string;
 }
 
 /** One message's label change. */
@@ -78,6 +92,11 @@ export class StartGmailWritesRequest {
   /** The mailbox, linked with gmail.modify. */
   email: string;
   changes: GmailWriteChange[];
+  /**
+   * Labels to create, rename and delete: creates and renames before the
+   * messages are written, deletes after, and only once Gmail says empty.
+   */
+  labelOps?: GmailWriteLabelOp[];
 }
 
 export class StartGmailWritesResponse {

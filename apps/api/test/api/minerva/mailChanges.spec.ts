@@ -191,6 +191,7 @@ describe("Mail changes", () => {
             remove: [{ name: "Accounts/A", gmailLabelId: "Label_1" }],
           },
         ],
+        labelOps: [],
       });
     });
 
@@ -311,6 +312,7 @@ describe("Mail changes", () => {
             kind: "apply",
             status: "done",
             undoneBy: [],
+            labelOps: [],
             changes: [
               {
                 gmailId: "a1",
@@ -378,11 +380,12 @@ describe("Mail changes", () => {
             remove: [{ name: "Travel", gmailLabelId: "Label_2" }],
           },
         ],
+        labelOps: [],
       });
     });
 
     it.each([
-      ["an undo", { kind: "undo" }, /Only an apply/],
+      ["an undo", { kind: "undo" }, /An undo cannot be undone/],
       ["a batch still running", { status: "running" }, /not finished/],
       [
         "a batch undone already",
@@ -403,6 +406,323 @@ describe("Mail changes", () => {
         minerva_mail_change_batches: [],
       });
       expect((await undo()).status).toBe(404);
+    });
+  });
+
+  describe("new labels and merges", () => {
+    it("creates a new sub-label first, and moves messages into it", async () => {
+      linked();
+      labels();
+      ctx.t.graphql.on("ListMailMessagesForChanges", {
+        minerva_mail_messages: [message("a1", ["Travel"])],
+      });
+      ctx.t.graphql.on("CreateMailChangeBatch", {
+        insert_minerva_mail_change_batches_one: { id: BATCH_ID },
+      });
+      ctx.t.graphql.on("CreateMailChanges", {
+        insert_minerva_mail_changes: { affected_rows: 1 },
+      });
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .post(`${BASE}/mail/account/${ACCOUNT_ID}/change-batches`)
+          .send({
+            newLabels: ["Travel/Japan"],
+            changes: [
+              { gmailId: "a1", add: ["Travel/Japan"], remove: ["Travel"] },
+            ],
+          }),
+      );
+      expect(res.status).toBe(201);
+      expect(
+        ctx.t.graphql.calls("CreateMailChangeBatch")[0].variables,
+      ).toMatchObject({
+        batch: {
+          kind: "apply",
+          labelOps: { data: [{ op: "create", name: "Travel/Japan" }] },
+        },
+      });
+      expect(agent.startWrites.mock.calls[0][0]).toMatchObject({
+        changes: [
+          {
+            gmailId: "a1",
+            add: [{ name: "Travel/Japan" }],
+            remove: [{ name: "Travel", gmailLabelId: "Label_2" }],
+          },
+        ],
+        labelOps: [{ op: "create", name: "Travel/Japan" }],
+      });
+    });
+
+    it("answers 400 to a new label that is removed, or a name that is not a path", async () => {
+      for (const body of [
+        {
+          newLabels: ["New"],
+          changes: [{ gmailId: "a1", add: ["Travel"], remove: ["New"] }],
+        },
+        {
+          newLabels: ["Bad//Name"],
+          changes: [{ gmailId: "a1", add: ["Bad//Name"], remove: [] }],
+        },
+      ]) {
+        const res = await ctx.as(
+          ctx.t
+            .http()
+            .post(`${BASE}/mail/account/${ACCOUNT_ID}/change-batches`)
+            .send(body),
+        );
+        expect(res.status).toBe(400);
+      }
+    });
+
+    const mergeLabels = () => {
+      ctx.t.graphql.on("ListMailLabelsForMerge", {
+        minerva_mail_labels: [
+          {
+            id: "l-b",
+            name: "zz-test/b",
+            type: "user",
+            gmailLabelId: "Label_b",
+          },
+          {
+            id: "l-bx",
+            name: "zz-test/b/x",
+            type: "user",
+            gmailLabelId: "Label_bx",
+          },
+          {
+            id: "l-by",
+            name: "zz-test/b/y",
+            type: "user",
+            gmailLabelId: "Label_by",
+          },
+        ],
+      });
+      ctx.t.graphql.on("ListMailLabelsForChanges", {
+        minerva_mail_labels: [
+          {
+            id: "l-a",
+            name: "zz-test/a",
+            type: "user",
+            gmailLabelId: "Label_a",
+          },
+          {
+            id: "l-ay",
+            name: "zz-test/a/y",
+            type: "user",
+            gmailLabelId: "Label_ay",
+          },
+          {
+            id: "l-b",
+            name: "zz-test/b",
+            type: "user",
+            gmailLabelId: "Label_b",
+          },
+          {
+            id: "l-bx",
+            name: "zz-test/b/x",
+            type: "user",
+            gmailLabelId: "Label_bx",
+          },
+          {
+            id: "l-by",
+            name: "zz-test/b/y",
+            type: "user",
+            gmailLabelId: "Label_by",
+          },
+        ],
+      });
+      ctx.t.graphql.on("ListMailMessagesWithLabels", (vars) => ({
+        minerva_mail_messages:
+          (vars as { after: string }).after === ""
+            ? [
+                message("b1", ["zz-test/b"]),
+                message("b2", ["zz-test/b/y", "zz-test/b/x"]),
+              ]
+            : [],
+      }));
+    };
+
+    it("previews a merge: messages moved, children renamed or merged, labels deleted", async () => {
+      linked();
+      mergeLabels();
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .get(`${BASE}/mail/account/${ACCOUNT_ID}/labels/merge-preview`)
+          .query({ from: "zz-test/b", into: "zz-test/a" }),
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.preview).toEqual({
+        from: "zz-test/b",
+        into: "zz-test/a",
+        messages: 2,
+        merges: [
+          { from: "zz-test/b", to: "zz-test/a", messages: 1 },
+          { from: "zz-test/b/y", to: "zz-test/a/y", messages: 1 },
+        ],
+        renames: [{ from: "zz-test/b/x", to: "zz-test/a/x" }],
+        deletes: ["zz-test/b", "zz-test/b/y"],
+      });
+      expect(
+        ctx.t.graphql.calls("ListMailMessagesWithLabels")[0].variables,
+      ).toMatchObject({ names: ["zz-test/b", "zz-test/b/y"] });
+      expect(agent.startWrites).not.toHaveBeenCalled();
+    });
+
+    it("merges as one batch: renames, then messages, then deletes", async () => {
+      linked();
+      mergeLabels();
+      ctx.t.graphql.on("CreateMailChangeBatch", {
+        insert_minerva_mail_change_batches_one: { id: BATCH_ID },
+      });
+      ctx.t.graphql.on("CreateMailChanges", {
+        insert_minerva_mail_changes: { affected_rows: 2 },
+      });
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .post(`${BASE}/mail/account/${ACCOUNT_ID}/labels/merge`)
+          .send({ from: "zz-test/b", into: "zz-test/a" }),
+      );
+      expect(res.status).toBe(201);
+      expect(res.headers.location).toBe(
+        `/v1/minerva/mail/change-batch/${BATCH_ID}`,
+      );
+      expect(
+        ctx.t.graphql.calls("CreateMailChangeBatch")[0].variables,
+      ).toMatchObject({
+        batch: {
+          kind: "merge",
+          labelOps: {
+            data: [
+              { op: "rename", name: "zz-test/b/x", newName: "zz-test/a/x" },
+              { op: "delete", name: "zz-test/b" },
+              { op: "delete", name: "zz-test/b/y" },
+            ],
+          },
+        },
+      });
+      expect(agent.startWrites.mock.calls[0][0]).toMatchObject({
+        changes: [
+          {
+            gmailId: "b1",
+            expected: ["zz-test/b"],
+            add: [{ name: "zz-test/a", gmailLabelId: "Label_a" }],
+            remove: [{ name: "zz-test/b", gmailLabelId: "Label_b" }],
+          },
+          {
+            gmailId: "b2",
+            expected: ["zz-test/b/x", "zz-test/b/y"],
+            add: [{ name: "zz-test/a/y", gmailLabelId: "Label_ay" }],
+            remove: [{ name: "zz-test/b/y", gmailLabelId: "Label_by" }],
+          },
+        ],
+        labelOps: [
+          {
+            op: "rename",
+            name: "zz-test/b/x",
+            newName: "zz-test/a/x",
+            gmailLabelId: "Label_bx",
+          },
+          { op: "delete", name: "zz-test/b", gmailLabelId: "Label_b" },
+          { op: "delete", name: "zz-test/b/y", gmailLabelId: "Label_by" },
+        ],
+      });
+    });
+
+    it.each([
+      ["into itself", { from: "zz-test/b", into: "zz-test/b" }],
+      ["into its own child", { from: "zz-test/b", into: "zz-test/b/x" }],
+    ])("answers 400 to a merge %s", async (_case, body) => {
+      linked();
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .post(`${BASE}/mail/account/${ACCOUNT_ID}/labels/merge`)
+          .send(body),
+      );
+      expect(res.status).toBe(400);
+    });
+
+    it("undoes a merge: labels back first, messages back, renames reversed", async () => {
+      linked();
+      ctx.t.graphql.on("ListMailLabelsForChanges", {
+        minerva_mail_labels: [
+          {
+            id: "l-a",
+            name: "zz-test/a",
+            type: "user",
+            gmailLabelId: "Label_a",
+          },
+        ],
+      });
+      ctx.t.graphql.on("DescribeMailChangeBatchToUndo", {
+        minerva_mail_change_batches: [
+          {
+            id: BATCH_ID,
+            accountId: ACCOUNT_ID,
+            kind: "merge",
+            status: "done",
+            undoneBy: [],
+            labelOps: [
+              {
+                op: "rename",
+                name: "zz-test/b/x",
+                newName: "zz-test/a/x",
+                status: "done",
+                detail: null,
+              },
+              {
+                op: "delete",
+                name: "zz-test/b",
+                status: "done",
+                newName: null,
+                detail: null,
+              },
+            ],
+            changes: [
+              {
+                gmailId: "b1",
+                messageId: "msg-b1",
+                status: "written",
+                message: null,
+                labels: [
+                  { role: "had", name: "zz-test/b" },
+                  { role: "had", name: "zz-test/b/x" },
+                  { role: "add", name: "zz-test/a" },
+                  { role: "remove", name: "zz-test/b" },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+      ctx.t.graphql.on("CreateMailChangeBatch", {
+        insert_minerva_mail_change_batches_one: { id: UNDO_ID },
+      });
+      ctx.t.graphql.on("CreateMailChanges", {
+        insert_minerva_mail_changes: { affected_rows: 1 },
+      });
+      const res = await ctx.as(
+        ctx.t.http().post(`${BASE}/mail/change-batch/${BATCH_ID}/undo`),
+      );
+      expect(res.status).toBe(201);
+      expect(agent.startWrites.mock.calls[0][0]).toMatchObject({
+        changes: [
+          {
+            gmailId: "b1",
+            // What the merge left, in today's names.
+            expected: ["zz-test/a", "zz-test/a/x"],
+            add: [{ name: "zz-test/b" }],
+            remove: [{ name: "zz-test/a", gmailLabelId: "Label_a" }],
+          },
+        ],
+        labelOps: [
+          { op: "rename", name: "zz-test/a/x", newName: "zz-test/b/x" },
+          { op: "create", name: "zz-test/b" },
+        ],
+      });
     });
   });
 

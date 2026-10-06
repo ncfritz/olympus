@@ -8,6 +8,7 @@ import {
   canUndo,
   changesByAccount,
   proposalsByAccount,
+  subLabelChanges,
 } from "../../src/utils/mailChanges";
 
 const proposal = (
@@ -40,6 +41,7 @@ const batch = (overrides: Partial<MailChangeBatch> = {}): MailChangeBatch =>
       gone: 0,
       failed: 0,
     },
+    labelOps: [],
     ...overrides,
   }) as MailChangeBatch;
 

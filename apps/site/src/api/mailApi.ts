@@ -4,6 +4,8 @@ import {
   describeMailChangeBatch,
   dismissMailProposals,
   listMailChangeBatches,
+  mergeMailLabels,
+  previewMailLabelMerge,
   type MailLabelChange,
   type MailProposalRef,
   undoMailChangeBatch,
@@ -102,8 +104,28 @@ class MailApi {
   }
 
   /** Writes label changes to one mailbox in Gmail, as a batch. */
-  async applyChanges(accountId: string, changes: MailLabelChange[]) {
-    return await applyMailChanges({ path: { accountId }, body: { changes } });
+  async applyChanges(
+    accountId: string,
+    changes: MailLabelChange[],
+    newLabels?: string[],
+  ) {
+    return await applyMailChanges({
+      path: { accountId },
+      body: { changes, ...(newLabels?.length ? { newLabels } : {}) },
+    });
+  }
+
+  /** What merging `from` into `into` would do; changes nothing. */
+  async previewMerge(accountId: string, from: string, into: string) {
+    return await previewMailLabelMerge({
+      path: { accountId },
+      query: { from, into },
+    });
+  }
+
+  /** Merges `from` into `into` in Gmail, as a batch. */
+  async mergeLabels(accountId: string, from: string, into: string) {
+    return await mergeMailLabels({ path: { accountId }, body: { from, into } });
   }
 
   /** Applies every open proposal the filter matches, as batches. */

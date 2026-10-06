@@ -62,8 +62,10 @@ export const gmailStatusOf = (error: unknown): number | undefined =>
 export type GmailTransport = <T>(
   url: string,
   params: Record<string, string | number | boolean | string[] | undefined>,
-  /** A POST's body; a GET has none. */
+  /** A POST's or PATCH's body; a GET has none. */
   body?: unknown,
+  /** GET without a body, POST with one, unless said otherwise. */
+  method?: "PATCH" | "DELETE",
 ) => Promise<T>;
 
 /** messages.batchModify takes at most this many IDs a call. */
@@ -130,12 +132,13 @@ export class GmailMailbox {
       string | number | boolean | string[] | undefined
     > = {},
     body?: unknown,
+    method?: "PATCH" | "DELETE",
   ): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       await this.throttle.take();
       this.requests++;
       try {
-        return await this.transport<T>(`${API}${path}`, params, body);
+        return await this.transport<T>(`${API}${path}`, params, body, method);
       } catch (error) {
         if (!retryable(error) || attempt >= MAX_TRIES) throw error;
         const wait = Math.min(32_000, 1000 * 2 ** (attempt - 1));
@@ -165,6 +168,26 @@ export class GmailMailbox {
       {},
       { ids, addLabelIds, removeLabelIds },
     );
+  }
+
+  /** Makes a user label, shown in the label list and on messages. */
+  async createLabel(name: string): Promise<GmailLabelInfo> {
+    const label = await this.send<{ id: string; name: string }>(
+      "/labels",
+      {},
+      { name, labelListVisibility: "labelShow", messageListVisibility: "show" },
+    );
+    return { id: label.id, name: label.name, type: "user" };
+  }
+
+  /** Renames a user label; its messages keep it. */
+  async renameLabel(id: string, name: string): Promise<void> {
+    await this.send<unknown>(`/labels/${id}`, {}, { name }, "PATCH");
+  }
+
+  /** Deletes a user label (its messages lose it; none are deleted). */
+  async deleteLabel(id: string): Promise<void> {
+    await this.send<unknown>(`/labels/${id}`, {}, undefined, "DELETE");
   }
 
   profile(): Promise<GmailProfile> {
@@ -291,13 +314,15 @@ export class GmailClient {
       url: string,
       params: Record<string, string | number | boolean | string[] | undefined>,
       body?: unknown,
+      method?: "PATCH" | "DELETE",
     ) =>
       (
-        await client.request<T>(
-          body === undefined
-            ? { url, params }
-            : { url, params, method: "POST", data: body },
-        )
+        await client.request<T>({
+          url,
+          params,
+          method: method ?? (body === undefined ? "GET" : "POST"),
+          ...(body === undefined ? {} : { data: body }),
+        })
       ).data;
     return new GmailMailbox(transport, intervalMs);
   }
