@@ -601,6 +601,20 @@ left until phase 5 has decisions to measure them against.
    be selected) and applies them to Gmail, one batch per mailbox, or marks
    them processed; Mail › Change log lists the batches, follows one being
    written, shows each message's change and outcome, and undoes an apply.
+   Then the label picker (`LabelPicker`, its logic in
+   `apps/site/src/utils/labelPicker.ts`): Suggested, On these messages and
+   Recent (kept in the browser) before typing; typing matches the path in
+   order, ties to the more used; a state replaces its family's other
+   states and a retired label applies its merge target, each saying so; a
+   path that does not exist is offered to create (`newLabels`); the
+   Changes line. In bulk ("Change labels…" on the review's selection),
+   each label's checkbox has three states with "on 7 of 12" or "adding to
+   5 · already on 7"; one batch per mailbox. A label's review shows its
+   processed bar. **Not yet**: "Often used for this sender" (nothing serves
+   a sender's label history; it matters most for one message, the Inbox's
+   panel in phase 5), the split alert (split suggestions come with
+   clustering, phase 6), and the picker's Tab and ⌘↵ keys (design.md,
+   Open 1).
 
 **Sign-off:** M6, M7, M8.
 

@@ -1,12 +1,14 @@
 import {
   CheckOutlined,
   CloudUploadOutlined,
+  EditOutlined,
   ExportOutlined,
   HistoryOutlined,
   PartitionOutlined,
   TagsOutlined,
 } from "@ant-design/icons";
 import type {
+  GetMailAuditResponse,
   ListMailAuditChangesResponse,
   MailAuditAction,
   MailAuditChange,
@@ -22,6 +24,7 @@ import {
   message,
   Modal,
   Popconfirm,
+  Progress,
   Segmented,
   Select,
   Space,
@@ -38,6 +41,7 @@ import React, { useEffect, useState } from "react";
 import mailApi, { type MailAuditChangeSort } from "../../../../api/mailApi";
 import ChangeTag from "../../../../components/minerva/mail/audit/ChangeTag";
 import ExportButton from "../../../../components/minerva/mail/audit/ExportButton";
+import ChangeLabelsDialog from "../../../../components/minerva/mail/ChangeLabelsDialog";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { apiProblems } from "../../../../utils/goals";
@@ -123,6 +127,8 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
   const [busy, setBusy] = useState(false);
   /** The new sub-label's name while the split dialog is open. */
   const [subLabel, setSubLabel] = useState<string>();
+  /** The bulk label picker is open. */
+  const [picking, setPicking] = useState(false);
   // A new page or filter starts with nothing selected.
   useEffect(() => setSelected([]), [label, filters]);
 
@@ -149,6 +155,34 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
       ).data,
   });
 
+  // The processed bar: how much of this label's proposals is decided.
+  const [audit, , , refetchAudit] = useFetch<
+    { ready: boolean },
+    GetMailAuditResponse | undefined
+  >({
+    dataType: "audit",
+    params: { ready: router.isReady },
+    watch: [router.isReady],
+    validateOptions: (q) => q.ready,
+    fetchFunction: async () => (await mailApi.getAudit()).data,
+  });
+  const progress = (() => {
+    if (!audit) return undefined;
+    if (!label) {
+      return audit.summary
+        ? { done: audit.summary.processed, total: audit.summary.changes }
+        : undefined;
+    }
+    const l = audit.labels.find((x) => x.name === label);
+    return l
+      ? { done: l.processed, total: l.proposedIn + l.proposedOut }
+      : undefined;
+  })();
+  const refresh = async () => {
+    await refetch(true);
+    await refetchAudit(true);
+  };
+
   const title = label ?? "All proposed changes";
 
   const apply = async () => {
@@ -171,7 +205,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
       );
       setSelected([]);
       // The batch is written in the background; what it applied shows soon.
-      setTimeout(() => void refetch(true), 5000);
+      setTimeout(() => void refresh(), 5000);
     } catch (error) {
       message.error(apiProblems(error).join(" "));
     } finally {
@@ -222,7 +256,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
         `${dismissed.toLocaleString()} marked processed, Gmail unchanged`,
       );
       setSelected([]);
-      await refetch(true);
+      await refresh();
     } catch (error) {
       message.error(apiProblems(error).join(" "));
     } finally {
@@ -257,7 +291,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
           "Nothing to apply: the rest are unticked, or cancel each other out."
         ),
       );
-      setTimeout(() => void refetch(true), 5000);
+      setTimeout(() => void refresh(), 5000);
     } catch (error) {
       message.error(apiProblems(error).join(" "));
     } finally {
@@ -273,7 +307,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
       message.success(
         `${dismissed.toLocaleString()} marked processed, Gmail unchanged`,
       );
-      await refetch(true);
+      await refresh();
     } catch (error) {
       message.error(apiProblems(error).join(" "));
     } finally {
@@ -405,6 +439,21 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
           </Space>
         </Flex>
         <div style={{ padding: "0 16px 16px" }}>
+          {progress && progress.total > 0 && (
+            <Flex align={"center"} gap={12} style={{ marginBottom: 12 }}>
+              <Text type={"secondary"} style={{ whiteSpace: "nowrap" }}>
+                Processed
+              </Text>
+              <Progress
+                percent={Math.floor((100 * progress.done) / progress.total)}
+                style={{ margin: 0, flex: 1 }}
+              />
+              <Text type={"secondary"} style={{ whiteSpace: "nowrap" }}>
+                {progress.done.toLocaleString()} of{" "}
+                {progress.total.toLocaleString()} decided
+              </Text>
+            </Flex>
+          )}
           {selected.length === 0 && openCount ? (
             <Flex
               justify={"flex-end"}
@@ -472,6 +521,12 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
                     >
                       Mark processed, no change
                     </Button>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => setPicking(true)}
+                    >
+                      Change labels…
+                    </Button>
                     {label && (
                       <Button
                         icon={<PartitionOutlined />}
@@ -488,6 +543,16 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
               }
             />
           )}
+          <ChangeLabelsDialog
+            open={picking}
+            proposals={selected}
+            onClose={() => setPicking(false)}
+            onApplied={() => {
+              setPicking(false);
+              setSelected([]);
+              setTimeout(() => void refresh(), 5000);
+            }}
+          />
           <Modal
             open={subLabel !== undefined}
             title={"Move to a new sub-label"}
