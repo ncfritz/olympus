@@ -1,4 +1,5 @@
--- Checks for migration 1791260000000_minerva_mail_links. Runs in a
+-- Checks for migrations 1791260000000_minerva_mail_links and
+-- 1791270000000_minerva_mail_sync (which moved the subject to `subject`). Runs in a
 -- transaction that is rolled back:
 --
 --   psql -v ON_ERROR_STOP=1 -f infra/hasura/tests/minerva_mail_links.sql <database>
@@ -29,19 +30,19 @@ INSERT INTO minerva.mail_accounts (id, user_id, email, verified_at, verification
     ('1c1c0000-0000-4000-8000-0000000000a2', '1c1c0000-0000-4000-8000-000000000001', 'link-b@example.test', now(), 'import');
 
 SELECT pg_temp.expect('an imported account is not linked',
-    (SELECT google_subject IS NULL AND linked_at IS NULL
+    (SELECT subject IS NULL AND linked_at IS NULL
        FROM minerva.mail_accounts WHERE id = '1c1c0000-0000-4000-8000-0000000000a1'));
 
 UPDATE minerva.mail_accounts
-   SET google_subject = 'g-1', linked_at = now(), link_scope = 'openid email gmail.readonly'
+   SET subject = 'g-1', linked_at = now(), link_scope = 'openid email gmail.readonly'
  WHERE id = '1c1c0000-0000-4000-8000-0000000000a1';
 
 SELECT pg_temp.expect_refused('a subject without when it was linked',
-    $q$UPDATE minerva.mail_accounts SET google_subject = 'g-2'
+    $q$UPDATE minerva.mail_accounts SET subject = 'g-2'
        WHERE id = '1c1c0000-0000-4000-8000-0000000000a2'$q$, '23514');
 SELECT pg_temp.expect_refused('one Google account is one mailbox',
     $q$UPDATE minerva.mail_accounts
-          SET google_subject = 'g-1', linked_at = now(), link_scope = 'openid'
+          SET subject = 'g-1', linked_at = now(), link_scope = 'openid'
         WHERE id = '1c1c0000-0000-4000-8000-0000000000a2'$q$, '23505');
 
 INSERT INTO minerva.mail_account_connections
@@ -53,6 +54,19 @@ SELECT pg_temp.expect_refused('a state is used once',
           (user_id, account_id, state_hash, code_verifier, return_to, expires_at)
        VALUES ('1c1c0000-0000-4000-8000-000000000001', '1c1c0000-0000-4000-8000-0000000000a2',
                'hash-1', 'v', 'https://x', now())$q$, '23505');
+
+SELECT pg_temp.expect_refused('a history ID is a number',
+    $q$UPDATE minerva.mail_accounts SET history_id = 'abc', synced_at = now()
+       WHERE id = '1c1c0000-0000-4000-8000-0000000000a1'$q$, '23514');
+SELECT pg_temp.expect_refused('a history ID comes with when it was synced',
+    $q$UPDATE minerva.mail_accounts SET history_id = '123'
+       WHERE id = '1c1c0000-0000-4000-8000-0000000000a1'$q$, '23514');
+UPDATE minerva.mail_accounts
+   SET history_id = '987654321', synced_at = now(), gmail_messages_total = 267362, gmail_threads_total = 250001
+ WHERE id = '1c1c0000-0000-4000-8000-0000000000a1';
+SELECT pg_temp.expect('a sync is recorded',
+    (SELECT history_id = '987654321' AND gmail_messages_total = 267362
+       FROM minerva.mail_accounts WHERE id = '1c1c0000-0000-4000-8000-0000000000a1'));
 
 DELETE FROM minerva.mail_accounts WHERE id = '1c1c0000-0000-4000-8000-0000000000a2';
 SELECT pg_temp.expect('an account takes its sign-ins with it',

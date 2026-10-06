@@ -26,7 +26,7 @@ const accountRow = (overrides = {}) => ({
   verifiedTime: "2026-10-05T12:00:00Z",
   linkedTime: null,
   linkScope: null,
-  googleSubject: null,
+  subject: null,
   ...overrides,
 });
 
@@ -87,7 +87,7 @@ describe("Mail account linking", () => {
           accountRow({
             linkedTime: "2026-10-06T17:00:00Z",
             linkScope: SCOPE,
-            googleSubject: SUBJECT,
+            subject: SUBJECT,
           }),
           accountRow({
             id: "7b2b0000-0000-4000-8000-000000000002",
@@ -249,9 +249,7 @@ describe("Mail account linking", () => {
     });
 
     it("re-links an account to the same Google account", async () => {
-      waiting(
-        connectionRow({ account: accountRow({ googleSubject: SUBJECT }) }),
-      );
+      waiting(connectionRow({ account: accountRow({ subject: SUBJECT }) }));
       elsewhere(false);
       signedIn({ created: false });
       const res = await callback({ state: STATE, code: "c" });
@@ -259,9 +257,7 @@ describe("Mail account linking", () => {
     });
 
     it("refuses another Google account than the one linked before", async () => {
-      waiting(
-        connectionRow({ account: accountRow({ googleSubject: "another" }) }),
-      );
+      waiting(connectionRow({ account: accountRow({ subject: "another" }) }));
       elsewhere(false);
       signedIn({ created: true });
       const res = await callback({ state: STATE, code: "c" });

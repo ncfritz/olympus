@@ -8067,6 +8067,28 @@
     ],
     "type": "object"
   },
+  "GmailLabel": {
+    "properties": {
+      "gmailLabelId": {
+        "description": "Gmail's label ID (`Label_12`, `CATEGORY_UPDATES`)",
+        "type": "string"
+      },
+      "name": {
+        "description": "Its full name, as Gmail shows it",
+        "type": "string"
+      },
+      "type": {
+        "description": "user, or system",
+        "type": "string"
+      }
+    },
+    "required": [
+      "gmailLabelId",
+      "name",
+      "type"
+    ],
+    "type": "object"
+  },
   "Goal": {
     "properties": {
       "categoryId": {
@@ -10000,6 +10022,25 @@
     ],
     "type": "object"
   },
+  "ListMailMessageStatesResponse": {
+    "properties": {
+      "messages": {
+        "description": "A page of the account's messages, by Gmail ID",
+        "items": {
+          "$ref": "#/components/schemas/MailMessageState"
+        },
+        "type": "array"
+      },
+      "nextCursor": {
+        "description": "Pass as `after` for the next page; absent on the last",
+        "type": "string"
+      }
+    },
+    "required": [
+      "messages"
+    ],
+    "type": "object"
+  },
   "ListMailTrainingAccountsResponse": {
     "properties": {
       "accounts": {
@@ -11014,6 +11055,14 @@
         "description": "The mailbox's address, lower case",
         "type": "string"
       },
+      "gmailMessagesTotal": {
+        "description": "Gmail's own count of the mailbox's messages, at the last sync",
+        "type": "number"
+      },
+      "gmailThreadsTotal": {
+        "description": "Gmail's count of its threads, at the last sync",
+        "type": "number"
+      },
       "id": {
         "description": "The unique ID of the account",
         "type": "string"
@@ -11024,6 +11073,10 @@
       },
       "linkedTime": {
         "description": "When the mailbox was linked to Gmail by its owner's sign-in; absent until it is (phase 1b)",
+        "type": "string"
+      },
+      "syncedTime": {
+        "description": "When the mailbox was last brought into step with Gmail",
         "type": "string"
       },
       "verification": {
@@ -11611,6 +11664,75 @@
       "messages",
       "name",
       "year"
+    ],
+    "type": "object"
+  },
+  "MailMessageState": {
+    "properties": {
+      "categories": {
+        "description": "Its Gmail categories, lower case, sorted",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "flags": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailMessageStateFlags"
+          }
+        ],
+        "description": "Its flags"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID, hexadecimal",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Its user labels by full name, sorted",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "categories",
+      "flags",
+      "gmailId",
+      "labels"
+    ],
+    "type": "object"
+  },
+  "MailMessageStateFlags": {
+    "properties": {
+      "important": {
+        "description": "Important",
+        "type": "boolean"
+      },
+      "inbox": {
+        "description": "In the inbox",
+        "type": "boolean"
+      },
+      "sent": {
+        "description": "Sent",
+        "type": "boolean"
+      },
+      "starred": {
+        "description": "Starred",
+        "type": "boolean"
+      },
+      "unread": {
+        "description": "Unread",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "important",
+      "inbox",
+      "sent",
+      "starred",
+      "unread"
     ],
     "type": "object"
   },
@@ -21067,6 +21189,46 @@
     ],
     "type": "object"
   },
+  "SyncMailLabelsRequest": {
+    "properties": {
+      "labels": {
+        "description": "Every label Gmail has for the mailbox",
+        "items": {
+          "$ref": "#/components/schemas/GmailLabel"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "labels"
+    ],
+    "type": "object"
+  },
+  "SyncMailLabelsResponse": {
+    "properties": {
+      "created": {
+        "description": "User labels made in Gmail since the import, added",
+        "type": "number"
+      },
+      "matched": {
+        "description": "Labels given their Gmail ID",
+        "type": "number"
+      },
+      "notInGmail": {
+        "description": "Minerva's user labels Gmail no longer has, by name: kept, with their kinds, until their messages say otherwise",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "created",
+      "matched",
+      "notInGmail"
+    ],
+    "type": "object"
+  },
   "SynoChatDestination": {
     "properties": {
       "destination": {
@@ -22508,6 +22670,44 @@
     },
     "required": [
       "goal"
+    ],
+    "type": "object"
+  },
+  "UpdateMailAccountSyncRequest": {
+    "properties": {
+      "historyId": {
+        "description": "Gmail's historyId when the reconcile began, where history polling carries on from",
+        "type": "string"
+      },
+      "messagesTotal": {
+        "description": "Gmail's count of the mailbox's messages (getProfile)",
+        "type": "number"
+      },
+      "threadsTotal": {
+        "description": "Gmail's count of its threads (getProfile)",
+        "type": "number"
+      }
+    },
+    "required": [
+      "historyId",
+      "messagesTotal",
+      "threadsTotal"
+    ],
+    "type": "object"
+  },
+  "UpdateMailAccountSyncResponse": {
+    "properties": {
+      "mailAccount": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAccount"
+          }
+        ],
+        "description": "The account, with its sync recorded"
+      }
+    },
+    "required": [
+      "mailAccount"
     ],
     "type": "object"
   },

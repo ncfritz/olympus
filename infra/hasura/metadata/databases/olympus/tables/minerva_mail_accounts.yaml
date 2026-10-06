@@ -5,12 +5,18 @@ configuration:
   column_config:
     created_at:
       custom_name: createdTime
-    google_subject:
-      custom_name: googleSubject
+    gmail_messages_total:
+      custom_name: gmailMessagesTotal
+    gmail_threads_total:
+      custom_name: gmailThreadsTotal
+    history_id:
+      custom_name: historyId
     link_scope:
       custom_name: linkScope
     linked_at:
       custom_name: linkedTime
+    synced_at:
+      custom_name: syncedTime
     updated_at:
       custom_name: lastUpdatedTime
     user_id:
@@ -21,9 +27,12 @@ configuration:
       custom_name: verifiedTime
   custom_column_names:
     created_at: createdTime
-    google_subject: googleSubject
+    gmail_messages_total: gmailMessagesTotal
+    gmail_threads_total: gmailThreadsTotal
+    history_id: historyId
     link_scope: linkScope
     linked_at: linkedTime
+    synced_at: syncedTime
     updated_at: lastUpdatedTime
     user_id: userId
     verification_method: verificationMethod

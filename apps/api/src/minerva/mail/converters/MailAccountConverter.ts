@@ -10,6 +10,9 @@ export type GraphQlMailAccount = {
   verifiedTime: string;
   linkedTime?: string | null;
   linkScope?: string | null;
+  syncedTime?: string | null;
+  gmailMessagesTotal?: number | null;
+  gmailThreadsTotal?: number | null;
 };
 
 export const toDomainObject = (input: GraphQlMailAccount): MailAccount => ({
@@ -19,4 +22,11 @@ export const toDomainObject = (input: GraphQlMailAccount): MailAccount => ({
   verifiedTime: moment(input.verifiedTime),
   ...(input.linkedTime ? { linkedTime: moment(input.linkedTime) } : {}),
   ...(input.linkScope ? { linkScope: input.linkScope } : {}),
+  ...(input.syncedTime ? { syncedTime: moment(input.syncedTime) } : {}),
+  ...(typeof input.gmailMessagesTotal === "number"
+    ? { gmailMessagesTotal: input.gmailMessagesTotal }
+    : {}),
+  ...(typeof input.gmailThreadsTotal === "number"
+    ? { gmailThreadsTotal: input.gmailThreadsTotal }
+    : {}),
 });

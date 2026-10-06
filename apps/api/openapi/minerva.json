@@ -8001,6 +8001,76 @@
         ]
       }
     },
+    "/minerva/mail/account/{accountId}/message-states": {
+      "get": {
+        "description": "For the mail agent's reconcile with Gmail (docs/plans/email-management phase 1b): a page of the account's messages by Gmail ID, each with its user labels, categories and flags as Minerva has them, to compare with Gmail's. Pass the answer's `nextCursor` as `after` for the next page.",
+        "operationId": "ListMailMessageStates",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many messages, 1 to 5000; 5000 by default",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "Only messages after this Gmail ID: the last page's nextCursor",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of messages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailMessageStatesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Lists an account's messages' labels and flags",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/audit/changes": {
       "get": {
         "description": "A page of the label changes proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, each with its message's metadata (never its text) and the evidence behind it (the sender's counts, or whether the classifier's is ticked), optionally for one label, one action, one rule, or at least a confidence. `sortBy` is `confidence` (the default) or `receivedTime`.",
@@ -8444,6 +8514,132 @@
           }
         },
         "summary": "Audits the caller's mail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/labels/sync": {
+      "post": {
+        "description": "For the mail agent's reconcile with Gmail (docs/plans/email-management phase 1b): Gmail's labels.list for the mailbox. Each of the account's labels gets its Gmail label ID by name (categories by their ID), user labels made in Gmail since the import are added, and those Gmail no longer has are named in the answer and kept, with their kinds.",
+        "operationId": "SyncMailLabels",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the SyncMailLabels operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncMailLabelsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncMailLabelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Brings an account's labels into step with Gmail's",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/sync": {
+      "put": {
+        "description": "For the mail agent (docs/plans/email-management phase 1b): the historyId the reconcile began at, where history polling carries on from, and Gmail's own totals for the mailbox (getProfile), which M2 compares with Minerva's.",
+        "operationId": "UpdateMailAccountSync",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateMailAccountSync operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMailAccountSyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMailAccountSyncResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Records a finished reconcile with Gmail",
         "tags": [
           "Mail"
         ]
@@ -15445,6 +15641,18 @@
           "linkScope": {
             "type": "string",
             "description": "The access Gmail granted, space-separated scopes"
+          },
+          "syncedTime": {
+            "type": "string",
+            "description": "When the mailbox was last brought into step with Gmail"
+          },
+          "gmailMessagesTotal": {
+            "type": "number",
+            "description": "Gmail's own count of the mailbox's messages, at the last sync"
+          },
+          "gmailThreadsTotal": {
+            "type": "number",
+            "description": "Gmail's count of its threads, at the last sync"
           }
         },
         "required": [
@@ -15483,6 +15691,94 @@
         },
         "required": [
           "accounts"
+        ]
+      },
+      "MailMessageStateFlags": {
+        "type": "object",
+        "properties": {
+          "inbox": {
+            "type": "boolean",
+            "description": "In the inbox"
+          },
+          "unread": {
+            "type": "boolean",
+            "description": "Unread"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Starred"
+          },
+          "important": {
+            "type": "boolean",
+            "description": "Important"
+          },
+          "sent": {
+            "type": "boolean",
+            "description": "Sent"
+          }
+        },
+        "required": [
+          "inbox",
+          "unread",
+          "starred",
+          "important",
+          "sent"
+        ]
+      },
+      "MailMessageState": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID, hexadecimal"
+          },
+          "labels": {
+            "description": "Its user labels by full name, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "categories": {
+            "description": "Its Gmail categories, lower case, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "flags": {
+            "description": "Its flags",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailMessageStateFlags"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gmailId",
+          "labels",
+          "categories",
+          "flags"
+        ]
+      },
+      "ListMailMessageStatesResponse": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "description": "A page of the account's messages, by Gmail ID",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailMessageState"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Pass as `after` for the next page; absent on the last"
+          }
+        },
+        "required": [
+          "messages"
         ]
       },
       "SortDirection": {
@@ -15943,6 +16239,106 @@
         },
         "required": [
           "runs"
+        ]
+      },
+      "GmailLabel": {
+        "type": "object",
+        "properties": {
+          "gmailLabelId": {
+            "type": "string",
+            "description": "Gmail's label ID (`Label_12`, `CATEGORY_UPDATES`)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its full name, as Gmail shows it"
+          },
+          "type": {
+            "type": "string",
+            "description": "user, or system"
+          }
+        },
+        "required": [
+          "gmailLabelId",
+          "name",
+          "type"
+        ]
+      },
+      "SyncMailLabelsRequest": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "Every label Gmail has for the mailbox",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GmailLabel"
+            }
+          }
+        },
+        "required": [
+          "labels"
+        ]
+      },
+      "SyncMailLabelsResponse": {
+        "type": "object",
+        "properties": {
+          "matched": {
+            "type": "number",
+            "description": "Labels given their Gmail ID"
+          },
+          "created": {
+            "type": "number",
+            "description": "User labels made in Gmail since the import, added"
+          },
+          "notInGmail": {
+            "description": "Minerva's user labels Gmail no longer has, by name: kept, with their kinds, until their messages say otherwise",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "matched",
+          "created",
+          "notInGmail"
+        ]
+      },
+      "UpdateMailAccountSyncRequest": {
+        "type": "object",
+        "properties": {
+          "historyId": {
+            "type": "string",
+            "description": "Gmail's historyId when the reconcile began, where history polling carries on from"
+          },
+          "messagesTotal": {
+            "type": "number",
+            "description": "Gmail's count of the mailbox's messages (getProfile)"
+          },
+          "threadsTotal": {
+            "type": "number",
+            "description": "Gmail's count of its threads (getProfile)"
+          }
+        },
+        "required": [
+          "historyId",
+          "messagesTotal",
+          "threadsTotal"
+        ]
+      },
+      "UpdateMailAccountSyncResponse": {
+        "type": "object",
+        "properties": {
+          "mailAccount": {
+            "description": "The account, with its sync recorded",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAccount"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mailAccount"
         ]
       },
       "UpdateMailLabelRequest": {

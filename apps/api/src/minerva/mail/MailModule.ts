@@ -12,6 +12,7 @@ import { GetMailAuditController } from "./controllers/GetMailAuditController";
 import { GetMailStatisticsController } from "./controllers/GetMailStatisticsController";
 import { ImportMailAccountController } from "./controllers/ImportMailAccountController";
 import { ListMailAccountsController } from "./controllers/ListMailAccountsController";
+import { ListMailMessageStatesController } from "./controllers/ListMailMessageStatesController";
 import { ListMailAuditChangesController } from "./controllers/ListMailAuditChangesController";
 import { ListMailLabelFamiliesController } from "./controllers/ListMailLabelFamiliesController";
 import { ListMailLabelsController } from "./controllers/ListMailLabelsController";
@@ -19,6 +20,8 @@ import { ListMailTrainingAccountsController } from "./controllers/ListMailTraini
 import { ListMailTrainingExamplesController } from "./controllers/ListMailTrainingExamplesController";
 import { ListMailTrainingLabelsController } from "./controllers/ListMailTrainingLabelsController";
 import { PublishMailSuggestionRunController } from "./controllers/PublishMailSuggestionRunController";
+import { SyncMailLabelsController } from "./controllers/SyncMailLabelsController";
+import { UpdateMailAccountSyncController } from "./controllers/UpdateMailAccountSyncController";
 import { RunMailAuditController } from "./controllers/RunMailAuditController";
 import { UpdateMailLabelController } from "./controllers/UpdateMailLabelController";
 import { MailMessageHandler } from "./handlers/MailMessageHandler";
@@ -30,6 +33,7 @@ import { MailMessageQueues } from "./services/MailMessageQueues";
 import { MailMessageService } from "./services/MailMessageService";
 import { MailStatisticsService } from "./services/MailStatisticsService";
 import { MailSuggestionService } from "./services/MailSuggestionService";
+import { MailSyncService } from "./services/MailSyncService";
 import { MailTrainingService } from "./services/MailTrainingService";
 import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
 
@@ -38,7 +42,8 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
  * reviewed changes (ADR 0030, docs/plans/email-management/README.md): the
  * agent's account import, the consumer of its message metadata, and the
  * statistics and audit over it, label kinds, and the classifier's
- * training data and suggestions, and linking mailboxes to Gmail.
+ * training data and suggestions, and linking mailboxes to Gmail and
+ * keeping them in step with it.
  */
 @Module({
   imports: [GraphQLClientModule, RabbitModule],
@@ -52,6 +57,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailMessageHandler,
     MailStatisticsService,
     MailSuggestionService,
+    MailSyncService,
     MailTrainingService,
     MinervaMailAgentClient,
   ],
@@ -68,6 +74,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     GetMailStatisticsController,
     ImportMailAccountController,
     ListMailAccountsController,
+    ListMailMessageStatesController,
     ListMailAuditChangesController,
     ListMailLabelFamiliesController,
     ListMailLabelsController,
@@ -76,6 +83,8 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailTrainingLabelsController,
     PublishMailSuggestionRunController,
     RunMailAuditController,
+    SyncMailLabelsController,
+    UpdateMailAccountSyncController,
     UpdateMailLabelController,
   ],
 })

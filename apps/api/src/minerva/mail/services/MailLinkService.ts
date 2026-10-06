@@ -35,10 +35,13 @@ const ACCOUNT_FIELDS = `
   verifiedTime
   linkedTime
   linkScope
-  googleSubject
+  syncedTime
+  gmailMessagesTotal
+  gmailThreadsTotal
+  subject
 `;
 
-type LinkedAccount = GraphQlMailAccount & { googleSubject: string | null };
+type LinkedAccount = GraphQlMailAccount & { subject: string | null };
 
 type GraphQlConnection = {
   id: string;
@@ -192,7 +195,7 @@ export class MailLinkService {
 
     // The agent checked its own credential's subject; Olympus checks its
     // record, which outlives a credential the agent lost.
-    if (account.googleSubject && account.googleSubject !== result.subject) {
+    if (account.subject && account.subject !== result.subject) {
       this.logger.warn(
         `Refused linking ${account.email}: another Google account than before`,
       );
@@ -217,7 +220,7 @@ export class MailLinkService {
       ) {
         update_minerva_mail_accounts(
           where: { id: { _eq: $id }, userId: { _eq: $userId } }
-          _set: { googleSubject: $subject, linkScope: $scope, linkedTime: $now }
+          _set: { subject: $subject, linkScope: $scope, linkedTime: $now }
         ) {
           affected_rows
         }
@@ -304,7 +307,7 @@ export class MailLinkService {
     const query = gql`
       query DescribeMailAccountBySubject($subject: String!, $id: uuid!) {
         minerva_mail_accounts(
-          where: { googleSubject: { _eq: $subject }, id: { _neq: $id } }
+          where: { subject: { _eq: $subject }, id: { _neq: $id } }
         ) {
           id
         }

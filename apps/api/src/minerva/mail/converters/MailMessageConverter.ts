@@ -246,3 +246,114 @@ export const toMailMessageFields = (
   const unique = [...new Map(labels.map((l) => [l.name, l])).values()];
   return { fields: { message, recipients, attachments, labels: unique } };
 };
+
+/** A message's labels and flags only (`message.labels`), as rows. */
+export type MailLabelsFields = {
+  accountId: string;
+  gmailId: string;
+  snapshotTime: string;
+  flags: Pick<
+    MailMessageRow,
+    "inInbox" | "unread" | "starred" | "important" | "sent"
+  >;
+  labels: MailLabelRef[];
+};
+
+/** A message to forget (`message.delete`). */
+export type MailDeleteFields = {
+  accountId: string;
+  gmailId: string;
+  snapshotTime: string;
+};
+
+const keyFields = (
+  m: Partial<MailMetadataMessage>,
+  problems: string[],
+): { accountId: string; gmailId: string; snapshotTime: string } => {
+  if (typeof m.accountId !== "string" || !UUID.test(m.accountId)) {
+    problems.push("accountId must be a UUID");
+  }
+  if (m.source !== "takeout" && m.source !== "gmail") {
+    problems.push("source must be takeout or gmail");
+  }
+  if (typeof m.gmailId !== "string" || !GMAIL_ID.test(m.gmailId)) {
+    problems.push("gmailId must be a hexadecimal Gmail ID");
+  }
+  const valid =
+    typeof m.snapshotTime === "string" &&
+    !Number.isNaN(Date.parse(m.snapshotTime));
+  if (!valid) problems.push("snapshotTime must be an ISO-8601 time");
+  return {
+    accountId: m.accountId as string,
+    gmailId: m.gmailId as string,
+    snapshotTime: valid ? new Date(m.snapshotTime as string).toISOString() : "",
+  };
+};
+
+/** The agent's `message.labels`, or what is wrong with it. */
+export const toMailLabelsFields = (
+  input: unknown,
+): { fields: MailLabelsFields } | { problems: string[] } => {
+  if (typeof input !== "object" || input === null) {
+    return { problems: ["the message is not an object"] };
+  }
+  const problems: string[] = [];
+  const m = input as Partial<MailMetadataMessage>;
+  const key = keyFields(m, problems);
+  const flags = (m.flags ?? {}) as Partial<MailMetadataMessage["flags"]>;
+  if (typeof m.flags !== "object" || m.flags === null) {
+    problems.push("flags must be an object");
+  }
+  const flag = (name: keyof MailMetadataMessage["flags"]): boolean => {
+    if (typeof flags[name] !== "boolean") {
+      problems.push(`flags.${name} must be true or false`);
+    }
+    return flags[name] === true;
+  };
+  const labels: MailLabelRef[] = [];
+  if (!Array.isArray(m.labels)) problems.push("labels must be a list");
+  for (const name of Array.isArray(m.labels) ? m.labels : []) {
+    if (
+      typeof name !== "string" ||
+      !name ||
+      name.length > 225 ||
+      name !== name.trim()
+    ) {
+      problems.push("labels must be names of 1 to 225 characters");
+      continue;
+    }
+    labels.push({ name, type: "user" });
+  }
+  if (!Array.isArray(m.categories)) problems.push("categories must be a list");
+  for (const category of Array.isArray(m.categories) ? m.categories : []) {
+    if (typeof category !== "string" || !CATEGORY.test(category)) {
+      problems.push("categories must be lower-case words");
+      continue;
+    }
+    labels.push({ name: categoryLabel(category), type: "system" });
+  }
+  const fields: MailLabelsFields = {
+    ...key,
+    flags: {
+      inInbox: flag("inbox"),
+      unread: flag("unread"),
+      starred: flag("starred"),
+      important: flag("important"),
+      sent: flag("sent"),
+    },
+    labels: [...new Map(labels.map((l) => [l.name, l])).values()],
+  };
+  return problems.length ? { problems } : { fields };
+};
+
+/** The agent's `message.delete`, or what is wrong with it. */
+export const toMailDeleteFields = (
+  input: unknown,
+): { fields: MailDeleteFields } | { problems: string[] } => {
+  if (typeof input !== "object" || input === null) {
+    return { problems: ["the message is not an object"] };
+  }
+  const problems: string[] = [];
+  const fields = keyFields(input as Partial<MailMetadataMessage>, problems);
+  return problems.length ? { problems } : { fields };
+};

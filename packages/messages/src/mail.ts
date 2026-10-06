@@ -13,8 +13,13 @@ import { exchange, route } from "./routing";
 
 export const MAIL_MESSAGES_EXCHANGE = exchange("mail.messages", "topic");
 
-/** Why the message was published. Deletions arrive with phase 1b. */
-export const MAIL_MESSAGE_ACTIONS = ["upsert"] as const;
+/**
+ * Why the message was published: a message's whole metadata (`upsert`);
+ * from phase 1b, a message's labels and flags only, when Gmail's changed
+ * and nothing else did (`labels`); and a message gone from Gmail
+ * (`delete`).
+ */
+export const MAIL_MESSAGE_ACTIONS = ["upsert", "labels", "delete"] as const;
 export type MailMessageAction = (typeof MAIL_MESSAGE_ACTIONS)[number];
 
 /** Where the agent read the message. */
@@ -79,6 +84,40 @@ export interface MailMetadataMessage {
   attachments: MailMessageAttachment[];
 }
 
+/**
+ * A message's labels and flags as Gmail has them now (`message.labels`),
+ * replacing Minerva's. Written only over an older snapshot, as an upsert is.
+ */
+export interface MailLabelsMessage {
+  accountId: string;
+  source: MailMessageSource;
+  snapshotTime: string;
+  gmailId: string;
+  /** User labels by full name. */
+  labels: string[];
+  /** Gmail's categories, lower case. */
+  categories: string[];
+  flags: MailMessageFlags;
+}
+
+/**
+ * A message no longer in Gmail (`message.delete`): deleted, or in Trash or
+ * Spam. Minerva forgets it, unless it holds a newer snapshot.
+ */
+export interface MailDeleteMessage {
+  accountId: string;
+  source: MailMessageSource;
+  snapshotTime: string;
+  gmailId: string;
+}
+
+/** What each action carries. */
+export interface MailMessageBodies {
+  upsert: MailMetadataMessage;
+  labels: MailLabelsMessage;
+  delete: MailDeleteMessage;
+}
+
 /** `message.<action>` on MAIL_MESSAGES_EXCHANGE. */
-export const mailMessageRoute = (action: MailMessageAction) =>
-  route<MailMetadataMessage>(MAIL_MESSAGES_EXCHANGE, `message.${action}`);
+export const mailMessageRoute = <A extends MailMessageAction>(action: A) =>
+  route<MailMessageBodies[A]>(MAIL_MESSAGES_EXCHANGE, `message.${action}`);

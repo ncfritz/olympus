@@ -68,6 +68,27 @@ export class MailAccount {
     description: "The access Gmail granted, space-separated scopes",
   })
   linkScope?: string;
+
+  @ApiTimestamp({
+    required: false,
+    description: "When the mailbox was last brought into step with Gmail",
+  })
+  syncedTime?: Moment;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "Gmail's own count of the mailbox's messages, at the last sync",
+  })
+  gmailMessagesTotal?: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "Gmail's count of its threads, at the last sync",
+  })
+  gmailThreadsTotal?: number;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

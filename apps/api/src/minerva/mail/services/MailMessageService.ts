@@ -1,7 +1,10 @@
+import type { MailMessageAction } from "@ncfritz/olympus-messages";
 import { Injectable } from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import {
   type MailLabelRef,
+  toMailDeleteFields,
+  toMailLabelsFields,
   toMailMessageFields,
 } from "../converters/MailMessageConverter";
 
@@ -53,10 +56,22 @@ export class MailMessageService {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
   /**
+   * One message of `action`: a whole message (upsert), its labels and
+   * flags (labels), or its deletion (delete).
+   *
    * @throws whatever the GraphQL client throws: the caller decides whether
    *   Hasura's answer makes the message worth retrying
    */
-  async consume(input: unknown): Promise<MailMessageOutcome> {
+  async consume(
+    input: unknown,
+    action: MailMessageAction = "upsert",
+  ): Promise<MailMessageOutcome> {
+    if (action === "labels") return this.consumeLabels(input);
+    if (action === "delete") return this.consumeDelete(input);
+    return this.consumeUpsert(input);
+  }
+
+  private async consumeUpsert(input: unknown): Promise<MailMessageOutcome> {
     const converted = toMailMessageFields(input);
     if ("problems" in converted) {
       return { result: "invalid", problems: converted.problems };
@@ -133,6 +148,106 @@ export class MailMessageService {
       labels: labelIds.map((labelId) => ({ messageId, labelId })),
     });
     return { result: "written" };
+  }
+
+  /**
+   * Gmail's labels and flags for a message Minerva has, replacing its own,
+   * unless Minerva holds a newer snapshot. A message Minerva lacks is left
+   * to its upsert: stale.
+   */
+  private async consumeLabels(input: unknown): Promise<MailMessageOutcome> {
+    const converted = toMailLabelsFields(input);
+    if ("problems" in converted) {
+      return { result: "invalid", problems: converted.problems };
+    }
+    const f = converted.fields;
+    if (!(await this.accountExists(f.accountId))) {
+      return { result: "unknown_account" };
+    }
+    const labelIds = await this.labelIdsFor(f.accountId, f.labels);
+    const update = gql`
+      mutation WriteMailMessageLabels(
+        $accountId: uuid!
+        $gmailId: String!
+        $snapshotTime: timestamptz!
+        $flags: minerva_mail_messages_set_input!
+      ) {
+        update_minerva_mail_messages(
+          where: {
+            accountId: { _eq: $accountId }
+            gmailId: { _eq: $gmailId }
+            snapshotTime: { _lte: $snapshotTime }
+          }
+          _set: $flags
+        ) {
+          returning {
+            id
+          }
+        }
+      }
+    `;
+    const updated = await this.graphQLClient.request<{
+      update_minerva_mail_messages: { returning: { id: string }[] };
+    }>(update, {
+      accountId: f.accountId,
+      gmailId: f.gmailId,
+      snapshotTime: f.snapshotTime,
+      flags: { ...f.flags, snapshotTime: f.snapshotTime },
+    });
+    const messageId = updated.update_minerva_mail_messages.returning[0]?.id;
+    if (!messageId) return { result: "stale" };
+    const replace = gql`
+      mutation ReplaceMailMessageLabels(
+        $messageId: uuid!
+        $labels: [minerva_mail_message_labels_insert_input!]!
+      ) {
+        delete_minerva_mail_message_labels(
+          where: { messageId: { _eq: $messageId } }
+        ) {
+          affected_rows
+        }
+        insert_minerva_mail_message_labels(objects: $labels) {
+          affected_rows
+        }
+      }
+    `;
+    await this.graphQLClient.request(replace, {
+      messageId,
+      labels: labelIds.map((labelId) => ({ messageId, labelId })),
+    });
+    return { result: "written" };
+  }
+
+  /** Forgets a message gone from Gmail, unless Minerva's is newer. */
+  private async consumeDelete(input: unknown): Promise<MailMessageOutcome> {
+    const converted = toMailDeleteFields(input);
+    if ("problems" in converted) {
+      return { result: "invalid", problems: converted.problems };
+    }
+    const f = converted.fields;
+    const remove = gql`
+      mutation DeleteMailMessage(
+        $accountId: uuid!
+        $gmailId: String!
+        $snapshotTime: timestamptz!
+      ) {
+        delete_minerva_mail_messages(
+          where: {
+            accountId: { _eq: $accountId }
+            gmailId: { _eq: $gmailId }
+            snapshotTime: { _lte: $snapshotTime }
+          }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    const deleted = await this.graphQLClient.request<{
+      delete_minerva_mail_messages: { affected_rows: number };
+    }>(remove, f);
+    return deleted.delete_minerva_mail_messages.affected_rows > 0
+      ? { result: "written" }
+      : { result: "stale" };
   }
 
   private async accountExists(accountId: string): Promise<boolean> {

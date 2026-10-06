@@ -55,7 +55,7 @@ export class MailMessageHandler {
     }
 
     try {
-      const outcome = await this.messages.consume(message);
+      const outcome = await this.messages.consume(message, action);
       recordMailMessage(action, outcome.result);
       if (outcome.result === "invalid") {
         return this.deadLetter(delivery, outcome.problems.join("; "));

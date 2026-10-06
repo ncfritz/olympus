@@ -37,6 +37,8 @@ exports[`message routes > match the snapshot 1`] = `
   ],
   "mail": [
     "mail.messages (topic) message.upsert",
+    "mail.messages (topic) message.labels",
+    "mail.messages (topic) message.delete",
   ],
   "media": [
     "media.trigger (topic) jobType.extractMetadata",

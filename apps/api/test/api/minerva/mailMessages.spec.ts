@@ -487,4 +487,115 @@ describe("Mail messages consumer", () => {
       ],
     ]);
   });
+
+  describe("labels and deletions from Gmail (phase 1b)", () => {
+    const labels = (accountId: string) => ({
+      accountId,
+      source: "gmail",
+      snapshotTime: "2026-10-06T18:00:00.000Z",
+      gmailId: "1a0fab8f293aa5b5",
+      labels: ["Bills/*Paid", "Bills/*Paid"],
+      categories: ["updates"],
+      flags: {
+        inbox: true,
+        unread: false,
+        starred: false,
+        important: true,
+        sent: false,
+      },
+    });
+
+    it("replaces a message's labels and flags, and nothing else", async () => {
+      hasura();
+      t.graphql.on("WriteMailMessageLabels", {
+        update_minerva_mail_messages: { returning: [{ id: MESSAGE_ID }] },
+      });
+      t.graphql.on("ReplaceMailMessageLabels", {
+        delete_minerva_mail_message_labels: { affected_rows: 2 },
+        insert_minerva_mail_message_labels: { affected_rows: 2 },
+      });
+      const accountId = nextAccount();
+      const before = await consumed("labels", "written");
+
+      await handler.handle(labels(accountId), delivery("message.labels"));
+
+      expect(t.graphql.calls("WriteMailMessageLabels")[0].variables).toEqual({
+        accountId,
+        gmailId: "1a0fab8f293aa5b5",
+        snapshotTime: "2026-10-06T18:00:00.000Z",
+        flags: {
+          inInbox: true,
+          unread: false,
+          starred: false,
+          important: true,
+          sent: false,
+          snapshotTime: "2026-10-06T18:00:00.000Z",
+        },
+      });
+      expect(t.graphql.calls("ReplaceMailMessageLabels")[0].variables).toEqual({
+        messageId: MESSAGE_ID,
+        labels: [
+          { messageId: MESSAGE_ID, labelId: "label:Bills/*Paid" },
+          { messageId: MESSAGE_ID, labelId: "label:CATEGORY_UPDATES" },
+        ],
+      });
+      expect(t.graphql.calls("WriteMailMessage")).toHaveLength(0);
+      expect(await consumed("labels", "written")).toBe(before + 1);
+    });
+
+    it("leaves a message Minerva lacks, or holds newer, as stale", async () => {
+      hasura();
+      t.graphql.on("WriteMailMessageLabels", {
+        update_minerva_mail_messages: { returning: [] },
+      });
+      const before = await consumed("labels", "stale");
+      await handler.handle(labels(nextAccount()), delivery("message.labels"));
+      expect(t.graphql.calls("ReplaceMailMessageLabels")).toHaveLength(0);
+      expect(await consumed("labels", "stale")).toBe(before + 1);
+    });
+
+    it("dead-letters a labels message without its flags", async () => {
+      hasura();
+      const { flags: _flags, ...broken } = labels(nextAccount());
+      await handler.handle(broken, delivery("message.labels"));
+      expect(sent()[0][0]).toBe(DEAD);
+      expect(sent()[0][2]).toMatchObject({
+        "x-olympus-dead-reason": expect.stringContaining("flags"),
+      });
+    });
+
+    it("forgets a message gone from Gmail, unless Minerva's is newer", async () => {
+      const accountId = nextAccount();
+      t.graphql.on("DeleteMailMessage", (vars) => ({
+        delete_minerva_mail_messages: {
+          affected_rows:
+            (vars as { gmailId: string }).gmailId === "1a0fab8f293aa5b5"
+              ? 1
+              : 0,
+        },
+      }));
+      const written = await consumed("delete", "written");
+      const stale = await consumed("delete", "stale");
+      const gone = {
+        accountId,
+        source: "gmail",
+        snapshotTime: "2026-10-06T18:00:00.000Z",
+        gmailId: "1a0fab8f293aa5b5",
+      };
+
+      await handler.handle(gone, delivery("message.delete"));
+      await handler.handle(
+        { ...gone, gmailId: "ff" },
+        delivery("message.delete"),
+      );
+
+      expect(t.graphql.calls("DeleteMailMessage")[0].variables).toEqual({
+        accountId,
+        gmailId: "1a0fab8f293aa5b5",
+        snapshotTime: "2026-10-06T18:00:00.000Z",
+      });
+      expect(await consumed("delete", "written")).toBe(written + 1);
+      expect(await consumed("delete", "stale")).toBe(stale + 1);
+    });
+  });
 });
