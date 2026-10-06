@@ -14,6 +14,7 @@ APP_NAME = "minerva-mail-ml"
 DEFAULT_PORT = 3106
 DEFAULT_SERVICES_PORT = 3107
 DEFAULT_STORE = "data/features.sqlite3"
+DEFAULT_MODELS = "data/models"
 
 
 class ConfigError(ValueError):
@@ -41,6 +42,17 @@ class ServicesTls:
 
 
 @dataclass(frozen=True)
+class ApiClient:
+    """How the service calls the API: its services listener, with the
+    classifier's own client certificate (ADR 0018, 0023)."""
+
+    base_url: str
+    cert: Path
+    key: Path
+    ca: Path
+
+
+@dataclass(frozen=True)
 class Config:
     app_name: str
     environment: str
@@ -51,6 +63,9 @@ class Config:
     # None: no services listener, so nothing can send text (a warning at
     # start-up; the plain listener still serves /health and /metrics).
     services_tls: ServicesTls | None = field(default=None)
+    model_dir: Path = Path(DEFAULT_MODELS)
+    # None: the API is not configured, so nothing can be trained.
+    api: ApiClient | None = field(default=None)
 
 
 def _port(env: Mapping[str, str], name: str, default: int, problems: list[str]) -> int:
@@ -99,6 +114,34 @@ def _services_tls(env: Mapping[str, str], problems: list[str]) -> ServicesTls | 
     )
 
 
+def _api_client(env: Mapping[str, str], problems: list[str]) -> ApiClient | None:
+    names = ("API_BASE_URL", "API_CLIENT_CERT", "API_CLIENT_KEY", "API_CA_CERT")
+    if not any(env.get(n) for n in names):
+        return None
+    missing = [n for n in names if not env.get(n)]
+    if missing:
+        problems.append(
+            "Calling the API needs all of "
+            + ", ".join(names)
+            + "; missing "
+            + ", ".join(missing)
+        )
+        return None
+    base_url = env["API_BASE_URL"].rstrip("/")
+    if not base_url.startswith("https://"):
+        problems.append(f'API_BASE_URL must be https, got "{base_url}"')
+    paths = {n: Path(env[n]) for n in names[1:]}
+    for name, path in paths.items():
+        if not path.is_file():
+            problems.append(f"{name}: no file at {path}")
+    return ApiClient(
+        base_url=base_url,
+        cert=paths["API_CLIENT_CERT"],
+        key=paths["API_CLIENT_KEY"],
+        ca=paths["API_CA_CERT"],
+    )
+
+
 def read_config(env: Mapping[str, str] | None = None) -> Config:
     """Reads and validates the configuration; raises ConfigError on problems."""
     env = os.environ if env is None else env
@@ -116,6 +159,7 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
         )
 
     services_tls = _services_tls(env, problems)
+    api = _api_client(env, problems)
 
     if problems:
         raise ConfigError(problems)
@@ -127,4 +171,6 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
         store_path=Path(env.get("FEATURE_STORE_PATH", DEFAULT_STORE)),
         services_port=services_port,
         services_tls=services_tls,
+        model_dir=Path(env.get("MODEL_DIR", DEFAULT_MODELS)),
+        api=api,
     )

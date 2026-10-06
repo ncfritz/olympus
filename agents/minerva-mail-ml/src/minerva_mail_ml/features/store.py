@@ -155,6 +155,14 @@ class FeatureStore:
             )
         return cursor.rowcount == 1
 
+    def n_features(self, version: str) -> int:
+        row = self._db.execute(
+            "SELECT n_features FROM feature_versions WHERE version = ?", (version,)
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"No feature version {version}")
+        return int(row[0])
+
     def serving_version(self) -> str | None:
         """The newest ready version, which the models use."""
         row = self._db.execute(

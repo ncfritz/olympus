@@ -21,8 +21,8 @@ def message(gmail_id: str = "1a0f", **overrides):
     }
 
 
-def test_stores_a_batch_and_says_which_version(store) -> None:
-    client = TestClient(create_services_app(store))
+def test_stores_a_batch_and_says_which_version(store, models) -> None:
+    client = TestClient(create_services_app(store, models))
     response = client.post(
         "/v1/features",
         json={"accountId": ACCOUNT, "messages": [message("a1"), message("a2")]},
@@ -34,8 +34,8 @@ def test_stores_a_batch_and_says_which_version(store) -> None:
     assert rows[0].from_address == "bill@power.example"
 
 
-def test_the_store_holds_no_text(store, tmp_path) -> None:
-    client = TestClient(create_services_app(store))
+def test_the_store_holds_no_text(store, models, tmp_path) -> None:
+    client = TestClient(create_services_app(store, models))
     client.post("/v1/features", json={"accountId": ACCOUNT, "messages": [message()]})
     store.close()
     raw = b"".join(p.read_bytes() for p in tmp_path.glob("features.sqlite3*"))
@@ -43,8 +43,8 @@ def test_the_store_holds_no_text(store, tmp_path) -> None:
     assert b"Your bill" not in raw
 
 
-def test_refuses_another_version(store) -> None:
-    client = TestClient(create_services_app(store))
+def test_refuses_another_version(store, models) -> None:
+    client = TestClient(create_services_app(store, models))
     response = client.post(
         "/v1/features",
         json={"accountId": ACCOUNT, "version": "v0", "messages": [message()]},
@@ -52,8 +52,8 @@ def test_refuses_another_version(store) -> None:
     assert response.status_code == 409
 
 
-def test_a_refused_message_is_not_echoed(store) -> None:
-    client = TestClient(create_services_app(store))
+def test_a_refused_message_is_not_echoed(store, models) -> None:
+    client = TestClient(create_services_app(store, models))
     response = client.post(
         "/v1/features",
         json={"accountId": ACCOUNT, "messages": [message(gmailId="NOT-HEX")]},
@@ -63,8 +63,8 @@ def test_a_refused_message_is_not_echoed(store) -> None:
     assert response.json()["detail"][0]["loc"] == ["body", "messages", 0, "gmailId"]
 
 
-def test_refuses_an_empty_or_oversized_batch(store) -> None:
-    client = TestClient(create_services_app(store))
+def test_refuses_an_empty_or_oversized_batch(store, models) -> None:
+    client = TestClient(create_services_app(store, models))
     for messages in ([], [message(f"{i:x}") for i in range(MAX_BATCH + 1)]):
         response = client.post(
             "/v1/features", json={"accountId": ACCOUNT, "messages": messages}
@@ -72,8 +72,8 @@ def test_refuses_an_empty_or_oversized_batch(store) -> None:
         assert response.status_code == 422
 
 
-def test_completing_a_version_makes_it_serve(store) -> None:
-    client = TestClient(create_services_app(store))
+def test_completing_a_version_makes_it_serve(store, models) -> None:
+    client = TestClient(create_services_app(store, models))
     client.post("/v1/features", json={"accountId": ACCOUNT, "messages": [message()]})
     assert client.get("/v1/features/versions").json()[0]["serving"] is False
 

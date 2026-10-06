@@ -13,6 +13,8 @@ def test_defaults() -> None:
     assert config.log_level == "info"
     assert config.store_path == Path("data/features.sqlite3")
     assert config.services_tls is None
+    assert config.model_dir == Path("data/models")
+    assert config.api is None
 
 
 def test_lists_every_problem_at_once() -> None:
@@ -74,3 +76,31 @@ def test_names_a_file_that_is_not_there(tmp_path: Path) -> None:
                 "SERVICES_ISSUER": "x",
             }
         )
+
+
+def _api_files(tmp_path: Path) -> dict[str, str]:
+    files = {"API_BASE_URL": "https://olympus-api:3443/v1/"}
+    for name in ("API_CLIENT_CERT", "API_CLIENT_KEY", "API_CA_CERT"):
+        path = tmp_path / f"{name.lower()}.pem"
+        path.write_text("pem")
+        files[name] = str(path)
+    return files
+
+
+def test_reads_the_api_client(tmp_path: Path) -> None:
+    config = read_config(_api_files(tmp_path))
+    assert config.api is not None
+    assert config.api.base_url == "https://olympus-api:3443/v1"
+
+
+def test_the_api_client_is_all_or_nothing(tmp_path: Path) -> None:
+    env = _api_files(tmp_path)
+    del env["API_CLIENT_KEY"]
+    with pytest.raises(ConfigError, match="missing API_CLIENT_KEY"):
+        read_config(env)
+
+
+def test_the_api_is_called_over_https(tmp_path: Path) -> None:
+    env = {**_api_files(tmp_path), "API_BASE_URL": "http://olympus-api/v1"}
+    with pytest.raises(ConfigError, match="must be https"):
+        read_config(env)

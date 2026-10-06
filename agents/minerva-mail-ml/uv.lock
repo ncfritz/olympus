@@ -288,6 +288,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "joblib" },
     { name = "numpy" },
     { name = "prometheus-client" },
     { name = "scikit-learn" },
@@ -307,6 +308,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "joblib", specifier = ">=1.4" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "prometheus-client", specifier = ">=0.21" },
     { name = "scikit-learn", specifier = ">=1.5" },

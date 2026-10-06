@@ -19,6 +19,8 @@ from minerva_mail_ml.config import Config, ConfigError, read_config
 from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.services_app import create_services_app
 from minerva_mail_ml.tls import allowed_clients_protocol, services_ssl_context
+from minerva_mail_ml.training.registry import ModelRegistry
+from minerva_mail_ml.training.serving import ServingModels
 
 logger = logging.getLogger("minerva_mail_ml")
 
@@ -31,7 +33,9 @@ class _Server(uvicorn.Server):
         yield
 
 
-def servers(config: Config, store: FeatureStore) -> list[uvicorn.Server]:
+def servers(
+    config: Config, store: FeatureStore, models: ServingModels
+) -> list[uvicorn.Server]:
     plain = _Server(
         uvicorn.Config(
             create_app(config, store),
@@ -47,7 +51,7 @@ def servers(config: Config, store: FeatureStore) -> list[uvicorn.Server]:
         )
         return [plain]
     services_config = uvicorn.Config(
-        create_services_app(store),
+        create_services_app(store, models),
         host="0.0.0.0",
         port=config.services_port,
         log_level=config.log_level,
@@ -87,7 +91,8 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     store = FeatureStore(config.store_path)
-    running = servers(config, store)
+    registry = ModelRegistry(config.model_dir)
+    running = servers(config, store, ServingModels(registry))
     logger.info(
         "Minerva mail classifier listening on %d%s",
         config.port,
@@ -96,6 +101,7 @@ def main() -> None:
     try:
         asyncio.run(serve(running))
     finally:
+        registry.close()
         store.close()
 
 

@@ -35,7 +35,8 @@ RUN useradd --system --uid 10001 --no-create-home mailml \
     && chown mailml /var/lib/minerva-mail-ml
 # The feature store: derived data, rebuilt from the archive or Gmail, so
 # the volume is not backed up (ADR 0030).
-ENV FEATURE_STORE_PATH=/var/lib/minerva-mail-ml/features.sqlite3
+ENV FEATURE_STORE_PATH=/var/lib/minerva-mail-ml/features.sqlite3 \
+    MODEL_DIR=/var/lib/minerva-mail-ml/models
 VOLUME /var/lib/minerva-mail-ml
 USER mailml
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

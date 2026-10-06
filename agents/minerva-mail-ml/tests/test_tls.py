@@ -141,6 +141,8 @@ def _free_port() -> int:
 @pytest.fixture(scope="module")
 def services_url(pki: Path, tmp_path_factory):
     from minerva_mail_ml.features.store import FeatureStore
+    from minerva_mail_ml.training.registry import ModelRegistry
+    from minerva_mail_ml.training.serving import ServingModels
 
     port, plain = _free_port(), _free_port()
     config = read_config(
@@ -155,7 +157,8 @@ def services_url(pki: Path, tmp_path_factory):
         }
     )
     store = FeatureStore(tmp_path_factory.mktemp("store") / "features.sqlite3")
-    running = servers(config, store)
+    registry = ModelRegistry(tmp_path_factory.mktemp("models"))
+    running = servers(config, store, ServingModels(registry))
     loop = asyncio.new_event_loop()
 
     def run() -> None:

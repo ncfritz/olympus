@@ -25,6 +25,8 @@ from minerva_mail_ml.features.featurize import (
     featurize,
 )
 from minerva_mail_ml.features.store import FeatureStore
+from minerva_mail_ml.training.dataset import sender_keys, weigh
+from minerva_mail_ml.training.serving import ServingModels
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,11 @@ FEATURES_STORED = Counter(
     "minerva_mail_ml_features_stored_total",
     "Messages featurized and stored, by feature version",
     ["version"],
+)
+
+SUGGESTIONS_MADE = Counter(
+    "minerva_mail_ml_suggestions_total",
+    "Messages given suggestions",
 )
 
 MAX_BATCH = 500
@@ -62,6 +69,30 @@ class FeaturesResponse(BaseModel):
     stored: int
 
 
+class SuggestionsRequest(BaseModel):
+    accountId: UUID  # noqa: N815
+    messages: list[FeatureMessage] = Field(min_length=1, max_length=MAX_BATCH)
+
+
+class SuggestedLabel(BaseModel):
+    label: str
+    kind: str
+    score: float
+    threshold: float | None = None
+    ticked: bool
+
+
+class MessageSuggestions(BaseModel):
+    gmailId: str  # noqa: N815
+    labels: list[SuggestedLabel]
+
+
+class SuggestionsResponse(BaseModel):
+    modelRun: str  # noqa: N815
+    featureVersion: str  # noqa: N815
+    messages: list[MessageSuggestions]
+
+
 class CompleteRequest(BaseModel):
     version: str
 
@@ -76,7 +107,21 @@ class VersionResponse(BaseModel):
     serving: bool
 
 
-def create_services_app(store: FeatureStore) -> FastAPI:
+def _texts(messages: list[FeatureMessage]) -> list[MessageText]:
+    return [
+        MessageText(
+            subject=m.subject,
+            text=m.text,
+            from_address=m.fromAddress,
+            list_id=m.listId,
+            has_list_unsubscribe=m.hasListUnsubscribe,
+            attachment_extensions=m.attachmentExtensions,
+        )
+        for m in messages
+    ]
+
+
+def create_services_app(store: FeatureStore, models: ServingModels) -> FastAPI:
     app = FastAPI(title="minerva-mail-ml services", version=__version__)
 
     @app.exception_handler(RequestValidationError)
@@ -100,19 +145,7 @@ def create_services_app(store: FeatureStore) -> FastAPI:
                 status_code=409,
                 detail=f"This classifier builds features {FEATURE_VERSION}",
             )
-        texts = [
-            MessageText(
-                subject=m.subject,
-                text=m.text,
-                from_address=m.fromAddress,
-                list_id=m.listId,
-                has_list_unsubscribe=m.hasListUnsubscribe,
-                attachment_extensions=m.attachmentExtensions,
-            )
-            for m in request.messages
-        ]
-        matrix = featurize(texts)
-        del texts
+        matrix = featurize(_texts(request.messages))
         store.begin_version(FEATURE_VERSION, N_FEATURES)
         stored = store.put(
             FEATURE_VERSION,
@@ -131,6 +164,57 @@ def create_services_app(store: FeatureStore) -> FastAPI:
         FEATURES_STORED.labels(FEATURE_VERSION).inc(stored)
         logger.debug("Stored features of %d messages", stored)
         return FeaturesResponse(version=FEATURE_VERSION, stored=stored)
+
+    @app.post("/v1/suggestions", response_model=SuggestionsResponse)
+    def suggestions(request: SuggestionsRequest) -> SuggestionsResponse:
+        """Labels for messages, from the account's serving model. The text
+        is featurized in memory and dropped; nothing is stored."""
+        serving = models.get(str(request.accountId))
+        if serving is None:
+            raise HTTPException(
+                status_code=404, detail="No model is trained for this account yet"
+            )
+        run_id, model = serving
+        if model.feature_version != FEATURE_VERSION:
+            raise HTTPException(
+                status_code=409,
+                detail=f"The serving model reads features {model.feature_version},"
+                f" this classifier makes {FEATURE_VERSION}",
+            )
+        x = weigh(featurize(_texts(request.messages)))
+        keys = [
+            sender_keys(
+                m.fromAddress.lower() if m.fromAddress else None,
+                m.listId.lower() if m.listId else None,
+            )
+            for m in request.messages
+        ]
+        found = model.suggest(x, keys)
+        SUGGESTIONS_MADE.inc(len(found))
+        return SuggestionsResponse(
+            modelRun=run_id,
+            featureVersion=model.feature_version,
+            messages=[
+                MessageSuggestions(
+                    gmailId=m.gmailId,
+                    labels=[
+                        SuggestedLabel(
+                            label=s.label,
+                            kind=s.kind,
+                            score=round(s.score, 4),
+                            threshold=(
+                                round(s.threshold, 4)
+                                if s.threshold is not None
+                                else None
+                            ),
+                            ticked=s.ticked,
+                        )
+                        for s in suggested
+                    ],
+                )
+                for m, suggested in zip(request.messages, found, strict=True)
+            ],
+        )
 
     def describe(version: str) -> VersionResponse:
         serving = store.serving_version()
