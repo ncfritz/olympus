@@ -55,6 +55,29 @@ resumes with `--offset` like `import`, and a message featurized again
 replaces its row. It needs the API (for the account) and the classifier,
 not the broker.
 
+## The Gmail command
+
+```sh
+pnpm --filter @ncfritz/minerva-mail-agent gmail reconcile neil@example.net
+```
+
+`reconcile` brings a mailbox linked from Minerva's Mail inbox into step
+with Gmail, read-only (`gmail.readonly`): every label gets its Gmail ID
+(labels made in Gmail since the export are added); each label's message
+IDs are listed (500 a call) and every message's labels, categories and
+flags compared with Minerva's, publishing `message.labels` where they
+differ and `message.delete` for mail Gmail no longer has (drafts and chats
+included, as the import skips them); mail Minerva lacks is fetched whole
+(`format=raw`), parsed as the import parses it and published as
+`message.upsert`. Requests are spaced 50 ms apart and retried with
+backoff when Google says to slow down. At the end, if nothing failed, it
+records the `historyId` it started from and Gmail's totals. It prints
+counts as JSON, never content, and is safe to run again; a run cut short
+is finished by the next. It needs the broker, the API and Gmail's client
+(`MAIL_GOOGLE_OAUTH_CLIENT_ID`, `MAIL_GOOGLE_OAUTH_CLIENT_SECRET_FILE`,
+`MAIL_CREDENTIALS_DIR`). New mail is not featurized for the classifier
+yet; that comes with history polling.
+
 ## Running it
 
 ```sh

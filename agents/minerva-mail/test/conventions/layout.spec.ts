@@ -76,8 +76,17 @@ describe("agent conventions", () => {
     const sdkCalls = SOURCES.filter((file) =>
       /^import (?!type )[^;]*from "@ncfritz\/olympus-sdk/m.test(read(file)),
     );
-    // No hand-built API URLs either.
-    const apiUrls = SOURCES.filter((file) => /\/v1\//.test(read(file)));
+    // No hand-built API URLs either. Google's own APIs (Gmail's is
+    // gmail.googleapis.com/gmail/v1/) are not Olympus's.
+    const apiUrls = SOURCES.filter((file) =>
+      read(file)
+        .split("\n")
+        .some(
+          (line) =>
+            /\/v1\//.test(line) &&
+            !/https:\/\/[a-z]+\.googleapis\.com\//.test(line),
+        ),
+    );
     expect({ sdkCalls, apiUrls }).toEqual({ sdkCalls: [], apiUrls: [] });
   });
 

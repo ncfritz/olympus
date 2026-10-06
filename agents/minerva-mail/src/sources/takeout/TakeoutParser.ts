@@ -1,10 +1,6 @@
-import PostalMime, { type Address, type Email } from "postal-mime";
-import { htmlToText, snippetOf } from "../bodyText";
-import type {
-  MailAddress,
-  MailAttachment,
-  MailSourceMessage,
-} from "../MailSourceMessage";
+import type { MailSourceMessage } from "../MailSourceMessage";
+import { MimeParseError } from "../MimeParseError";
+import { parseRawMessage } from "../parseRawMessage";
 import { decimalToGmailId } from "./gmailIds";
 import type { MboxEntry } from "./MboxReader";
 import { classifyLabels, parseLabelHeader } from "./takeoutLabels";
@@ -44,33 +40,6 @@ export const parseSeparatorDate = (value: string): string | undefined => {
   return new Date(utc - zone * 60_000).toISOString();
 };
 
-const mailboxes = (addresses: Address[] | Address | undefined): MailAddress[] =>
-  (Array.isArray(addresses) ? addresses : addresses ? [addresses] : [])
-    .flatMap((a) => (a.group ? a.group : [a]))
-    .filter((m) => m.address)
-    .map((m) => ({
-      address: (m.address ?? "").trim().toLowerCase(),
-      ...(m.name ? { name: m.name.trim() } : {}),
-    }));
-
-const listIdOf = (value: string | undefined): string | undefined => {
-  if (!value) return undefined;
-  const inside = /<([^>]+)>/.exec(value);
-  return (inside ? inside[1] : value).trim().toLowerCase() || undefined;
-};
-
-const extensionOf = (filename: string | null): string | undefined => {
-  const m = filename ? /\.([A-Za-z0-9]{1,10})$/.exec(filename.trim()) : null;
-  return m ? m[1].toLowerCase() : undefined;
-};
-
-const sizeOf = (content: ArrayBuffer | Uint8Array | string): number =>
-  typeof content === "string" ? Buffer.byteLength(content) : content.byteLength;
-
-/** Folded header values arrive with their line breaks. */
-const unfold = (value: string | undefined): string | undefined =>
-  value?.replace(/\r?\n[ \t]*/g, " ").trim();
-
 /**
  * One Takeout message to the shape every source yields. Attachments are
  * decoded to be measured and then dropped; the text is kept only on the
@@ -87,20 +56,26 @@ export class TakeoutParser {
     const receivedAt = parseSeparatorDate(entry.separatorDate);
     if (!receivedAt) throw new TakeoutParseError("bad-date", entry.offset);
 
-    let email: Email;
+    // Takeout carries the thread and the labels in headers of its own,
+    // read from the parsed message below.
+    let parsed: Awaited<ReturnType<typeof parseRawMessage>>;
     try {
-      email = await PostalMime.parse(entry.raw, {
-        attachmentEncoding: "arraybuffer",
+      parsed = await parseRawMessage(entry.raw, {
+        gmailId,
+        threadId: "0",
+        receivedAt,
+        labels: [],
+        flags: classifyLabels([]).flags,
+        categories: [],
       });
     } catch (e) {
       throw new TakeoutParseError(
         "mime",
         entry.offset,
-        e instanceof Error ? e.name : undefined,
+        e instanceof MimeParseError ? e.causeName : undefined,
       );
     }
-    const header = (key: string) =>
-      unfold(email.headers.find((h) => h.key === key)?.value);
+    const { message, header } = parsed;
 
     const thread = header("x-gm-thrid");
     if (!thread) throw new TakeoutParseError("no-thread-id", entry.offset);
@@ -115,49 +90,6 @@ export class TakeoutParser {
     const { labels, flags, categories } = classifyLabels(
       labelHeader ? parseLabelHeader(labelHeader) : [],
     );
-
-    const sent = email.date ? new Date(email.date) : undefined;
-    const text = email.text?.trim()
-      ? email.text.trim()
-      : email.html
-        ? htmlToText(email.html)
-        : "";
-    const attachments: MailAttachment[] = email.attachments.map((a) => ({
-      mimeType: a.mimeType.toLowerCase(),
-      ...(extensionOf(a.filename)
-        ? { extension: extensionOf(a.filename) }
-        : {}),
-      sizeBytes: sizeOf(a.content),
-      inline: a.disposition === "inline" || a.related === true,
-    }));
-
-    return {
-      gmailId,
-      threadId,
-      receivedAt,
-      ...(sent && !Number.isNaN(sent.getTime())
-        ? { sentAt: sent.toISOString() }
-        : {}),
-      from: mailboxes(email.from)[0],
-      replyTo: mailboxes(email.replyTo),
-      to: mailboxes(email.to),
-      cc: mailboxes(email.cc),
-      ...(email.deliveredTo
-        ? { deliveredTo: email.deliveredTo.trim().toLowerCase() }
-        : {}),
-      ...(listIdOf(header("list-id"))
-        ? { listId: listIdOf(header("list-id")) }
-        : {}),
-      hasListUnsubscribe: header("list-unsubscribe") !== undefined,
-      ...(email.messageId ? { messageIdHeader: email.messageId.trim() } : {}),
-      ...(email.subject !== undefined ? { subject: email.subject.trim() } : {}),
-      sizeBytes: entry.raw.length,
-      labels,
-      flags,
-      categories,
-      attachments,
-      text,
-      snippet: snippetOf(text),
-    };
+    return { ...message, threadId, labels, flags, categories };
   }
 }

@@ -96,7 +96,8 @@ export class GmailHandler extends SmtpHandler {
 ## Calling the API
 
 - Only through `@ncfritz/olympus-client` (ADR 0017): SDK imports are
-  type-only and no code builds `/v1/` URLs. **[checked]**
+  type-only and no code builds `/v1/` URLs (a third party's own API, such
+  as Gmail's at `gmail.googleapis.com`, is not Olympus's). **[checked]**
 - `AppModule` imports `OlympusClientModule.forRootAsync(...)` with
   `baseUrl` from `API_BASE_URL` (including `/v1`) and `clientName` from
   `runtime.serviceName`, the name on the agent's certificate. Not

@@ -311,12 +311,24 @@ messages have no queue to land in.
    must be the imported account's; the subject is recorded
    (`1791260000000_minerva_mail_links`), and a later sign-in, or another
    mail account, must not bring another.
-2. **Reconcile**: `getProfile` for the starting `historyId`;
-   `labels.list` to give each label its ID (labels made in Gmail since
-   the export are added); each label's message IDs by `messages.list`,
-   and All Mail's, to bring labels and deletions up to date;
-   `messages.get` only for mail after the archive's last message.
-   Throttled and resumable.
+2. **Reconcile**: **built**. `gmail reconcile <email>` in the mail agent:
+   `getProfile` for the starting `historyId` (and a check that the
+   credential reads that mailbox); `labels.list`, matched by name
+   (`SyncMailLabels` gives each label its `gmailLabelId`, adds labels made
+   since the export, and names Minerva's labels Gmail lacks); each
+   tracked label's message IDs by `messages.list` (user labels, `INBOX`,
+   `UNREAD`, `STARRED`, `IMPORTANT`, `SENT`, `CATEGORY_*`), and All
+   Mail's less drafts and chats, compared with `ListMailMessageStates`:
+   differences go out as `message.labels`, mail gone from Gmail as
+   `message.delete` (both new actions on `mail.messages`, guarded by
+   `snapshotTime`), and `messages.get` (`format=raw`, parsed as the
+   import parses) only for mail Minerva lacks. Throttled to 50 ms a
+   request with backoff on 429, 5xx and rate-limit 403s; resumable by
+   running again, since `UpdateMailAccountSync` records the `historyId`
+   and Gmail's totals only after a clean run
+   (`1791270000000_minerva_mail_sync`, which also moves the link's
+   Google subject into the account's existing `subject`). Mail fetched
+   here is not featurized; step 3 does that for new mail.
 3. **Incremental**: `history.list` polling from the `historyId`; added
    and removed labels, new and deleted messages; new messages fetched,
    with Gmail's snippet. A `historyId` too old (404) runs the reconcile

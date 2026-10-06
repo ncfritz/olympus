@@ -5,8 +5,13 @@ const mode =
   process.env.NODE_ENV === "production" ? "production" : "development";
 
 module.exports = {
-  // The agent, and the Takeout command (docs/plans/email-management, 1a).
-  entry: { main: "./src/main.ts", takeout: "./src/takeout.ts" },
+  // The agent, the Takeout command (docs/plans/email-management, 1a) and
+  // the Gmail command (1b).
+  entry: {
+    main: "./src/main.ts",
+    takeout: "./src/takeout.ts",
+    gmail: "./src/gmail.ts",
+  },
   mode,
   target: "node",
   devtool: "source-map",
