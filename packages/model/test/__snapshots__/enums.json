@@ -274,6 +274,12 @@
   "MailAuditRule": {
     "Sender": "sender"
   },
+  "MailLabelKind": {
+    "Retired": "retired",
+    "State": "state",
+    "System": "system",
+    "Topical": "topical"
+  },
   "MailStarAge": {
     "Month": "month",
     "Older": "older",

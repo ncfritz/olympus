@@ -7344,6 +7344,159 @@
         ]
       }
     },
+    "/minerva/mail/families": {
+      "post": {
+        "description": "Makes two or more of the caller's topical labels, of one account, the states of a family (`Bills`: `*Payable`, then `*Paid`): each open or closed, one open state the initial, with the moves allowed between them. The classifier then predicts the family and applies the initial state.",
+        "operationId": "CreateMailLabelFamily",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailLabelFamily operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailLabelFamilyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The family was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailLabelFamilyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A label is not topical, or the account has a family of that name."
+          }
+        },
+        "summary": "Creates a family of state labels",
+        "tags": [
+          "Mail"
+        ]
+      },
+      "get": {
+        "description": "The caller's families of state labels, by name, each with its states (open or closed), its initial state and the moves it allows (ADR 0030, Label kinds).",
+        "operationId": "ListMailLabelFamilies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The families.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailLabelFamiliesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the caller's label families",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/family/{familyId}": {
+      "delete": {
+        "description": "Removes one of the caller's label families and its transitions; its states become topical labels again. The labels and their messages are not touched.",
+        "operationId": "DeleteMailLabelFamily",
+        "parameters": [
+          {
+            "name": "familyId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the family",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The family was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deletes a family of state labels",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/audit/changes/export": {
       "get": {
         "description": "The change plan for review outside the site (docs/plans/email-management phase 2): every label change the latest audit proposes over the caller's mail, or those for one label, one action or at least a confidence, a row each, most confident first. Columns: received_time, gmail_id, thread_id, from_address, from_name, subject, label, action, rule, confidence, sender_messages, sender_label_messages, labels_now, gmail_link. Metadata only; never message text.",
@@ -7702,6 +7855,52 @@
         ]
       }
     },
+    "/minerva/mail/labels": {
+      "get": {
+        "description": "Every label of the caller's mail accounts, by name, with its kind (topical, state, system, retired), its family or merge target, and its message count (ADR 0030, Label kinds).",
+        "operationId": "ListMailLabels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The labels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailLabelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the caller's mail labels with their kinds",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/audit/runs": {
       "post": {
         "description": "Runs the audit (docs/plans/email-management phase 2) over each of the caller's mail accounts, replacing its last run: label changes proposed from each sender's habits, threads whose messages disagree, and labels that may be one. Read-only towards Gmail. Takes a few seconds on a large mailbox.",
@@ -7743,6 +7942,76 @@
           }
         },
         "summary": "Audits the caller's mail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/label/{labelId}": {
+      "put": {
+        "description": "Makes one of the caller's labels topical, or retired into another of the same account (picking a retired label applies its target). A label becomes a state by joining a family (CreateMailLabelFamily) and stops being one when the family is deleted.",
+        "operationId": "UpdateMailLabel",
+        "parameters": [
+          {
+            "name": "labelId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the label",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateMailLabel operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMailLabelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The label as it now is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMailLabelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The label is a state, its target is retired, or other labels merge into it."
+          }
+        },
+        "summary": "Sets a mail label's kind",
         "tags": [
           "Mail"
         ]
@@ -13644,6 +13913,154 @@
           "meeting"
         ]
       },
+      "CreateMailLabelFamilyState": {
+        "type": "object",
+        "properties": {
+          "labelId": {
+            "type": "string",
+            "description": "The label"
+          },
+          "open": {
+            "type": "boolean",
+            "description": "Open (wants attention) or closed (done)"
+          }
+        },
+        "required": [
+          "labelId",
+          "open"
+        ]
+      },
+      "MailLabelTransition": {
+        "type": "object",
+        "properties": {
+          "fromLabelId": {
+            "type": "string",
+            "description": "From this state"
+          },
+          "toLabelId": {
+            "type": "string",
+            "description": "To this state"
+          }
+        },
+        "required": [
+          "fromLabelId",
+          "toLabelId"
+        ]
+      },
+      "CreateMailLabelFamilyRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The family's name, unique in its account (`Bills`)"
+          },
+          "states": {
+            "description": "Its states: two or more topical labels of one account, each open or closed",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateMailLabelFamilyState"
+            }
+          },
+          "initialLabelId": {
+            "type": "string",
+            "description": "The open state a message enters the family in"
+          },
+          "transitions": {
+            "description": "The moves allowed between the states",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelTransition"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "states",
+          "initialLabelId",
+          "transitions"
+        ]
+      },
+      "MailLabelFamilyState": {
+        "type": "object",
+        "properties": {
+          "labelId": {
+            "type": "string",
+            "description": "The label"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name"
+          },
+          "open": {
+            "type": "boolean",
+            "description": "Open (the message wants attention) or closed (its action is done)"
+          }
+        },
+        "required": [
+          "labelId",
+          "name",
+          "open"
+        ]
+      },
+      "MailLabelFamily": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The family's ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The mail account it belongs to"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name"
+          },
+          "initialLabelId": {
+            "type": "string",
+            "description": "The state a message enters the family in"
+          },
+          "states": {
+            "description": "Its states, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelFamilyState"
+            }
+          },
+          "transitions": {
+            "description": "The moves it allows between them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelTransition"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "initialLabelId",
+          "states",
+          "transitions"
+        ]
+      },
+      "CreateMailLabelFamilyResponse": {
+        "type": "object",
+        "properties": {
+          "family": {
+            "description": "The new family",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailLabelFamily"
+              }
+            ]
+          }
+        },
+        "required": [
+          "family"
+        ]
+      },
       "MailAuditAction": {
         "type": "string",
         "enum": [
@@ -14473,6 +14890,102 @@
           "changes"
         ]
       },
+      "ListMailLabelFamiliesResponse": {
+        "type": "object",
+        "properties": {
+          "families": {
+            "description": "The caller's label families, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelFamily"
+            }
+          }
+        },
+        "required": [
+          "families"
+        ]
+      },
+      "MailLabelKind": {
+        "type": "string",
+        "description": "What a label is to the classifier",
+        "enum": [
+          "topical",
+          "state",
+          "system",
+          "retired"
+        ]
+      },
+      "MailLabel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The label's ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The mail account it belongs to"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its full name, as Gmail shows it (`Bills/*Paid`)"
+          },
+          "kind": {
+            "description": "Its kind",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailLabelKind"
+              }
+            ]
+          },
+          "messages": {
+            "type": "number",
+            "description": "Messages with the label"
+          },
+          "familyId": {
+            "type": "string",
+            "description": "For a state, the family it belongs to"
+          },
+          "familyName": {
+            "type": "string",
+            "description": "For a state, its family's name"
+          },
+          "stateOpen": {
+            "type": "boolean",
+            "description": "For a state: open (the message wants attention) or closed (its action is done)"
+          },
+          "mergeTargetId": {
+            "type": "string",
+            "description": "For a retired label, the label it is merged into"
+          },
+          "mergeTargetName": {
+            "type": "string",
+            "description": "For a retired label, its merge target's name"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "kind",
+          "messages"
+        ]
+      },
+      "ListMailLabelsResponse": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "The caller's labels, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabel"
+            }
+          }
+        },
+        "required": [
+          "labels"
+        ]
+      },
       "MailAuditRun": {
         "type": "object",
         "properties": {
@@ -14528,6 +15041,42 @@
         },
         "required": [
           "runs"
+        ]
+      },
+      "UpdateMailLabelRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "`topical` or `retired`; a label becomes a state by joining a family",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailLabelKind"
+              }
+            ]
+          },
+          "mergeTargetId": {
+            "type": "string",
+            "description": "For `retired`: the label it merges into, in the same account, not itself retired"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "UpdateMailLabelResponse": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "description": "The label as it now is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailLabel"
+              }
+            ]
+          }
+        },
+        "required": [
+          "label"
         ]
       }
     }

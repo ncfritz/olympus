@@ -1,0 +1,32 @@
+table:
+  name: mail_label_transitions
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    family_id:
+      custom_name: familyId
+    from_label_id:
+      custom_name: fromLabelId
+    to_label_id:
+      custom_name: toLabelId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    family_id: familyId
+    from_label_id: fromLabelId
+    to_label_id: toLabelId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: family
+    using:
+      foreign_key_constraint_on: family_id
+  - name: fromLabel
+    using:
+      foreign_key_constraint_on: from_label_id
+  - name: toLabel
+    using:
+      foreign_key_constraint_on: to_label_id

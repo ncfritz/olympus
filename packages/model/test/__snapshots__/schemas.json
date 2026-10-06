@@ -4227,6 +4227,72 @@
     ],
     "type": "object"
   },
+  "CreateMailLabelFamilyRequest": {
+    "properties": {
+      "initialLabelId": {
+        "description": "The open state a message enters the family in",
+        "type": "string"
+      },
+      "name": {
+        "description": "The family's name, unique in its account (`Bills`)",
+        "type": "string"
+      },
+      "states": {
+        "description": "Its states: two or more topical labels of one account, each open or closed",
+        "items": {
+          "$ref": "#/components/schemas/CreateMailLabelFamilyState"
+        },
+        "type": "array"
+      },
+      "transitions": {
+        "description": "The moves allowed between the states",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelTransition"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "initialLabelId",
+      "name",
+      "states",
+      "transitions"
+    ],
+    "type": "object"
+  },
+  "CreateMailLabelFamilyResponse": {
+    "properties": {
+      "family": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelFamily"
+          }
+        ],
+        "description": "The new family"
+      }
+    },
+    "required": [
+      "family"
+    ],
+    "type": "object"
+  },
+  "CreateMailLabelFamilyState": {
+    "properties": {
+      "labelId": {
+        "description": "The label",
+        "type": "string"
+      },
+      "open": {
+        "description": "Open (wants attention) or closed (done)",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "labelId",
+      "open"
+    ],
+    "type": "object"
+  },
   "CreateMediaAssetRequest": {
     "properties": {
       "asset": {
@@ -9795,6 +9861,36 @@
     ],
     "type": "object"
   },
+  "ListMailLabelFamiliesResponse": {
+    "properties": {
+      "families": {
+        "description": "The caller's label families, by name",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelFamily"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "families"
+    ],
+    "type": "object"
+  },
+  "ListMailLabelsResponse": {
+    "properties": {
+      "labels": {
+        "description": "The caller's labels, by name",
+        "items": {
+          "$ref": "#/components/schemas/MailLabel"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "labels"
+    ],
+    "type": "object"
+  },
   "ListMediaAssetDownloadsResponse": {
     "properties": {
       "count": {
@@ -11135,6 +11231,137 @@
     ],
     "type": "object"
   },
+  "MailLabel": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account it belongs to",
+        "type": "string"
+      },
+      "familyId": {
+        "description": "For a state, the family it belongs to",
+        "type": "string"
+      },
+      "familyName": {
+        "description": "For a state, its family's name",
+        "type": "string"
+      },
+      "id": {
+        "description": "The label's ID",
+        "type": "string"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelKind"
+          }
+        ],
+        "description": "Its kind"
+      },
+      "mergeTargetId": {
+        "description": "For a retired label, the label it is merged into",
+        "type": "string"
+      },
+      "mergeTargetName": {
+        "description": "For a retired label, its merge target's name",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages with the label",
+        "type": "number"
+      },
+      "name": {
+        "description": "Its full name, as Gmail shows it (`Bills/*Paid`)",
+        "type": "string"
+      },
+      "stateOpen": {
+        "description": "For a state: open (the message wants attention) or closed (its action is done)",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "accountId",
+      "id",
+      "kind",
+      "messages",
+      "name"
+    ],
+    "type": "object"
+  },
+  "MailLabelFamily": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account it belongs to",
+        "type": "string"
+      },
+      "id": {
+        "description": "The family's ID",
+        "type": "string"
+      },
+      "initialLabelId": {
+        "description": "The state a message enters the family in",
+        "type": "string"
+      },
+      "name": {
+        "description": "Its name",
+        "type": "string"
+      },
+      "states": {
+        "description": "Its states, by name",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelFamilyState"
+        },
+        "type": "array"
+      },
+      "transitions": {
+        "description": "The moves it allows between them",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelTransition"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "accountId",
+      "id",
+      "initialLabelId",
+      "name",
+      "states",
+      "transitions"
+    ],
+    "type": "object"
+  },
+  "MailLabelFamilyState": {
+    "properties": {
+      "labelId": {
+        "description": "The label",
+        "type": "string"
+      },
+      "name": {
+        "description": "Its name",
+        "type": "string"
+      },
+      "open": {
+        "description": "Open (the message wants attention) or closed (its action is done)",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "labelId",
+      "name",
+      "open"
+    ],
+    "type": "object"
+  },
+  "MailLabelKind": {
+    "description": "What a label is to the classifier",
+    "enum": [
+      "topical",
+      "state",
+      "system",
+      "retired"
+    ],
+    "type": "string"
+  },
   "MailLabelStatistics": {
     "properties": {
       "lastReceivedTime": {
@@ -11159,6 +11386,23 @@
       "messages",
       "name",
       "senders"
+    ],
+    "type": "object"
+  },
+  "MailLabelTransition": {
+    "properties": {
+      "fromLabelId": {
+        "description": "From this state",
+        "type": "string"
+      },
+      "toLabelId": {
+        "description": "To this state",
+        "type": "string"
+      }
+    },
+    "required": [
+      "fromLabelId",
+      "toLabelId"
     ],
     "type": "object"
   },
@@ -21864,6 +22108,42 @@
     },
     "required": [
       "goal"
+    ],
+    "type": "object"
+  },
+  "UpdateMailLabelRequest": {
+    "properties": {
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabelKind"
+          }
+        ],
+        "description": "`topical` or `retired`; a label becomes a state by joining a family"
+      },
+      "mergeTargetId": {
+        "description": "For `retired`: the label it merges into, in the same account, not itself retired",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "type": "object"
+  },
+  "UpdateMailLabelResponse": {
+    "properties": {
+      "label": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailLabel"
+          }
+        ],
+        "description": "The label as it now is"
+      }
+    },
+    "required": [
+      "label"
     ],
     "type": "object"
   },
