@@ -251,10 +251,12 @@ def suggest_account(
     data = ds.build(
         store, model.feature_version, account_id, api.examples(account_id), labels
     )
-    found = suggestions(model, data, jobs=jobs)
+    # The run first, so the API is known to take suggestions before the
+    # minutes of scoring; a run left building is dropped by the next publish.
     suggestion_run = api.create_suggestion_run(
         account_id, run_id, model.feature_version
     )
+    found = suggestions(model, data, jobs=jobs)
     stored = skipped = 0
     for start in range(0, len(found), SUGGESTION_BATCH):
         created, left_out = api.create_suggestions(

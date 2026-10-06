@@ -74,6 +74,33 @@ def _example(raw: dict) -> Example:
     )
 
 
+class ApiError(Exception):
+    """The API refused a request; its own message says why (never a
+    message's text, which is not sent there)."""
+
+    def __init__(self, method: str, path: str, status: int, detail: str) -> None:
+        super().__init__(f"{method} {path}: {status} {detail}")
+        self.status = status
+
+
+def _checked(response: httpx.Response) -> dict:
+    if response.is_success:
+        return response.json()
+    try:
+        body = response.json()
+        detail = body.get("message") or body.get("error") or response.reason_phrase
+        if isinstance(detail, list):
+            detail = "; ".join(str(d) for d in detail)
+    except ValueError:
+        detail = response.reason_phrase
+    raise ApiError(
+        response.request.method,
+        response.request.url.path,
+        response.status_code,
+        str(detail)[:300],
+    )
+
+
 class OlympusApi:
     def __init__(
         self,
@@ -96,14 +123,10 @@ class OlympusApi:
         self._client.close()
 
     def _get(self, path: str, params: dict | None = None) -> dict:
-        response = self._client.get(path, params=params)
-        response.raise_for_status()
-        return response.json()
+        return _checked(self._client.get(path, params=params))
 
     def _post(self, path: str, body: dict) -> dict:
-        response = self._client.post(path, json=body)
-        response.raise_for_status()
-        return response.json()
+        return _checked(self._client.post(path, json=body))
 
     def accounts(self) -> list[Account]:
         body = self._get("/training/accounts")

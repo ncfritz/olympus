@@ -115,3 +115,24 @@ def test_posts_a_run_of_suggestions() -> None:
         "/v1/minerva/mail/suggestion-run/run-1/publish",
         {"messagesScored": 255056},
     )
+
+
+def test_says_what_the_api_said() -> None:
+    import pytest
+
+    from minerva_mail_ml.olympus_api import ApiError
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            404,
+            json={
+                "statusCode": 404,
+                "message": "Cannot POST /v1/minerva/mail/suggestion-runs",
+                "error": "Not Found",
+            },
+        )
+
+    with pytest.raises(ApiError) as error:
+        _api(handler).create_suggestion_run(ACCOUNT, "model-1", "v1")
+    assert error.value.status == 404
+    assert "Cannot POST /v1/minerva/mail/suggestion-runs" in str(error.value)
