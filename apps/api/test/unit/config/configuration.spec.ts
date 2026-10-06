@@ -117,6 +117,33 @@ describe("readConfig", () => {
       });
     });
 
+    it("reads the mail agent's the same way", () => {
+      expect(
+        readConfig({
+          ...REQUIRED,
+          MINERVA_MAIL_AGENT_URL: "https://minerva-mail-agent:4435/v1",
+          MINERVA_MAIL_AGENT_CLIENT_CERT: "/run/secrets/tls/client.crt",
+          MINERVA_MAIL_AGENT_CLIENT_KEY: "/run/secrets/tls/client.key",
+        }).minerva,
+      ).toEqual({
+        mailAgent: {
+          baseUrl: "https://minerva-mail-agent:4435/v1",
+          tls: {
+            certificate: "/run/secrets/tls/client.crt",
+            key: "/run/secrets/tls/client.key",
+            ca: undefined,
+          },
+          timeoutMs: 10000,
+        },
+      });
+      expect(() =>
+        readConfig({
+          ...REQUIRED,
+          MINERVA_MAIL_AGENT_URL: "https://minerva-mail-agent:4435/v1",
+        }),
+      ).toThrow(/MINERVA_MAIL_AGENT_CLIENT_CERT/);
+    });
+
     it("refuses an https URL without a client certificate", () => {
       expect(() =>
         readConfig({

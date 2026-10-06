@@ -134,6 +134,7 @@
 - '!include minerva_goal_tags.yaml'
 - '!include minerva_goal_user_settings.yaml'
 - '!include minerva_goals.yaml'
+- '!include minerva_mail_account_connections.yaml'
 - '!include minerva_mail_accounts.yaml'
 - '!include minerva_mail_audit_changes.yaml'
 - '!include minerva_mail_audit_label_type.yaml'

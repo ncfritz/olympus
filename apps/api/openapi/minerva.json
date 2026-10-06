@@ -7344,6 +7344,88 @@
         ]
       }
     },
+    "/minerva/mail/accounts/callback": {
+      "get": {
+        "description": "Google's redirect, registered with the mail OAuth client. Redeems the sign-in through the mail agent, links the account when it is the mailbox's own, and sends the browser back to the site page with the outcome: mailAccount=connected (with accountId), cancelled, expired, refused (with reason another-account or owned) or failed.",
+        "operationId": "CompleteMailAccountConnect",
+        "parameters": [],
+        "responses": {
+          "302": {
+            "description": "Back to the site page."
+          },
+          "400": {
+            "description": "No sign-in is waiting for this state, so there is nowhere safe to send the browser."
+          }
+        },
+        "summary": "Completes linking a mail account to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/connect": {
+      "post": {
+        "description": "Starts a Google sign-in that links one of the caller's mailboxes to Gmail (docs/plans/email-management phase 1b; ADR 0030 by ADR 0028's consent flow), and returns Google's page to send the browser to. The sign-in must be the mailbox's own account: its address, and once linked, the same Google account. Google sends the browser to CompleteMailAccountConnect, and from there back to returnTo with the outcome.",
+        "operationId": "ConnectMailAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account to link",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ConnectMailAccount operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectMailAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Google's sign-in page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectMailAccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nThe account is not the caller's."
+          },
+          "503": {
+            "description": "The mail agent or the API's public address is not configured."
+          }
+        },
+        "summary": "Starts linking a mail account to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/families": {
       "post": {
         "description": "Makes two or more of the caller's topical labels, of one account, the states of a family (`Bills`: `*Payable`, then `*Paid`): each open or closed, one open state the initial, with the moves allowed between them. The classifier then predicts the family and applies the initial state.",
@@ -7868,6 +7950,52 @@
           }
         },
         "summary": "Makes a mailbox imported from Takeout a user's",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/accounts": {
+      "get": {
+        "description": "Each of the caller's mailboxes, by address: how it became theirs, and whether and when it was linked to Gmail (docs/plans/email-management phase 1b).",
+        "operationId": "ListMailAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailAccountsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the caller's mail accounts",
         "tags": [
           "Mail"
         ]
@@ -14287,6 +14415,30 @@
           "meeting"
         ]
       },
+      "ConnectMailAccountRequest": {
+        "type": "object",
+        "properties": {
+          "returnTo": {
+            "type": "string",
+            "description": "The site page to come back to when the sign-in is done, with the outcome in its query (mailAccount=connected, cancelled, expired, refused or failed). It must be a page of one of the API's clients."
+          }
+        },
+        "required": [
+          "returnTo"
+        ]
+      },
+      "ConnectMailAccountResponse": {
+        "type": "object",
+        "properties": {
+          "authUrl": {
+            "type": "string",
+            "description": "Google's sign-in page, for the browser to go to. The sign-in expires in ten minutes."
+          }
+        },
+        "required": [
+          "authUrl"
+        ]
+      },
       "CreateMailLabelFamilyState": {
         "type": "object",
         "properties": {
@@ -15285,6 +15437,14 @@
           "verifiedTime": {
             "type": "string",
             "description": "An ISO-8601 formatted string indicating when the account became the user's"
+          },
+          "linkedTime": {
+            "type": "string",
+            "description": "When the mailbox was linked to Gmail by its owner's sign-in; absent until it is (phase 1b)"
+          },
+          "linkScope": {
+            "type": "string",
+            "description": "The access Gmail granted, space-separated scopes"
           }
         },
         "required": [
@@ -15308,6 +15468,21 @@
         },
         "required": [
           "mailAccount"
+        ]
+      },
+      "ListMailAccountsResponse": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "description": "The caller's mail accounts, by address",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailAccount"
+            }
+          }
+        },
+        "required": [
+          "accounts"
         ]
       },
       "SortDirection": {

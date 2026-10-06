@@ -2895,6 +2895,30 @@
     ],
     "type": "object"
   },
+  "ConnectMailAccountRequest": {
+    "properties": {
+      "returnTo": {
+        "description": "The site page to come back to when the sign-in is done, with the outcome in its query (mailAccount=connected, cancelled, expired, refused or failed). It must be a page of one of the API's clients.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "returnTo"
+    ],
+    "type": "object"
+  },
+  "ConnectMailAccountResponse": {
+    "properties": {
+      "authUrl": {
+        "description": "Google's sign-in page, for the browser to go to. The sign-in expires in ten minutes.",
+        "type": "string"
+      }
+    },
+    "required": [
+      "authUrl"
+    ],
+    "type": "object"
+  },
   "ContentAggregateStatisticsResponse": {
     "properties": {
       "avgDuration": {
@@ -9911,6 +9935,21 @@
     ],
     "type": "object"
   },
+  "ListMailAccountsResponse": {
+    "properties": {
+      "accounts": {
+        "description": "The caller's mail accounts, by address",
+        "items": {
+          "$ref": "#/components/schemas/MailAccount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "accounts"
+    ],
+    "type": "object"
+  },
   "ListMailAuditChangesResponse": {
     "properties": {
       "changes": {
@@ -10977,6 +11016,14 @@
       },
       "id": {
         "description": "The unique ID of the account",
+        "type": "string"
+      },
+      "linkScope": {
+        "description": "The access Gmail granted, space-separated scopes",
+        "type": "string"
+      },
+      "linkedTime": {
+        "description": "When the mailbox was linked to Gmail by its owner's sign-in; absent until it is (phase 1b)",
         "type": "string"
       },
       "verification": {

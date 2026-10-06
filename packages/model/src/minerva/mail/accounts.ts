@@ -54,6 +54,20 @@ export class MailAccount {
       "An ISO-8601 formatted string indicating when the account became the user's",
   })
   verifiedTime: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "When the mailbox was linked to Gmail by its owner's sign-in; absent until it is (phase 1b)",
+  })
+  linkedTime?: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The access Gmail granted, space-separated scopes",
+  })
+  linkScope?: string;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -77,6 +91,16 @@ export class ImportMailAccountRequest {
   ownerEmail: string;
 }
 
+export class ConnectMailAccountRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The site page to come back to when the sign-in is done, with the outcome in its query (mailAccount=connected, cancelled, expired, refused or failed). It must be a page of one of the API's clients.",
+  })
+  returnTo: string;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -88,4 +112,24 @@ export class ImportMailAccountResponse {
     description: "The account the archive's messages are imported into.",
   })
   mailAccount: MailAccount;
+}
+
+export class ListMailAccountsResponse {
+  @ApiProperty({
+    type: () => MailAccount,
+    isArray: true,
+    required: true,
+    description: "The caller's mail accounts, by address",
+  })
+  accounts: MailAccount[];
+}
+
+export class ConnectMailAccountResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "Google's sign-in page, for the browser to go to. The sign-in expires in ten minutes.",
+  })
+  authUrl: string;
 }

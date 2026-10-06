@@ -155,13 +155,20 @@ export type WeatherConfig = {
  * agent's services listener with the API's own client certificate
  * (ADR 0028). Unset, the calendar account operations answer 503.
  */
+export type AgentEndpoint = {
+  /** Including the version: https://minerva-calendar-agent:4433/v1 */
+  baseUrl: string;
+  tls?: { certificate: string; key: string; ca?: string };
+  timeoutMs: number;
+};
+
 export type MinervaConfig = {
-  calendarAgent?: {
-    /** Including the version: https://minerva-calendar-agent:4433/v1 */
-    baseUrl: string;
-    tls?: { certificate: string; key: string; ca?: string };
-    timeoutMs: number;
-  };
+  calendarAgent?: AgentEndpoint;
+  /**
+   * The mail agent's services listener, for linking mailboxes to Gmail
+   * (ADR 0030, by ADR 0028's flow). Unset, linking answers 503.
+   */
+  mailAgent?: AgentEndpoint;
   /**
    * The From of a calendar account claim's email (ADR 0028), e.g.
    * `Olympus <olympus@ncfritz.net>`. Unset, claims answer 503.
@@ -332,47 +339,45 @@ export const isCidr = (value: string): boolean => {
 };
 
 /**
- * MINERVA_CALENDAR_AGENT_URL, with MINERVA_CALENDAR_AGENT_CLIENT_CERT and
- * _CLIENT_KEY (and the optional _CA_CERT), which an https URL requires; and
- * MINERVA_CLAIM_MAIL_FROM.
+ * MINERVA_CALENDAR_AGENT_URL and MINERVA_MAIL_AGENT_URL, each with its
+ * _CLIENT_CERT and _CLIENT_KEY (and the optional _CA_CERT), which an https
+ * URL requires; and MINERVA_CLAIM_MAIL_FROM.
  */
 const readMinervaConfig = (read: EnvReader): MinervaConfig => {
   const claimMailFrom = read.optional("MINERVA_CLAIM_MAIL_FROM");
+  const calendarAgent = readAgentEndpoint(read, "MINERVA_CALENDAR_AGENT");
+  const mailAgent = readAgentEndpoint(read, "MINERVA_MAIL_AGENT");
   return {
-    ...readCalendarAgentConfig(read),
+    ...(calendarAgent ? { calendarAgent } : {}),
+    ...(mailAgent ? { mailAgent } : {}),
     ...(claimMailFrom ? { claimMailFrom } : {}),
   };
 };
 
-const readCalendarAgentConfig = (
+const readAgentEndpoint = (
   read: EnvReader,
-): Pick<MinervaConfig, "calendarAgent"> => {
-  const baseUrl = read.optional("MINERVA_CALENDAR_AGENT_URL");
-  const certificate = read.optional("MINERVA_CALENDAR_AGENT_CLIENT_CERT");
-  const key = read.optional("MINERVA_CALENDAR_AGENT_CLIENT_KEY");
-  const ca = read.optional("MINERVA_CALENDAR_AGENT_CA_CERT");
-  const timeoutMs = readInteger(
-    read,
-    "MINERVA_CALENDAR_AGENT_TIMEOUT_MS",
-    10000,
-  );
+  prefix: string,
+): AgentEndpoint | undefined => {
+  const baseUrl = read.optional(`${prefix}_URL`);
+  const certificate = read.optional(`${prefix}_CLIENT_CERT`);
+  const key = read.optional(`${prefix}_CLIENT_KEY`);
+  const ca = read.optional(`${prefix}_CA_CERT`);
+  const timeoutMs = readInteger(read, `${prefix}_TIMEOUT_MS`, 10000);
   if (Boolean(certificate) !== Boolean(key)) {
     read.problems.push(
-      "MINERVA_CALENDAR_AGENT_CLIENT_CERT and MINERVA_CALENDAR_AGENT_CLIENT_KEY are set together",
+      `${prefix}_CLIENT_CERT and ${prefix}_CLIENT_KEY are set together`,
     );
   }
-  if (!baseUrl) return {};
+  if (!baseUrl) return undefined;
   if (baseUrl.startsWith("https:") && !(certificate && key)) {
     read.problems.push(
-      "MINERVA_CALENDAR_AGENT_CLIENT_CERT and MINERVA_CALENDAR_AGENT_CLIENT_KEY are required for an https MINERVA_CALENDAR_AGENT_URL",
+      `${prefix}_CLIENT_CERT and ${prefix}_CLIENT_KEY are required for an https ${prefix}_URL`,
     );
   }
   return {
-    calendarAgent: {
-      baseUrl,
-      tls: certificate && key ? { certificate, key, ca } : undefined,
-      timeoutMs,
-    },
+    baseUrl,
+    tls: certificate && key ? { certificate, key, ca } : undefined,
+    timeoutMs,
   };
 };
 

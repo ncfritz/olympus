@@ -8,6 +8,8 @@ export type GraphQlMailAccount = {
   email: string;
   verificationMethod: string;
   verifiedTime: string;
+  linkedTime?: string | null;
+  linkScope?: string | null;
 };
 
 export const toDomainObject = (input: GraphQlMailAccount): MailAccount => ({
@@ -15,4 +17,6 @@ export const toDomainObject = (input: GraphQlMailAccount): MailAccount => ({
   email: input.email,
   verification: input.verificationMethod as MailAccountVerification,
   verifiedTime: moment(input.verifiedTime),
+  ...(input.linkedTime ? { linkedTime: moment(input.linkedTime) } : {}),
+  ...(input.linkScope ? { linkScope: input.linkScope } : {}),
 });
