@@ -57,6 +57,13 @@ const EXTENSION = /^[a-z0-9]{1,10}$/;
 const MAX_INT = 2_147_483_647;
 
 /** Gmail's name for a category, as the API's label IDs have it. */
+/**
+ * The longest address a message may carry. RFC 5321 allows 320, but bulk
+ * mail puts tracking tokens in Reply-To local parts past that, and Gmail
+ * accepts them; the recipients table allows the same.
+ */
+export const MAX_MESSAGE_ADDRESS = 1024;
+
 export const categoryLabel = (category: string): string =>
   `CATEGORY_${category.toUpperCase()}`;
 
@@ -113,7 +120,7 @@ export const toMailMessageFields = (
       !a ||
       typeof a.address !== "string" ||
       !a.address ||
-      a.address.length > 320 ||
+      a.address.length > MAX_MESSAGE_ADDRESS ||
       a.address !== a.address.toLowerCase()
     ) {
       problems.push(`${name} must have a lower-case address`);
@@ -218,7 +225,9 @@ export const toMailMessageFields = (
     sentTime,
     fromAddress: from?.address ?? null,
     fromName: from?.name ?? null,
-    deliveredTo: text("deliveredTo", m.deliveredTo, 320)?.toLowerCase() ?? null,
+    deliveredTo:
+      text("deliveredTo", m.deliveredTo, MAX_MESSAGE_ADDRESS)?.toLowerCase() ??
+      null,
     listId: text("listId", m.listId, 500),
     hasListUnsubscribe: flag("hasListUnsubscribe", m.hasListUnsubscribe),
     messageIdHeader: text("messageIdHeader", m.messageIdHeader, 1000),

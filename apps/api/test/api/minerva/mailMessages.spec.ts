@@ -338,6 +338,13 @@ describe("Mail messages consumer", () => {
       /categories/,
     ],
     ["no account", { accountId: "neil" }, /accountId/],
+    [
+      "a reply-to address past 1,024 characters",
+      {
+        replyTo: [{ address: `${"t".repeat(1015)}@b.example`, name: null }],
+      },
+      /replyTo\[0\]/,
+    ],
   ])(
     "dead-letters %s with why, before Hasura",
     async (_case, overrides, reason) => {
@@ -359,6 +366,18 @@ describe("Mail messages consumer", () => {
       ]);
     },
   );
+
+  it("allows a reply-to address longer than RFC 5321's 320 characters", async () => {
+    // Bulk mail's tracking addresses run past it; Gmail takes them.
+    hasura();
+    const replyTo = [{ address: `${"t".repeat(310)}@b.example`, name: null }];
+    await handler.handle(
+      mailMessage({ accountId: nextAccount(), replyTo }),
+      delivery("message.upsert"),
+    );
+    expect(sent()).toEqual([]);
+    expect(t.graphql.calls("WriteMailMessageParts")).toHaveLength(1);
+  });
 
   it("allows a snippet of 200 characters however many bytes", async () => {
     hasura();
