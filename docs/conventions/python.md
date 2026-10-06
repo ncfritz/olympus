@@ -69,9 +69,15 @@ agents/<name>/
 - Only through the Olympus API, over HTTPS with the service's client
   certificate (ADR 0018, 0023). Never Hasura or Postgres for platform
   data.
-- Requests into the service (from the mail agent) arrive on the
-  internal network and require a service certificate from phase 3, when
-  the first route that takes text exists.
+- Requests into the service arrive on a **services listener** of their
+  own: mutual TLS against the services chain and its revocation lists,
+  and, since the handshake does not say which service it is, the client
+  certificate's issuer and common name checked as the connection opens
+  (`tls.py`; uvicorn does not hand the certificate to the app). Every
+  route that takes text is on it and nowhere else; the plain listener
+  serves `/health` and `/metrics` only.
+- A validation error says where and why, never what: FastAPI's default
+  answer repeats the refused input, which could be a message's text.
 
 ## Data
 

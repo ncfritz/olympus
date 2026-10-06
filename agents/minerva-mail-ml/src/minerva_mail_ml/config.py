@@ -1,18 +1,19 @@
 """The service's configuration, from environment variables.
 
 Every variable is read here and nowhere else (docs/conventions/python.md).
-Phase 0 of docs/plans/email-management needs only the listener; the feature
-store and the API client arrive with phase 3.
 """
 
 from __future__ import annotations
 
 import os
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 APP_NAME = "minerva-mail-ml"
 DEFAULT_PORT = 3106
+DEFAULT_SERVICES_PORT = 3107
+DEFAULT_STORE = "data/features.sqlite3"
 
 
 class ConfigError(ValueError):
@@ -24,11 +25,78 @@ class ConfigError(ValueError):
 
 
 @dataclass(frozen=True)
+class ServicesTls:
+    """The services listener's TLS: the only way text reaches the service.
+
+    Clients present a certificate from the services issuer (ADR 0018,
+    0023), and only the services named in `allowed_clients` get in.
+    """
+
+    cert: Path
+    key: Path
+    ca: Path
+    crls: tuple[Path, ...]
+    issuer: str
+    allowed_clients: frozenset[str]
+
+
+@dataclass(frozen=True)
 class Config:
     app_name: str
     environment: str
     port: int
     log_level: str
+    store_path: Path
+    services_port: int
+    # None: no services listener, so nothing can send text (a warning at
+    # start-up; the plain listener still serves /health and /metrics).
+    services_tls: ServicesTls | None = field(default=None)
+
+
+def _port(env: Mapping[str, str], name: str, default: int, problems: list[str]) -> int:
+    raw = env.get(name, str(default))
+    if raw.isdigit() and 1 <= int(raw) <= 65535:
+        return int(raw)
+    problems.append(f'{name} must be a port number, got "{raw}"')
+    return default
+
+
+def _services_tls(env: Mapping[str, str], problems: list[str]) -> ServicesTls | None:
+    names = ("TLS_CERT", "TLS_KEY", "TLS_CA_SERVICES", "SERVICES_ISSUER")
+    given = [n for n in names if env.get(n)]
+    if not given:
+        return None
+    missing = [n for n in names if not env.get(n)]
+    if missing:
+        problems.append(
+            "The services listener needs all of "
+            + ", ".join(names)
+            + "; missing "
+            + ", ".join(missing)
+        )
+        return None
+    paths = {n: Path(env[n]) for n in ("TLS_CERT", "TLS_KEY", "TLS_CA_SERVICES")}
+    crls = tuple(
+        Path(p.strip()) for p in env.get("TLS_CRL_SERVICES", "").split(",") if p.strip()
+    )
+    for name, path in [*paths.items(), *(("TLS_CRL_SERVICES", p) for p in crls)]:
+        if not path.is_file():
+            problems.append(f"{name}: no file at {path}")
+    allowed = frozenset(
+        c.strip()
+        for c in env.get("SERVICES_ALLOWED_CLIENTS", "minerva-mail-agent").split(",")
+        if c.strip()
+    )
+    if not allowed:
+        problems.append("SERVICES_ALLOWED_CLIENTS names no service")
+    return ServicesTls(
+        cert=paths["TLS_CERT"],
+        key=paths["TLS_KEY"],
+        ca=paths["TLS_CA_SERVICES"],
+        crls=crls,
+        issuer=env["SERVICES_ISSUER"],
+        allowed_clients=allowed,
+    )
 
 
 def read_config(env: Mapping[str, str] | None = None) -> Config:
@@ -36,18 +104,18 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
     env = os.environ if env is None else env
     problems: list[str] = []
 
-    raw_port = env.get("LISTEN_PORT", str(DEFAULT_PORT))
-    port = DEFAULT_PORT
-    if raw_port.isdigit() and 1 <= int(raw_port) <= 65535:
-        port = int(raw_port)
-    else:
-        problems.append(f'LISTEN_PORT must be a port number, got "{raw_port}"')
+    port = _port(env, "LISTEN_PORT", DEFAULT_PORT, problems)
+    services_port = _port(env, "SERVICES_LISTEN_PORT", DEFAULT_SERVICES_PORT, problems)
+    if port == services_port:
+        problems.append("LISTEN_PORT and SERVICES_LISTEN_PORT must differ")
 
     log_level = env.get("LOG_LEVEL", "info").lower()
     if log_level not in {"debug", "info", "warning", "error"}:
         problems.append(
             f'LOG_LEVEL is one of debug, info, warning, error, got "{log_level}"'
         )
+
+    services_tls = _services_tls(env, problems)
 
     if problems:
         raise ConfigError(problems)
@@ -56,4 +124,7 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
         environment=env.get("ENVIRONMENT", "development"),
         port=port,
         log_level=log_level,
+        store_path=Path(env.get("FEATURE_STORE_PATH", DEFAULT_STORE)),
+        services_port=services_port,
+        services_tls=services_tls,
     )

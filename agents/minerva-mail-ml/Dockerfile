@@ -28,9 +28,15 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1
 WORKDIR /app
 # Owned by root and readable but not writable by the service: what it
-# writes (the feature store, from phase 3) goes to a volume.
+# writes (the feature store) goes to a volume.
 COPY --from=build /app/.venv /app/.venv
-RUN useradd --system --uid 10001 --no-create-home mailml
+RUN useradd --system --uid 10001 --no-create-home mailml \
+    && mkdir -p /var/lib/minerva-mail-ml \
+    && chown mailml /var/lib/minerva-mail-ml
+# The feature store: derived data, rebuilt from the archive or Gmail, so
+# the volume is not backed up (ADR 0030).
+ENV FEATURE_STORE_PATH=/var/lib/minerva-mail-ml/features.sqlite3
+VOLUME /var/lib/minerva-mail-ml
 USER mailml
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"LISTEN_PORT\", \"3106\")}/health', timeout=4)" || exit 1

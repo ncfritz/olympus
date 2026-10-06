@@ -318,10 +318,16 @@ echo "calendar sync agent server certificate"
 server services . minerva-calendar-sync "/CN=minerva-calendar-sync-agent/O=Olympus Dev" \
   "DNS:minerva-calendar-agent,DNS:localhost,IP:127.0.0.1$extra_san"
 
+echo "mail classifier server certificate"
+# Its services listener, which only the mail agent calls (ADR 0030), as
+# the calendar agent's is the API's alone.
+server services . minerva-mail-ml "/CN=minerva-mail-ml/O=Olympus Dev" \
+  "DNS:minerva-mail-ml,DNS:localhost,IP:127.0.0.1$extra_san"
+
 echo "agent certificates"
 # OU is the deployment, not the machine (ADR 0022).
 for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent \
-  minerva-mail-agent olympus-notification-agent olympus-weather-relay-agent; do
+  minerva-mail-agent minerva-mail-ml olympus-notification-agent olympus-weather-relay-agent; do
   client services agents "$agent" "/CN=$agent/OU=prod/O=Olympus Dev"
 done
 # The API calls the calendar sync agent's services listener (ADR 0028).
@@ -352,7 +358,7 @@ done
 # it with a device identity against the same listener is how it proves the
 # listener tells them apart (ADR 0023).
 for agent in dionysus-asset-agent dionysus-metadata-agent dionysus-search-agent \
-  minerva-mail-agent olympus-notification-agent olympus-weather-relay-agent \
+  minerva-mail-agent minerva-mail-ml olympus-notification-agent olympus-weather-relay-agent \
   dionysus-asset-agent-nas \
   svc-revoked svc-expired \
   svc-wrong-ca; do
@@ -417,6 +423,10 @@ The chain is three authorities deep, like the real one:
                        the calendar sync agent's server certificate, for
                        its services listener; agents/olympus-api.* is the
                        API's client certificate for calling it
+  minerva-mail-ml.crt / .key
+                       the mail classifier's server certificate, for its
+                       services listener; agents/minerva-mail-agent.* is
+                       the mail agent's client certificate for calling it
   api.crt / api.key    the API's server certificate, valid 825 days because
                        Apple refuses a longer one whatever anchor it chains to.
                        From the service issuer --
