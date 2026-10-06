@@ -371,7 +371,7 @@ numbers come with the sign-off on DEV.
 
 **Sign-off:** M3, M4.
 
-## Phase 3 — The classifier — built 2026-10-06, not signed off
+## Phase 3 — The classifier — done 2026-10-06
 
 1. **Feature store**: **built**. SQLite on the classifier's volume
    (`FEATURE_STORE_PATH`): per feature version, each message's hashed
@@ -421,7 +421,32 @@ numbers come with the sign-off on DEV.
 
 Not yet: embeddings (phase 6), online updates from decisions (phase 5).
 
-**Sign-off:** M5.
+**Sign-off:** M5, against the whole archive: 255,056 received messages
+featurized (`v1`), 481 targets, run `6ca3f45f` (about three minutes).
+
+1. **Pass.** Trained before 2025-10-03, validated to 2026-04-03, tested on
+   the 16,300 messages since. Recorded per label; the baseline, at 0.5:
+   precision 98.5%, recall 95.7%. At each label's threshold: 98.7%,
+   94.6%. Over the 117 labels with five or more test messages, 79.9% and
+   76.8%: the shortfall is labels new since the split (`ecobee`,
+   `Claude`, `Paprika`), senders that changed (`Microsoft`, `Meetup`), and
+   catch-alls (`Registrations & Confirmations`), for phase 5's learning
+   from decisions.
+2. **Pass.** With the Bills family made, `family:Bills → Bills/*Payable`
+   scored 91.6% precision and 97.6% recall on 167 test bills; `*Paid` is
+   no longer a target, so it cannot be suggested. Before the family
+   existed, `Bills/*Paid` trained as a topic, which is the failure this
+   case guards against.
+3. **Pass, by test** (`test_completing_a_version_makes_it_serve`); a
+   second pass over the archive for a new version was not worth its
+   hours (Neil, 2026-10-06).
+
+The first run's thresholds, tuned freely per label, lost to 0.5 on both
+precision and recall; they now start at 0.5 and only rise (item 5). A few
+still rose on three or four validation suggestions (`Nest`, `Uber`);
+left until phase 5 has decisions to measure them against.
+
+**M5 signed off 2026-10-06.**
 
 ## Phase 4 — Re-classification and writes to Gmail
 
