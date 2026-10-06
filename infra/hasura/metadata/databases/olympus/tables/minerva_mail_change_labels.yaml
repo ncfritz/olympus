@@ -1,0 +1,14 @@
+table:
+  name: mail_change_labels
+  schema: minerva
+configuration:
+  column_config:
+    change_id:
+      custom_name: changeId
+  custom_column_names:
+    change_id: changeId
+  custom_root_fields: {}
+object_relationships:
+  - name: change
+    using:
+      foreign_key_constraint_on: change_id

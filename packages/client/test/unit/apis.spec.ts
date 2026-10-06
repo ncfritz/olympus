@@ -87,6 +87,7 @@ const ARGS: Record<string, unknown[]> = {
   listMailTrainingAccounts: [],
   listMailMessageStates: ["account-1", "a"],
   listMailSyncAccounts: [],
+  updateMailChangeBatch: ["batch-1", { status: "running" }],
   syncMailLabels: ["account-1", []],
   updateMailAccountSync: [
     "account-1",

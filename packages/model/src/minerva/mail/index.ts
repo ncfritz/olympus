@@ -13,3 +13,4 @@ export * from "./labels";
 export * from "./training";
 export * from "./suggestions";
 export * from "./sync";
+export * from "./changes";

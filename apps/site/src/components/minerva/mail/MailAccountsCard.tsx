@@ -1,10 +1,16 @@
-import { GoogleOutlined, LinkOutlined } from "@ant-design/icons";
+import { EditOutlined, GoogleOutlined, LinkOutlined } from "@ant-design/icons";
 import type { MailAccount } from "@ncfritz/olympus-sdk/minerva";
 import { Button, Card, List, Space, Tag, Typography } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 
 const { Text } = Typography;
+
+const MODIFY = "https://www.googleapis.com/auth/gmail.modify";
+
+/** Whether the mailbox's link lets Olympus change labels in Gmail. */
+export const canChangeLabels = (a: MailAccount): boolean =>
+  Boolean(a.linkScope?.split(" ").includes(MODIFY));
 
 /**
  * The user's mailboxes and whether each is linked to Gmail (phase 1b):
@@ -24,15 +30,27 @@ const MailAccountsCard: React.FunctionComponent<{
       renderItem={(a) => (
         <List.Item
           actions={[
-            <Button
-              key={"connect"}
-              size={"small"}
-              type={a.linkedTime ? "default" : "primary"}
-              icon={<GoogleOutlined />}
-              onClick={() => onConnect(a)}
-            >
-              {a.linkedTime ? "Sign in again" : "Link to Gmail"}
-            </Button>,
+            a.linkedTime && !canChangeLabels(a) ? (
+              <Button
+                key={"allow"}
+                size={"small"}
+                type={"primary"}
+                icon={<EditOutlined />}
+                onClick={() => onConnect(a)}
+              >
+                Allow changes
+              </Button>
+            ) : (
+              <Button
+                key={"connect"}
+                size={"small"}
+                type={a.linkedTime ? "default" : "primary"}
+                icon={<GoogleOutlined />}
+                onClick={() => onConnect(a)}
+              >
+                {a.linkedTime ? "Sign in again" : "Link to Gmail"}
+              </Button>
+            ),
           ]}
         >
           <List.Item.Meta
@@ -40,12 +58,17 @@ const MailAccountsCard: React.FunctionComponent<{
             description={
               <Space size={8} wrap={true}>
                 {a.linkedTime ? (
-                  <Tag icon={<LinkOutlined />} color={"green"}>
-                    Linked{" "}
-                    {DateTime.fromISO(a.linkedTime).toLocaleString(
-                      DateTime.DATE_MED,
-                    )}
-                  </Tag>
+                  <>
+                    <Tag icon={<LinkOutlined />} color={"green"}>
+                      Linked{" "}
+                      {DateTime.fromISO(a.linkedTime).toLocaleString(
+                        DateTime.DATE_MED,
+                      )}
+                    </Tag>
+                    <Tag color={canChangeLabels(a) ? "blue" : undefined}>
+                      {canChangeLabels(a) ? "Can change labels" : "Read only"}
+                    </Tag>
+                  </>
                 ) : (
                   <Tag>Not linked</Tag>
                 )}

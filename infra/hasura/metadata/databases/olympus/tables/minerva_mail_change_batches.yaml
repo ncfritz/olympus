@@ -1,0 +1,50 @@
+table:
+  name: mail_change_batches
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    created_at:
+      custom_name: createdTime
+    finished_at:
+      custom_name: finishedTime
+    requested_at:
+      custom_name: requestedTime
+    undoes_batch_id:
+      custom_name: undoesBatchId
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    account_id: accountId
+    created_at: createdTime
+    finished_at: finishedTime
+    requested_at: requestedTime
+    undoes_batch_id: undoesBatchId
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+  - name: undoes
+    using:
+      foreign_key_constraint_on: undoes_batch_id
+array_relationships:
+  - name: changes
+    using:
+      foreign_key_constraint_on:
+        column: batch_id
+        table:
+          name: mail_changes
+          schema: minerva
+  - name: undoneBy
+    using:
+      foreign_key_constraint_on:
+        column: undoes_batch_id
+        table:
+          name: mail_change_batches
+          schema: minerva

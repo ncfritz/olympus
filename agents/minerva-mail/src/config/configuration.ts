@@ -46,6 +46,11 @@ export type GmailConfig = {
   scopes: string[];
   /** Seconds between history polls of each linked mailbox; 0 turns it off. */
   pollSeconds: number;
+  /**
+   * Whether label changes may be written to Gmail (phase 4): sign-ins then
+   * ask for gmail.modify, and the API's batches are written.
+   */
+  writesEnabled: boolean;
 };
 
 /** The scopes until the first phase that writes (ADR 0030). */
@@ -54,6 +59,13 @@ export const GMAIL_READ_SCOPES = [
   "email",
   "https://www.googleapis.com/auth/gmail.readonly",
 ];
+
+/** What label changes need (ADR 0030): nothing is ever deleted. */
+export const GMAIL_MODIFY_SCOPE =
+  "https://www.googleapis.com/auth/gmail.modify";
+
+/** The scopes once writes are on (phase 4). */
+export const GMAIL_WRITE_SCOPES = [...GMAIL_READ_SCOPES, GMAIL_MODIFY_SCOPE];
 
 /**
  * The services listener (ADR 0028's, for this agent): its management API
@@ -85,7 +97,8 @@ export type AgentConfig = {
 /**
  * MAIL_GOOGLE_OAUTH_CLIENT_ID and MAIL_GOOGLE_OAUTH_CLIENT_SECRET (or
  * _SECRET_FILE), together or not at all; MAIL_CREDENTIALS_DIR; and
- * MAIL_GMAIL_POLL_SECONDS, 60 unless set (0: no polling).
+ * MAIL_GMAIL_POLL_SECONDS, 60 unless set (0: no polling); and
+ * MAIL_WRITES_ENABLED, false unless set.
  */
 const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
   const clientId = read.optional("MAIL_GOOGLE_OAUTH_CLIENT_ID");
@@ -108,12 +121,14 @@ const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
       "MAIL_GMAIL_POLL_SECONDS must be 0 (no polling) or a whole number of seconds, 10 or more",
     );
   }
+  const writesEnabled = read.boolean("MAIL_WRITES_ENABLED", false);
   return {
     clientId,
     clientSecret,
     credentialsDir,
-    scopes: GMAIL_READ_SCOPES,
+    scopes: writesEnabled ? GMAIL_WRITE_SCOPES : GMAIL_READ_SCOPES,
     pollSeconds,
+    writesEnabled,
   };
 };
 

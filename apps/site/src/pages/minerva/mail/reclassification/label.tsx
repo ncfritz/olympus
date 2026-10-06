@@ -1,4 +1,10 @@
-import { ExportOutlined, TagsOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  CloudUploadOutlined,
+  ExportOutlined,
+  HistoryOutlined,
+  TagsOutlined,
+} from "@ant-design/icons";
 import type {
   ListMailAuditChangesResponse,
   MailAuditAction,
@@ -6,7 +12,11 @@ import type {
   MailAuditRule,
 } from "@ncfritz/olympus-sdk/minerva";
 import {
+  Alert,
+  Button,
   Flex,
+  message,
+  Popconfirm,
   Segmented,
   Select,
   Space,
@@ -20,17 +30,24 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 
-type Query = Filters & { label?: string; ready: boolean };
 import mailApi, { type MailAuditChangeSort } from "../../../../api/mailApi";
 import ChangeTag from "../../../../components/minerva/mail/audit/ChangeTag";
 import ExportButton from "../../../../components/minerva/mail/audit/ExportButton";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
+import { apiProblems } from "../../../../utils/goals";
 import { gmailLink } from "../../../../utils/mailAudit";
+import {
+  changesByAccount,
+  proposalKey,
+  proposalsByAccount,
+} from "../../../../utils/mailChanges";
 
 const { Title, Text } = Typography;
 
 const PAGE_SIZE = 50;
+
+type Query = Filters & { label?: string; ready: boolean };
 
 type Filters = {
   action?: MailAuditAction;
@@ -69,7 +86,8 @@ const CONFIDENCES = [
  * A label's review (docs/plans/email-management phases 2 and 4): the
  * changes proposed into and out of one label, or all of them, by the
  * sender audit and the classifier, with each message's current labels and
- * the evidence. Read-only until writes to Gmail.
+ * the evidence. Selected proposals are applied to Gmail as a batch (phase
+ * 4), followed in the change log, or marked processed without change.
  */
 const MailLabelReviewPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -86,7 +104,12 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
 
   // The label comes from the address, which is known only once the router
   // is ready: no request goes out before, so none goes out without it.
-  const [result, loading] = useFetch<
+  const [selected, setSelected] = useState<MailAuditChange[]>([]);
+  const [busy, setBusy] = useState(false);
+  // A new page or filter starts with nothing selected.
+  useEffect(() => setSelected([]), [label, filters]);
+
+  const [result, loading, , refetch] = useFetch<
     Query,
     ListMailAuditChangesResponse | undefined
   >({
@@ -109,6 +132,56 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
   });
 
   const title = label ?? "All proposed changes";
+
+  const apply = async () => {
+    const byAccount = changesByAccount(selected);
+    setBusy(true);
+    try {
+      let messages = 0;
+      for (const [accountId, changes] of byAccount) {
+        const batch = (await mailApi.applyChanges(accountId, changes)).data
+          .batch;
+        messages += batch.messages;
+      }
+      message.success(
+        <span>
+          Writing changes to {messages.toLocaleString()} messages in Gmail.{" "}
+          <Link href={"/minerva/mail/changes"}>
+            Follow it in the change log
+          </Link>
+        </span>,
+      );
+      setSelected([]);
+      // The batch is written in the background; what it applied shows soon.
+      setTimeout(() => void refetch(true), 5000);
+    } catch (error) {
+      message.error(apiProblems(error).join(" "));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const dismiss = async () => {
+    setBusy(true);
+    try {
+      let dismissed = 0;
+      for (const [accountId, proposals] of proposalsByAccount(selected)) {
+        dismissed += (await mailApi.dismissProposals(accountId, proposals)).data
+          .dismissed;
+      }
+      message.success(
+        `${dismissed.toLocaleString()} marked processed, Gmail unchanged`,
+      );
+      setSelected([]);
+      await refetch(true);
+    } catch (error) {
+      message.error(apiProblems(error).join(" "));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const messagesSelected = new Set(selected.map((c) => c.message.gmailId)).size;
 
   return (
     <>
@@ -151,6 +224,9 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
             </Text>
           </Space>
           <Space size={12} wrap={true}>
+            <Link href={"/minerva/mail/changes"}>
+              <Button icon={<HistoryOutlined />}>Change log</Button>
+            </Link>
             <ExportButton
               label={label}
               action={filters.action}
@@ -209,13 +285,56 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
           </Space>
         </Flex>
         <div style={{ padding: "0 16px 16px" }}>
+          {selected.length > 0 && (
+            <Alert
+              type={"info"}
+              style={{ marginBottom: 12 }}
+              message={
+                <Flex justify={"space-between"} align={"center"} wrap={true}>
+                  <Text>
+                    {selected.length.toLocaleString()} proposed changes on{" "}
+                    {messagesSelected.toLocaleString()} messages selected
+                  </Text>
+                  <Space wrap={true}>
+                    <Popconfirm
+                      title={"Apply to Gmail?"}
+                      description={`Changes labels on ${messagesSelected.toLocaleString()} messages in Gmail. A message changed in Gmail since is left as it is. It can be undone from the change log.`}
+                      okText={"Apply"}
+                      onConfirm={apply}
+                    >
+                      <Button
+                        type={"primary"}
+                        icon={<CloudUploadOutlined />}
+                        loading={busy}
+                      >
+                        Apply to Gmail
+                      </Button>
+                    </Popconfirm>
+                    <Button
+                      icon={<CheckOutlined />}
+                      loading={busy}
+                      onClick={dismiss}
+                    >
+                      Mark processed, no change
+                    </Button>
+                    <Button type={"text"} onClick={() => setSelected([])}>
+                      Clear
+                    </Button>
+                  </Space>
+                </Flex>
+              }
+            />
+          )}
           <Table<MailAuditChange>
             size={"small"}
             loading={loading}
             dataSource={result?.changes ?? []}
-            rowKey={(c) =>
-              `${c.message.gmailId}\u0000${c.label}\u0000${c.action}\u0000${c.rule}`
-            }
+            rowKey={proposalKey}
+            rowSelection={{
+              selectedRowKeys: selected.map(proposalKey),
+              onChange: (_, rows) => setSelected(rows),
+              getCheckboxProps: (c) => ({ disabled: Boolean(c.decision) }),
+            }}
             pagination={{
               current: filters.page + 1,
               pageSize: PAGE_SIZE,
@@ -285,6 +404,19 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
                     </span>
                   </Tooltip>
                 ),
+              },
+              {
+                title: "Status",
+                key: "status",
+                width: 110,
+                render: (_, c) =>
+                  c.decision === "applied" ? (
+                    <Tag color={"green"}>Applied</Tag>
+                  ) : c.decision === "dismissed" ? (
+                    <Tag>Processed</Tag>
+                  ) : (
+                    <Text type={"secondary"}>To review</Text>
+                  ),
               },
             ]}
           />

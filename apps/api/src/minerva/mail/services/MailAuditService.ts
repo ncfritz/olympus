@@ -65,6 +65,7 @@ export const MAIL_AUDIT_EXPORT_COLUMNS = [
   "sender_messages",
   "sender_label_messages",
   "ticked",
+  "decision",
   "labels_now",
   "gmail_link",
 ];
@@ -311,6 +312,7 @@ export class MailAuditService {
           change.senderMessages,
           change.senderLabelMessages,
           change.ticked === undefined ? undefined : String(change.ticked),
+          change.decision,
           m.labels.join("; "),
           `https://mail.google.com/mail/u/0/#all/${m.gmailId}`,
         ]);
@@ -385,10 +387,12 @@ export class MailAuditService {
           senderMessages
           senderLabelMessages
           ticked
+          decision
           label {
             name
           }
           message {
+            accountId
             gmailId
             threadId
             receivedTime

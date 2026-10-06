@@ -62,7 +62,12 @@ export const gmailStatusOf = (error: unknown): number | undefined =>
 export type GmailTransport = <T>(
   url: string,
   params: Record<string, string | number | boolean | string[] | undefined>,
+  /** A POST's body; a GET has none. */
+  body?: unknown,
 ) => Promise<T>;
+
+/** messages.batchModify takes at most this many IDs a call. */
+export const BATCH_MODIFY_IDS = 1000;
 
 /** A pause between requests, shared by every call through one mailbox. */
 class Throttle {
@@ -118,18 +123,19 @@ export class GmailMailbox {
     this.throttle = new Throttle(intervalMs);
   }
 
-  private async get<T>(
+  private async send<T>(
     path: string,
     params: Record<
       string,
       string | number | boolean | string[] | undefined
     > = {},
+    body?: unknown,
   ): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       await this.throttle.take();
       this.requests++;
       try {
-        return await this.transport<T>(`${API}${path}`, params);
+        return await this.transport<T>(`${API}${path}`, params, body);
       } catch (error) {
         if (!retryable(error) || attempt >= MAX_TRIES) throw error;
         const wait = Math.min(32_000, 1000 * 2 ** (attempt - 1));
@@ -141,12 +147,32 @@ export class GmailMailbox {
     }
   }
 
+  /**
+   * Adds and removes labels on up to 1,000 messages at once (gmail.modify).
+   * Safe to retry: adding a label a message has, or removing one it lacks,
+   * changes nothing.
+   */
+  async batchModify(
+    ids: string[],
+    addLabelIds: string[],
+    removeLabelIds: string[],
+  ): Promise<void> {
+    if (ids.length < 1 || ids.length > BATCH_MODIFY_IDS) {
+      throw new Error(`batchModify takes 1 to ${BATCH_MODIFY_IDS} IDs`);
+    }
+    await this.send<unknown>(
+      "/messages/batchModify",
+      {},
+      { ids, addLabelIds, removeLabelIds },
+    );
+  }
+
   profile(): Promise<GmailProfile> {
-    return this.get<GmailProfile>("/profile");
+    return this.send<GmailProfile>("/profile");
   }
 
   async labels(): Promise<GmailLabelInfo[]> {
-    const body = await this.get<{
+    const body = await this.send<{
       labels?: { id: string; name: string; type?: string }[];
     }>("/labels");
     return (body.labels ?? []).map((l) => ({
@@ -160,7 +186,7 @@ export class GmailMailbox {
   async labelTotals(
     id: string,
   ): Promise<{ messagesTotal: number; threadsTotal: number }> {
-    const body = await this.get<{
+    const body = await this.send<{
       messagesTotal?: number;
       threadsTotal?: number;
     }>(`/labels/${id}`);
@@ -179,7 +205,7 @@ export class GmailMailbox {
     const ids: string[] = [];
     let pageToken: string | undefined;
     do {
-      const body = await this.get<{
+      const body = await this.send<{
         messages?: { id: string }[];
         nextPageToken?: string;
       }>("/messages", {
@@ -206,7 +232,7 @@ export class GmailMailbox {
     let historyId = startHistoryId;
     let pageToken: string | undefined;
     do {
-      const body = await this.get<{
+      const body = await this.send<{
         history?: GmailHistoryRecord[];
         historyId?: string;
         nextPageToken?: string;
@@ -224,14 +250,14 @@ export class GmailMailbox {
 
   /** A message's label IDs alone (format minimal). */
   minimal(id: string): Promise<{ id: string; labelIds?: string[] }> {
-    return this.get<{ id: string; labelIds?: string[] }>(`/messages/${id}`, {
+    return this.send<{ id: string; labelIds?: string[] }>(`/messages/${id}`, {
       format: "minimal",
     });
   }
 
   /** A message's RFC 822 text and Gmail's facts about it. */
   raw(id: string): Promise<GmailRawMessage> {
-    return this.get<GmailRawMessage>(`/messages/${id}`, { format: "raw" });
+    return this.send<GmailRawMessage>(`/messages/${id}`, { format: "raw" });
   }
 }
 
@@ -264,7 +290,15 @@ export class GmailClient {
     const transport: GmailTransport = async <T>(
       url: string,
       params: Record<string, string | number | boolean | string[] | undefined>,
-    ) => (await client.request<T>({ url, params })).data;
+      body?: unknown,
+    ) =>
+      (
+        await client.request<T>(
+          body === undefined
+            ? { url, params }
+            : { url, params, method: "POST", data: body },
+        )
+      ).data;
     return new GmailMailbox(transport, intervalMs);
   }
 }

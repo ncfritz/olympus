@@ -95,6 +95,14 @@ describe("readConfig", () => {
       ).toEqual({ claimMailFrom: "Olympus <olympus@example.com>" });
     });
 
+    it("writes to Gmail only when MINERVA_MAIL_WRITES_ENABLED says so", () => {
+      expect(
+        readConfig({ ...REQUIRED, MINERVA_MAIL_WRITES_ENABLED: "true" }).minerva
+          .mailWritesEnabled,
+      ).toBe(true);
+      expect(readConfig(REQUIRED).minerva.mailWritesEnabled).toBeUndefined();
+    });
+
     it("reads the URL and the API's client certificate", () => {
       expect(
         readConfig({

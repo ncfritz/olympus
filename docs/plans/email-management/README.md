@@ -543,17 +543,39 @@ left until phase 5 has decisions to measure them against.
    classifier's: the Re-classification page counts both, and a label's
    review filters by source and fades what is unticked. The nightly DAG
    suggests after it trains.
-2. **Writes**: `gmail.modify` added by a new consent; `MAIL_WRITES_ENABLED`
-   on. The API records each batch before calling the agent; the agent
-   checks `historyId` per message and resyncs a changed one instead of
-   writing it; `batchModify` in chunks of 1,000.
+2. **Writes**: **built**. `gmail.modify` added by a new consent ("Allow
+   changes" on the Inbox) once the agent's `MAIL_WRITES_ENABLED` is on;
+   the API's `MINERVA_MAIL_WRITES_ENABLED` gates applying and undoing
+   (503 when off). `1791290000000_minerva_mail_changes`: the change log
+   (`mail_change_batches`, `mail_changes`, `mail_change_labels`, each
+   message's user labels before and what was added and removed, by name
+   so it outlives a merged label) and `mail_decisions` (a proposal
+   applied, or processed without change), which `mail_proposals` shows.
+   `ApplyMailChanges` records a batch and hands it to the agent
+   (`StartGmailWrites`), which writes in the background and reports each
+   message's outcome (`UpdateMailChangeBatch`): written, already so,
+   changed in Gmail since (synced, not written), gone, or failed;
+   `batchModify` 1,000 a call, messages with the same change together.
+   **Not as ADR 0030 says**: instead of each message's `historyId`, which
+   Minerva does not keep, the agent compares the message's user labels in
+   Gmail with those the batch recorded; it is the same guard against
+   overwriting a change made by hand. `UndoMailChangeBatch` writes the
+   reverse of what an apply wrote, against the labels it left, and takes
+   back its decisions; a batch is undone once. `DismissMailProposals`
+   marks proposals processed. `ListMailChangeBatches` and
+   `DescribeMailChangeBatch` are the change log. Only labels Gmail has
+   (with a Gmail ID) are written; new labels, merges and splits are step 3.
 3. **Operations**: list labels with their suggestion counts; list a
    label's messages with filters (changes only, change type, confidence,
    status); apply, mark processed without change, undo a batch; preview
    and apply a merge (move messages, delete the source label, rename its
    children); create sub-labels from a split.
 4. **Site**: the Re-classification page and its label drill-down, as
-   designed, with the bulk label picker.
+   designed, with the bulk label picker. **Begun**: the label review
+   selects proposals (decided ones show Applied or Processed and cannot
+   be selected) and applies them to Gmail, one batch per mailbox, or marks
+   them processed; Mail › Change log lists the batches, follows one being
+   written, shows each message's change and outcome, and undoes an apply.
 
 **Sign-off:** M6, M7, M8.
 

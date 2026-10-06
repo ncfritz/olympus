@@ -275,6 +275,33 @@
     "Classifier": "classifier",
     "Sender": "sender"
   },
+  "MailChangeBatchKind": {
+    "Apply": "apply",
+    "Undo": "undo"
+  },
+  "MailChangeBatchReport": {
+    "Done": "done",
+    "Failed": "failed",
+    "Running": "running"
+  },
+  "MailChangeBatchStatus": {
+    "Done": "done",
+    "Failed": "failed",
+    "Pending": "pending",
+    "Running": "running"
+  },
+  "MailChangeStatus": {
+    "Changed": "changed",
+    "Failed": "failed",
+    "Gone": "gone",
+    "Pending": "pending",
+    "Unchanged": "unchanged",
+    "Written": "written"
+  },
+  "MailDecision": {
+    "Applied": "applied",
+    "Dismissed": "dismissed"
+  },
   "MailLabelKind": {
     "Retired": "retired",
     "State": "state",

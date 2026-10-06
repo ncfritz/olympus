@@ -1,3 +1,10 @@
+import { ApplyMailChangesController } from "./controllers/ApplyMailChangesController";
+import { DescribeMailChangeBatchController } from "./controllers/DescribeMailChangeBatchController";
+import { DismissMailProposalsController } from "./controllers/DismissMailProposalsController";
+import { ListMailChangeBatchesController } from "./controllers/ListMailChangeBatchesController";
+import { UndoMailChangeBatchController } from "./controllers/UndoMailChangeBatchController";
+import { UpdateMailChangeBatchController } from "./controllers/UpdateMailChangeBatchController";
+import { MailChangeService } from "./services/MailChangeService";
 import { Module } from "@nestjs/common";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { RabbitModule } from "../../infra/RabbitModule";
@@ -59,6 +66,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailStatisticsService,
     MailSuggestionService,
     MailSyncService,
+    MailChangeService,
     MailTrainingService,
     MinervaMailAgentClient,
   ],
@@ -76,6 +84,12 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ImportMailAccountController,
     ListMailAccountsController,
     ListMailMessageStatesController,
+    ApplyMailChangesController,
+    DescribeMailChangeBatchController,
+    DismissMailProposalsController,
+    ListMailChangeBatchesController,
+    UndoMailChangeBatchController,
+    UpdateMailChangeBatchController,
     ListMailAuditChangesController,
     ListMailLabelFamiliesController,
     ListMailLabelsController,

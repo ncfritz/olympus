@@ -6,6 +6,8 @@ import {
   listMailTrainingAccounts,
   syncMailLabels,
   updateMailAccountSync,
+  updateMailChangeBatch,
+  type UpdateMailChangeBatchRequest,
 } from "@ncfritz/olympus-sdk/minerva";
 import type { OlympusClients } from "../clients";
 
@@ -72,5 +74,18 @@ export class MailApi {
       body: sync,
     });
     return response.data.mailAccount;
+  }
+
+  /** Reports where a batch of label changes is, and outcomes since. */
+  async updateMailChangeBatch(
+    batchId: string,
+    report: UpdateMailChangeBatchRequest,
+  ) {
+    const response = await updateMailChangeBatch({
+      client: this.clients.minerva,
+      path: { batchId },
+      body: report,
+    });
+    return response.data.batch;
   }
 }

@@ -7700,7 +7700,7 @@
     },
     "/minerva/mail/audit/changes/export": {
       "get": {
-        "description": "The change plan for review outside the site (docs/plans/email-management phase 2): every label change proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, or those for one label, one action, one rule or at least a confidence, a row each, most confident first. Columns: received_time, gmail_id, thread_id, from_address, from_name, subject, label, action, rule, confidence, sender_messages, sender_label_messages, ticked, labels_now, gmail_link. Metadata only; never message text.",
+        "description": "The change plan for review outside the site (docs/plans/email-management phase 2): every label change proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, or those for one label, one action, one rule or at least a confidence, a row each, most confident first. Columns: received_time, gmail_id, thread_id, from_address, from_name, subject, label, action, rule, confidence, sender_messages, sender_label_messages, ticked, decision, labels_now, gmail_link. Metadata only; never message text.",
         "operationId": "ExportMailAuditChanges",
         "parameters": [
           {
@@ -8066,6 +8066,397 @@
           }
         },
         "summary": "Lists an account's messages' labels and flags",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/change-batches": {
+      "post": {
+        "description": "Records a batch of label changes to one of the caller's mailboxes, each message's user labels as Minerva has them, and hands it to the mail agent, which writes it in the background (docs/plans/email-management phase 4; ADR 0030). A message changed in Gmail since is synced again instead of written. Follow the batch with DescribeMailChangeBatch; once done, the proposals it carried out show as applied.",
+        "operationId": "ApplyMailChanges",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ApplyMailChanges operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyMailChangesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The batch was recorded and the agent has it.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the batch"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyMailChangesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nThe account is not the caller's."
+          },
+          "409": {
+            "description": "The mailbox is linked for reading only."
+          },
+          "503": {
+            "description": "Writes to Gmail are turned off, or the agent is not configured."
+          }
+        },
+        "summary": "Applies label changes to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      },
+      "get": {
+        "description": "The change log (docs/plans/email-management phase 4; ADR 0030): the caller's batches for one mailbox, newest first, each with its changes counted by outcome and, for an apply that was undone, the undo.",
+        "operationId": "ListMailChangeBatches",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Batches to list, at most 200; 50 by default",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The batches.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailChangeBatchesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists a mail account's batches of label changes to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/change-batch/{batchId}": {
+      "get": {
+        "description": "One of the caller's batches (docs/plans/email-management phase 4): where it is, its changes counted by outcome, and a page of its changes by Gmail ID, each with the message's user labels when the batch was asked for and what it adds and removes.",
+        "operationId": "DescribeMailChangeBatch",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "The batch",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Changes on the page, at most 1,000; 100 by default",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Changes to skip; 0 by default",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The batch and a page of its changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeMailChangeBatchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such batch of the caller's."
+          }
+        },
+        "summary": "Describes a batch of label changes to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      },
+      "put": {
+        "description": "For the mail agent (docs/plans/email-management phase 4): where it has got to with a batch, and each change's outcome since its last report. Done, what it wrote is recorded as decided (for an undo, the decisions it reversed are taken back).",
+        "operationId": "UpdateMailChangeBatch",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "The batch",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateMailChangeBatch operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMailChangeBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The batch, with the report recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMailChangeBatchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such batch."
+          },
+          "409": {
+            "description": "The batch has finished."
+          }
+        },
+        "summary": "Reports on a batch of label changes being written",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/proposals/dismiss": {
+      "post": {
+        "description": "Records a decision not to make proposed changes (docs/plans/email-management phase 4): they show as processed, whichever audit or classifier run proposes them again. Gmail is not changed. A proposal decided already keeps its decision; one naming a message or label the account no longer has is passed over.",
+        "operationId": "DismissMailProposals",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the DismissMailProposals operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissMailProposalsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How many were marked processed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissMailProposalsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nThe account is not the caller's."
+          }
+        },
+        "summary": "Marks proposed label changes processed without change",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/change-batch/{batchId}/undo": {
+      "post": {
+        "description": "Reverses what one of the caller's finished applies wrote (docs/plans/email-management phase 4; ADR 0030), as a batch of its own: each message still as the apply left it gets its labels back; one changed in Gmail since is synced again instead. Its decisions are taken back for the messages reversed. A batch is undone once.",
+        "operationId": "UndoMailChangeBatch",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "The apply to undo",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The undo was recorded and the agent has it.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the undo"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UndoMailChangeBatchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such batch of the caller's."
+          },
+          "409": {
+            "description": "Not a finished apply, undone already, wrote nothing, or a label it wrote is gone from Gmail."
+          },
+          "503": {
+            "description": "Writes to Gmail are turned off, or the agent is not configured."
+          }
+        },
+        "summary": "Undoes a batch of label changes to Gmail",
         "tags": [
           "Mail"
         ]
@@ -15856,6 +16247,436 @@
           "messages"
         ]
       },
+      "MailLabelChange": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID, hexadecimal"
+          },
+          "add": {
+            "description": "User labels to add, by full name",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remove": {
+            "description": "User labels to remove, by full name",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "add",
+          "remove"
+        ]
+      },
+      "ApplyMailChangesRequest": {
+        "type": "object",
+        "properties": {
+          "changes": {
+            "description": "Each message's change, up to 10,000; labels must be the account's user labels with Gmail IDs",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelChange"
+            }
+          }
+        },
+        "required": [
+          "changes"
+        ]
+      },
+      "MailChangeBatchKind": {
+        "type": "string",
+        "description": "An apply or an undo",
+        "enum": [
+          "apply",
+          "undo"
+        ]
+      },
+      "MailChangeBatchStatus": {
+        "type": "string",
+        "description": "Where the batch is",
+        "enum": [
+          "pending",
+          "running",
+          "done",
+          "failed"
+        ]
+      },
+      "MailChangeCounts": {
+        "type": "object",
+        "properties": {
+          "pending": {
+            "type": "number",
+            "description": "Not written yet"
+          },
+          "written": {
+            "type": "number",
+            "description": "Written"
+          },
+          "unchanged": {
+            "type": "number",
+            "description": "Already as wanted"
+          },
+          "changed": {
+            "type": "number",
+            "description": "Changed in Gmail since, synced instead"
+          },
+          "gone": {
+            "type": "number",
+            "description": "No longer in Gmail"
+          },
+          "failed": {
+            "type": "number",
+            "description": "Refused"
+          }
+        },
+        "required": [
+          "pending",
+          "written",
+          "unchanged",
+          "changed",
+          "gone",
+          "failed"
+        ]
+      },
+      "MailChangeBatch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The batch's ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The mail account it changes"
+          },
+          "kind": {
+            "description": "An apply or an undo",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatchKind"
+              }
+            ]
+          },
+          "undoesBatchId": {
+            "type": "string",
+            "description": "For an undo, the batch it reverses"
+          },
+          "undoneByBatchId": {
+            "type": "string",
+            "description": "The undo that reversed this batch, if one has"
+          },
+          "status": {
+            "description": "Where the batch is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatchStatus"
+              }
+            ]
+          },
+          "requestedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when it was asked for"
+          },
+          "finishedTime": {
+            "type": "string",
+            "description": "When it finished, done or failed"
+          },
+          "error": {
+            "type": "string",
+            "description": "Why the batch failed as a whole"
+          },
+          "messages": {
+            "type": "number",
+            "description": "How many messages it changes"
+          },
+          "counts": {
+            "description": "Its changes by outcome",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeCounts"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "kind",
+          "status",
+          "requestedTime",
+          "messages",
+          "counts"
+        ]
+      },
+      "ApplyMailChangesResponse": {
+        "type": "object",
+        "properties": {
+          "batch": {
+            "description": "The batch, as the agent took it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "batch"
+        ]
+      },
+      "MailChangeStatus": {
+        "type": "string",
+        "description": "What became of one message's change",
+        "enum": [
+          "pending",
+          "written",
+          "unchanged",
+          "changed",
+          "gone",
+          "failed"
+        ]
+      },
+      "MailChange": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its subject, while Minerva has the message"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "Its sender, while Minerva has the message"
+          },
+          "status": {
+            "description": "What became of it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeStatus"
+              }
+            ]
+          },
+          "had": {
+            "description": "Its user labels when the batch was asked for",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "add": {
+            "description": "Labels added",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remove": {
+            "description": "Labels removed",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "status",
+          "had",
+          "add",
+          "remove"
+        ]
+      },
+      "DescribeMailChangeBatchResponse": {
+        "type": "object",
+        "properties": {
+          "batch": {
+            "description": "The batch",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          },
+          "changes": {
+            "description": "A page of its changes, by Gmail ID",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailChange"
+            }
+          }
+        },
+        "required": [
+          "batch",
+          "changes"
+        ]
+      },
+      "MailProposalRef": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "label": {
+            "type": "string",
+            "description": "The label proposed, by full name"
+          },
+          "action": {
+            "description": "Whether it was proposed to add or remove the label",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAuditAction"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gmailId",
+          "label",
+          "action"
+        ]
+      },
+      "DismissMailProposalsRequest": {
+        "type": "object",
+        "properties": {
+          "proposals": {
+            "description": "The proposals to mark processed, up to 10,000",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailProposalRef"
+            }
+          }
+        },
+        "required": [
+          "proposals"
+        ]
+      },
+      "DismissMailProposalsResponse": {
+        "type": "object",
+        "properties": {
+          "dismissed": {
+            "type": "number",
+            "description": "Proposals marked processed"
+          }
+        },
+        "required": [
+          "dismissed"
+        ]
+      },
+      "ListMailChangeBatchesResponse": {
+        "type": "object",
+        "properties": {
+          "batches": {
+            "description": "The account's batches, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailChangeBatch"
+            }
+          }
+        },
+        "required": [
+          "batches"
+        ]
+      },
+      "UndoMailChangeBatchResponse": {
+        "type": "object",
+        "properties": {
+          "batch": {
+            "description": "The undo, a batch of its own",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "batch"
+        ]
+      },
+      "MailChangeBatchReport": {
+        "type": "string",
+        "description": "Running, done (every change has its outcome), or failed",
+        "enum": [
+          "running",
+          "done",
+          "failed"
+        ]
+      },
+      "MailChangeOutcome": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "status": {
+            "description": "What became of it (not pending)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeStatus"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gmailId",
+          "status"
+        ]
+      },
+      "UpdateMailChangeBatchRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "Running, done (every change has its outcome), or failed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatchReport"
+              }
+            ]
+          },
+          "error": {
+            "type": "string",
+            "description": "Why it failed, for a failed batch; at most 500 characters"
+          },
+          "changes": {
+            "description": "Outcomes known since the last report",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailChangeOutcome"
+            }
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "UpdateMailChangeBatchResponse": {
+        "type": "object",
+        "properties": {
+          "batch": {
+            "description": "The batch, with the report recorded",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "batch"
+        ]
+      },
       "SortDirection": {
         "type": "string",
         "enum": [
@@ -15870,6 +16691,10 @@
       "MailAuditMessage": {
         "type": "object",
         "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The mail account the message is in"
+          },
           "gmailId": {
             "type": "string",
             "description": "The message's Gmail ID, hexadecimal"
@@ -15903,10 +16728,19 @@
           }
         },
         "required": [
+          "accountId",
           "gmailId",
           "threadId",
           "receivedTime",
           "labels"
+        ]
+      },
+      "MailDecision": {
+        "type": "string",
+        "description": "What was decided: applied by a batch, or processed without change; absent while undecided",
+        "enum": [
+          "applied",
+          "dismissed"
         ]
       },
       "MailAuditChange": {
@@ -15937,6 +16771,14 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/MailAuditRule"
+              }
+            ]
+          },
+          "decision": {
+            "description": "What was decided: applied by a batch, or processed without change; absent while undecided",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailDecision"
               }
             ]
           },

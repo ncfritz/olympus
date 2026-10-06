@@ -29,6 +29,21 @@ export type AgentGmailSignIn = {
   created: boolean;
 };
 
+/** A label to write, by name and Gmail's ID. */
+export type AgentGmailLabel = { name: string; gmailLabelId: string };
+
+/** One message's change for the agent to write. */
+export type AgentGmailChange = {
+  gmailId: string;
+  /**
+   * The user labels the message must still have in Gmail for the change
+   * to be written; otherwise it was changed there, and is synced instead.
+   */
+  expected: string[];
+  add: AgentGmailLabel[];
+  remove: AgentGmailLabel[];
+};
+
 /**
  * The mail agent's management API, on its services listener with the API's
  * client certificate (ADR 0030, by ADR 0028's pattern). The API is its only
@@ -90,6 +105,22 @@ export class MinervaMailAgentClient {
       (http) => http.post("/gmail-sign-ins/complete", callback),
     );
     return body.account;
+  }
+
+  /**
+   * Hands the agent a batch of label changes to write to Gmail. It answers
+   * at once and writes in the background, reporting each change's outcome
+   * through UpdateMailChangeBatch.
+   */
+  async startWrites(writes: {
+    batchId: string;
+    accountId: string;
+    email: string;
+    changes: AgentGmailChange[];
+  }): Promise<void> {
+    await this.call("StartGmailWrites", (http) =>
+      http.post("/gmail-writes", writes),
+    );
   }
 
   /** Forgets a mailbox's credential at the agent. */

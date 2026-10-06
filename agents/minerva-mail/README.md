@@ -101,6 +101,23 @@ that fails part way is repeated. A mailbox with no `historyId` yet, or
 whose history Gmail no longer keeps (404, after about a week), is
 reconciled instead, at most once an hour.
 
+## Writing to Gmail
+
+With `MAIL_WRITES_ENABLED=true` (and the API's
+`MINERVA_MAIL_WRITES_ENABLED=true`), linking asks for `gmail.modify` as
+well, and the running agent writes the API's batches of label changes
+(`POST /v1/gmail-writes` on its services listener, from the API alone),
+one batch at a time in the background. Each message is read first: one
+gone or in Spam or Trash is reported gone; one already as wanted,
+unchanged; one whose user labels are no longer those the API recorded was
+changed in Gmail since, and is synced to Minerva instead of written, so a
+change made by hand is never overwritten. The rest are written with
+`messages.batchModify`, those with the same change together, 1,000 a
+call, and published to Minerva as written. Outcomes go back to the API
+(`UpdateMailChangeBatch`) a few hundred at a time. Nothing is deleted.
+A batch the agent is stopped in the middle of stays "Writing" in the
+change log.
+
 ## Running it
 
 ```sh

@@ -124,6 +124,37 @@
     ],
     "type": "object"
   },
+  "ApplyMailChangesRequest": {
+    "properties": {
+      "changes": {
+        "description": "Each message's change, up to 10,000; labels must be the account's user labels with Gmail IDs",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelChange"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "changes"
+    ],
+    "type": "object"
+  },
+  "ApplyMailChangesResponse": {
+    "properties": {
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The batch, as the agent took it"
+      }
+    },
+    "required": [
+      "batch"
+    ],
+    "type": "object"
+  },
   "ApproveMediaAssetTranscodeConfigurationRequest": {
     "properties": {
       "audioTrackIndex": {
@@ -6017,6 +6048,30 @@
     ],
     "type": "object"
   },
+  "DescribeMailChangeBatchResponse": {
+    "properties": {
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The batch"
+      },
+      "changes": {
+        "description": "A page of its changes, by Gmail ID",
+        "items": {
+          "$ref": "#/components/schemas/MailChange"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "batch",
+      "changes"
+    ],
+    "type": "object"
+  },
   "DescribeMediaAssetWorkflowStepResponse": {
     "properties": {
       "step": {
@@ -6302,6 +6357,33 @@
     },
     "required": [
       "step"
+    ],
+    "type": "object"
+  },
+  "DismissMailProposalsRequest": {
+    "properties": {
+      "proposals": {
+        "description": "The proposals to mark processed, up to 10,000",
+        "items": {
+          "$ref": "#/components/schemas/MailProposalRef"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "proposals"
+    ],
+    "type": "object"
+  },
+  "DismissMailProposalsResponse": {
+    "properties": {
+      "dismissed": {
+        "description": "Proposals marked processed",
+        "type": "number"
+      }
+    },
+    "required": [
+      "dismissed"
     ],
     "type": "object"
   },
@@ -9992,6 +10074,21 @@
     ],
     "type": "object"
   },
+  "ListMailChangeBatchesResponse": {
+    "properties": {
+      "batches": {
+        "description": "The account's batches, newest first",
+        "items": {
+          "$ref": "#/components/schemas/MailChangeBatch"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "batches"
+    ],
+    "type": "object"
+  },
   "ListMailLabelFamiliesResponse": {
     "properties": {
       "families": {
@@ -11145,6 +11242,14 @@
         "description": "How sure the rule is, 0 to 1",
         "type": "number"
       },
+      "decision": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailDecision"
+          }
+        ],
+        "description": "What was decided: applied by a batch, or processed without change; absent while undecided"
+      },
       "label": {
         "description": "The label added or removed",
         "type": "string"
@@ -11297,6 +11402,10 @@
   },
   "MailAuditMessage": {
     "properties": {
+      "accountId": {
+        "description": "The mail account the message is in",
+        "type": "string"
+      },
       "fromAddress": {
         "description": "The sender's address",
         "type": "string"
@@ -11330,6 +11439,7 @@
       }
     },
     "required": [
+      "accountId",
       "gmailId",
       "labels",
       "receivedTime",
@@ -11485,6 +11595,234 @@
     ],
     "type": "object"
   },
+  "MailChange": {
+    "properties": {
+      "add": {
+        "description": "Labels added",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "fromAddress": {
+        "description": "Its sender, while Minerva has the message",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "had": {
+        "description": "Its user labels when the batch was asked for",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "remove": {
+        "description": "Labels removed",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeStatus"
+          }
+        ],
+        "description": "What became of it"
+      },
+      "subject": {
+        "description": "Its subject, while Minerva has the message",
+        "type": "string"
+      }
+    },
+    "required": [
+      "add",
+      "gmailId",
+      "had",
+      "remove",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailChangeBatch": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account it changes",
+        "type": "string"
+      },
+      "counts": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeCounts"
+          }
+        ],
+        "description": "Its changes by outcome"
+      },
+      "error": {
+        "description": "Why the batch failed as a whole",
+        "type": "string"
+      },
+      "finishedTime": {
+        "description": "When it finished, done or failed",
+        "type": "string"
+      },
+      "id": {
+        "description": "The batch's ID",
+        "type": "string"
+      },
+      "kind": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatchKind"
+          }
+        ],
+        "description": "An apply or an undo"
+      },
+      "messages": {
+        "description": "How many messages it changes",
+        "type": "number"
+      },
+      "requestedTime": {
+        "description": "An ISO-8601 formatted string indicating when it was asked for",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatchStatus"
+          }
+        ],
+        "description": "Where the batch is"
+      },
+      "undoesBatchId": {
+        "description": "For an undo, the batch it reverses",
+        "type": "string"
+      },
+      "undoneByBatchId": {
+        "description": "The undo that reversed this batch, if one has",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "counts",
+      "id",
+      "kind",
+      "messages",
+      "requestedTime",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailChangeBatchKind": {
+    "description": "What a batch of changes does",
+    "enum": [
+      "apply",
+      "undo"
+    ],
+    "type": "string"
+  },
+  "MailChangeBatchReport": {
+    "description": "Running, done (every change has its outcome), or failed",
+    "enum": [
+      "running",
+      "done",
+      "failed"
+    ],
+    "type": "string"
+  },
+  "MailChangeBatchStatus": {
+    "description": "Where a batch of changes is",
+    "enum": [
+      "pending",
+      "running",
+      "done",
+      "failed"
+    ],
+    "type": "string"
+  },
+  "MailChangeCounts": {
+    "properties": {
+      "changed": {
+        "description": "Changed in Gmail since, synced instead",
+        "type": "number"
+      },
+      "failed": {
+        "description": "Refused",
+        "type": "number"
+      },
+      "gone": {
+        "description": "No longer in Gmail",
+        "type": "number"
+      },
+      "pending": {
+        "description": "Not written yet",
+        "type": "number"
+      },
+      "unchanged": {
+        "description": "Already as wanted",
+        "type": "number"
+      },
+      "written": {
+        "description": "Written",
+        "type": "number"
+      }
+    },
+    "required": [
+      "changed",
+      "failed",
+      "gone",
+      "pending",
+      "unchanged",
+      "written"
+    ],
+    "type": "object"
+  },
+  "MailChangeOutcome": {
+    "properties": {
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeStatus"
+          }
+        ],
+        "description": "What became of it (not pending)"
+      }
+    },
+    "required": [
+      "gmailId",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailChangeStatus": {
+    "description": "What became of one message's change",
+    "enum": [
+      "pending",
+      "written",
+      "unchanged",
+      "changed",
+      "gone",
+      "failed"
+    ],
+    "type": "string"
+  },
+  "MailDecision": {
+    "description": "What was decided about a proposal",
+    "enum": [
+      "applied",
+      "dismissed"
+    ],
+    "type": "string"
+  },
   "MailLabel": {
     "properties": {
       "accountId": {
@@ -11538,6 +11876,34 @@
       "kind",
       "messages",
       "name"
+    ],
+    "type": "object"
+  },
+  "MailLabelChange": {
+    "properties": {
+      "add": {
+        "description": "User labels to add, by full name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID, hexadecimal",
+        "type": "string"
+      },
+      "remove": {
+        "description": "User labels to remove, by full name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "add",
+      "gmailId",
+      "remove"
     ],
     "type": "object"
   },
@@ -11756,6 +12122,32 @@
       "sent",
       "starred",
       "unread"
+    ],
+    "type": "object"
+  },
+  "MailProposalRef": {
+    "properties": {
+      "action": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditAction"
+          }
+        ],
+        "description": "Whether it was proposed to add or remove the label"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "label": {
+        "description": "The label proposed, by full name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "action",
+      "gmailId",
+      "label"
     ],
     "type": "object"
   },
@@ -22339,6 +22731,22 @@
     ],
     "type": "object"
   },
+  "UndoMailChangeBatchResponse": {
+    "properties": {
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The undo, a batch of its own"
+      }
+    },
+    "required": [
+      "batch"
+    ],
+    "type": "object"
+  },
   "UpdateAvailabilityBlockRequest": {
     "properties": {
       "block": {
@@ -22770,6 +23178,49 @@
     },
     "required": [
       "mailAccount"
+    ],
+    "type": "object"
+  },
+  "UpdateMailChangeBatchRequest": {
+    "properties": {
+      "changes": {
+        "description": "Outcomes known since the last report",
+        "items": {
+          "$ref": "#/components/schemas/MailChangeOutcome"
+        },
+        "type": "array"
+      },
+      "error": {
+        "description": "Why it failed, for a failed batch; at most 500 characters",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatchReport"
+          }
+        ],
+        "description": "Running, done (every change has its outcome), or failed"
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "type": "object"
+  },
+  "UpdateMailChangeBatchResponse": {
+    "properties": {
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The batch, with the report recorded"
+      }
+    },
+    "required": [
+      "batch"
     ],
     "type": "object"
   },

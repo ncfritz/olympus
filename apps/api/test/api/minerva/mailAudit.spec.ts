@@ -113,6 +113,7 @@ const change = (overrides: Record<string, unknown> = {}) => ({
   ticked: null,
   label: { name: "Bills/Power" },
   message: {
+    accountId: "7b2b0000-0000-4000-8000-0000000000a1",
     gmailId: "1a0fab8f293aa5b5",
     threadId: "1a0fab8f293aa5b5",
     receivedTime: "2026-09-01T00:00:00+00:00",
@@ -270,6 +271,7 @@ describe("Mail audit API", () => {
         senderMessages: 30,
         senderLabelMessages: 27,
         message: {
+          accountId: "7b2b0000-0000-4000-8000-0000000000a1",
           gmailId: "1a0fab8f293aa5b5",
           fromAddress: "bill@power.example",
           fromName: "Power Co",
@@ -417,10 +419,10 @@ describe("Mail audit API", () => {
       );
       const lines = res.text.split("\r\n");
       expect(lines[0]).toBe(
-        "received_time,gmail_id,thread_id,from_address,from_name,subject,label,action,rule,confidence,sender_messages,sender_label_messages,ticked,labels_now,gmail_link",
+        "received_time,gmail_id,thread_id,from_address,from_name,subject,label,action,rule,confidence,sender_messages,sender_label_messages,ticked,decision,labels_now,gmail_link",
       );
       expect(lines[1]).toBe(
-        `2026-09-01T00:00:00.000Z,1a0fab8f293aa5b5,1a0fab8f293aa5b5,bill@power.example,'=cmd,"Your bill, ""final""",Bills/Power,add,sender,0.9,30,27,,Bills; Shopping,https://mail.google.com/mail/u/0/#all/1a0fab8f293aa5b5`,
+        `2026-09-01T00:00:00.000Z,1a0fab8f293aa5b5,1a0fab8f293aa5b5,bill@power.example,'=cmd,"Your bill, ""final""",Bills/Power,add,sender,0.9,30,27,,,Bills; Shopping,https://mail.google.com/mail/u/0/#all/1a0fab8f293aa5b5`,
       );
       expect(lines[2]).toContain(",Shopping,remove,sender,0.933,");
       expect(lines).toHaveLength(4);

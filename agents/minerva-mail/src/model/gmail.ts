@@ -51,3 +51,36 @@ export class GmailAccount {
 export class ListGmailAccountsResponse {
   accounts: GmailAccount[];
 }
+
+/** A label to write, by name and Gmail's ID. */
+export class GmailWriteLabel {
+  name: string;
+  gmailLabelId: string;
+}
+
+/** One message's label change. */
+export class GmailWriteChange {
+  gmailId: string;
+  /**
+   * The user labels, by name, the message must still have in Gmail for the
+   * change to be written; otherwise it was changed there since.
+   */
+  expected: string[];
+  add: GmailWriteLabel[];
+  remove: GmailWriteLabel[];
+}
+
+/** A batch of label changes the API recorded, to write to Gmail. */
+export class StartGmailWritesRequest {
+  batchId: string;
+  /** The Olympus mail account, which Minerva's updates are published for. */
+  accountId: string;
+  /** The mailbox, linked with gmail.modify. */
+  email: string;
+  changes: GmailWriteChange[];
+}
+
+export class StartGmailWritesResponse {
+  /** Changes taken, to be written in the background. */
+  accepted: number;
+}

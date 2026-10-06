@@ -34,6 +34,14 @@ export enum MailAuditMergeReason {
   SenderOverlap = "sender_overlap",
 }
 
+/** What was decided about a proposal. */
+export enum MailDecision {
+  /** Written to Gmail by a batch. */
+  Applied = "applied",
+  /** Processed without change. */
+  Dismissed = "dismissed",
+}
+
 /** How old starred messages are. */
 export enum MailStarAge {
   /** Received in the last month. */
@@ -498,6 +506,13 @@ export class MailAuditMessage {
   @ApiProperty({
     type: String,
     required: true,
+    description: "The mail account the message is in",
+  })
+  accountId: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
     description: "The message's Gmail ID, hexadecimal",
   })
   gmailId: string;
@@ -579,6 +594,16 @@ export class MailAuditChange {
     description: "The rule that proposed it",
   })
   rule: MailAuditRule;
+
+  @ApiProperty({
+    enum: () => MailDecision,
+    enumName: "MailDecision",
+    enumSchema: { description: "What was decided about a proposal" },
+    required: false,
+    description:
+      "What was decided: applied by a batch, or processed without change; absent while undecided",
+  })
+  decision?: MailDecision;
 
   @ApiProperty({
     type: Number,

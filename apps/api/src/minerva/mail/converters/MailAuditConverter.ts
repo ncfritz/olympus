@@ -13,6 +13,7 @@ import {
   MailStarLabel,
   MailStarMixed,
   MailStarSender,
+  MailDecision,
 } from "@ncfritz/olympus-model";
 import moment from "moment";
 
@@ -200,8 +201,10 @@ export type GraphQlMailAuditChange = {
   senderMessages: number | null;
   senderLabelMessages: number | null;
   ticked: boolean | null;
+  decision?: string | null;
   label: { name: string };
   message: {
+    accountId: string;
     gmailId: string;
     threadId: string;
     receivedTime: string;
@@ -216,6 +219,7 @@ export const toChange = (input: GraphQlMailAuditChange): MailAuditChange => {
   const m = input.message;
   return {
     message: {
+      accountId: m.accountId,
       gmailId: m.gmailId,
       threadId: m.threadId,
       receivedTime: moment(m.receivedTime),
@@ -238,5 +242,6 @@ export const toChange = (input: GraphQlMailAuditChange): MailAuditChange => {
       ? { senderLabelMessages: input.senderLabelMessages }
       : {}),
     ...(input.ticked !== null ? { ticked: input.ticked } : {}),
+    ...(input.decision ? { decision: input.decision as MailDecision } : {}),
   };
 };

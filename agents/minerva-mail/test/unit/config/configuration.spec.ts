@@ -128,12 +128,25 @@ describe("Gmail and the services listener", () => {
       clientSecret: "the-secret",
       credentialsDir: "data/credentials",
       pollSeconds: 60,
+      writesEnabled: false,
       scopes: [
         "openid",
         "email",
         "https://www.googleapis.com/auth/gmail.readonly",
       ],
     });
+  });
+
+  it("asks for gmail.modify only when MAIL_WRITES_ENABLED says so", () => {
+    const gmail = readConfig({
+      MAIL_GOOGLE_OAUTH_CLIENT_ID: "id",
+      MAIL_GOOGLE_OAUTH_CLIENT_SECRET: "secret",
+      MAIL_WRITES_ENABLED: "true",
+    }).gmail;
+    expect(gmail?.writesEnabled).toBe(true);
+    expect(gmail?.scopes).toContain(
+      "https://www.googleapis.com/auth/gmail.modify",
+    );
   });
 
   it("polls Gmail every MAIL_GMAIL_POLL_SECONDS, 10 at least, or not at all", () => {

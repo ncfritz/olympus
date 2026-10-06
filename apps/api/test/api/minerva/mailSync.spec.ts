@@ -308,6 +308,200 @@ describe("Mail sync", () => {
     });
   });
 
+  describe("UpdateMailChangeBatch", () => {
+    const BATCH = "7b2b0000-0000-4000-8000-0000000000b1";
+    const count = (n: number) => ({ aggregate: { count: n } });
+    const batchRow = (status: string) => ({
+      id: BATCH,
+      accountId: ACCOUNT_ID,
+      kind: "apply",
+      undoesBatchId: null,
+      status,
+      requestedTime: "2026-10-06T21:00:00Z",
+      finishedTime: status === "done" ? "2026-10-06T21:01:00Z" : null,
+      error: null,
+      undoneBy: [],
+      total: count(2),
+      pending: count(0),
+      written: count(1),
+      unchanged: count(0),
+      changed: count(1),
+      gone: count(0),
+      failed: count(0),
+    });
+    const current = (overrides = {}) =>
+      t.graphql.on("DescribeMailChangeBatchForReport", {
+        minerva_mail_change_batches_by_pk: {
+          id: BATCH,
+          accountId: ACCOUNT_ID,
+          userId: "user-1",
+          kind: "apply",
+          status: "running",
+          undoesBatchId: null,
+          ...overrides,
+        },
+      });
+
+    beforeEach(() => {
+      t.graphql.on("UpdateMailChanges", {
+        update_minerva_mail_changes: { affected_rows: 1 },
+      });
+      t.graphql.on("UpdateMailChangeBatch", (vars) => ({
+        update_minerva_mail_change_batches_by_pk: batchRow(
+          (vars as { set: { status: string } }).set.status,
+        ),
+      }));
+    });
+
+    it("records outcomes, and once done what was written as decided", async () => {
+      current();
+      t.graphql.on("ListMailChangesDone", {
+        minerva_mail_changes: [
+          {
+            messageId: "msg-a1",
+            labels: [
+              { role: "add", name: "Travel" },
+              { role: "remove", name: "Accounts/A" },
+            ],
+          },
+        ],
+      });
+      t.graphql.on("ListMailLabelsForChanges", {
+        minerva_mail_labels: [
+          {
+            id: "l-travel",
+            name: "Travel",
+            type: "user",
+            gmailLabelId: "Label_2",
+          },
+          {
+            id: "l-a",
+            name: "Accounts/A",
+            type: "user",
+            gmailLabelId: "Label_1",
+          },
+        ],
+      });
+      t.graphql.on("RecordMailDecisions", {
+        insert_minerva_mail_decisions: { affected_rows: 2 },
+      });
+
+      const res = await asAgent(
+        "PUT",
+        `/v1/minerva/mail/change-batch/${BATCH}`,
+        {
+          status: "done",
+          changes: [
+            { gmailId: "a1", status: "written" },
+            { gmailId: "a2", status: "changed" },
+          ],
+        },
+      );
+
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body).batch).toMatchObject({
+        status: "done",
+        counts: { written: 1, changed: 1 },
+      });
+      expect(
+        t.graphql.calls("UpdateMailChanges").map((c) => c.variables),
+      ).toEqual([
+        { batchId: BATCH, gmailIds: ["a1"], status: "written" },
+        { batchId: BATCH, gmailIds: ["a2"], status: "changed" },
+      ]);
+      const decisions = (
+        t.graphql.calls("RecordMailDecisions")[0].variables as {
+          decisions: Record<string, unknown>[];
+        }
+      ).decisions;
+      expect(decisions).toEqual([
+        expect.objectContaining({
+          messageId: "msg-a1",
+          labelId: "l-travel",
+          action: "add",
+          decision: "applied",
+          batchId: BATCH,
+          userId: "user-1",
+        }),
+        expect.objectContaining({ labelId: "l-a", action: "remove" }),
+      ]);
+      expect(
+        t.graphql.calls("UpdateMailChangeBatch")[0].variables,
+      ).toMatchObject({ id: BATCH, set: { status: "done" } });
+    });
+
+    it("takes back the reversed batch's decisions once an undo is done", async () => {
+      current({
+        kind: "undo",
+        undoesBatchId: "7b2b0000-0000-4000-8000-0000000000b0",
+      });
+      t.graphql.on("ListMailChangesDone", {
+        minerva_mail_changes: [{ messageId: "msg-a1", labels: [] }],
+      });
+      t.graphql.on("TakeBackMailDecisions", {
+        delete_minerva_mail_decisions: { affected_rows: 2 },
+      });
+      const res = await asAgent(
+        "PUT",
+        `/v1/minerva/mail/change-batch/${BATCH}`,
+        {
+          status: "done",
+          changes: [{ gmailId: "a1", status: "written" }],
+        },
+      );
+      expect(res.status).toBe(200);
+      expect(t.graphql.calls("TakeBackMailDecisions")[0].variables).toEqual({
+        batchId: "7b2b0000-0000-4000-8000-0000000000b0",
+        messageIds: ["msg-a1"],
+      });
+      expect(t.graphql.calls("RecordMailDecisions")).toHaveLength(0);
+    });
+
+    it("records a failed batch with why", async () => {
+      current();
+      const res = await asAgent(
+        "PUT",
+        `/v1/minerva/mail/change-batch/${BATCH}`,
+        {
+          status: "failed",
+          error: "Gmail answered 403",
+        },
+      );
+      expect(res.status).toBe(200);
+      expect(
+        t.graphql.calls("UpdateMailChangeBatch")[0].variables,
+      ).toMatchObject({
+        set: { status: "failed", error: "Gmail answered 403" },
+      });
+    });
+
+    it.each([
+      ["a finished batch", { status: "done" }, { status: "running" }, 409],
+      [
+        "an outcome of pending",
+        {},
+        { status: "running", changes: [{ gmailId: "a1", status: "pending" }] },
+        400,
+      ],
+      ["a failure without why", {}, { status: "failed" }, 400],
+      [
+        "an error on a batch that did not fail",
+        {},
+        { status: "done", error: "x" },
+        400,
+      ],
+    ])("answers %s with its status", async (_case, batch, body, status) => {
+      current(batch);
+      const res = await asAgent(
+        "PUT",
+        `/v1/minerva/mail/change-batch/${BATCH}`,
+        body,
+      );
+      expect(res.status).toBe(status);
+      expect(t.graphql.calls("UpdateMailChangeBatch")).toHaveLength(0);
+    });
+  });
+
   it("answers 403 to a service without the agent role", async () => {
     const res = await asAgent(
       "GET",

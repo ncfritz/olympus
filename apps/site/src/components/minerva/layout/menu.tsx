@@ -7,6 +7,7 @@ import {
   EditOutlined,
   HomeOutlined,
   InboxOutlined,
+  HistoryOutlined,
   MailOutlined,
   ProjectOutlined,
   ScheduleOutlined,
@@ -34,6 +35,7 @@ const SUB_MENUS = {
 
 const MATCHERS = {
   "^/minerva/mail/reclassification(/.*)?$": "/minerva/mail/reclassification",
+  "^/minerva/mail/changes([/?].*)?$": "/minerva/mail/changes",
   "^/minerva/mail/statistics([/?].*)?$": "/minerva/mail/statistics",
   "^/minerva/mail/clusters([/?].*)?$": "/minerva/mail/clusters",
   "^/minerva/mail/labels([/?].*)?$": "/minerva/mail/labels",
@@ -232,6 +234,11 @@ const MinervaMenu: React.FunctionComponent = () => {
               key: `/${BASE_PATH}/mail/reclassification`,
               icon: <TagsOutlined />,
               label: "Re-classification",
+            },
+            {
+              key: `/${BASE_PATH}/mail/changes`,
+              icon: <HistoryOutlined />,
+              label: "Change log",
             },
             {
               key: `/${BASE_PATH}/mail/statistics`,

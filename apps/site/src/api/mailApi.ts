@@ -1,5 +1,12 @@
 import {
+  applyMailChanges,
   client,
+  describeMailChangeBatch,
+  dismissMailProposals,
+  listMailChangeBatches,
+  type MailLabelChange,
+  type MailProposalRef,
+  undoMailChangeBatch,
   connectMailAccount,
   listMailAccounts,
   createMailLabelFamily,
@@ -87,6 +94,37 @@ class MailApi {
 
   async deleteFamily(familyId: string) {
     return await deleteMailLabelFamily({ path: { familyId } });
+  }
+
+  /** Writes label changes to one mailbox in Gmail, as a batch. */
+  async applyChanges(accountId: string, changes: MailLabelChange[]) {
+    return await applyMailChanges({ path: { accountId }, body: { changes } });
+  }
+
+  /** Marks proposals processed without changing Gmail. */
+  async dismissProposals(accountId: string, proposals: MailProposalRef[]) {
+    return await dismissMailProposals({
+      path: { accountId },
+      body: { proposals },
+    });
+  }
+
+  async listChangeBatches(accountId: string, limit = 50) {
+    return await listMailChangeBatches({
+      path: { accountId },
+      query: { limit },
+    });
+  }
+
+  async describeChangeBatch(batchId: string, offset = 0, limit = 100) {
+    return await describeMailChangeBatch({
+      path: { batchId },
+      query: { offset, limit },
+    });
+  }
+
+  async undoChangeBatch(batchId: string) {
+    return await undoMailChangeBatch({ path: { batchId } });
   }
 
   /** The changes as CSV, and the file name the API gives it. */

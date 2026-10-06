@@ -620,6 +620,8 @@ describe("Location headers of created resources", () => {
     // CreateMailLabelFamily, whose families are listed only (mailLabels),
     // nor CreateMailSuggestionRun and CreateMailSuggestions, whose runs and
     // suggestions the classifier only writes (mailSuggestions).
+    // ApplyMailChanges and UndoMailChangeBatch need a signed-in caller too;
+    // mailChanges asserts their Location headers.
     const exempt = [
       "CreateNotification",
       "UploadAssets",
@@ -646,6 +648,8 @@ describe("Location headers of created resources", () => {
       "CreateMailLabelFamily",
       "CreateMailSuggestionRun",
       "CreateMailSuggestions",
+      "ApplyMailChanges",
+      "UndoMailChangeBatch",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

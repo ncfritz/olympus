@@ -170,6 +170,12 @@ export type MinervaConfig = {
    */
   mailAgent?: AgentEndpoint;
   /**
+   * Whether label changes may be written to Gmail (docs/plans/
+   * email-management phase 4). Off, applying and undoing answer 503 and
+   * linking asks for read access only.
+   */
+  mailWritesEnabled?: boolean;
+  /**
    * The From of a calendar account claim's email (ADR 0028), e.g.
    * `Olympus <olympus@ncfritz.net>`. Unset, claims answer 503.
    */
@@ -341,7 +347,8 @@ export const isCidr = (value: string): boolean => {
 /**
  * MINERVA_CALENDAR_AGENT_URL and MINERVA_MAIL_AGENT_URL, each with its
  * _CLIENT_CERT and _CLIENT_KEY (and the optional _CA_CERT), which an https
- * URL requires; and MINERVA_CLAIM_MAIL_FROM.
+ * URL requires; MINERVA_CLAIM_MAIL_FROM; and MINERVA_MAIL_WRITES_ENABLED,
+ * false unless set.
  */
 const readMinervaConfig = (read: EnvReader): MinervaConfig => {
   const claimMailFrom = read.optional("MINERVA_CLAIM_MAIL_FROM");
@@ -350,6 +357,9 @@ const readMinervaConfig = (read: EnvReader): MinervaConfig => {
   return {
     ...(calendarAgent ? { calendarAgent } : {}),
     ...(mailAgent ? { mailAgent } : {}),
+    ...(read.boolean("MINERVA_MAIL_WRITES_ENABLED", false)
+      ? { mailWritesEnabled: true }
+      : {}),
     ...(claimMailFrom ? { claimMailFrom } : {}),
   };
 };
