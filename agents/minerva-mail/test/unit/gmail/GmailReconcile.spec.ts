@@ -98,6 +98,7 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
     updateMailAccountSync: vi.fn(async () => ({})),
   };
   const mailbox = {
+    requests: 42,
     profile: vi.fn(async () => ({
       emailAddress: options.email ?? "Owner@Example.net",
       messagesTotal: 4,
@@ -144,6 +145,7 @@ describe("GmailReconcile", () => {
         messagesTotal: 4,
         threadsTotal: 3,
         kept: 3,
+        requests: 42,
         excluded: {
           spam: { messages: 0, threads: 0 },
           trash: { messages: 0, threads: 0 },

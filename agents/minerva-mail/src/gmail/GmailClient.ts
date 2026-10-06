@@ -87,6 +87,8 @@ const retryable = (error: unknown): boolean => {
 export class GmailMailbox {
   private readonly logger = new Logger(GmailMailbox.name);
   private readonly throttle: Throttle;
+  /** Requests sent, retries included: what counts against the quota. */
+  requests = 0;
 
   constructor(
     private readonly transport: GmailTransport,
@@ -106,6 +108,7 @@ export class GmailMailbox {
   ): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       await this.throttle.take();
+      this.requests++;
       try {
         return await this.transport<T>(`${API}${path}`, params);
       } catch (error) {

@@ -51,6 +51,8 @@ export type GmailReconcileReport = {
     messagesTotal: number;
     threadsTotal: number;
     kept: number;
+    /** Gmail API requests this run sent, retries included. */
+    requests: number;
     /** Gmail's own counts for what Minerva leaves out (null: no such label). */
     excluded: Record<keyof typeof EXCLUDED, Totals | null>;
   };
@@ -184,6 +186,7 @@ export class GmailReconcile {
         messagesTotal: profile.messagesTotal,
         threadsTotal: profile.threadsTotal,
         kept: kept.size,
+        requests: 0,
         excluded,
       },
       labels: synced,
@@ -311,6 +314,7 @@ export class GmailReconcile {
         threadsTotal: profile.threadsTotal,
       });
     }
+    report.gmail.requests = mailbox.requests;
     report.seconds = Math.round((Date.now() - started) / 1000);
     return report;
   }

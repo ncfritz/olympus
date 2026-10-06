@@ -69,6 +69,7 @@ describe("GmailMailbox", () => {
 
     expect(await mailbox.profile()).toMatchObject({ historyId: "9" });
     expect(calls).toHaveLength(4);
+    expect(mailbox.requests).toBe(4);
     expect(sleep.mock.calls.map((c) => c[0])).toEqual([1000, 2000, 4000]);
   });
 
