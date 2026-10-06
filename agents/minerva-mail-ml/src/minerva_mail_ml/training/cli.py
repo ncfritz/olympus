@@ -98,6 +98,8 @@ def main(argv: list[str] | None = None) -> int:
                 for r in registry.runs(limit=1000):
                     newest.setdefault(r.account_id, r)
                 runs = list(newest.values())
+                if not runs:
+                    sys.stdout.write("No training runs yet.\n")
             for r in runs:
                 report(registry, r)
             return 0

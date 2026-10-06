@@ -191,7 +191,10 @@ def train_account(
     """Trains the account on the serving feature version; the run's ID."""
     version = store.serving_version()
     if version is None:
-        raise TrainingError("No feature version is ready")
+        raise TrainingError(
+            "No feature version is ready: featurize the mail first"
+            " (minerva-mail takeout featurize), through to the archive's end"
+        )
     run_id = registry.begin(account_id, version)
     try:
         labels = api.labels(account_id)
