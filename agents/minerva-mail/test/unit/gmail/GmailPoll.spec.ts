@@ -124,7 +124,7 @@ const setup = (
     }),
     labels: vi.fn(async () => [...LABELS, NEW_LABEL]),
     messageIds: vi.fn(async (_label?: string, query?: string) =>
-      query === "has:green-check" ? ["s1"] : [],
+      query === "l:^ss_cg" ? ["s1"] : [],
     ),
     profile: vi.fn(async () => ({
       emailAddress: ACCOUNT.email,
@@ -246,7 +246,7 @@ describe("GmailPoll", () => {
     await poll.pollAccount(ACCOUNT, open);
 
     expect(mailbox.messageIds).toHaveBeenCalledTimes(12);
-    expect(mailbox.messageIds).toHaveBeenCalledWith(undefined, "has:red-bang");
+    expect(mailbox.messageIds).toHaveBeenCalledWith(undefined, "l:^ss_cr");
     expect(published.map((p) => [p.body.gmailId, p.body.starIcon])).toEqual([
       ["s1", "green-check"],
       ["s2", null],

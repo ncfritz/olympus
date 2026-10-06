@@ -322,7 +322,12 @@ messages have no queue to land in.
    differences go out as `message.labels`, mail gone from Gmail as
    `message.delete` (both new actions on `mail.messages`, guarded by
    `snapshotTime`), and `messages.get` (`format=raw`, parsed as the
-   import parses) only for mail Minerva lacks. Throttled to 50 ms a
+   import parses) only for mail Minerva lacks. A message Minerva has and Gmail's list does not is
+   deleted only when a minimal get says it is gone, or in Spam, Trash, the
+   drafts or chats: mail that arrived during the run, which polling adds,
+   is kept (`arrivedDuringRun`). Before that check a reconcile running
+   beside the poller deleted 3 such messages; the next reconcile fetched
+   them again. Throttled to 50 ms a
    request with backoff on 429, 5xx and rate-limit 403s; resumable by
    running again, since `UpdateMailAccountSync` records the `historyId`
    and Gmail's totals only after a clean run
@@ -348,18 +353,20 @@ messages have no queue to land in.
 4. **Stars**: **built**. `mail_messages.star_icon`
    (`1791280000000_minerva_mail_star_icons`): a starred message's icon by
    Gmail's search name, none on one not starred. The API names only
-   `STARRED`, so the reconcile runs one `messages.list` per icon
-   (`has:yellow-star`, `has:red-bang`, … twelve) and records each starred
-   message's icon, reporting the counts per icon and the starred messages
-   no search found; a poll whose history gives or takes a star runs the
-   same searches. The icon rides on `message.upsert` and `message.labels`
-   (absent: keep the recorded one). An icon changed without the star
-   being taken off may make no history record; the next reconcile finds
-   it. Takeout has no icons, so re-importing the archive clears them
-   until the next reconcile. Writes: no API call names an icon (the
-   writes are label changes, and labels.list has no label for any icon),
-   so adding `STARRED` is all Olympus can do; which icon Gmail gives it is
-   checked with the first write, in phase 4.
+   `STARRED`, so the reconcile runs one `messages.list` per icon and
+   records each starred message's icon. The search box's names
+   (`has:red-bang`) find nothing through the API (the first run found no
+   icon on any of 3,723 starred messages); each icon's hidden label does
+   (`l:^ss_cr`; stars `^ss_s` and a colour, the rest `^ss_c` and one). It
+   reports the counts per icon and the starred messages no search found.
+   A poll whose history gives or takes a star, or names a hidden icon
+   label, runs the same searches. The icon rides on `message.upsert` and
+   `message.labels` (absent: keep the recorded one). An icon changed
+   without the star being taken off may make no history record; the next
+   reconcile finds it. Takeout has no icons, so re-importing the archive
+   clears them until the next reconcile. Writes: the hidden labels are
+   not in `labels.list`, so whether `messages.modify` takes one (setting
+   an icon) or only `STARRED` is checked with the first write, in phase 4.
 5. **Full backfill from the API** stays available (list, then get,
    throttled, resumable) for an account with no archive.
 6. **Tests**: the throttle, cursor resume, reconciliation diffs, history

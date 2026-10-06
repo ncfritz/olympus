@@ -1,6 +1,6 @@
 import { MailApi } from "@ncfritz/olympus-client";
 import { Injectable, Logger } from "@nestjs/common";
-import { GmailClient, type GmailMailbox } from "./GmailClient";
+import { GmailClient, gmailStatusOf, type GmailMailbox } from "./GmailClient";
 import { GmailMessages } from "./GmailMessages";
 import {
   applyLabel,
@@ -12,6 +12,7 @@ import {
   LEFT_OUT,
   readStarIcons,
   sortState,
+  stateOfLabelIds,
   withStarIcon,
 } from "./gmailState";
 
@@ -65,6 +66,11 @@ export type GmailReconcileReport = {
   /** The labels most often added or removed, with how many messages. */
   labelChanges: { label: string; added: number; removed: number }[];
   deleted: number;
+  /**
+   * In Minerva but not in Gmail's list, yet in Gmail when asked: mail that
+   * arrived after the list was read (history polling added it). Kept.
+   */
+  arrivedDuringRun: number;
   added: number;
   /** New mail's text sent to the classifier; and what it refused. */
   featurized: number;
@@ -212,6 +218,7 @@ export class GmailReconcile {
       },
       labelChanges: [],
       deleted: 0,
+      arrivedDuringRun: 0,
       added: 0,
       featurized: 0,
       featurizeFailed: 0,
@@ -220,6 +227,7 @@ export class GmailReconcile {
     };
 
     // Minerva's state, compared message by message.
+    const absent: string[] = [];
     const changes = new Map<string, { added: number; removed: number }>();
     const seen = new Set<string>();
     let after: string | undefined;
@@ -229,12 +237,8 @@ export class GmailReconcile {
         report.minerva.messages++;
         seen.add(m.gmailId);
         if (!kept.has(m.gmailId)) {
-          await this.messages.publishDelete(
-            account.id,
-            m.gmailId,
-            snapshotTime,
-          );
-          report.deleted++;
+          // Gone, or newer than the list: asked below, once the list is done.
+          absent.push(m.gmailId);
           continue;
         }
         const g = states.get(m.gmailId) ?? emptyState();
@@ -278,6 +282,33 @@ export class GmailReconcile {
       after = page.nextCursor;
       progress("compared", report.minerva.messages);
     } while (after);
+
+    // A message Minerva has and Gmail's list had not is deleted only once
+    // Gmail says it is gone, or in Spam, Trash, the drafts or chats. Mail
+    // that arrived during the run (history polling adds it while this
+    // runs) is kept.
+    const labelsById = new Map(labels.map((l) => [l.id, l]));
+    for (const id of absent) {
+      try {
+        let current: { labelIds?: string[] } | undefined;
+        try {
+          current = await mailbox.minimal(id);
+        } catch (error) {
+          if (gmailStatusOf(error) !== 404) throw error;
+        }
+        if (current && stateOfLabelIds(current.labelIds ?? [], labelsById)) {
+          report.arrivedDuringRun++;
+          continue;
+        }
+        await this.messages.publishDelete(account.id, id, snapshotTime);
+        report.deleted++;
+      } catch (error) {
+        report.failed++;
+        this.logger.warn(
+          `Could not check message ${id} before deleting it: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
 
     report.labelChanges = [...changes]
       .map(([label, c]) => ({ label, ...c }))

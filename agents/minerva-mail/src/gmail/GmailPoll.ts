@@ -10,6 +10,7 @@ import {
 import { GmailMessages } from "./GmailMessages";
 import { GmailReconcile } from "./GmailReconcile";
 import {
+  isStarIconLabel,
   LEFT_OUT,
   readStarIcons,
   stateOfLabelIds,
@@ -197,12 +198,20 @@ export class GmailPoll {
         if (quiet(change.message)) continue;
         touched.add(change.message.id);
         change.labelIds.forEach((id) => labelIds.add(id));
-        if (change.labelIds.includes("STARRED")) stars = true;
+        if (
+          change.labelIds.some((id) => id === "STARRED" || isStarIconLabel(id))
+        ) {
+          stars = true;
+        }
       }
       for (const change of record.labelsRemoved ?? []) {
         if (quiet(change.message)) continue;
         touched.add(change.message.id);
-        if (change.labelIds.includes("STARRED")) stars = true;
+        if (
+          change.labelIds.some((id) => id === "STARRED" || isStarIconLabel(id))
+        ) {
+          stars = true;
+        }
         if (change.labelIds.some((id) => RESTORING.has(id))) {
           added.add(change.message.id);
         }

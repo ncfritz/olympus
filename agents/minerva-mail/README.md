@@ -66,12 +66,14 @@ with Gmail, read-only (`gmail.readonly`): every label gets its Gmail ID
 (labels made in Gmail since the export are added); each label's message
 IDs are listed (500 a call) and every message's labels, categories and
 flags compared with Minerva's, publishing `message.labels` where they
-differ and `message.delete` for mail Gmail no longer has (drafts and chats
+differ and `message.delete` for mail Gmail no longer has (asked about one
+by one first, so mail that arrived during the run is kept) (drafts and chats
 included, as the import skips them); mail Minerva lacks is fetched whole
 (`format=raw`), parsed as the import parses it and published as
 `message.upsert`, its text sent to the classifier when `MAIL_ML_URL` is
 set. Gmail's API names only `STARRED`, so each star icon is found by
-one search (`has:red-bang`, twelve in all), and the report counts the
+one search on its hidden label (`l:^ss_cr` for the red bang; the search
+box's `has:red-bang` finds nothing through the API), twelve in all, and the report counts the
 starred messages by icon. Requests are spaced 50 ms apart and retried with
 backoff when Google says to slow down. At the end, if nothing failed, it
 records the `historyId` it started from and Gmail's totals. It prints

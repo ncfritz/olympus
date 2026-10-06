@@ -97,23 +97,56 @@ export const stateOfLabelIds = (
   if (labelIds.some((id) => NOT_KEPT.has(id))) return undefined;
   const state = emptyState();
   for (const id of labelIds) {
+    const icon = ICON_OF_LABEL.get(id);
+    if (icon) state.starIcon = icon;
     const label = labels.get(id);
     if (label) applyLabel(state, label);
   }
+  // Should Gmail ever list the hidden label, the icon is known without a
+  // search; and a star taken off takes its icon with it.
+  if (state.starIcon && !state.flags.starred) state.starIcon = null;
   return sortState(state);
 };
 
 /**
+ * Gmail's hidden label for each star icon. The search box's names
+ * (`has:red-bang`) find nothing through the API; these do (`l:^ss_cr`).
+ * Stars are `^ss_s` and a colour, the other icons `^ss_c` and one.
+ */
+export const STAR_ICON_LABELS: Record<MailStarIcon, string> = {
+  "yellow-star": "^ss_sy",
+  "orange-star": "^ss_so",
+  "red-star": "^ss_sr",
+  "purple-star": "^ss_sp",
+  "blue-star": "^ss_sb",
+  "green-star": "^ss_sg",
+  "red-bang": "^ss_cr",
+  "orange-guillemet": "^ss_co",
+  "yellow-bang": "^ss_cy",
+  "green-check": "^ss_cg",
+  "blue-info": "^ss_cb",
+  "purple-question": "^ss_cp",
+};
+
+const ICON_OF_LABEL = new Map(
+  MAIL_STAR_ICONS.map((icon) => [STAR_ICON_LABELS[icon], icon] as const),
+);
+
+/** Whether a label ID is one of the star icons' hidden labels. */
+export const isStarIconLabel = (id: string): boolean => id.startsWith("^ss_");
+
+/**
  * Which starred message has which star icon. Gmail's API names only
- * STARRED; its search tells the icons apart (`has:red-bang`): one search per
- * icon, each a page or two.
+ * STARRED among a message's labels; a search on each icon's hidden label
+ * tells them apart: one search per icon, each a page or two.
  */
 export const readStarIcons = async (
   mailbox: GmailMailbox,
 ): Promise<Map<string, MailStarIcon>> => {
   const icons = new Map<string, MailStarIcon>();
   for (const icon of MAIL_STAR_ICONS) {
-    for (const id of await mailbox.messageIds(undefined, `has:${icon}`)) {
+    const query = `l:${STAR_ICON_LABELS[icon]}`;
+    for (const id of await mailbox.messageIds(undefined, query)) {
       icons.set(id, icon);
     }
   }
@@ -127,6 +160,8 @@ export const withStarIcon = (
   icons: Map<string, MailStarIcon> | undefined,
 ): GmailState | undefined => {
   if (!state || !icons) return state;
-  state.starIcon = state.flags.starred ? (icons.get(id) ?? null) : null;
+  state.starIcon = state.flags.starred
+    ? (icons.get(id) ?? state.starIcon ?? null)
+    : null;
   return state;
 };

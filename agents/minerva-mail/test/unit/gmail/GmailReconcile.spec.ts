@@ -11,7 +11,8 @@ import { GmailMessages } from "../../../src/gmail/GmailMessages";
 import { GmailReconcile } from "../../../src/gmail/GmailReconcile";
 
 /*
- * A synthetic mailbox (never real mail): Minerva has a, b, c and d from the
+ * A synthetic mailbox (never real mail). Minerva has f, which arrived
+ * after Gmail's list was read (polling added it), and a, b, c and d from the
  * archive; Gmail has a unchanged, b relabelled and read, c deleted, d as a
  * draft (left out, so deleted), and e new since the archive. a, b and e
  * are starred: a with the red bang Minerva has, b with a green check
@@ -43,8 +44,8 @@ const BY_LABEL: Record<string, string[]> = {
 };
 
 const ICONS: Record<string, string[]> = {
-  "has:red-bang": ["a"],
-  "has:green-check": ["b"],
+  "l:^ss_cr": ["a"],
+  "l:^ss_cg": ["b"],
 };
 
 const flags = (over: Record<string, boolean> = {}) => ({
@@ -72,7 +73,11 @@ const MINERVA = [
   },
   { gmailId: "c", labels: [], categories: [], flags: flags() },
   { gmailId: "d", labels: [], categories: [], flags: flags() },
+  { gmailId: "f", labels: [], categories: [], flags: flags({ inbox: true }) },
 ];
+
+/** What Gmail answers when asked about one message (format minimal). */
+const NOW: Record<string, string[]> = { d: ["DRAFT"], f: ["INBOX"] };
 
 const RAW = [
   "From: Example Sender <sender@example.com>",
@@ -125,6 +130,14 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
     messageIds: vi.fn(async (label?: string, query?: string) =>
       query ? (ICONS[query] ?? []) : (BY_LABEL[label ?? ""] ?? []),
     ),
+    minimal: vi.fn(async (id: string) => {
+      if (!NOW[id]) {
+        throw Object.assign(new Error("status 404"), {
+          response: { status: 404 },
+        });
+      }
+      return { id, labelIds: NOW[id] };
+    }),
     raw: vi.fn(async (id: string) => {
       if (options.rawFails) throw new Error("status 500");
       return {
@@ -184,7 +197,7 @@ describe("GmailReconcile", () => {
         withoutIcon: 1,
       },
       labels: { matched: 4, created: 1, notInGmail: ["Old"] },
-      minerva: { messages: 4 },
+      minerva: { messages: 5 },
       unchanged: 1,
       relabelled: 1,
       differences: {
@@ -198,6 +211,7 @@ describe("GmailReconcile", () => {
         { label: "Travel", added: 1, removed: 0 },
       ],
       deleted: 2,
+      arrivedDuringRun: 1,
       added: 1,
       featurized: 1,
       featurizeFailed: 0,
