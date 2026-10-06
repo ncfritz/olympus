@@ -40,6 +40,27 @@ export interface MailMessageAttachment {
   inline: boolean;
 }
 
+/**
+ * Gmail's star icons (Settings, Stars), by the name its search uses
+ * (`has:red-bang`). The API names only STARRED; the agent finds the icon by
+ * searching.
+ */
+export const MAIL_STAR_ICONS = [
+  "yellow-star",
+  "orange-star",
+  "red-star",
+  "purple-star",
+  "blue-star",
+  "green-star",
+  "red-bang",
+  "orange-guillemet",
+  "yellow-bang",
+  "green-check",
+  "blue-info",
+  "purple-question",
+] as const;
+export type MailStarIcon = (typeof MAIL_STAR_ICONS)[number];
+
 /** Gmail's system labels that are flags on the message. */
 export interface MailMessageFlags {
   inbox: boolean;
@@ -81,6 +102,11 @@ export interface MailMetadataMessage {
   /** Gmail's categories, lower case (`updates`, `promotions`). */
   categories: string[];
   flags: MailMessageFlags;
+  /**
+   * A starred message's icon, when the source knows it (Gmail, not
+   * Takeout); null or absent is none found. Ignored when not starred.
+   */
+  starIcon?: MailStarIcon | null;
   attachments: MailMessageAttachment[];
 }
 
@@ -98,6 +124,11 @@ export interface MailLabelsMessage {
   /** Gmail's categories, lower case. */
   categories: string[];
   flags: MailMessageFlags;
+  /**
+   * A starred message's icon; null for none found, absent to keep the one
+   * recorded. A message not starred has none.
+   */
+  starIcon?: MailStarIcon | null;
 }
 
 /**

@@ -53,6 +53,7 @@ export class GmailMessages {
       labels: state.labels,
       categories: state.categories,
       flags: toFlags(state.flags),
+      ...(state.starIcon !== undefined ? { starIcon: state.starIcon } : {}),
     });
   }
 

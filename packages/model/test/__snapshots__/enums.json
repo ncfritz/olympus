@@ -286,6 +286,20 @@
     "Older": "older",
     "Year": "year"
   },
+  "MailStarIcon": {
+    "BlueInfo": "blue-info",
+    "BlueStar": "blue-star",
+    "GreenCheck": "green-check",
+    "GreenStar": "green-star",
+    "OrangeGuillemet": "orange-guillemet",
+    "OrangeStar": "orange-star",
+    "PurpleQuestion": "purple-question",
+    "PurpleStar": "purple-star",
+    "RedBang": "red-bang",
+    "RedStar": "red-star",
+    "YellowBang": "yellow-bang",
+    "YellowStar": "yellow-star"
+  },
   "MailStatisticsRange": {
     "AllTime": "all",
     "ThreeYears": "3y",

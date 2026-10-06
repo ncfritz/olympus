@@ -10,7 +10,9 @@ import {
   FLAG_NAMES,
   type GmailState,
   LEFT_OUT,
+  readStarIcons,
   sortState,
+  withStarIcon,
 } from "./gmailState";
 
 /** Outside All Mail or left out: counted, for comparing with the totals. */
@@ -44,6 +46,12 @@ export type GmailReconcileReport = {
     excluded: Record<keyof typeof EXCLUDED, Totals | null>;
   };
   labels: { matched: number; created: number; notInGmail: string[] };
+  /** Starred messages by icon (Gmail's searches), and those none found. */
+  stars: {
+    starred: number;
+    byIcon: Record<string, number>;
+    withoutIcon: number;
+  };
   minerva: { messages: number };
   unchanged: number;
   relabelled: number;
@@ -52,6 +60,7 @@ export type GmailReconcileReport = {
     labels: number;
     categories: number;
     flags: Record<string, number>;
+    starIcon: number;
   };
   /** The labels most often added or removed, with how many messages. */
   labelChanges: { label: string; added: number; removed: number }[];
@@ -161,6 +170,25 @@ export class GmailReconcile {
     }
     for (const s of states.values()) sortState(s);
 
+    // Which icon each starred message has: one search per icon.
+    const icons = await readStarIcons(mailbox);
+    const stars = {
+      starred: 0,
+      byIcon: {} as Record<string, number>,
+      withoutIcon: 0,
+    };
+    for (const [id, s] of states) {
+      withStarIcon(s, id, icons);
+      if (!s.flags.starred) continue;
+      stars.starred++;
+      if (s.starIcon) {
+        stars.byIcon[s.starIcon] = (stars.byIcon[s.starIcon] ?? 0) + 1;
+      } else {
+        stars.withoutIcon++;
+      }
+    }
+    progress("stars", stars.starred);
+
     const report: GmailReconcileReport = {
       accountId: account.id,
       historyId: profile.historyId,
@@ -172,10 +200,16 @@ export class GmailReconcile {
         excluded,
       },
       labels: synced,
+      stars,
       minerva: { messages: 0 },
       unchanged: 0,
       relabelled: 0,
-      differences: { labels: 0, categories: 0, flags: emptyCounts() },
+      differences: {
+        labels: 0,
+        categories: 0,
+        flags: emptyCounts(),
+        starIcon: 0,
+      },
       labelChanges: [],
       deleted: 0,
       added: 0,
@@ -210,12 +244,21 @@ export class GmailReconcile {
         );
         const labelsSame = sameList(g.labels, m.labels);
         const categoriesSame = sameList(g.categories, m.categories);
-        if (!flagsDiffering.length && labelsSame && categoriesSame) {
+        const iconSame =
+          (g.flags.starred ? (g.starIcon ?? undefined) : undefined) ===
+          (m.starIcon ?? undefined);
+        if (
+          !flagsDiffering.length &&
+          labelsSame &&
+          categoriesSame &&
+          iconSame
+        ) {
           report.unchanged++;
           continue;
         }
         for (const f of flagsDiffering) report.differences.flags[f]++;
         if (!categoriesSame) report.differences.categories++;
+        if (!iconSame) report.differences.starIcon++;
         if (!labelsSame) {
           report.differences.labels++;
           const before = new Set(m.labels);

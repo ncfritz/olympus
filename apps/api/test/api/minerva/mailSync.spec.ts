@@ -19,6 +19,7 @@ const row = (gmailId: string, overrides = {}) => ({
   inInbox: true,
   unread: false,
   starred: false,
+  starIcon: null,
   important: true,
   sent: false,
   messageLabels: [
@@ -137,7 +138,11 @@ describe("Mail sync", () => {
       t.graphql.on("ListMailMessageStates", {
         minerva_mail_messages: [
           row("19be00000000a1"),
-          row("19be00000000a2", { messageLabels: [] }),
+          row("19be00000000a2", {
+            messageLabels: [],
+            starred: true,
+            starIcon: "green-check",
+          }),
         ],
       });
       const res = await asAgent(
@@ -159,6 +164,8 @@ describe("Mail sync", () => {
         },
       });
       expect(body.messages[1].labels).toEqual([]);
+      expect(body.messages[1].starIcon).toBe("green-check");
+      expect(body.messages[0]).not.toHaveProperty("starIcon");
       expect(body.nextCursor).toBe("19be00000000a2");
       expect(t.graphql.calls("ListMailMessageStates")[0].variables).toEqual({
         where: {

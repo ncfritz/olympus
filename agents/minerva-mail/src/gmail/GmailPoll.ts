@@ -9,7 +9,12 @@ import {
 } from "./GmailClient";
 import { GmailMessages } from "./GmailMessages";
 import { GmailReconcile } from "./GmailReconcile";
-import { LEFT_OUT, stateOfLabelIds } from "./gmailState";
+import {
+  LEFT_OUT,
+  readStarIcons,
+  stateOfLabelIds,
+  withStarIcon,
+} from "./gmailState";
 
 /** At most one reconcile an hour per mailbox when polling falls back to one. */
 export const RECONCILE_INTERVAL_MS = 60 * 60 * 1000;
@@ -175,11 +180,14 @@ export class GmailPoll {
     const deleted = new Set<string>();
     const touched = new Set<string>();
     const labelIds = new Set<string>();
+    // A star given or taken: which icon is read by search, once a poll.
+    let stars = false;
     for (const record of records) {
       for (const { message } of record.messagesAdded ?? []) {
         if (quiet(message)) continue;
         added.add(message.id);
         deleted.delete(message.id);
+        if (message.labelIds?.includes("STARRED")) stars = true;
       }
       for (const { message } of record.messagesDeleted ?? []) {
         if (quiet(message)) continue;
@@ -189,10 +197,12 @@ export class GmailPoll {
         if (quiet(change.message)) continue;
         touched.add(change.message.id);
         change.labelIds.forEach((id) => labelIds.add(id));
+        if (change.labelIds.includes("STARRED")) stars = true;
       }
       for (const change of record.labelsRemoved ?? []) {
         if (quiet(change.message)) continue;
         touched.add(change.message.id);
+        if (change.labelIds.includes("STARRED")) stars = true;
         if (change.labelIds.some((id) => RESTORING.has(id))) {
           added.add(change.message.id);
         }
@@ -201,7 +211,9 @@ export class GmailPoll {
     if (added.size + deleted.size + touched.size === 0) return;
 
     const labels = await this.labelsOf(account, mailbox, labelIds);
-    const stateOf = (ids: string[]) => stateOfLabelIds(ids, labels);
+    const icons = stars ? await readStarIcons(mailbox) : undefined;
+    const stateOf = (id: string) => (ids: string[]) =>
+      withStarIcon(stateOfLabelIds(ids, labels), id, icons);
     const snapshotTime = new Date().toISOString();
 
     for (const id of deleted) {
@@ -212,7 +224,7 @@ export class GmailPoll {
     for (const id of added) {
       if (deleted.has(id)) continue;
       try {
-        const outcome = await batch.add(mailbox, id, stateOf);
+        const outcome = await batch.add(mailbox, id, stateOf(id));
         if (outcome === "added") {
           report.added++;
         } else {
@@ -236,7 +248,7 @@ export class GmailPoll {
         } catch (error) {
           if (gmailStatusOf(error) !== 404) throw error;
         }
-        const state = current ? stateOf(current.labelIds ?? []) : undefined;
+        const state = current ? stateOf(id)(current.labelIds ?? []) : undefined;
         if (state) {
           await this.messages.publishLabels(
             account.id,

@@ -15774,6 +15774,24 @@
           "sent"
         ]
       },
+      "MailStarIcon": {
+        "type": "string",
+        "description": "A starred message's star icon, by Gmail's search name; absent when not starred or none was found",
+        "enum": [
+          "yellow-star",
+          "orange-star",
+          "red-star",
+          "purple-star",
+          "blue-star",
+          "green-star",
+          "red-bang",
+          "orange-guillemet",
+          "yellow-bang",
+          "green-check",
+          "blue-info",
+          "purple-question"
+        ]
+      },
       "MailMessageState": {
         "type": "object",
         "properties": {
@@ -15800,6 +15818,14 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/MailMessageStateFlags"
+              }
+            ]
+          },
+          "starIcon": {
+            "description": "A starred message's star icon, by Gmail's search name; absent when not starred or none was found",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
               }
             ]
           }

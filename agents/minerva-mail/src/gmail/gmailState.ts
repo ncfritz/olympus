@@ -1,5 +1,6 @@
+import { MAIL_STAR_ICONS, type MailStarIcon } from "@ncfritz/olympus-messages";
 import type { MailFlags } from "../sources/MailSourceMessage";
-import type { GmailLabelInfo } from "./GmailClient";
+import type { GmailLabelInfo, GmailMailbox } from "./GmailClient";
 
 /*
  * A message's state as Gmail gives it, in Minerva's terms (docs/plans/
@@ -33,6 +34,11 @@ export type GmailState = {
   labels: string[];
   categories: string[];
   flags: Record<string, boolean>;
+  /**
+   * A starred message's icon: null when no icon's search found it,
+   * undefined when the icons were not read.
+   */
+  starIcon?: MailStarIcon | null;
 };
 
 export const emptyFlags = (): Record<string, boolean> => ({
@@ -95,4 +101,32 @@ export const stateOfLabelIds = (
     if (label) applyLabel(state, label);
   }
   return sortState(state);
+};
+
+/**
+ * Which starred message has which star icon. Gmail's API names only
+ * STARRED; its search tells the icons apart (`has:red-bang`): one search per
+ * icon, each a page or two.
+ */
+export const readStarIcons = async (
+  mailbox: GmailMailbox,
+): Promise<Map<string, MailStarIcon>> => {
+  const icons = new Map<string, MailStarIcon>();
+  for (const icon of MAIL_STAR_ICONS) {
+    for (const id of await mailbox.messageIds(undefined, `has:${icon}`)) {
+      icons.set(id, icon);
+    }
+  }
+  return icons;
+};
+
+/** A state given its message's icon from `icons`, when it is starred. */
+export const withStarIcon = (
+  state: GmailState | undefined,
+  id: string,
+  icons: Map<string, MailStarIcon> | undefined,
+): GmailState | undefined => {
+  if (!state || !icons) return state;
+  state.starIcon = state.flags.starred ? (icons.get(id) ?? null) : null;
+  return state;
 };

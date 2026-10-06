@@ -172,9 +172,10 @@ export class GmailMailbox {
 
   /**
    * Every message ID with the label (or in the mailbox, without one),
-   * Trash and Spam left out as Gmail leaves them out.
+   * and matching Gmail's search `query` when one is given; Trash and Spam
+   * left out as Gmail leaves them out.
    */
-  async messageIds(labelId?: string): Promise<string[]> {
+  async messageIds(labelId?: string, query?: string): Promise<string[]> {
     const ids: string[] = [];
     let pageToken: string | undefined;
     do {
@@ -184,6 +185,7 @@ export class GmailMailbox {
       }>("/messages", {
         maxResults: 500,
         ...(labelId ? { labelIds: labelId } : {}),
+        ...(query ? { q: query } : {}),
         ...(pageToken ? { pageToken } : {}),
       });
       for (const m of body.messages ?? []) ids.push(m.id);

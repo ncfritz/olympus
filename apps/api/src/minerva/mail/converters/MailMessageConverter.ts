@@ -1,4 +1,8 @@
-import type { MailMetadataMessage } from "@ncfritz/olympus-messages";
+import {
+  MAIL_STAR_ICONS,
+  type MailMetadataMessage,
+  type MailStarIcon,
+} from "@ncfritz/olympus-messages";
 
 /** A minerva.mail_messages row as the consumer writes it (custom names). */
 export type MailMessageRow = {
@@ -21,6 +25,7 @@ export type MailMessageRow = {
   inInbox: boolean;
   unread: boolean;
   starred: boolean;
+  starIcon: MailStarIcon | null;
   important: boolean;
   sent: boolean;
 };
@@ -55,6 +60,23 @@ const GMAIL_ID = /^[0-9a-f]{1,16}$/;
 const CATEGORY = /^[a-z]{1,30}$/;
 const EXTENSION = /^[a-z0-9]{1,10}$/;
 const MAX_INT = 2_147_483_647;
+
+/**
+ * A starred message's icon from the agent: one of Gmail's, or null for
+ * none found; undefined when the message does not say.
+ */
+const starIconOf = (
+  value: unknown,
+  problems: string[],
+): MailStarIcon | null | undefined => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!MAIL_STAR_ICONS.includes(value as MailStarIcon)) {
+    problems.push(`starIcon must be one of ${MAIL_STAR_ICONS.join(", ")}`);
+    return null;
+  }
+  return value as MailStarIcon;
+};
 
 /** Gmail's name for a category, as the API's label IDs have it. */
 /**
@@ -237,6 +259,11 @@ export const toMailMessageFields = (
     inInbox: flag("flags.inbox", flags.inbox),
     unread: flag("flags.unread", flags.unread),
     starred: flag("flags.starred", flags.starred),
+    // An upsert replaces the icon too: Takeout's carries none.
+    starIcon:
+      flags.starred === true
+        ? (starIconOf(m.starIcon, problems) ?? null)
+        : null,
     important: flag("flags.important", flags.important),
     sent: flag("flags.sent", flags.sent),
   };
@@ -255,7 +282,7 @@ export type MailLabelsFields = {
   flags: Pick<
     MailMessageRow,
     "inInbox" | "unread" | "starred" | "important" | "sent"
-  >;
+  > & { starIcon?: MailStarIcon | null };
   labels: MailLabelRef[];
 };
 
@@ -332,14 +359,22 @@ export const toMailLabelsFields = (
     }
     labels.push({ name: categoryLabel(category), type: "system" });
   }
+  const starred = flag("starred");
+  const starIcon = starIconOf(m.starIcon, problems);
   const fields: MailLabelsFields = {
     ...key,
     flags: {
       inInbox: flag("inbox"),
       unread: flag("unread"),
-      starred: flag("starred"),
+      starred,
       important: flag("important"),
       sent: flag("sent"),
+      // Unstarred has no icon; starred without one keeps what it has.
+      ...(!starred
+        ? { starIcon: null }
+        : starIcon !== undefined
+          ? { starIcon }
+          : {}),
     },
     labels: [...new Map(labels.map((l) => [l.name, l])).values()],
   };

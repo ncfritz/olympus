@@ -11709,6 +11709,14 @@
           "type": "string"
         },
         "type": "array"
+      },
+      "starIcon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "A starred message's star icon, by Gmail's search name; absent when not starred or none was found"
       }
     },
     "required": [
@@ -11828,6 +11836,24 @@
       "starred"
     ],
     "type": "object"
+  },
+  "MailStarIcon": {
+    "description": "Gmail's star icons, by search name",
+    "enum": [
+      "yellow-star",
+      "orange-star",
+      "red-star",
+      "purple-star",
+      "blue-star",
+      "green-star",
+      "red-bang",
+      "orange-guillemet",
+      "yellow-bang",
+      "green-check",
+      "blue-info",
+      "purple-question"
+    ],
+    "type": "string"
   },
   "MailStarLabel": {
     "properties": {

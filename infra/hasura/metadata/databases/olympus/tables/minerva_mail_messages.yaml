@@ -33,6 +33,8 @@ configuration:
       custom_name: sizeBytes
     snapshot_time:
       custom_name: snapshotTime
+    star_icon:
+      custom_name: starIcon
     thread_id:
       custom_name: threadId
     updated_at:
@@ -53,6 +55,7 @@ configuration:
     sent_at: sentTime
     size_bytes: sizeBytes
     snapshot_time: snapshotTime
+    star_icon: starIcon
     thread_id: threadId
     updated_at: lastUpdatedTime
   custom_root_fields: {}

@@ -8,6 +8,7 @@ import {
   ListMailMessageStatesResponse,
   MailAccount,
   MailMessageState,
+  MailStarIcon,
   MailSyncAccount,
   SyncMailLabelsResponse,
   UpdateMailAccountSyncRequest,
@@ -29,6 +30,7 @@ type GraphQlState = {
   inInbox: boolean;
   unread: boolean;
   starred: boolean;
+  starIcon: string | null;
   important: boolean;
   sent: boolean;
   messageLabels: { label: { name: string; type: string } }[];
@@ -56,6 +58,9 @@ const toState = (m: GraphQlState): MailMessageState => {
       important: m.important,
       sent: m.sent,
     },
+    ...(m.starred && m.starIcon
+      ? { starIcon: m.starIcon as MailStarIcon }
+      : {}),
   };
 };
 
@@ -139,6 +144,7 @@ export class MailSyncService {
           inInbox
           unread
           starred
+          starIcon
           important
           sent
           messageLabels {

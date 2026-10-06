@@ -11,6 +11,25 @@ import { MailAccount } from "./accounts";
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
+/**
+ * Gmail's star icons (Settings, Stars), by the name its search uses
+ * (`has:red-bang`); the same as @ncfritz/olympus-messages' MAIL_STAR_ICONS.
+ */
+export enum MailStarIcon {
+  YellowStar = "yellow-star",
+  OrangeStar = "orange-star",
+  RedStar = "red-star",
+  PurpleStar = "purple-star",
+  BlueStar = "blue-star",
+  GreenStar = "green-star",
+  RedBang = "red-bang",
+  OrangeGuillemet = "orange-guillemet",
+  YellowBang = "yellow-bang",
+  GreenCheck = "green-check",
+  BlueInfo = "blue-info",
+  PurpleQuestion = "purple-question",
+}
+
 /** Gmail's system labels that Minerva keeps as flags on a message. */
 export class MailMessageStateFlags {
   @ApiProperty({ type: Boolean, required: true, description: "In the inbox" })
@@ -83,6 +102,16 @@ export class MailMessageState {
     description: "Its flags",
   })
   flags: MailMessageStateFlags;
+
+  @ApiProperty({
+    enum: () => MailStarIcon,
+    enumName: "MailStarIcon",
+    enumSchema: { description: "Gmail's star icons, by search name" },
+    required: false,
+    description:
+      "A starred message's star icon, by Gmail's search name; absent when not starred or none was found",
+  })
+  starIcon?: MailStarIcon;
 }
 
 /** One of the mailbox's labels as Gmail's labels.list has it. */

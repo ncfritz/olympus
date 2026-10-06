@@ -23,6 +23,7 @@ const ACCOUNT = {
 const LABELS: GmailLabelInfo[] = [
   { id: "INBOX", name: "INBOX", type: "system" },
   { id: "UNREAD", name: "UNREAD", type: "system" },
+  { id: "STARRED", name: "STARRED", type: "system" },
   { id: "TRASH", name: "TRASH", type: "system" },
   { id: "DRAFT", name: "DRAFT", type: "system" },
   { id: "CATEGORY_UPDATES", name: "CATEGORY_UPDATES", type: "system" },
@@ -57,6 +58,8 @@ const HISTORY: GmailHistoryRecord[] = [
 const CURRENT: Record<string, string[]> = {
   a1: ["Label_3", "Label_1", "CATEGORY_UPDATES"],
   t1: ["TRASH", "Label_1"],
+  s1: ["STARRED", "Label_1"],
+  s2: ["Label_1"],
 };
 
 const rawOf = (id: string, labelIds: string[]) => ({
@@ -120,6 +123,9 @@ const setup = (
       };
     }),
     labels: vi.fn(async () => [...LABELS, NEW_LABEL]),
+    messageIds: vi.fn(async (_label?: string, query?: string) =>
+      query === "has:green-check" ? ["s1"] : [],
+    ),
     profile: vi.fn(async () => ({
       emailAddress: ACCOUNT.email,
       messagesTotal: 10,
@@ -213,6 +219,38 @@ describe("GmailPoll", () => {
       messagesTotal: 10,
       threadsTotal: 8,
     });
+  });
+
+  it("reads which icon a star has only when a star was given or taken", async () => {
+    const plain = setup();
+    await plain.poll.pollAccount(ACCOUNT, plain.open);
+    expect(plain.mailbox.messageIds).not.toHaveBeenCalled();
+    // Without the icons read, a labels message keeps the recorded icon.
+    expect(
+      plain.published.find((p) => p.key === "message.labels")?.body,
+    ).not.toHaveProperty("starIcon");
+
+    const { poll, open, mailbox, published } = setup({
+      history: [
+        {
+          id: "101",
+          labelsAdded: [{ message: msg("s1"), labelIds: ["STARRED"] }],
+        },
+        {
+          id: "102",
+          labelsRemoved: [{ message: msg("s2"), labelIds: ["STARRED"] }],
+        },
+      ],
+    });
+
+    await poll.pollAccount(ACCOUNT, open);
+
+    expect(mailbox.messageIds).toHaveBeenCalledTimes(12);
+    expect(mailbox.messageIds).toHaveBeenCalledWith(undefined, "has:red-bang");
+    expect(published.map((p) => [p.body.gmailId, p.body.starIcon])).toEqual([
+      ["s1", "green-check"],
+      ["s2", null],
+    ]);
   });
 
   it("does nothing more when history has not moved", async () => {

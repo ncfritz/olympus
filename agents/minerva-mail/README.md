@@ -70,7 +70,9 @@ differ and `message.delete` for mail Gmail no longer has (drafts and chats
 included, as the import skips them); mail Minerva lacks is fetched whole
 (`format=raw`), parsed as the import parses it and published as
 `message.upsert`, its text sent to the classifier when `MAIL_ML_URL` is
-set. Requests are spaced 50 ms apart and retried with
+set. Gmail's API names only `STARRED`, so each star icon is found by
+one search (`has:red-bang`, twelve in all), and the report counts the
+starred messages by icon. Requests are spaced 50 ms apart and retried with
 backoff when Google says to slow down. At the end, if nothing failed, it
 records the `historyId` it started from and Gmail's totals. It prints
 counts as JSON, never content, and is safe to run again; a run cut short
@@ -89,7 +91,8 @@ current state of each message history names. New mail, and mail taken
 out of Spam or Trash, is fetched whole, published and featurized; a
 message whose labels changed is read with a minimal get and published as
 `message.labels`; one deleted, or moved to Spam, Trash or the drafts, as
-`message.delete`. Drafts being saved and chats are passed over. A label
+`message.delete`. Drafts being saved and chats are passed over. When a star was given or taken,
+the twelve icon searches run too. A label
 Minerva has not seen is read and synced first. Once everything is
 published the new `historyId` and Gmail's totals are recorded, so a poll
 that fails part way is repeated. A mailbox with no `historyId` yet, or

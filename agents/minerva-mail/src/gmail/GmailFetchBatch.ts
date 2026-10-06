@@ -59,10 +59,10 @@ export class GmailFetchBatch {
         categories: state.categories,
       },
     );
-    await this.messages.publish(
-      "upsert",
-      toMetadataMessage(message, this.accountId, "gmail", new Date()),
-    );
+    await this.messages.publish("upsert", {
+      ...toMetadataMessage(message, this.accountId, "gmail", new Date()),
+      ...(state.starIcon !== undefined ? { starIcon: state.starIcon } : {}),
+    });
     if (this.messages.featurizing) {
       this.pending.push(toClassifierMessage(message));
       if (this.pending.length >= FEATURIZE_BATCH) await this.flush();

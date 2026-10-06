@@ -13,7 +13,9 @@ import { GmailReconcile } from "../../../src/gmail/GmailReconcile";
 /*
  * A synthetic mailbox (never real mail): Minerva has a, b, c and d from the
  * archive; Gmail has a unchanged, b relabelled and read, c deleted, d as a
- * draft (left out, so deleted), and e new since the archive.
+ * draft (left out, so deleted), and e new since the archive. a, b and e
+ * are starred: a with the red bang Minerva has, b with a green check
+ * Minerva has not recorded, e with an icon no search finds.
  */
 const ACCOUNT_ID = "3f0c8d4e-1a2b-4c3d-8e9f-0a1b2c3d4e5f";
 const EMAIL = "owner@example.net";
@@ -21,6 +23,7 @@ const EMAIL = "owner@example.net";
 const LABELS: GmailLabelInfo[] = [
   { id: "INBOX", name: "INBOX", type: "system" },
   { id: "UNREAD", name: "UNREAD", type: "system" },
+  { id: "STARRED", name: "STARRED", type: "system" },
   { id: "DRAFT", name: "DRAFT", type: "system" },
   { id: "TRASH", name: "TRASH", type: "system" },
   { id: "CATEGORY_UPDATES", name: "CATEGORY_UPDATES", type: "system" },
@@ -32,10 +35,16 @@ const BY_LABEL: Record<string, string[]> = {
   "": ["a", "b", "d", "e"],
   INBOX: ["a", "e"],
   UNREAD: ["a", "e"],
+  STARRED: ["a", "b", "e"],
   DRAFT: ["d"],
   CATEGORY_UPDATES: ["a", "b"],
   Label_1: ["a"],
   Label_2: ["b", "e"],
+};
+
+const ICONS: Record<string, string[]> = {
+  "has:red-bang": ["a"],
+  "has:green-check": ["b"],
 };
 
 const flags = (over: Record<string, boolean> = {}) => ({
@@ -52,13 +61,14 @@ const MINERVA = [
     gmailId: "a",
     labels: ["Accounts/A"],
     categories: ["updates"],
-    flags: flags({ inbox: true, unread: true }),
+    flags: flags({ inbox: true, unread: true, starred: true }),
+    starIcon: "red-bang",
   },
   {
     gmailId: "b",
     labels: ["Accounts/A"],
     categories: ["updates"],
-    flags: flags({ unread: true }),
+    flags: flags({ unread: true, starred: true }),
   },
   { gmailId: "c", labels: [], categories: [], flags: flags() },
   { gmailId: "d", labels: [], categories: [], flags: flags() },
@@ -112,7 +122,9 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
       if (id === "CHAT") throw new Error("status 404");
       return { messagesTotal: id === "DRAFT" ? 1 : 0, threadsTotal: 0 };
     }),
-    messageIds: vi.fn(async (label?: string) => BY_LABEL[label ?? ""] ?? []),
+    messageIds: vi.fn(async (label?: string, query?: string) =>
+      query ? (ICONS[query] ?? []) : (BY_LABEL[label ?? ""] ?? []),
+    ),
     raw: vi.fn(async (id: string) => {
       if (options.rawFails) throw new Error("status 500");
       return {
@@ -166,6 +178,11 @@ describe("GmailReconcile", () => {
           chats: null,
         },
       },
+      stars: {
+        starred: 3,
+        byIcon: { "red-bang": 1, "green-check": 1 },
+        withoutIcon: 1,
+      },
       labels: { matched: 4, created: 1, notInGmail: ["Old"] },
       minerva: { messages: 4 },
       unchanged: 1,
@@ -174,6 +191,7 @@ describe("GmailReconcile", () => {
         labels: 1,
         categories: 0,
         flags: { inbox: 0, unread: 1, starred: 0, important: 0, sent: 0 },
+        starIcon: 1,
       },
       labelChanges: [
         { label: "Accounts/A", added: 0, removed: 1 },
@@ -202,7 +220,8 @@ describe("GmailReconcile", () => {
       source: "gmail",
       labels: ["Travel"],
       categories: ["updates"],
-      flags: flags(),
+      flags: flags({ starred: true }),
+      starIcon: "green-check",
     });
     expect(published[3].body).toMatchObject({
       source: "gmail",
@@ -210,7 +229,8 @@ describe("GmailReconcile", () => {
       subject: "A new message",
       labels: ["Travel"],
       categories: [],
-      flags: { inbox: true, unread: true },
+      flags: { inbox: true, unread: true, starred: true },
+      starIcon: null,
     });
     expect(JSON.stringify(published)).not.toContain("Past the snippet");
     // The text goes to the classifier alone.

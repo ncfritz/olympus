@@ -200,6 +200,7 @@ describe("Mail messages consumer", () => {
         inInbox: false,
         unread: false,
         starred: true,
+        starIcon: null,
         important: false,
         sent: false,
       },
@@ -290,6 +291,28 @@ describe("Mail messages consumer", () => {
       { messageId: MESSAGE_ID, labelId: "label:New" },
       { messageId: MESSAGE_ID, labelId: "label:CATEGORY_UPDATES" },
     ]);
+  });
+
+  it("writes a Gmail message's star icon, and none on one not starred", async () => {
+    hasura();
+    const starred = mailMessage({
+      accountId: nextAccount(),
+      source: "gmail",
+      starIcon: "purple-question",
+    });
+    await handler.handle(starred, delivery("message.upsert"));
+    await handler.handle(
+      { ...starred, flags: { ...starred.flags, starred: false } },
+      delivery("message.upsert"),
+    );
+
+    const [first, second] = t.graphql
+      .calls("WriteMailMessage")
+      .map(
+        (c) => (c.variables as { message: Record<string, unknown> }).message,
+      );
+    expect(first).toMatchObject({ starred: true, starIcon: "purple-question" });
+    expect(second).toMatchObject({ starred: false, starIcon: null });
   });
 
   it("skips, and writes no parts for, a message Minerva holds a newer snapshot of", async () => {
@@ -529,6 +552,7 @@ describe("Mail messages consumer", () => {
           starred: false,
           important: true,
           sent: false,
+          starIcon: null,
           snapshotTime: "2026-10-06T18:00:00.000Z",
         },
       });
@@ -541,6 +565,47 @@ describe("Mail messages consumer", () => {
       });
       expect(t.graphql.calls("WriteMailMessage")).toHaveLength(0);
       expect(await consumed("labels", "written")).toBe(before + 1);
+    });
+
+    it("records a starred message's icon, and keeps it when none is sent", async () => {
+      hasura();
+      t.graphql.on("WriteMailMessageLabels", {
+        update_minerva_mail_messages: { returning: [{ id: MESSAGE_ID }] },
+      });
+      t.graphql.on("ReplaceMailMessageLabels", {
+        delete_minerva_mail_message_labels: { affected_rows: 0 },
+        insert_minerva_mail_message_labels: { affected_rows: 0 },
+      });
+      const accountId = nextAccount();
+      const starred = {
+        ...labels(accountId),
+        flags: { ...labels(accountId).flags, starred: true },
+      };
+
+      await handler.handle(
+        { ...starred, starIcon: "red-bang" },
+        delivery("message.labels"),
+      );
+      await handler.handle(starred, delivery("message.labels"));
+
+      const [withIcon, without] = t.graphql
+        .calls("WriteMailMessageLabels")
+        .map((c) => (c.variables as { flags: Record<string, unknown> }).flags);
+      expect(withIcon).toMatchObject({ starred: true, starIcon: "red-bang" });
+      expect(without).toMatchObject({ starred: true });
+      expect(without).not.toHaveProperty("starIcon");
+    });
+
+    it("dead-letters an icon Gmail does not have", async () => {
+      hasura();
+      await handler.handle(
+        { ...labels(nextAccount()), starIcon: "pink-heart" },
+        delivery("message.labels"),
+      );
+      expect(sent()[0][0]).toBe(DEAD);
+      expect(sent()[0][2]).toMatchObject({
+        "x-olympus-dead-reason": expect.stringContaining("starIcon"),
+      });
     });
 
     it("leaves a message Minerva lacks, or holds newer, as stale", async () => {

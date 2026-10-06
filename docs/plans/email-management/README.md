@@ -345,12 +345,21 @@ messages have no queue to land in.
    now featurizes what it fetches too; the 379 messages its first runs
    fetched were not, and wait for the next featurize of the archive or a
    backfill.
-4. **Stars**: for each star icon, a `messages.list` with its search
-   operator (`has:yellow-star`, `has:red-bang`, `has:green-check`, …)
-   records which icon each starred message has, and again on each poll
-   for starred messages that changed. The counts per icon show which are
-   in use. Also checked: whether any write can set a particular icon, or
-   only `STARRED`.
+4. **Stars**: **built**. `mail_messages.star_icon`
+   (`1791280000000_minerva_mail_star_icons`): a starred message's icon by
+   Gmail's search name, none on one not starred. The API names only
+   `STARRED`, so the reconcile runs one `messages.list` per icon
+   (`has:yellow-star`, `has:red-bang`, … twelve) and records each starred
+   message's icon, reporting the counts per icon and the starred messages
+   no search found; a poll whose history gives or takes a star runs the
+   same searches. The icon rides on `message.upsert` and `message.labels`
+   (absent: keep the recorded one). An icon changed without the star
+   being taken off may make no history record; the next reconcile finds
+   it. Takeout has no icons, so re-importing the archive clears them
+   until the next reconcile. Writes: no API call names an icon (the
+   writes are label changes, and labels.list has no label for any icon),
+   so adding `STARRED` is all Olympus can do; which icon Gmail gives it is
+   checked with the first write, in phase 4.
 5. **Full backfill from the API** stays available (list, then get,
    throttled, resumable) for an account with no archive.
 6. **Tests**: the throttle, cursor resume, reconciliation diffs, history

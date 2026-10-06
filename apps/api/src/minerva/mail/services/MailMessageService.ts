@@ -36,6 +36,7 @@ const MESSAGE_COLUMNS = [
   "inInbox",
   "unread",
   "starred",
+  "starIcon",
   "important",
   "sent",
 ].join("\n");
