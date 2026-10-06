@@ -4293,6 +4293,76 @@
     ],
     "type": "object"
   },
+  "CreateMailSuggestionRunRequest": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account",
+        "type": "string"
+      },
+      "featureVersion": {
+        "description": "The feature version",
+        "type": "string"
+      },
+      "modelRun": {
+        "description": "The classifier's model run",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "featureVersion",
+      "modelRun"
+    ],
+    "type": "object"
+  },
+  "CreateMailSuggestionRunResponse": {
+    "properties": {
+      "run": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailSuggestionRun"
+          }
+        ],
+        "description": "The run, building"
+      }
+    },
+    "required": [
+      "run"
+    ],
+    "type": "object"
+  },
+  "CreateMailSuggestionsRequest": {
+    "properties": {
+      "suggestions": {
+        "description": "Up to 5,000 suggestions",
+        "items": {
+          "$ref": "#/components/schemas/NewMailSuggestion"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "suggestions"
+    ],
+    "type": "object"
+  },
+  "CreateMailSuggestionsResponse": {
+    "properties": {
+      "created": {
+        "description": "Suggestions stored (or replaced)",
+        "type": "number"
+      },
+      "skipped": {
+        "description": "Suggestions left out: an unknown message or label, a label that is not the user's, adding a label the message has, or removing one it lacks",
+        "type": "number"
+      }
+    },
+    "required": [
+      "created",
+      "skipped"
+    ],
+    "type": "object"
+  },
   "CreateMediaAssetRequest": {
     "properties": {
       "asset": {
@@ -10981,12 +11051,16 @@
         "description": "The rule that proposed it"
       },
       "senderLabelMessages": {
-        "description": "How many of them have the label",
+        "description": "How many of them have the label (the sender rule)",
         "type": "number"
       },
       "senderMessages": {
-        "description": "The sender's received messages the rule looked at",
+        "description": "The sender's received messages the rule looked at (the sender rule)",
         "type": "number"
+      },
+      "ticked": {
+        "description": "Whether it is at or above its label's threshold, so applied unless unticked (the classifier)",
+        "type": "boolean"
       }
     },
     "required": [
@@ -10994,9 +11068,7 @@
       "confidence",
       "label",
       "message",
-      "rule",
-      "senderLabelMessages",
-      "senderMessages"
+      "rule"
     ],
     "type": "object"
   },
@@ -11151,9 +11223,10 @@
     "type": "object"
   },
   "MailAuditRule": {
-    "description": "The audit rule a change was proposed by",
+    "description": "What proposed a change: an audit rule, or the classifier",
     "enum": [
-      "sender"
+      "sender",
+      "classifier"
     ],
     "type": "string"
   },
@@ -11209,6 +11282,14 @@
         "description": "Label changes proposed",
         "type": "number"
       },
+      "classifierChanges": {
+        "description": "Of the changes, those the classifier proposed",
+        "type": "number"
+      },
+      "classifierFinishedTime": {
+        "description": "When the classifier's suggestions were last published",
+        "type": "string"
+      },
       "consistentSenders": {
         "description": "Senders with one usual label",
         "type": "number"
@@ -11249,6 +11330,7 @@
     "required": [
       "additions",
       "changes",
+      "classifierChanges",
       "consistentSenders",
       "finishedTime",
       "highConfidence",
@@ -11730,6 +11812,63 @@
       "unlabelled"
     ],
     "type": "object"
+  },
+  "MailSuggestionRun": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account",
+        "type": "string"
+      },
+      "featureVersion": {
+        "description": "The feature version the scores came from",
+        "type": "string"
+      },
+      "finishedTime": {
+        "description": "When it was published",
+        "type": "string"
+      },
+      "id": {
+        "description": "The run's ID",
+        "type": "string"
+      },
+      "messagesScored": {
+        "description": "Messages scored, once published",
+        "type": "number"
+      },
+      "modelRun": {
+        "description": "The classifier's model run the scores came from",
+        "type": "string"
+      },
+      "startedTime": {
+        "description": "When the run began",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailSuggestionRunStatus"
+          }
+        ],
+        "description": "Building, or published"
+      }
+    },
+    "required": [
+      "accountId",
+      "featureVersion",
+      "id",
+      "modelRun",
+      "startedTime",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailSuggestionRunStatus": {
+    "description": "Where a run of the classifier's suggestions is",
+    "enum": [
+      "building",
+      "ready"
+    ],
+    "type": "string"
   },
   "MailTrainingAccount": {
     "properties": {
@@ -14265,6 +14404,42 @@
       "logoPath",
       "name",
       "tvSeriesCount"
+    ],
+    "type": "object"
+  },
+  "NewMailSuggestion": {
+    "properties": {
+      "action": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailAuditAction"
+          }
+        ],
+        "description": "Add the label, or remove it"
+      },
+      "confidence": {
+        "description": "How sure the classifier is, 0 to 1",
+        "type": "number"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "label": {
+        "description": "The label's full name",
+        "type": "string"
+      },
+      "ticked": {
+        "description": "Whether it is at or above the label's threshold",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "action",
+      "confidence",
+      "gmailId",
+      "label",
+      "ticked"
     ],
     "type": "object"
   },
@@ -18204,6 +18379,34 @@
       "use",
       "x",
       "y"
+    ],
+    "type": "object"
+  },
+  "PublishMailSuggestionRunRequest": {
+    "properties": {
+      "messagesScored": {
+        "description": "How many messages the classifier scored",
+        "type": "number"
+      }
+    },
+    "required": [
+      "messagesScored"
+    ],
+    "type": "object"
+  },
+  "PublishMailSuggestionRunResponse": {
+    "properties": {
+      "run": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailSuggestionRun"
+          }
+        ],
+        "description": "The run, published"
+      }
+    },
+    "required": [
+      "run"
     ],
     "type": "object"
   },

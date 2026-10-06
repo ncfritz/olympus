@@ -35,6 +35,8 @@ const audit = (overrides: Record<string, unknown> = {}) => ({
       messagesAffected: 30000,
       merges: 1,
       threads: "9131",
+      classifierFinishedTime: "2026-10-06T08:00:00+00:00",
+      classifierChanges: "1200",
     },
   ],
   minerva_mail_audit_labels: [
@@ -108,6 +110,7 @@ const change = (overrides: Record<string, unknown> = {}) => ({
   confidence: "0.900",
   senderMessages: 30,
   senderLabelMessages: 27,
+  ticked: null,
   label: { name: "Bills/Power" },
   message: {
     gmailId: "1a0fab8f293aa5b5",
@@ -183,6 +186,8 @@ describe("Mail audit API", () => {
           highConfidence: 31849,
           merges: 1,
           threads: 9131,
+          classifierFinishedTime: "2026-10-06T08:00:00.000Z",
+          classifierChanges: 1200,
         },
         labels: [
           {
@@ -246,8 +251,8 @@ describe("Mail audit API", () => {
 
   describe("GET /v1/minerva/mail/audit/changes (ListMailAuditChanges)", () => {
     const changes = (rows = [change()], count = rows.length) => ({
-      minerva_mail_audit_changes: rows,
-      minerva_mail_audit_changes_aggregate: { aggregate: { count } },
+      minerva_mail_proposals: rows,
+      minerva_mail_proposals_aggregate: { aggregate: { count } },
     });
 
     it("pages the caller's changes, most confident first, with the message's user labels", async () => {
@@ -274,7 +279,7 @@ describe("Mail audit API", () => {
       });
       expect(res.body.changes[0].message).not.toHaveProperty("snippet");
       expect(t().graphql.calls("ListMailAuditChanges")[0].variables).toEqual({
-        where: { run: { account: { userId: { _eq: USER } } } },
+        where: { account: { userId: { _eq: USER } } },
         orderBy: [
           { confidence: "desc" },
           { message: { receivedTime: "desc" } },
@@ -282,6 +287,43 @@ describe("Mail audit API", () => {
         ],
         limit: 50,
         offset: 0,
+      });
+    });
+
+    it("answers the classifier's with whether each is ticked, and no sender counts", async () => {
+      t().graphql.on(
+        "ListMailAuditChanges",
+        changes([
+          change({
+            rule: "classifier",
+            confidence: "0.970",
+            senderMessages: null,
+            senderLabelMessages: null,
+            ticked: true,
+          }),
+        ]),
+      );
+
+      const res = await ctx.as(
+        t().http().get(CHANGES).query({ rule: "classifier" }),
+      );
+
+      expect(res.status).toBe(200);
+      const [proposal] = res.body.changes;
+      expect(proposal).toMatchObject({
+        rule: "classifier",
+        confidence: 0.97,
+        ticked: true,
+      });
+      expect(proposal).not.toHaveProperty("senderMessages");
+      expect(proposal).not.toHaveProperty("senderLabelMessages");
+      expect(
+        t().graphql.calls("ListMailAuditChanges")[0].variables,
+      ).toMatchObject({
+        where: {
+          account: { userId: { _eq: USER } },
+          rule: { _eq: "classifier" },
+        },
       });
     });
 
@@ -303,7 +345,7 @@ describe("Mail audit API", () => {
       expect(res.status).toBe(200);
       expect(t().graphql.calls("ListMailAuditChanges")[0].variables).toEqual({
         where: {
-          run: { account: { userId: { _eq: USER } } },
+          account: { userId: { _eq: USER } },
           label: { name: { _eq: "Bills/Power" } },
           action: { _eq: "remove" },
           confidence: { _gte: 0.95 },
@@ -320,6 +362,7 @@ describe("Mail audit API", () => {
 
     it.each([
       ["an unknown action", { action: "move" }],
+      ["an unknown rule", { rule: "magic" }],
       ["a confidence that is not a number", { minConfidence: "high" }],
       ["a confidence above 1", { minConfidence: "1.5" }],
       ["a negative confidence", { minConfidence: "-0.1" }],
@@ -340,8 +383,8 @@ describe("Mail audit API", () => {
 
   describe("GET /v1/minerva/mail/audit/changes/export (ExportMailAuditChanges)", () => {
     const page = (rows: unknown[]) => ({
-      minerva_mail_audit_changes: rows,
-      minerva_mail_audit_changes_aggregate: {
+      minerva_mail_proposals: rows,
+      minerva_mail_proposals_aggregate: {
         aggregate: { count: rows.length },
       },
     });
@@ -374,10 +417,10 @@ describe("Mail audit API", () => {
       );
       const lines = res.text.split("\r\n");
       expect(lines[0]).toBe(
-        "received_time,gmail_id,thread_id,from_address,from_name,subject,label,action,rule,confidence,sender_messages,sender_label_messages,labels_now,gmail_link",
+        "received_time,gmail_id,thread_id,from_address,from_name,subject,label,action,rule,confidence,sender_messages,sender_label_messages,ticked,labels_now,gmail_link",
       );
       expect(lines[1]).toBe(
-        `2026-09-01T00:00:00.000Z,1a0fab8f293aa5b5,1a0fab8f293aa5b5,bill@power.example,'=cmd,"Your bill, ""final""",Bills/Power,add,sender,0.9,30,27,Bills; Shopping,https://mail.google.com/mail/u/0/#all/1a0fab8f293aa5b5`,
+        `2026-09-01T00:00:00.000Z,1a0fab8f293aa5b5,1a0fab8f293aa5b5,bill@power.example,'=cmd,"Your bill, ""final""",Bills/Power,add,sender,0.9,30,27,,Bills; Shopping,https://mail.google.com/mail/u/0/#all/1a0fab8f293aa5b5`,
       );
       expect(lines[2]).toContain(",Shopping,remove,sender,0.933,");
       expect(lines).toHaveLength(4);
@@ -385,7 +428,7 @@ describe("Mail audit API", () => {
       expect(
         t().graphql.calls("ListMailAuditChanges")[0].variables,
       ).toMatchObject({
-        where: { run: { account: { userId: { _eq: USER } } } },
+        where: { account: { userId: { _eq: USER } } },
         orderBy: [
           { confidence: "desc" },
           { message: { receivedTime: "desc" } },

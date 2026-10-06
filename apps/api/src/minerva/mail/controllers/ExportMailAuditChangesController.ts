@@ -1,4 +1,4 @@
-import { MailAuditAction } from "@ncfritz/olympus-model";
+import { MailAuditAction, MailAuditRule } from "@ncfritz/olympus-model";
 import {
   Controller,
   Get,
@@ -46,7 +46,7 @@ export class ExportMailAuditChangesController {
   @RequiresIdentity()
   @ApiOperation({
     summary: "Exports the latest audit's proposed label changes as CSV",
-    description: `The change plan for review outside the site (docs/plans/email-management phase 2): every label change the latest audit proposes over the caller's mail, or those for one label, one action or at least a confidence, a row each, most confident first. Columns: ${MAIL_AUDIT_EXPORT_COLUMNS.join(", ")}. Metadata only; never message text.`,
+    description: `The change plan for review outside the site (docs/plans/email-management phase 2): every label change proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, or those for one label, one action, one rule or at least a confidence, a row each, most confident first. Columns: ${MAIL_AUDIT_EXPORT_COLUMNS.join(", ")}. Metadata only; never message text.`,
     operationId: "ExportMailAuditChanges",
     tags: ["Mail"],
   })
@@ -63,6 +63,17 @@ export class ExportMailAuditChangesController {
     enum: MailAuditAction,
     enumName: "MailAuditAction",
     enumSchema: { description: "What a proposed label change does" },
+    required: false,
+  })
+  @ApiQuery({
+    name: "rule",
+    description:
+      "Only those one rule proposed: the sender audit, or the classifier",
+    enum: MailAuditRule,
+    enumName: "MailAuditRule",
+    enumSchema: {
+      description: "What proposed a change: an audit rule, or the classifier",
+    },
     required: false,
   })
   @ApiQuery({
@@ -85,6 +96,8 @@ export class ExportMailAuditChangesController {
     @Query("label") label: string | undefined,
     @Query("action", new ParseEnumPipe(MailAuditAction, { optional: true }))
     action: MailAuditAction | undefined,
+    @Query("rule", new ParseEnumPipe(MailAuditRule, { optional: true }))
+    rule: MailAuditRule | undefined,
     @Query("minConfidence", new ParseFloatPipe({ optional: true }))
     minConfidence: number | undefined,
     @Res() response: Response,
@@ -93,6 +106,7 @@ export class ExportMailAuditChangesController {
     const csv = await this.audit.exportChanges(user.userId, {
       label,
       action,
+      rule,
       minConfidence,
     });
     response

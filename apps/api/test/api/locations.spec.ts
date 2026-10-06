@@ -617,7 +617,9 @@ describe("Location headers of created resources", () => {
     // CreateGoalMilestone, CreateGoalCheckin, CreateReviewPin and
     // CreateReviewAnswerItem have no GET route, so they set none; nor has
     // AddCalendar, whose calendar is listed but not described alone, nor
-    // CreateMailLabelFamily, whose families are listed only (mailLabels).
+    // CreateMailLabelFamily, whose families are listed only (mailLabels),
+    // nor CreateMailSuggestionRun and CreateMailSuggestions, whose runs and
+    // suggestions the classifier only writes (mailSuggestions).
     const exempt = [
       "CreateNotification",
       "UploadAssets",
@@ -642,6 +644,8 @@ describe("Location headers of created resources", () => {
       "AddCalendar",
       "CreateAvailabilityBlock",
       "CreateMailLabelFamily",
+      "CreateMailSuggestionRun",
+      "CreateMailSuggestions",
     ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))

@@ -4,6 +4,7 @@ import {
   ListMailAuditChangesResponse,
   MailAuditAction,
   MailAuditChangeSort,
+  MailAuditRule,
   RunMailAuditResponse,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -63,6 +64,7 @@ export const MAIL_AUDIT_EXPORT_COLUMNS = [
   "confidence",
   "sender_messages",
   "sender_label_messages",
+  "ticked",
   "labels_now",
   "gmail_link",
 ];
@@ -70,12 +72,14 @@ export const MAIL_AUDIT_EXPORT_COLUMNS = [
 export type MailAuditChangeFilters = {
   label?: string;
   action?: MailAuditAction;
+  rule?: MailAuditRule;
   minConfidence?: number;
 };
 
 export type MailAuditChangeQuery = {
   label?: string;
   action?: MailAuditAction;
+  rule?: MailAuditRule;
   minConfidence?: number;
   sortBy: MailAuditChangeSort;
   sort: SortDirection;
@@ -142,6 +146,8 @@ export class MailAuditService {
           messagesAffected
           merges
           threads
+          classifierFinishedTime
+          classifierChanges
         }
         minerva_mail_audit_labels(args: { for_user: $userId, high: $high }) {
           name
@@ -242,7 +248,10 @@ export class MailAuditService {
     };
   }
 
-  /** A page of the latest audit's proposed changes over the user's mail. */
+  /**
+   * A page of the proposed changes over the user's mail: the latest
+   * audit's and the classifier's latest published run's (mail_proposals).
+   */
   async listChanges(
     userId: string,
     q: MailAuditChangeQuery,
@@ -301,6 +310,7 @@ export class MailAuditService {
           change.confidence,
           change.senderMessages,
           change.senderLabelMessages,
+          change.ticked === undefined ? undefined : String(change.ticked),
           m.labels.join("; "),
           `https://mail.google.com/mail/u/0/#all/${m.gmailId}`,
         ]);
@@ -323,9 +333,10 @@ export class MailAuditService {
       throw new BadRequestException("minConfidence must be from 0 to 1");
     }
     return {
-      run: { account: { userId: { _eq: userId } } },
+      account: { userId: { _eq: userId } },
       ...(f.label !== undefined ? { label: { name: { _eq: f.label } } } : {}),
       ...(f.action !== undefined ? { action: { _eq: f.action } } : {}),
+      ...(f.rule !== undefined ? { rule: { _eq: f.rule } } : {}),
       ...(f.minConfidence !== undefined
         ? { confidence: { _gte: f.minConfidence } }
         : {}),
@@ -357,12 +368,12 @@ export class MailAuditService {
   ): Promise<{ count: number; changes: GraphQlMailAuditChange[] }> {
     const query = gql`
       query ListMailAuditChanges(
-        $where: minerva_mail_audit_changes_bool_exp!
-        $orderBy: [minerva_mail_audit_changes_order_by!]!
+        $where: minerva_mail_proposals_bool_exp!
+        $orderBy: [minerva_mail_proposals_order_by!]!
         $limit: Int!
         $offset: Int!
       ) {
-        minerva_mail_audit_changes(
+        minerva_mail_proposals(
           where: $where
           order_by: $orderBy
           limit: $limit
@@ -373,6 +384,7 @@ export class MailAuditService {
           confidence
           senderMessages
           senderLabelMessages
+          ticked
           label {
             name
           }
@@ -391,7 +403,7 @@ export class MailAuditService {
             }
           }
         }
-        minerva_mail_audit_changes_aggregate(where: $where) {
+        minerva_mail_proposals_aggregate(where: $where) {
           aggregate {
             count
           }
@@ -399,12 +411,12 @@ export class MailAuditService {
       }
     `;
     const response = await this.graphQLClient.request<{
-      minerva_mail_audit_changes: GraphQlMailAuditChange[];
-      minerva_mail_audit_changes_aggregate: { aggregate: { count: number } };
+      minerva_mail_proposals: GraphQlMailAuditChange[];
+      minerva_mail_proposals_aggregate: { aggregate: { count: number } };
     }>(query, { where, orderBy, limit, offset });
     return {
-      count: response.minerva_mail_audit_changes_aggregate.aggregate.count,
-      changes: response.minerva_mail_audit_changes,
+      count: response.minerva_mail_proposals_aggregate.aggregate.count,
+      changes: response.minerva_mail_proposals,
     };
   }
 }

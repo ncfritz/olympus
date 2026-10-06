@@ -1,6 +1,7 @@
 import {
   ListMailAuditChangesResponse,
   MailAuditAction,
+  MailAuditRule,
   MailAuditChangeSort,
   SortDirection,
 } from "@ncfritz/olympus-model";
@@ -43,7 +44,7 @@ export class ListMailAuditChangesController {
   @ApiOperation({
     summary: "Lists the latest audit's proposed label changes",
     description:
-      "A page of the label changes the latest audit proposes over the caller's mail, each with its message's metadata (never its text) and the evidence behind it, optionally for one label, one action, or at least a confidence. `sortBy` is `confidence` (the default) or `receivedTime`.",
+      "A page of the label changes proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, each with its message's metadata (never its text) and the evidence behind it (the sender's counts, or whether the classifier's is ticked), optionally for one label, one action, one rule, or at least a confidence. `sortBy` is `confidence` (the default) or `receivedTime`.",
     operationId: "ListMailAuditChanges",
     tags: ["Mail"],
   })
@@ -60,6 +61,17 @@ export class ListMailAuditChangesController {
     enum: MailAuditAction,
     enumName: "MailAuditAction",
     enumSchema: { description: "What a proposed label change does" },
+    required: false,
+  })
+  @ApiQuery({
+    name: "rule",
+    description:
+      "Only those one rule proposed: the sender audit, or the classifier",
+    enum: MailAuditRule,
+    enumName: "MailAuditRule",
+    enumSchema: {
+      description: "What proposed a change: an audit rule, or the classifier",
+    },
     required: false,
   })
   @ApiQuery({
@@ -83,6 +95,8 @@ export class ListMailAuditChangesController {
     @Query("label") label: string | undefined,
     @Query("action", new ParseEnumPipe(MailAuditAction, { optional: true }))
     action: MailAuditAction | undefined,
+    @Query("rule", new ParseEnumPipe(MailAuditRule, { optional: true }))
+    rule: MailAuditRule | undefined,
     @Query("minConfidence", new ParseFloatPipe({ optional: true }))
     minConfidence: number | undefined,
     @Query(
@@ -106,7 +120,16 @@ export class ListMailAuditChangesController {
     const user = requireUser(principal);
     const body: ListMailAuditChangesResponse = await this.audit.listChanges(
       user.userId,
-      { label, action, minConfidence, sortBy, sort, pageSize, startPage },
+      {
+        label,
+        action,
+        rule,
+        minConfidence,
+        sortBy,
+        sort,
+        pageSize,
+        startPage,
+      },
     );
     response.status(HttpStatus.OK).send(body);
   }

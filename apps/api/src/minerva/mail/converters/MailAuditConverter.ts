@@ -58,6 +58,8 @@ export type GraphQlMailAuditSummary = {
   messagesAffected: Count;
   merges: Count;
   threads: Count;
+  classifierFinishedTime: string | null;
+  classifierChanges: Count;
 };
 
 export const toSummary = (
@@ -74,6 +76,10 @@ export const toSummary = (
   messagesAffected: Number(input.messagesAffected),
   merges: Number(input.merges),
   threads: Number(input.threads),
+  ...(input.classifierFinishedTime
+    ? { classifierFinishedTime: moment(input.classifierFinishedTime) }
+    : {}),
+  classifierChanges: Number(input.classifierChanges ?? 0),
 });
 
 export type GraphQlMailAuditLabel = {
@@ -190,8 +196,10 @@ export type GraphQlMailAuditChange = {
   action: string;
   rule: string;
   confidence: Count;
-  senderMessages: number;
-  senderLabelMessages: number;
+  // The sender rule's evidence, or the classifier's ticked: the other is null.
+  senderMessages: number | null;
+  senderLabelMessages: number | null;
+  ticked: boolean | null;
   label: { name: string };
   message: {
     gmailId: string;
@@ -223,7 +231,12 @@ export const toChange = (input: GraphQlMailAuditChange): MailAuditChange => {
     action: input.action as MailAuditAction,
     rule: input.rule as MailAuditRule,
     confidence: Number(input.confidence),
-    senderMessages: input.senderMessages,
-    senderLabelMessages: input.senderLabelMessages,
+    ...(input.senderMessages !== null
+      ? { senderMessages: input.senderMessages }
+      : {}),
+    ...(input.senderLabelMessages !== null
+      ? { senderLabelMessages: input.senderLabelMessages }
+      : {}),
+    ...(input.ticked !== null ? { ticked: input.ticked } : {}),
   };
 };

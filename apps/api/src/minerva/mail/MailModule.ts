@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { RabbitModule } from "../../infra/RabbitModule";
 import { CreateMailLabelFamilyController } from "./controllers/CreateMailLabelFamilyController";
+import { CreateMailSuggestionRunController } from "./controllers/CreateMailSuggestionRunController";
+import { CreateMailSuggestionsController } from "./controllers/CreateMailSuggestionsController";
 import { DeleteMailLabelFamilyController } from "./controllers/DeleteMailLabelFamilyController";
 import { ExportMailAuditChangesController } from "./controllers/ExportMailAuditChangesController";
 import { GetMailAuditController } from "./controllers/GetMailAuditController";
@@ -13,6 +15,7 @@ import { ListMailLabelsController } from "./controllers/ListMailLabelsController
 import { ListMailTrainingAccountsController } from "./controllers/ListMailTrainingAccountsController";
 import { ListMailTrainingExamplesController } from "./controllers/ListMailTrainingExamplesController";
 import { ListMailTrainingLabelsController } from "./controllers/ListMailTrainingLabelsController";
+import { PublishMailSuggestionRunController } from "./controllers/PublishMailSuggestionRunController";
 import { RunMailAuditController } from "./controllers/RunMailAuditController";
 import { UpdateMailLabelController } from "./controllers/UpdateMailLabelController";
 import { MailMessageHandler } from "./handlers/MailMessageHandler";
@@ -22,6 +25,7 @@ import { MailLabelService } from "./services/MailLabelService";
 import { MailMessageQueues } from "./services/MailMessageQueues";
 import { MailMessageService } from "./services/MailMessageService";
 import { MailStatisticsService } from "./services/MailStatisticsService";
+import { MailSuggestionService } from "./services/MailSuggestionService";
 import { MailTrainingService } from "./services/MailTrainingService";
 
 /**
@@ -29,7 +33,7 @@ import { MailTrainingService } from "./services/MailTrainingService";
  * reviewed changes (ADR 0030, docs/plans/email-management/README.md): the
  * agent's account import, the consumer of its message metadata, and the
  * statistics and audit over it, label kinds, and the classifier's
- * training data.
+ * training data and suggestions.
  */
 @Module({
   imports: [GraphQLClientModule, RabbitModule],
@@ -41,10 +45,13 @@ import { MailTrainingService } from "./services/MailTrainingService";
     MailMessageQueues,
     MailMessageHandler,
     MailStatisticsService,
+    MailSuggestionService,
     MailTrainingService,
   ],
   controllers: [
     CreateMailLabelFamilyController,
+    CreateMailSuggestionRunController,
+    CreateMailSuggestionsController,
     DeleteMailLabelFamilyController,
     ExportMailAuditChangesController,
     GetMailAuditController,
@@ -56,6 +63,7 @@ import { MailTrainingService } from "./services/MailTrainingService";
     ListMailTrainingAccountsController,
     ListMailTrainingExamplesController,
     ListMailTrainingLabelsController,
+    PublishMailSuggestionRunController,
     RunMailAuditController,
     UpdateMailLabelController,
   ],

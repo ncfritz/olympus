@@ -272,6 +272,7 @@
     "SenderOverlap": "sender_overlap"
   },
   "MailAuditRule": {
+    "Classifier": "classifier",
     "Sender": "sender"
   },
   "MailLabelKind": {
@@ -294,6 +295,10 @@
     "All": "all",
     "Received": "received",
     "Sent": "sent"
+  },
+  "MailSuggestionRunStatus": {
+    "Building": "building",
+    "Ready": "ready"
   },
   "MediaAssetSearchConfigurationStatus": {
     "ERROR": "error",

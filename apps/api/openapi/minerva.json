@@ -7448,6 +7448,125 @@
         ]
       }
     },
+    "/minerva/mail/suggestion-runs": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 4): a run for one account, building until it is published. Its suggestions are posted with CreateMailSuggestions and show nowhere until PublishMailSuggestionRun.",
+        "operationId": "CreateMailSuggestionRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailSuggestionRun operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailSuggestionRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The run was begun.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailSuggestionRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Begins a run of the classifier's suggestions",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/suggestion-run/{runId}/suggestions": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 4): up to 5000 suggestions, each a message by Gmail ID and a label by full name to add or remove, with a confidence and whether it is ticked. One per message and label; posting one again replaces it. A suggestion that no longer fits the mailbox is skipped and counted: an unknown message or label, a label that is not the user's own, adding a label the message has or removing one it lacks.",
+        "operationId": "CreateMailSuggestions",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "The building run",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailSuggestions operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailSuggestionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The batch was stored; some may have been skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such run."
+          },
+          "409": {
+            "description": "The run is published."
+          }
+        },
+        "summary": "Adds a batch of suggestions to a building run",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/family/{familyId}": {
       "delete": {
         "description": "Removes one of the caller's label families and its transitions; its states become topical labels again. The labels and their messages are not touched.",
@@ -7499,7 +7618,7 @@
     },
     "/minerva/mail/audit/changes/export": {
       "get": {
-        "description": "The change plan for review outside the site (docs/plans/email-management phase 2): every label change the latest audit proposes over the caller's mail, or those for one label, one action or at least a confidence, a row each, most confident first. Columns: received_time, gmail_id, thread_id, from_address, from_name, subject, label, action, rule, confidence, sender_messages, sender_label_messages, labels_now, gmail_link. Metadata only; never message text.",
+        "description": "The change plan for review outside the site (docs/plans/email-management phase 2): every label change proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, or those for one label, one action, one rule or at least a confidence, a row each, most confident first. Columns: received_time, gmail_id, thread_id, from_address, from_name, subject, label, action, rule, confidence, sender_messages, sender_label_messages, ticked, labels_now, gmail_link. Metadata only; never message text.",
         "operationId": "ExportMailAuditChanges",
         "parameters": [
           {
@@ -7509,6 +7628,15 @@
             "description": "Only changes at least this confident, 0 to 1",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "rule",
+            "required": false,
+            "in": "query",
+            "description": "Only those one rule proposed: the sender audit, or the classifier",
+            "schema": {
+              "$ref": "#/components/schemas/MailAuditRule"
             }
           },
           {
@@ -7747,7 +7875,7 @@
     },
     "/minerva/mail/audit/changes": {
       "get": {
-        "description": "A page of the label changes the latest audit proposes over the caller's mail, each with its message's metadata (never its text) and the evidence behind it, optionally for one label, one action, or at least a confidence. `sortBy` is `confidence` (the default) or `receivedTime`.",
+        "description": "A page of the label changes proposed over the caller's mail, by the latest audit and by the classifier's latest published suggestions, each with its message's metadata (never its text) and the evidence behind it (the sender's counts, or whether the classifier's is ticked), optionally for one label, one action, one rule, or at least a confidence. `sortBy` is `confidence` (the default) or `receivedTime`.",
         "operationId": "ListMailAuditChanges",
         "parameters": [
           {
@@ -7793,6 +7921,15 @@
             "description": "Only changes at least this confident, 0 to 1",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "rule",
+            "required": false,
+            "in": "query",
+            "description": "Only those one rule proposed: the sender audit, or the classifier",
+            "schema": {
+              "$ref": "#/components/schemas/MailAuditRule"
             }
           },
           {
@@ -8067,6 +8204,72 @@
           }
         },
         "summary": "Lists the labels the classifier can suggest for an account",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/suggestion-run/{runId}/publish": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 4): the run's suggestions become the account's, beside the audit's on the Re-classification page, and the account's runs before it are dropped, in one transaction.",
+        "operationId": "PublishMailSuggestionRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "The building run",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the PublishMailSuggestionRun operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishMailSuggestionRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The run, published.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishMailSuggestionRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such run."
+          },
+          "409": {
+            "description": "The run is published already."
+          }
+        },
+        "summary": "Publishes a run of the classifier's suggestions",
         "tags": [
           "Mail"
         ]
@@ -14232,13 +14435,184 @@
           "family"
         ]
       },
+      "CreateMailSuggestionRunRequest": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The mail account"
+          },
+          "modelRun": {
+            "type": "string",
+            "description": "The classifier's model run"
+          },
+          "featureVersion": {
+            "type": "string",
+            "description": "The feature version"
+          }
+        },
+        "required": [
+          "accountId",
+          "modelRun",
+          "featureVersion"
+        ]
+      },
+      "MailSuggestionRunStatus": {
+        "type": "string",
+        "description": "Building, or published",
+        "enum": [
+          "building",
+          "ready"
+        ]
+      },
+      "MailSuggestionRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The run's ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The mail account"
+          },
+          "modelRun": {
+            "type": "string",
+            "description": "The classifier's model run the scores came from"
+          },
+          "featureVersion": {
+            "type": "string",
+            "description": "The feature version the scores came from"
+          },
+          "status": {
+            "description": "Building, or published",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailSuggestionRunStatus"
+              }
+            ]
+          },
+          "startedTime": {
+            "type": "string",
+            "description": "When the run began"
+          },
+          "finishedTime": {
+            "type": "string",
+            "description": "When it was published"
+          },
+          "messagesScored": {
+            "type": "number",
+            "description": "Messages scored, once published"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "modelRun",
+          "featureVersion",
+          "status",
+          "startedTime"
+        ]
+      },
+      "CreateMailSuggestionRunResponse": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "description": "The run, building",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailSuggestionRun"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
       "MailAuditAction": {
         "type": "string",
+        "description": "What a proposed label change does",
         "enum": [
           "add",
           "remove"
+        ]
+      },
+      "NewMailSuggestion": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "label": {
+            "type": "string",
+            "description": "The label's full name"
+          },
+          "action": {
+            "description": "Add the label, or remove it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailAuditAction"
+              }
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "description": "How sure the classifier is, 0 to 1"
+          },
+          "ticked": {
+            "type": "boolean",
+            "description": "Whether it is at or above the label's threshold"
+          }
+        },
+        "required": [
+          "gmailId",
+          "label",
+          "action",
+          "confidence",
+          "ticked"
+        ]
+      },
+      "CreateMailSuggestionsRequest": {
+        "type": "object",
+        "properties": {
+          "suggestions": {
+            "description": "Up to 5,000 suggestions",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewMailSuggestion"
+            }
+          }
+        },
+        "required": [
+          "suggestions"
+        ]
+      },
+      "CreateMailSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "description": "Suggestions stored (or replaced)"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Suggestions left out: an unknown message or label, a label that is not the user's, adding a label the message has, or removing one it lacks"
+          }
+        },
+        "required": [
+          "created",
+          "skipped"
+        ]
+      },
+      "MailAuditRule": {
+        "type": "string",
+        "enum": [
+          "sender",
+          "classifier"
         ],
-        "description": "What a proposed label change does"
+        "description": "What proposed a change: an audit rule, or the classifier"
       },
       "MailAuditSummary": {
         "type": "object",
@@ -14286,6 +14660,14 @@
           "threads": {
             "type": "number",
             "description": "Threads whose messages disagree on their labels"
+          },
+          "classifierFinishedTime": {
+            "type": "string",
+            "description": "When the classifier's suggestions were last published"
+          },
+          "classifierChanges": {
+            "type": "number",
+            "description": "Of the changes, those the classifier proposed"
           }
         },
         "required": [
@@ -14299,7 +14681,8 @@
           "highConfidence",
           "messagesAffected",
           "merges",
-          "threads"
+          "threads",
+          "classifierChanges"
         ]
       },
       "MailAuditLabel": {
@@ -14980,13 +15363,6 @@
           "labels"
         ]
       },
-      "MailAuditRule": {
-        "type": "string",
-        "description": "The rule that proposed it",
-        "enum": [
-          "sender"
-        ]
-      },
       "MailAuditChange": {
         "type": "object",
         "properties": {
@@ -15024,11 +15400,15 @@
           },
           "senderMessages": {
             "type": "number",
-            "description": "The sender's received messages the rule looked at"
+            "description": "The sender's received messages the rule looked at (the sender rule)"
           },
           "senderLabelMessages": {
             "type": "number",
-            "description": "How many of them have the label"
+            "description": "How many of them have the label (the sender rule)"
+          },
+          "ticked": {
+            "type": "boolean",
+            "description": "Whether it is at or above its label's threshold, so applied unless unticked (the classifier)"
           }
         },
         "required": [
@@ -15036,9 +15416,7 @@
           "label",
           "action",
           "rule",
-          "confidence",
-          "senderMessages",
-          "senderLabelMessages"
+          "confidence"
         ]
       },
       "ListMailAuditChangesResponse": {
@@ -15305,6 +15683,34 @@
         "required": [
           "topics",
           "families"
+        ]
+      },
+      "PublishMailSuggestionRunRequest": {
+        "type": "object",
+        "properties": {
+          "messagesScored": {
+            "type": "number",
+            "description": "How many messages the classifier scored"
+          }
+        },
+        "required": [
+          "messagesScored"
+        ]
+      },
+      "PublishMailSuggestionRunResponse": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "description": "The run, published",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailSuggestionRun"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run"
         ]
       },
       "MailAuditRun": {

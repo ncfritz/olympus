@@ -15,10 +15,15 @@ export enum MailAuditAction {
   Remove = "remove",
 }
 
-/** The audit rule a change was proposed by (docs/plans/email-management phase 2). */
+/**
+ * What proposed a change: an audit rule (docs/plans/email-management phase
+ * 2), or the classifier over the whole mailbox (phase 4).
+ */
 export enum MailAuditRule {
   /** The sender's own habit: the label its mail usually has, or seldom has. */
   Sender = "sender",
+  /** The classifier, confidently disagreeing with the message's labels. */
+  Classifier = "classifier",
 }
 
 /** Why two labels are proposed as one. */
@@ -176,6 +181,19 @@ export class MailAuditSummary {
     description: "Threads whose messages disagree on their labels",
   })
   threads: number;
+
+  @ApiTimestamp({
+    required: false,
+    description: "When the classifier's suggestions were last published",
+  })
+  classifierFinishedTime?: Moment;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Of the changes, those the classifier proposed",
+  })
+  classifierChanges: number;
 }
 
 /** A user label with its messages and the latest audit's proposals into and out of it. */
@@ -554,7 +572,9 @@ export class MailAuditChange {
   @ApiProperty({
     enum: () => MailAuditRule,
     enumName: "MailAuditRule",
-    enumSchema: { description: "The audit rule a change was proposed by" },
+    enumSchema: {
+      description: "What proposed a change: an audit rule, or the classifier",
+    },
     required: true,
     description: "The rule that proposed it",
   })
@@ -569,17 +589,26 @@ export class MailAuditChange {
 
   @ApiProperty({
     type: Number,
-    required: true,
-    description: "The sender's received messages the rule looked at",
+    required: false,
+    description:
+      "The sender's received messages the rule looked at (the sender rule)",
   })
-  senderMessages: number;
+  senderMessages?: number;
 
   @ApiProperty({
     type: Number,
-    required: true,
-    description: "How many of them have the label",
+    required: false,
+    description: "How many of them have the label (the sender rule)",
   })
-  senderLabelMessages: number;
+  senderLabelMessages?: number;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Whether it is at or above its label's threshold, so applied unless unticked (the classifier)",
+  })
+  ticked?: boolean;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
