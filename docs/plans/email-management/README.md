@@ -579,6 +579,19 @@ left until phase 5 has decisions to measure them against.
 
 **Sign-off:** M6, M7, M8.
 
+**M7 run 2026-10-06**, DEV, Neil and Claude, after re-linking with
+`gmail.modify`:
+
+- **1. Pass.** Three proposals applied changed exactly those labels in
+  Gmail; the batch is in the change log, three written.
+- **2. Pass.** Undoing it put Gmail's labels back as they were.
+- **3. Pass.** A message relabelled by hand in Gmail before its apply (with
+  polling off) came back "Changed in Gmail": its labels were left as they
+  were in Gmail and synced to Minerva. (Its suggestion is recomputed by the
+  next nightly suggest run, not at once.)
+- **4. Pass.** With `MINERVA_MAIL_WRITES_ENABLED` unset, applying answered
+  503 and Gmail was unchanged.
+
 ## Phase 5 — The inbox
 
 1. **Suggestions for new mail**: scored as it arrives.
