@@ -1,4 +1,4 @@
-import CopyPlugin from "copy-webpack-plugin";
+import { cpSync } from "fs";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -7,6 +7,16 @@ import packageJson from "./package.json" with { type: "json" };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// TinyMCE is served from public/ as it ships, copied from node_modules
+// whenever the config loads (dev and build). Not through webpack: as a
+// webpack asset, Next's minifiers rewrote every .js and .css file in place,
+// and each build left the committed copies changed.
+cpSync(
+  path.join(__dirname, "node_modules/tinymce"),
+  path.join(__dirname, "public/assets/libs/tinymce"),
+  { recursive: true, dereference: true },
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -58,17 +68,6 @@ const nextConfig = {
   webpack: (config) => {
     const fileLoaderRule = config.module.rules.find((rule) =>
       rule.test?.test?.(".svg"),
-    );
-
-    config.plugins.push(
-      new CopyPlugin({
-        patterns: [
-          {
-            from: path.join(__dirname, "node_modules/tinymce"),
-            to: path.join(__dirname, "public/assets/libs/tinymce"),
-          },
-        ],
-      }),
     );
 
     config.module.rules.push(
