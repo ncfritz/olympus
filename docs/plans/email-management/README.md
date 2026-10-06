@@ -357,7 +357,12 @@ steps 3 and 4):
   and was fetched by the second); no message was deleted in Gmail since
   the export, so deletion is checked by the unit tests until step 3. The
   second reconcile changed nothing and fetched the 2 that had arrived.
-- **3.** Waiting on the request count of a run.
+- **3. Pass, at twice the estimate.** A run sends 2,190 requests
+  (about 11,000 quota units, nine minutes at the throttle's pace), against
+  ADR 0030's "about a thousand": the estimate left out that each of the
+  484 labels takes at least one list call, besides All Mail's 552 pages.
+  Still under 1 % of the 278,000 gets a backfill would take, which is the
+  ADR's point.
 - **7. Pass.** Gmail's 278,125 messages and 267,404 threads, less 2,390
   chats in 2,385 threads (Spam, Trash and drafts empty), are 275,735 and
   265,019; Minerva holds exactly 275,735 messages in 265,019 threads.
