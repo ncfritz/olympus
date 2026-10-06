@@ -259,6 +259,16 @@
     "Consent": "consent",
     "Import": "import"
   },
+  "MailStatisticsRange": {
+    "AllTime": "all",
+    "ThreeYears": "3y",
+    "TwelveMonths": "12m"
+  },
+  "MailStatisticsScope": {
+    "All": "all",
+    "Received": "received",
+    "Sent": "sent"
+  },
   "MediaAssetSearchConfigurationStatus": {
     "ERROR": "error",
     "OK": "ok",

@@ -7344,6 +7344,71 @@
         ]
       }
     },
+    "/minerva/mail/statistics": {
+      "get": {
+        "description": "The Statistics page's numbers (docs/plans/email-management phase 2): totals, the busiest senders and labels, and their mail per year, over the caller's mail accounts in the range and scope. Computed from the stored metadata on each request.",
+        "operationId": "GetMailStatistics",
+        "parameters": [
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "How far back to look; the last twelve months by default",
+            "schema": {
+              "$ref": "#/components/schemas/MailStatisticsRange"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "Which messages to count; all by default",
+            "schema": {
+              "$ref": "#/components/schemas/MailStatisticsScope"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The statistics.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMailStatisticsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets statistics over the caller's mail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/accounts/import": {
       "post": {
         "description": "For the mail agent's Takeout import (ADR 0030, as amended): the mail account for the address, made the named user's with verification `import` if it is new. Importing the same mailbox for the same user again answers the same account. The archive's messages then arrive on the mail.messages queue under the account's ID.",
@@ -13301,6 +13366,226 @@
         },
         "required": [
           "meeting"
+        ]
+      },
+      "MailStatisticsRange": {
+        "type": "string",
+        "enum": [
+          "12m",
+          "3y",
+          "all"
+        ],
+        "description": "How far back mail statistics look"
+      },
+      "MailStatisticsScope": {
+        "type": "string",
+        "enum": [
+          "all",
+          "received",
+          "sent"
+        ],
+        "description": "Which messages mail statistics count"
+      },
+      "MailStatisticsSummary": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "number",
+            "description": "Messages"
+          },
+          "labelsInUse": {
+            "type": "number",
+            "description": "User labels on at least one of the messages"
+          },
+          "senders": {
+            "type": "number",
+            "description": "Distinct sender addresses"
+          },
+          "unlabelled": {
+            "type": "number",
+            "description": "Messages with no user label (categories do not count)"
+          },
+          "firstReceivedTime": {
+            "type": "string",
+            "description": "When the earliest message was received; absent when none"
+          },
+          "lastReceivedTime": {
+            "type": "string",
+            "description": "When the latest message was received; absent when none"
+          }
+        },
+        "required": [
+          "messages",
+          "labelsInUse",
+          "senders",
+          "unlabelled"
+        ]
+      },
+      "MailSenderStatistics": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The sender's address, lower case"
+          },
+          "name": {
+            "type": "string",
+            "description": "A display name the sender used, when it gave one"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Messages"
+          },
+          "lastReceivedTime": {
+            "type": "string",
+            "description": "When its latest message was received"
+          }
+        },
+        "required": [
+          "address",
+          "messages",
+          "lastReceivedTime"
+        ]
+      },
+      "MailLabelStatistics": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The label's full name, as Gmail shows it"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Messages"
+          },
+          "senders": {
+            "type": "number",
+            "description": "Distinct senders of those messages"
+          },
+          "lastReceivedTime": {
+            "type": "string",
+            "description": "When its latest message was received"
+          }
+        },
+        "required": [
+          "name",
+          "messages",
+          "senders",
+          "lastReceivedTime"
+        ]
+      },
+      "MailSenderYear": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "year": {
+            "type": "number",
+            "description": "The year"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Messages"
+          }
+        },
+        "required": [
+          "address",
+          "year",
+          "messages"
+        ]
+      },
+      "MailLabelYear": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The label"
+          },
+          "year": {
+            "type": "number",
+            "description": "The year"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Messages"
+          }
+        },
+        "required": [
+          "name",
+          "year",
+          "messages"
+        ]
+      },
+      "GetMailStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "description": "The range counted",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStatisticsRange"
+              }
+            ]
+          },
+          "scope": {
+            "description": "The scope counted",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStatisticsScope"
+              }
+            ]
+          },
+          "sinceTime": {
+            "type": "string",
+            "description": "The start of the range; absent for all time"
+          },
+          "summary": {
+            "description": "Totals over the range and scope",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStatisticsSummary"
+              }
+            ]
+          },
+          "topSenders": {
+            "description": "The busiest senders, busiest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailSenderStatistics"
+            }
+          },
+          "topLabels": {
+            "description": "The busiest user labels, busiest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelStatistics"
+            }
+          },
+          "senderActivity": {
+            "description": "Messages per year from the busiest few senders, by sender then year; a year without mail is absent",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailSenderYear"
+            }
+          },
+          "labelActivity": {
+            "description": "Messages per year under the busiest labels, by label then year; a year without mail is absent",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailLabelYear"
+            }
+          }
+        },
+        "required": [
+          "range",
+          "scope",
+          "summary",
+          "topSenders",
+          "topLabels",
+          "senderActivity",
+          "labelActivity"
         ]
       },
       "ImportMailAccountRequest": {

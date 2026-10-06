@@ -1,3 +1,8 @@
+- '!include minerva_mail_label_years.yaml'
+- '!include minerva_mail_sender_years.yaml'
+- '!include minerva_mail_statistics_summary.yaml'
+- '!include minerva_mail_top_labels.yaml'
+- '!include minerva_mail_top_senders.yaml'
 - '!include minerva_meeting_day_statistics.yaml'
 - '!include minerva_meeting_hour_statistics.yaml'
 - '!include minerva_meeting_status_statistics.yaml'

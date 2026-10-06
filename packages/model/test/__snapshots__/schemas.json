@@ -7341,6 +7341,76 @@
     ],
     "type": "object"
   },
+  "GetMailStatisticsResponse": {
+    "properties": {
+      "labelActivity": {
+        "description": "Messages per year under the busiest labels, by label then year; a year without mail is absent",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelYear"
+        },
+        "type": "array"
+      },
+      "range": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStatisticsRange"
+          }
+        ],
+        "description": "The range counted"
+      },
+      "scope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStatisticsScope"
+          }
+        ],
+        "description": "The scope counted"
+      },
+      "senderActivity": {
+        "description": "Messages per year from the busiest few senders, by sender then year; a year without mail is absent",
+        "items": {
+          "$ref": "#/components/schemas/MailSenderYear"
+        },
+        "type": "array"
+      },
+      "sinceTime": {
+        "description": "The start of the range; absent for all time",
+        "type": "string"
+      },
+      "summary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStatisticsSummary"
+          }
+        ],
+        "description": "Totals over the range and scope"
+      },
+      "topLabels": {
+        "description": "The busiest user labels, busiest first",
+        "items": {
+          "$ref": "#/components/schemas/MailLabelStatistics"
+        },
+        "type": "array"
+      },
+      "topSenders": {
+        "description": "The busiest senders, busiest first",
+        "items": {
+          "$ref": "#/components/schemas/MailSenderStatistics"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "labelActivity",
+      "range",
+      "scope",
+      "senderActivity",
+      "summary",
+      "topLabels",
+      "topSenders"
+    ],
+    "type": "object"
+  },
   "GetMediaAssetSearchConfigurationsRunningCountResponse": {
     "properties": {
       "count": {
@@ -10641,6 +10711,156 @@
       "consent"
     ],
     "type": "string"
+  },
+  "MailLabelStatistics": {
+    "properties": {
+      "lastReceivedTime": {
+        "description": "When its latest message was received",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages",
+        "type": "number"
+      },
+      "name": {
+        "description": "The label's full name, as Gmail shows it",
+        "type": "string"
+      },
+      "senders": {
+        "description": "Distinct senders of those messages",
+        "type": "number"
+      }
+    },
+    "required": [
+      "lastReceivedTime",
+      "messages",
+      "name",
+      "senders"
+    ],
+    "type": "object"
+  },
+  "MailLabelYear": {
+    "properties": {
+      "messages": {
+        "description": "Messages",
+        "type": "number"
+      },
+      "name": {
+        "description": "The label",
+        "type": "string"
+      },
+      "year": {
+        "description": "The year",
+        "type": "number"
+      }
+    },
+    "required": [
+      "messages",
+      "name",
+      "year"
+    ],
+    "type": "object"
+  },
+  "MailSenderStatistics": {
+    "properties": {
+      "address": {
+        "description": "The sender's address, lower case",
+        "type": "string"
+      },
+      "lastReceivedTime": {
+        "description": "When its latest message was received",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages",
+        "type": "number"
+      },
+      "name": {
+        "description": "A display name the sender used, when it gave one",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "lastReceivedTime",
+      "messages"
+    ],
+    "type": "object"
+  },
+  "MailSenderYear": {
+    "properties": {
+      "address": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages",
+        "type": "number"
+      },
+      "year": {
+        "description": "The year",
+        "type": "number"
+      }
+    },
+    "required": [
+      "address",
+      "messages",
+      "year"
+    ],
+    "type": "object"
+  },
+  "MailStatisticsRange": {
+    "description": "The range counted",
+    "enum": [
+      "12m",
+      "3y",
+      "all"
+    ],
+    "type": "string"
+  },
+  "MailStatisticsScope": {
+    "description": "The scope counted",
+    "enum": [
+      "all",
+      "received",
+      "sent"
+    ],
+    "type": "string"
+  },
+  "MailStatisticsSummary": {
+    "properties": {
+      "firstReceivedTime": {
+        "description": "When the earliest message was received; absent when none",
+        "type": "string"
+      },
+      "labelsInUse": {
+        "description": "User labels on at least one of the messages",
+        "type": "number"
+      },
+      "lastReceivedTime": {
+        "description": "When the latest message was received; absent when none",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages",
+        "type": "number"
+      },
+      "senders": {
+        "description": "Distinct sender addresses",
+        "type": "number"
+      },
+      "unlabelled": {
+        "description": "Messages with no user label (categories do not count)",
+        "type": "number"
+      }
+    },
+    "required": [
+      "labelsInUse",
+      "messages",
+      "senders",
+      "unlabelled"
+    ],
+    "type": "object"
   },
   "MediaAsset": {
     "properties": {

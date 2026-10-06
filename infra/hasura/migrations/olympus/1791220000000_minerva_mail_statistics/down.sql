@@ -1,0 +1,11 @@
+DROP FUNCTION minerva.mail_label_years(uuid, timestamptz, text, integer);
+DROP FUNCTION minerva.mail_sender_years(uuid, timestamptz, text, integer);
+DROP FUNCTION minerva.mail_top_labels(uuid, timestamptz, text, integer);
+DROP FUNCTION minerva.mail_top_senders(uuid, timestamptz, text, integer);
+DROP FUNCTION minerva.mail_statistics_summary(uuid, timestamptz, text);
+DROP FUNCTION minerva.mail_messages_in_scope(uuid, timestamptz, text);
+DROP TABLE minerva.mail_label_year_statistics_type;
+DROP TABLE minerva.mail_sender_year_statistics_type;
+DROP TABLE minerva.mail_label_statistics_type;
+DROP TABLE minerva.mail_sender_statistics_type;
+DROP TABLE minerva.mail_statistics_summary_type;
