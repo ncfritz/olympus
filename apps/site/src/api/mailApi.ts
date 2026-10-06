@@ -1,13 +1,20 @@
 import {
   client,
+  createMailLabelFamily,
+  type CreateMailLabelFamilyRequest,
+  deleteMailLabelFamily,
   exportMailAuditChanges,
   getMailAudit,
   getMailStatistics,
   listMailAuditChanges,
+  listMailLabelFamilies,
+  listMailLabels,
   type MailAuditAction,
   type MailStatisticsRange,
   type MailStatisticsScope,
   runMailAudit,
+  updateMailLabel,
+  type UpdateMailLabelRequest,
   type SortDirection,
 } from "@ncfritz/olympus-sdk/minerva";
 
@@ -45,6 +52,26 @@ class MailApi {
     startPage: number;
   }) {
     return await listMailAuditChanges({ query });
+  }
+
+  async listLabels() {
+    return await listMailLabels();
+  }
+
+  async updateLabel(labelId: string, body: UpdateMailLabelRequest) {
+    return await updateMailLabel({ path: { labelId }, body });
+  }
+
+  async listFamilies() {
+    return await listMailLabelFamilies();
+  }
+
+  async createFamily(body: CreateMailLabelFamilyRequest) {
+    return await createMailLabelFamily({ body });
+  }
+
+  async deleteFamily(familyId: string) {
+    return await deleteMailLabelFamily({ path: { familyId } });
   }
 
   /** The changes as CSV, and the file name the API gives it. */
