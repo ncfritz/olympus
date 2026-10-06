@@ -371,22 +371,52 @@ numbers come with the sign-off on DEV.
 
 **Sign-off:** M3, M4.
 
-## Phase 3 — The classifier
+## Phase 3 — The classifier — built 2026-10-06, not signed off
 
-1. **Feature store** as decided; feature version on every row.
-2. **Featurize**: subject, body text and header features go to `minerva-mail-ml`
-   from a pass over the Takeout archive (from Gmail only for mail newer
-   than it, or with no archive); hashed word counts are kept, the text is
-   not. The pass is resumable and can run beside incremental sync.
-3. **Label kinds**: operations to set a label's kind, family and merge
-   target, and each star icon's meaning; the families seeded with `Bills`
-   (`Payable` initial and open, then `Paid`, closed). Training maps state
-   labels to their family and never trains on stars as a topic.
-4. **Models**: sender history, then the linear model; per-label
-   calibration and thresholds.
-5. **Evaluation**: train on mail before the last six months, test on the
-   last six; precision and recall per label, written to the run.
-6. **Retrain**: the nightly Airflow DAG.
+1. **Feature store**: **built**. SQLite on the classifier's volume
+   (`FEATURE_STORE_PATH`): per feature version, each message's hashed
+   token counts (2^18 columns: subject, the body's first 5,000
+   characters, sender, domain, list, unsubscribe header, attachment
+   types) as compressed arrays, and the sender and list beside them; no
+   text. A version is `building` until its pass completes, then `ready`;
+   the newest ready version serves.
+2. **Featurize**: **built** for the archive. `takeout featurize` in the
+   mail agent sends batches of 200 messages' text over mutual TLS to the
+   classifier's services listener (`POST /v1/features`, the agent's
+   certificate only), resumable by byte offset, and completes the version
+   at the end of the archive (`--no-complete` to hold it). From Gmail
+   comes with 1b.
+3. **Label kinds**: **built** (`1791240000000_minerva_mail_label_kinds`;
+   the Labels page). `ListMailLabels`, `UpdateMailLabel` (topical, or
+   retired into a target), `ListMailLabelFamilies`,
+   `CreateMailLabelFamily`, `DeleteMailLabelFamily`. Families are
+   suggested from sibling labels starting `*` (`Bills/*Payable`,
+   `Bills/*Paid`) rather than seeded. Star meanings move to 1b, since
+   Takeout has no star icons.
+4. **Training data**: **built**. `ListMailTrainingAccounts`,
+   `ListMailTrainingExamples` (keyset pages by Gmail ID, up to 5,000) and
+   `ListMailTrainingLabels`, agents only: metadata and targets, never text.
+   A topical label is a topic; a state counts as its family; a retired
+   label as its merge target's mapping; system labels and stars never.
+5. **Models**: **built**. Sender history (address, else list, else
+   domain; one-year half-life) and one-vs-rest logistic regression (SGD,
+   older mail weighing less), combined per label by a small logistic
+   regression fitted on the validation months: the calibration. Each
+   label's threshold is the highest score finding what it can at 90%
+   precision on validation; a label that never gets there is never
+   ticked. A predicted family suggests its initial label.
+   `POST /v1/suggestions` answers from the serving model.
+6. **Evaluation**: **built**. Test: the last six months; validation: the
+   six before; training: everything older. Precision and recall per label,
+   at its threshold and at 0.5, written to the run
+   (`MODEL_DIR/runs.sqlite3`), with coverage and top-suggestion accuracy;
+   `minerva-mail-ml-train report` prints it. The newest ready run serves;
+   a failed run leaves the last.
+7. **Retrain**: **built**, paused. `minerva_mail_retrain`, nightly, runs
+   `minerva-mail-ml-train run` in the classifier's image with its data
+   directory. Unpaused once the classifier is in the deployed stack.
+
+Not yet: embeddings (phase 6), online updates from decisions (phase 5).
 
 **Sign-off:** M5.
 

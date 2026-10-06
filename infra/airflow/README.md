@@ -1,8 +1,8 @@
 # Airflow
 
 Scheduled work that belongs to Olympus but is not part of any service: the
-nightly backups ([the plan](../../docs/plans/docker/README.md), phase 6) and
-the weather archive's copy to the NAS,
+nightly backups ([the plan](../../docs/plans/docker/README.md), phase 6),
+the weather archive's copy to the NAS, and the mail classifier's retrain,
 more later. Airflow decides **when**; what runs is here, reviewed like the rest
 of the repository and deployed the same way the host's other DAGs are, from
 git.
@@ -227,6 +227,26 @@ Both run in the worker with `SFTPHook` on `WEATHER_NAS_SFTP_CONNECTION`, into
 `WEATHER_NAS_SFTP_DIR` (`prod.env`), the way the host's other SFTP jobs reach
 the NAS.
 
+### `minerva_mail_retrain` (Minerva Mail Retrain)
+
+Nightly at 03:43, **created paused**: the classifier is not yet part of the
+deployed stack, and its first run belongs after the Takeout archive has been
+featurized ([the plan](../../docs/plans/email-management/README.md), phase 3).
+One task runs `minerva-mail-ml-train run` in the classifier's image
+(`${IMAGE_PREFIX}/minerva-mail-ml:${OLYMPUS_TAG}`) on `olympus-backend`, with:
+
+- `${DATA_DIR}/minerva-mail-ml` at `/var/lib/minerva-mail-ml`: the feature
+  store it reads and the model registry it writes, the same directory the
+  service serves from, which picks up a new model on its next request;
+- `${SECRETS_DIR}/tls/minerva-mail-ml` read-only at `/run/secrets/tls`:
+  `client.crt`, `client.key` and `services-ca.crt`, for the API's mTLS
+  listener (`MAIL_ML_API_BASE_URL` overrides `https://olympus-api:3443/v1`),
+  and the API needs `minerva-mail-ml:agent` in `AUTH_SERVICE_ROLES`.
+
+An account without enough mail to split by time is logged and skipped; a run
+that fails leaves the previous model serving
+([the service](../../agents/minerva-mail-ml/README.md#training)).
+
 ## By hand
 
 In the worker (`docker compose exec airflow-worker ...` on the Mini):
@@ -235,18 +255,21 @@ In the worker (`docker compose exec airflow-worker ...` on the Mini):
 airflow dags test olympus_backup                # a whole run, today, no scheduler
 airflow tasks test olympus_backup verify 2026-09-29
 airflow tasks test olympus_weather_archive copy 2026-09-29
+airflow tasks test minerva_mail_retrain train 2026-10-06
 ```
 
 `retain` is the one to read twice before running with a date you care about.
 
 ## Tests
 
-The weather archive's copy and prune have tests against a fake SFTP client, in
-a virtualenv with Airflow 3 and the SFTP provider (nothing in the workspace runs
-them):
+The weather archive's copy and prune have tests against a fake SFTP client,
+and the retrain DAG's task is checked for its image, mounts and environment, in
+a virtualenv with Airflow 3 and the SFTP and Docker providers (nothing in the
+workspace runs them):
 
 ```sh
 python -m venv .venv && . .venv/bin/activate
-pip install "apache-airflow==3.3.0" apache-airflow-providers-sftp pytest
+pip install "apache-airflow==3.3.0" apache-airflow-providers-sftp \
+  apache-airflow-providers-docker pytest
 python -m pytest infra/airflow/tests
 ```

@@ -40,12 +40,17 @@ agents/<name>/
     __main__.py            validates config, sets up logging, runs uvicorn
     config.py              read_config(): every environment variable, here only
     app.py                 create_app(config): routes, /health, /metrics
-    <feature>/             e.g. features/, store/, models/, audit/
+    <feature>/             e.g. features/, training/, audit/
+      cli.py               a command of the feature's own, if it has one
   tests/                   mirrors src/<package>/
 ```
 
 - Modules and packages are `snake_case`; one feature per package.
 - Code under `src/`, tests under `tests/`, never mixed.
+- Work that runs on a schedule rather than per request is a command
+  (`[project.scripts]`, `argparse`) in the same image, started by Airflow
+  with the service's volume, not a route: the service only reads what it
+  writes. Its output goes to `sys.stdout.write` or the log.
 
 ## Configuration
 
@@ -82,7 +87,9 @@ agents/<name>/
 ## Data
 
 - Private working state goes in the service's own store on its volume
-  (for the classifier, a SQLite database). It is derived data, rebuilt
+  (for the classifier, SQLite databases: the features, and the model
+  runs with their evaluation, a row per label rather than a JSON
+  document, ADR 0007). It is derived data, rebuilt
   from its sources, and not backed up.
 - Message text exists only in memory, for the length of a request. It is
   not written to the store, a temporary file, a log or an exception
@@ -90,7 +97,8 @@ agents/<name>/
 
 ## Tests
 
-- `pytest`, with FastAPI's `TestClient` for routes. Warnings are errors
+- `pytest`, with FastAPI's `TestClient` for routes, and
+  `httpx.MockTransport` for calls to the API. Warnings are errors
   in review: `uv run pytest -W error` should pass.
 - Unit tests for configuration and every feature; fixtures are small and
   synthetic, never real mail.
