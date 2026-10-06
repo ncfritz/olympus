@@ -41,6 +41,20 @@ message again rewrites its row, so a run stopped by `--max-seconds` or
 repeated run is harmless. It needs the broker and the API, configured as
 below; `scan` needs neither.
 
+```sh
+pnpm --filter @ncfritz/minerva-mail-agent takeout featurize ~/Downloads/Takeout/Mail/mail.mbox \
+  --account neil@example.net --owner neil@example.net
+```
+
+`featurize` sends every kept message's text, 200 at a time, to the
+classifier's services listener (`MAIL_ML_URL`, mutual TLS with this
+agent's certificate), which keeps hashed word counts and drops the text.
+Reaching the archive's end marks the classifier's feature version
+complete, so its models use it; `--no-complete` leaves it building. It
+resumes with `--offset` like `import`, and a message featurized again
+replaces its row. It needs the API (for the account) and the classifier,
+not the broker.
+
 ## Running it
 
 ```sh
@@ -50,14 +64,17 @@ pnpm --filter @ncfritz/minerva-mail-agent dev
 
 ## Configuration
 
-| Variable       | What                                   | Default                    |
-| -------------- | -------------------------------------- | -------------------------- |
-| `LISTEN_PORT`  | /metrics                               | `3105`                     |
-| `LOKI_*`       | Logging                                | (none)                     |
-| `AMQP_*`       | The broker `mail.messages` is on       | `/dionysus-dev`            |
-| `API_BASE_URL` | The Olympus API                        | `http://localhost:3100/v1` |
-| `API_CLIENT_*` | This agent's certificate, for `https:` | (none)                     |
-| `API_CA_CERT`  | The services CA                        | (none)                     |
+| Variable                                         | What                                     | Default                    |
+| ------------------------------------------------ | ---------------------------------------- | -------------------------- |
+| `LISTEN_PORT`                                    | /metrics                                 | `3105`                     |
+| `LOKI_*`                                         | Logging                                  | (none)                     |
+| `AMQP_*`                                         | The broker `mail.messages` is on         | `/dionysus-dev`            |
+| `API_BASE_URL`                                   | The Olympus API                          | `http://localhost:3100/v1` |
+| `API_CLIENT_*`                                   | This agent's certificate, for `https:`   | (none)                     |
+| `API_CA_CERT`                                    | The services CA                          | (none)                     |
+| `MAIL_ML_URL`                                    | The classifier's services listener       | (none: no `featurize`)     |
+| `MAIL_ML_CLIENT_CERT`, `_KEY`, `MAIL_ML_CA_CERT` | Its client certificate, if not the API's | the `API_*` ones           |
+| `MAIL_ML_TIMEOUT_MS`                             | Per request to the classifier            | `60000`                    |
 
 In production the agent needs a service certificate (CN
 `minerva-mail-agent`), `minerva-mail-agent:agent` in the API's

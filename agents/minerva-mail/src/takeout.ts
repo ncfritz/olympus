@@ -3,6 +3,8 @@ import "source-map-support/register";
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { validateEnvironment } from "./config/configuration";
+import { FeaturizeModule } from "./takeout/FeaturizeModule";
+import { TakeoutFeaturize } from "./takeout/TakeoutFeaturize";
 import { TakeoutImport } from "./takeout/TakeoutImport";
 import { TakeoutModule } from "./takeout/TakeoutModule";
 import { TakeoutScan } from "./takeout/TakeoutScan";
@@ -11,6 +13,9 @@ const USAGE = `Usage:
   takeout scan <mbox> [--offset <bytes>] [--limit <messages>] [--max-seconds <s>]
   takeout import <mbox> --account <mailbox email> --owner <Olympus user email>
                  [--offset <bytes>] [--limit <messages>] [--max-seconds <s>]
+  takeout featurize <mbox> --account <mailbox email> --owner <Olympus user email>
+                 [--offset <bytes>] [--limit <messages>] [--max-seconds <s>]
+                 [--no-complete]
 
   scan     Reads and parses a Google Takeout mbox as the import will, and
            prints what it found as JSON: counts only, never message
@@ -19,6 +24,11 @@ const USAGE = `Usage:
            publishes every message's metadata to mail.messages for the API
            to store. Skips chats, Trash and Spam. Reads the broker and the
            API from the environment (dev.env); makes no Gmail API calls.
+  featurize
+           Sends every kept message's text, in batches, to the classifier
+           (MAIL_ML_URL, over mutual TLS), which keeps hashed counts and
+           drops the text. Reaching the archive's end marks the classifier's
+           feature version complete, so it serves (--no-complete: not yet).
 
   Both print nextOffset when they stop early; --offset resumes there.
 `;
@@ -71,6 +81,30 @@ const main = async (args: string[]): Promise<number> => {
         account,
         owner,
         onProgress: progress("published"),
+      });
+      process.stdout.write(`${JSON.stringify(report, null, 1)}\n`);
+    } finally {
+      await app.close();
+    }
+    return 0;
+  }
+  if (command === "featurize" && path && account && owner) {
+    const config = validateEnvironment();
+    if (!config.classifier) {
+      throw new Error(
+        "featurize needs the classifier: set MAIL_ML_URL (see dev.env.example)",
+      );
+    }
+    const app = await NestFactory.createApplicationContext(FeaturizeModule, {
+      logger: ["log", "warn", "error"],
+    });
+    try {
+      const report = await app.get(TakeoutFeaturize).run(path, {
+        ...limits,
+        account,
+        owner,
+        complete: !args.includes("--no-complete"),
+        onProgress: progress("featurized"),
       });
       process.stdout.write(`${JSON.stringify(report, null, 1)}\n`);
     } finally {

@@ -35,6 +35,67 @@ describe("readConfig", () => {
     });
   });
 
+  it("has no classifier until MAIL_ML_URL is set", () => {
+    expect(readConfig({}).classifier).toBeUndefined();
+  });
+
+  it("calls the classifier with the agent's own certificate by default", () => {
+    const config = readConfig({
+      API_BASE_URL: "https://localhost:3443/v1",
+      API_CLIENT_CERT: "mail.crt",
+      API_CLIENT_KEY: "mail.key",
+      API_CA_CERT: "services-ca.crt",
+      MAIL_ML_URL: "https://localhost:3107/v1",
+    });
+    expect(config.classifier).toEqual({
+      baseUrl: "https://localhost:3107/v1",
+      tls: { certificate: "mail.crt", key: "mail.key", ca: "services-ca.crt" },
+      timeoutMs: 60000,
+    });
+  });
+
+  it("takes a certificate of the classifier's own", () => {
+    const config = readConfig({
+      MAIL_ML_URL: "https://localhost:3107/v1",
+      MAIL_ML_CLIENT_CERT: "a.crt",
+      MAIL_ML_CLIENT_KEY: "a.key",
+      MAIL_ML_TIMEOUT_MS: "5000",
+    });
+    expect(config.classifier).toMatchObject({
+      tls: { certificate: "a.crt", key: "a.key" },
+      timeoutMs: 5000,
+    });
+  });
+
+  it.each([
+    [
+      "plain HTTP",
+      {
+        MAIL_ML_URL: "http://localhost:3107/v1",
+        MAIL_ML_CLIENT_CERT: "a",
+        MAIL_ML_CLIENT_KEY: "b",
+      },
+      /mutual TLS/,
+    ],
+    [
+      "no certificate",
+      { MAIL_ML_URL: "https://localhost:3107/v1" },
+      /client certificate/,
+    ],
+    [
+      "a timeout that is not one",
+      {
+        MAIL_ML_URL: "https://localhost:3107/v1",
+        MAIL_ML_CLIENT_CERT: "a",
+        MAIL_ML_CLIENT_KEY: "b",
+        MAIL_ML_TIMEOUT_MS: "soon",
+      },
+      /MAIL_ML_TIMEOUT_MS/,
+    ],
+  ])("refuses a classifier with %s", (_case, env, reason) => {
+    expect(() => readConfig(env)).toThrow(reason);
+  });
+
   it("refuses a port that is not one", () => {
     expect(() => readConfig({ LISTEN_PORT: "mail" })).toThrow(
       ConfigValidationError,
