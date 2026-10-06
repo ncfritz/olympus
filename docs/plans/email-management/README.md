@@ -142,7 +142,7 @@ agent boots and answers `/health` and `/metrics`. The classifier passes
 the two images through `docker buildx bake`, and the API booted against a
 database.
 
-## Phase 1a — Import from Takeout
+## Phase 1a — Import from Takeout — done 2026-10-05
 
 No Gmail API calls (ADR 0030, as amended 2026-10-05).
 
@@ -267,11 +267,13 @@ messages have no queue to land in.
    by their hexadecimal ID with the labels and flags Minerva recorded. One
    has a label header Takeout folded onto two lines
    (`Finance/Bank of America`); the parser joins it, and a test now says so.
-2. **Open.** 275,358 messages match the archive less chats and Trash.
-   Gmail counts conversations: the archive holds 264,648 imported
-   conversations, 267,035 with chats, and Gmail showed 267,362 (taken
-   later, with new mail). To close: Gmail's count for
-   `-in:chats before:2026/10/03` against Minerva's distinct thread IDs.
+2. **Pass, by label.** 275,358 messages match the archive less chats and
+   Trash. Gmail gives no exact total for a search this large ("many"), so
+   the check is per label: labels with no mail since the export, of
+   several sizes, show in Gmail the same number of conversations Minerva
+   counts by thread. The mailbox-wide total waits for the API's
+   `getProfile` in phase 1b, and is case 7 of M2. (For the record: the
+   archive holds 264,648 imported conversations, 267,035 with chats.)
 3. **Pass.** The import resumed from its `nextOffset`; re-running 163
    messages changed nothing but the four it was meant to fix.
 4. **Pass.** The dead-letter queue is empty. In a data dump of the mail
@@ -289,7 +291,7 @@ messages have no queue to land in.
 6. **Pass.** No Gmail API calls: mail's OAuth client does not exist until
    phase 1b, and the quota page shows nothing for it.
 
-M0 is signed off when case 2 closes.
+**M0 signed off 2026-10-05.**
 
 ## Phase 1b — Linking and live sync
 

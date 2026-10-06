@@ -19,7 +19,7 @@
 | 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                           |
 | 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                 |
 | 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | phases 0–4 **done** (2026-10-01); phase 5 built, not signed off; phases 6–9 planned      |
-| 14  | Email management: label audit and suggestions (ADR 0030, [plan](plans/email-management/README.md))   | phase 0 **done**; 1a built and run on DEV, M0 passing but for case 2                     |
+| 14  | Email management: label audit and suggestions (ADR 0030, [plan](plans/email-management/README.md))   | phases 0 and 1a **done** (2026-10-05, M0 signed off); 1b, 2 and 3 next                   |
 | —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                  |
 | —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                 |
 | —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                 |

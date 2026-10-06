@@ -60,6 +60,9 @@ accepted, recorded exception.
 
 ## M2 — Reconcile and live sync
 
+M0 checked the Takeout import's counts by label only, since Gmail's
+search gives no exact total; the mailbox-wide total is case 7 here.
+
 1. Every imported label has its Gmail ID; a label made in Gmail after
    the export is added.
 2. A label changed and a message deleted in Gmail after the export are
@@ -71,6 +74,9 @@ accepted, recorded exception.
 5. The database holds well under 1 GB for the mailbox.
 6. Messages starred with two different icons in Gmail are recorded with
    those icons; the counts per icon match Gmail's searches.
+7. After reconciling, Minerva's messages and distinct threads match
+   `getProfile`'s `messagesTotal` and `threadsTotal`, less Spam, Trash
+   and chats (whose counts are recorded with the run).
 
 ## M3 — Audit reports
 
