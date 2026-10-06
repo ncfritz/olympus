@@ -259,10 +259,37 @@ must set `AUTH_SERVICE_ROLES` once (a second line replaces the first); and
 the API must have started once before the agent publishes, or the
 messages have no queue to land in.
 
-M0 is not signed off yet. Done: case 2 against the archive's counts (not
-yet Gmail's), and case 3's resume and repeat. Open: 1 (ten messages
-checked in Gmail), 4 (no body text in the dead-letter queue, logs or a
-database dump), 5 (the archive unchanged) and 6 (no Gmail API calls).
+**M0 run 2026-10-05**, DEV, build `7d262f67`, Neil and Claude:
+
+1. **Pass.** Ten messages picked across the archive (oldest, newest, a
+   three-level label, Inbox, Sent, unread and important, starred, a
+   workflow label, no label header, a three-message thread) open in Gmail
+   by their hexadecimal ID with the labels and flags Minerva recorded. One
+   has a label header Takeout folded onto two lines
+   (`Finance/Bank of America`); the parser joins it, and a test now says so.
+2. **Open.** 275,358 messages match the archive less chats and Trash.
+   Gmail counts conversations: the archive holds 264,648 imported
+   conversations, 267,035 with chats, and Gmail showed 267,362 (taken
+   later, with new mail). To close: Gmail's count for
+   `-in:chats before:2026/10/03` against Minerva's distinct thread IDs.
+3. **Pass.** The import resumed from its `nextOffset`; re-running 163
+   messages changed nothing but the four it was meant to fix.
+4. **Pass.** The dead-letter queue is empty. In a data dump of the mail
+   tables, phrases from past the first 200 characters of ten messages'
+   text matched nothing but one subject line that repeats the body's
+   words; a phrase from inside each message's first 200 characters was
+   found in its snippet, all ten. No message text reaches a queue, so no
+   log can hold it: the agent publishes metadata and the snippet only, and
+   the API logs message IDs and reasons. The dump was deleted after.
+5. **Pass.** The archive is 12,058,675,283 bytes, last modified
+   2026-10-03 before any import, opened read-only, and not copied; its
+   SHA-256 from 2026-10-05 is
+   `7232b38a80d1f8ed1b9ce7aef31871ba8b2f74cffb0bda854cd5ab7889131496`,
+   for later runs to compare.
+6. **Pass.** No Gmail API calls: mail's OAuth client does not exist until
+   phase 1b, and the quota page shows nothing for it.
+
+M0 is signed off when case 2 closes.
 
 ## Phase 1b — Linking and live sync
 
