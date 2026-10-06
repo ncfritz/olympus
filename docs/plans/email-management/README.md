@@ -358,23 +358,27 @@ messages have no queue to land in.
 
 **Sign-off:** M1, M2.
 
-**M2 so far, 2026-10-06**, DEV, Neil and Claude (the remaining cases with
-steps 3 and 4):
+**M2 so far, 2026-10-06**, DEV, Neil and Claude (case 6 waits for step
+4):
 
 - **1. Pass.** All 484 labels have their Gmail IDs; the 4 made since the
   export were added. The 7 `IMAP_*` labels of the export are not in
   Gmail's API, and came off the messages that had them.
-- **2. Pass, for labels and new mail.** The first reconcile relabelled
-  6,228 messages and fetched the 376 newer than the archive (one failed
-  and was fetched by the second); no message was deleted in Gmail since
-  the export, so deletion is checked by the unit tests until step 3. The
-  second reconcile changed nothing and fetched the 2 that had arrived.
+- **2. Pass.** The first reconcile relabelled 6,228 messages and fetched
+  the 376 newer than the archive (one failed and was fetched by the
+  second); the second changed nothing and fetched the 2 that had arrived.
+  No message had been deleted in Gmail since the export; deletion passed
+  with history polling (case 4).
 - **3. Pass, at twice the estimate.** A run sends 2,190 requests
   (about 11,000 quota units, nine minutes at the throttle's pace), against
   ADR 0030's "about a thousand": the estimate left out that each of the
   484 labels takes at least one list call, besides All Mail's 552 pages.
   Still under 1 % of the 278,000 gets a backfill would take, which is the
   ADR's point.
+- **4. Pass.** With the agent polling every 60 s, a label added to a
+  message in Gmail showed on it in Minerva, and a message deleted in
+  Gmail was gone from Minerva, both within two polls.
+- **5. Pass.** The mail tables take 418 MB for the mailbox.
 - **7. Pass.** Gmail's 278,125 messages and 267,404 threads, less 2,390
   chats in 2,385 threads (Spam, Trash and drafts empty), are 275,735 and
   265,019; Minerva holds exactly 275,735 messages in 265,019 threads.
