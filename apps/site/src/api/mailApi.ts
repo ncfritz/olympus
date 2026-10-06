@@ -10,6 +10,7 @@ import {
   listMailLabelFamilies,
   listMailLabels,
   type MailAuditAction,
+  type MailAuditRule,
   type MailStatisticsRange,
   type MailStatisticsScope,
   runMailAudit,
@@ -45,6 +46,7 @@ class MailApi {
   async listAuditChanges(query: {
     label?: string;
     action?: MailAuditAction;
+    rule?: MailAuditRule;
     minConfidence?: number;
     sortBy?: MailAuditChangeSort;
     sort?: SortDirection;
@@ -78,6 +80,7 @@ class MailApi {
   async exportAuditChanges(query: {
     label?: string;
     action?: MailAuditAction;
+    rule?: MailAuditRule;
     minConfidence?: number;
   }) {
     return await exportMailAuditChanges({ query });

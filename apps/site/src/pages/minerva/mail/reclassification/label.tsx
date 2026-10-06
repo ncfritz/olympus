@@ -3,6 +3,7 @@ import type {
   ListMailAuditChangesResponse,
   MailAuditAction,
   MailAuditChange,
+  MailAuditRule,
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   Flex,
@@ -33,6 +34,7 @@ const PAGE_SIZE = 50;
 
 type Filters = {
   action?: MailAuditAction;
+  rule?: MailAuditRule;
   minConfidence?: number;
   sortBy: MailAuditChangeSort;
   page: number;
@@ -44,6 +46,18 @@ const ACTIONS = [
   { label: "Removing", value: "remove" },
 ];
 
+const RULES = [
+  { label: "Every source", value: "all" },
+  { label: "Sender audit", value: "sender" },
+  { label: "Classifier", value: "classifier" },
+];
+
+/** Why a change was proposed, for its tooltip. */
+const evidence = (c: MailAuditChange): string =>
+  c.rule === "classifier"
+    ? `The classifier, scoring this message with a model that never saw it, is ${Math.round(c.confidence * 100)}% sure${c.ticked ? "" : "; below the label's threshold, so unticked"}`
+    : `${c.senderLabelMessages} of this sender's ${c.senderMessages} received messages carry ${c.label}`;
+
 const CONFIDENCES = [
   { label: "Any confidence", value: 0 },
   { label: "≥ 80%", value: 0.8 },
@@ -52,9 +66,10 @@ const CONFIDENCES = [
 ];
 
 /**
- * A label's review (docs/plans/email-management phase 2): the audit's
- * proposed changes into and out of one label, or all of them, with each
- * message's current labels and the evidence. Read-only until phase 4.
+ * A label's review (docs/plans/email-management phases 2 and 4): the
+ * changes proposed into and out of one label, or all of them, by the
+ * sender audit and the classifier, with each message's current labels and
+ * the evidence. Read-only until writes to Gmail.
  */
 const MailLabelReviewPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -84,6 +99,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
         await mailApi.listAuditChanges({
           ...(f.label ? { label: f.label } : {}),
           ...(f.action ? { action: f.action } : {}),
+          ...(f.rule ? { rule: f.rule } : {}),
           ...(f.minConfidence ? { minConfidence: f.minConfidence } : {}),
           sortBy: f.sortBy,
           pageSize: PAGE_SIZE,
@@ -138,7 +154,20 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
             <ExportButton
               label={label}
               action={filters.action}
+              rule={filters.rule}
               minConfidence={filters.minConfidence}
+            />
+            <Select
+              style={{ width: 150 }}
+              options={RULES}
+              value={filters.rule ?? "all"}
+              onChange={(v: string) =>
+                setFilters((f) => ({
+                  ...f,
+                  rule: v === "all" ? undefined : (v as MailAuditRule),
+                  page: 0,
+                }))
+              }
             />
             <Segmented
               options={ACTIONS}
@@ -185,7 +214,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
             loading={loading}
             dataSource={result?.changes ?? []}
             rowKey={(c) =>
-              `${c.message.gmailId}\u0000${c.label}\u0000${c.action}`
+              `${c.message.gmailId}\u0000${c.label}\u0000${c.action}\u0000${c.rule}`
             }
             pagination={{
               current: filters.page + 1,
@@ -245,14 +274,13 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
                 key: "proposed",
                 width: 260,
                 render: (_, c) => (
-                  <Tooltip
-                    title={`${c.senderLabelMessages} of this sender's ${c.senderMessages} received messages carry ${c.label}`}
-                  >
+                  <Tooltip title={evidence(c)}>
                     <span>
                       <ChangeTag
                         action={c.action}
                         label={c.label}
                         confidence={c.confidence}
+                        unticked={c.ticked === false}
                       />
                     </span>
                   </Tooltip>

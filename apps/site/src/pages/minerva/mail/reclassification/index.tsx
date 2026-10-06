@@ -98,7 +98,11 @@ const MailReclassificationPage: React.FunctionComponent = () => {
             </Title>
             <Text type={"secondary"} style={{ fontSize: 15 }}>
               {summary
-                ? `Audited ${DateTime.fromISO(summary.finishedTime).toRelative()} · ${summary.messagesExamined.toLocaleString()} messages, ${summary.consistentSenders.toLocaleString()} consistent senders`
+                ? `Audited ${DateTime.fromISO(summary.finishedTime).toRelative()} · ${summary.messagesExamined.toLocaleString()} messages, ${summary.consistentSenders.toLocaleString()} consistent senders · ${
+                    summary.classifierFinishedTime
+                      ? `${summary.classifierChanges.toLocaleString()} from the classifier, ${DateTime.fromISO(summary.classifierFinishedTime).toRelative()}`
+                      : "the classifier has not run"
+                  }`
                 : "What the audit finds in your labels"}
             </Text>
           </Space>

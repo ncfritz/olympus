@@ -1,5 +1,8 @@
 import { DownloadOutlined } from "@ant-design/icons";
-import type { MailAuditAction } from "@ncfritz/olympus-sdk/minerva";
+import type {
+  MailAuditAction,
+  MailAuditRule,
+} from "@ncfritz/olympus-sdk/minerva";
 import { Button, message } from "antd";
 import React, { useState } from "react";
 import mailApi from "../../../../api/mailApi";
@@ -9,8 +12,9 @@ import { fileNameOf, saveText } from "../../../../utils/download";
 const ExportButton: React.FunctionComponent<{
   label?: string;
   action?: MailAuditAction;
+  rule?: MailAuditRule;
   minConfidence?: number;
-}> = ({ label, action, minConfidence }) => {
+}> = ({ label, action, rule, minConfidence }) => {
   const [busy, setBusy] = useState(false);
   const save = async () => {
     setBusy(true);
@@ -18,6 +22,7 @@ const ExportButton: React.FunctionComponent<{
       const response = await mailApi.exportAuditChanges({
         ...(label ? { label } : {}),
         ...(action ? { action } : {}),
+        ...(rule ? { rule } : {}),
         ...(minConfidence ? { minConfidence } : {}),
       });
       saveText(
