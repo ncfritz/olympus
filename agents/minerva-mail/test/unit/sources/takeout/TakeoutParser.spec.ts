@@ -152,6 +152,22 @@ describe("TakeoutParser", () => {
     expect(parsed.categories).toEqual([]);
   });
 
+  it("joins a label header Takeout folded onto a second line", async () => {
+    // As Takeout wrote one on Neil's export: a long header continues on the
+    // next line, and the label spans the break.
+    const parsed = await parser.parse(
+      entry(
+        message({
+          id: "9",
+          labels:
+            "Archived,Category Updates,Starred,Bills/SWG,Finance/Bank of\n America",
+        }),
+      ),
+    );
+    expect(parsed.labels).toEqual(["Bills/SWG", "Finance/Bank of America"]);
+    expect(parsed.flags.starred).toBe(true);
+  });
+
   it("refuses a message without a thread ID, naming its offset only", async () => {
     const failure = parser.parse(
       entry(message({ id: "9", thread: null }), 1234),
