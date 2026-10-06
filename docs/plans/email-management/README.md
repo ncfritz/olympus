@@ -374,8 +374,7 @@ messages have no queue to land in.
 
 **Sign-off:** M1, M2.
 
-**M2 so far, 2026-10-06**, DEV, Neil and Claude (case 6 waits for step
-4):
+**M2 run 2026-10-06**, DEV, Neil and Claude:
 
 - **1. Pass.** All 484 labels have their Gmail IDs; the 4 made since the
   export were added. The 7 `IMAP_*` labels of the export are not in
@@ -395,6 +394,12 @@ messages have no queue to land in.
   message in Gmail showed on it in Minerva, and a message deleted in
   Gmail was gone from Minerva, both within two polls.
 - **5. Pass.** The mail tables take 418 MB for the mailbox.
+- **6. Pass.** With the icons searched by their hidden labels, 3,710 of
+  the 3,723 starred messages were recorded with their icons (green check
+  3,644, yellow star 24, orange guillemet 23, blue info 15, red bang 3,
+  yellow bang 1); Minerva's counts per icon match the report's, and the
+  three messages Neil gave the red bang are Gmail's `has:red-bang`. The
+  13 starred without an icon have none of the hidden icon labels.
 - **7. Pass.** Gmail's 278,125 messages and 267,404 threads, less 2,390
   chats in 2,385 threads (Spam, Trash and drafts empty), are 275,735 and
   265,019; Minerva holds exactly 275,735 messages in 265,019 threads.
