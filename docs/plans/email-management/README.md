@@ -243,6 +243,27 @@ No Gmail API calls (ADR 0030, as amended 2026-10-05).
 
 **Sign-off:** M0.
 
+**First run on DEV 2026-10-05**, the whole export into `olympus_dev`
+(build `7d262f67`, Neil): a 200-message slice, then the rest from its
+`nextOffset`. 275,358 messages stored: the 277,751 in the export less
+2,390 chats and 3 in Trash. Four messages were dead-lettered on the first
+pass: each had a Reply-To tracking address of 322–323 characters, past
+RFC 5321's 320, which Gmail accepts. Message addresses now allow 1,024
+(`1791210000000_minerva_mail_long_addresses`), and the four were imported
+by re-running the 163 messages around them; the dead-letter queue is
+empty.
+
+What it took to run, for next time: the agent connects to the broker as
+`olympus-dev` in dev, with that user's password; the API's `dev.env`
+must set `AUTH_SERVICE_ROLES` once (a second line replaces the first); and
+the API must have started once before the agent publishes, or the
+messages have no queue to land in.
+
+M0 is not signed off yet. Done: case 2 against the archive's counts (not
+yet Gmail's), and case 3's resume and repeat. Open: 1 (ten messages
+checked in Gmail), 4 (no body text in the dead-letter queue, logs or a
+database dump), 5 (the archive unchanged) and 6 (no Gmail API calls).
+
 ## Phase 1b — Linking and live sync
 
 0. **OAuth**: a new client for mail in the calendar agent's Google
