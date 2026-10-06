@@ -10,6 +10,9 @@ import { ImportMailAccountController } from "./controllers/ImportMailAccountCont
 import { ListMailAuditChangesController } from "./controllers/ListMailAuditChangesController";
 import { ListMailLabelFamiliesController } from "./controllers/ListMailLabelFamiliesController";
 import { ListMailLabelsController } from "./controllers/ListMailLabelsController";
+import { ListMailTrainingAccountsController } from "./controllers/ListMailTrainingAccountsController";
+import { ListMailTrainingExamplesController } from "./controllers/ListMailTrainingExamplesController";
+import { ListMailTrainingLabelsController } from "./controllers/ListMailTrainingLabelsController";
 import { RunMailAuditController } from "./controllers/RunMailAuditController";
 import { UpdateMailLabelController } from "./controllers/UpdateMailLabelController";
 import { MailMessageHandler } from "./handlers/MailMessageHandler";
@@ -19,12 +22,14 @@ import { MailLabelService } from "./services/MailLabelService";
 import { MailMessageQueues } from "./services/MailMessageQueues";
 import { MailMessageService } from "./services/MailMessageService";
 import { MailStatisticsService } from "./services/MailStatisticsService";
+import { MailTrainingService } from "./services/MailTrainingService";
 
 /**
  * Mail: each user's Gmail labels, message metadata, label suggestions and
  * reviewed changes (ADR 0030, docs/plans/email-management/README.md): the
  * agent's account import, the consumer of its message metadata, and the
- * statistics and audit over it, and label kinds.
+ * statistics and audit over it, label kinds, and the classifier's
+ * training data.
  */
 @Module({
   imports: [GraphQLClientModule, RabbitModule],
@@ -36,6 +41,7 @@ import { MailStatisticsService } from "./services/MailStatisticsService";
     MailMessageQueues,
     MailMessageHandler,
     MailStatisticsService,
+    MailTrainingService,
   ],
   controllers: [
     CreateMailLabelFamilyController,
@@ -47,6 +53,9 @@ import { MailStatisticsService } from "./services/MailStatisticsService";
     ListMailAuditChangesController,
     ListMailLabelFamiliesController,
     ListMailLabelsController,
+    ListMailTrainingAccountsController,
+    ListMailTrainingExamplesController,
+    ListMailTrainingLabelsController,
     RunMailAuditController,
     UpdateMailLabelController,
   ],

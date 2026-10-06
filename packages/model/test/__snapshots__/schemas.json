@@ -9891,6 +9891,63 @@
     ],
     "type": "object"
   },
+  "ListMailTrainingAccountsResponse": {
+    "properties": {
+      "accounts": {
+        "description": "Every mail account",
+        "items": {
+          "$ref": "#/components/schemas/MailTrainingAccount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "accounts"
+    ],
+    "type": "object"
+  },
+  "ListMailTrainingExamplesResponse": {
+    "properties": {
+      "examples": {
+        "description": "A page of examples, by Gmail ID",
+        "items": {
+          "$ref": "#/components/schemas/MailTrainingExample"
+        },
+        "type": "array"
+      },
+      "nextCursor": {
+        "description": "Pass as `after` for the next page; absent on the last",
+        "type": "string"
+      }
+    },
+    "required": [
+      "examples"
+    ],
+    "type": "object"
+  },
+  "ListMailTrainingLabelsResponse": {
+    "properties": {
+      "families": {
+        "description": "Its state families, by name",
+        "items": {
+          "$ref": "#/components/schemas/MailTrainingFamily"
+        },
+        "type": "array"
+      },
+      "topics": {
+        "description": "The account's topical labels, by name: what can be suggested",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "families",
+      "topics"
+    ],
+    "type": "object"
+  },
   "ListMediaAssetDownloadsResponse": {
     "properties": {
       "count": {
@@ -11671,6 +11728,99 @@
       "messages",
       "senders",
       "unlabelled"
+    ],
+    "type": "object"
+  },
+  "MailTrainingAccount": {
+    "properties": {
+      "email": {
+        "description": "The mailbox's address",
+        "type": "string"
+      },
+      "id": {
+        "description": "The account's ID",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "id"
+    ],
+    "type": "object"
+  },
+  "MailTrainingExample": {
+    "properties": {
+      "families": {
+        "description": "The families of its state labels, by name, sorted",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "fromAddress": {
+        "description": "The sender's address",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID, hexadecimal",
+        "type": "string"
+      },
+      "listId": {
+        "description": "Its List-Id",
+        "type": "string"
+      },
+      "receivedTime": {
+        "description": "When it was received",
+        "type": "string"
+      },
+      "sent": {
+        "description": "Whether it was sent from the mailbox",
+        "type": "boolean"
+      },
+      "threadId": {
+        "description": "Its thread",
+        "type": "string"
+      },
+      "topics": {
+        "description": "Its topical labels, by full name, sorted",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "families",
+      "gmailId",
+      "receivedTime",
+      "sent",
+      "threadId",
+      "topics"
+    ],
+    "type": "object"
+  },
+  "MailTrainingFamily": {
+    "properties": {
+      "initialLabel": {
+        "description": "The label a message predicted in it is given",
+        "type": "string"
+      },
+      "name": {
+        "description": "Its name",
+        "type": "string"
+      },
+      "states": {
+        "description": "All its states' labels, by name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "initialLabel",
+      "name",
+      "states"
     ],
     "type": "object"
   },

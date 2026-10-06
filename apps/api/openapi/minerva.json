@@ -7901,6 +7901,177 @@
         ]
       }
     },
+    "/minerva/mail/training/accounts": {
+      "get": {
+        "description": "For the mail classifier (ADR 0030, docs/plans/email-management phase 3): every mail account, by address, each trained on its own.",
+        "operationId": "ListMailTrainingAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailTrainingAccountsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the mail accounts the classifier trains for",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/training/examples": {
+      "get": {
+        "description": "For the mail classifier (ADR 0030, Label kinds): a page of the account's messages by Gmail ID, each with its metadata (never its text) and its labels as targets. A topical label is a topic; a state counts as its family; a retired label counts as what it merges into; system labels and stars are never targets. Pass the answer's `nextCursor` as `after` for the next page.",
+        "operationId": "ListMailTrainingExamples",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many examples, 1 to 5000; 1000 by default",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "Only messages after this Gmail ID: the last page's nextCursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "query",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of examples.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailTrainingExamplesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Lists an account's messages as training examples",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/training/labels": {
+      "get": {
+        "description": "For the mail classifier (ADR 0030, Label kinds): the account's topical labels, and its state families with each one's initial label, the label a message predicted in the family is given.",
+        "operationId": "ListMailTrainingLabels",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "query",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The topics and families.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailTrainingLabelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Lists the labels the classifier can suggest for an account",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/audit/runs": {
       "post": {
         "description": "Runs the audit (docs/plans/email-management phase 2) over each of the caller's mail accounts, replacing its last run: label changes proposed from each sender's habits, threads whose messages disagree, and labels that may be one. Read-only towards Gmail. Takes a few seconds on a large mailbox.",
@@ -14984,6 +15155,156 @@
         },
         "required": [
           "labels"
+        ]
+      },
+      "MailTrainingAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The account's ID"
+          },
+          "email": {
+            "type": "string",
+            "description": "The mailbox's address"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "ListMailTrainingAccountsResponse": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "description": "Every mail account",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailTrainingAccount"
+            }
+          }
+        },
+        "required": [
+          "accounts"
+        ]
+      },
+      "MailTrainingExample": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID, hexadecimal"
+          },
+          "threadId": {
+            "type": "string",
+            "description": "Its thread"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When it was received"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender's address"
+          },
+          "listId": {
+            "type": "string",
+            "description": "Its List-Id"
+          },
+          "sent": {
+            "type": "boolean",
+            "description": "Whether it was sent from the mailbox"
+          },
+          "topics": {
+            "description": "Its topical labels, by full name, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "families": {
+            "description": "The families of its state labels, by name, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "threadId",
+          "receivedTime",
+          "sent",
+          "topics",
+          "families"
+        ]
+      },
+      "ListMailTrainingExamplesResponse": {
+        "type": "object",
+        "properties": {
+          "examples": {
+            "description": "A page of examples, by Gmail ID",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailTrainingExample"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Pass as `after` for the next page; absent on the last"
+          }
+        },
+        "required": [
+          "examples"
+        ]
+      },
+      "MailTrainingFamily": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Its name"
+          },
+          "initialLabel": {
+            "type": "string",
+            "description": "The label a message predicted in it is given"
+          },
+          "states": {
+            "description": "All its states' labels, by name",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "initialLabel",
+          "states"
+        ]
+      },
+      "ListMailTrainingLabelsResponse": {
+        "type": "object",
+        "properties": {
+          "topics": {
+            "description": "The account's topical labels, by name: what can be suggested",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "families": {
+            "description": "Its state families, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailTrainingFamily"
+            }
+          }
+        },
+        "required": [
+          "topics",
+          "families"
         ]
       },
       "MailAuditRun": {
