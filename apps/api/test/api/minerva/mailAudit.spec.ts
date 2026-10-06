@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  MAIL_AUDIT_EXPORT_CHUNK,
   MAIL_AUDIT_HIGH_CONFIDENCE,
   MAIL_AUDIT_TOP,
 } from "../../../src/minerva/mail/services/MailAuditService";
@@ -8,6 +9,7 @@ import { signedInApp, USER } from "../../support/signedInApp";
 const RUNS = "/v1/minerva/mail/audit/runs";
 const AUDIT = "/v1/minerva/mail/audit";
 const CHANGES = "/v1/minerva/mail/audit/changes";
+const EXPORT = "/v1/minerva/mail/audit/changes/export";
 
 const run = {
   id: "8d4d0000-0000-4000-8000-000000000001",
@@ -135,6 +137,7 @@ describe("Mail audit API", () => {
     ["post", RUNS],
     ["get", AUDIT],
     ["get", CHANGES],
+    ["get", EXPORT],
   ] as const)(
     "%s %s answers 401 without an identity and asks Hasura nothing",
     async (method, path) => {
@@ -330,6 +333,117 @@ describe("Mail audit API", () => {
       ["a label past 225 characters", { label: "x".repeat(226) }],
     ])("answers 400 for %s and asks Hasura nothing", async (_case, query) => {
       const res = await ctx.as(t().http().get(CHANGES).query(query));
+      expect(res.status).toBe(400);
+      expect(t().graphql.request).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("GET /v1/minerva/mail/audit/changes/export (ExportMailAuditChanges)", () => {
+    const page = (rows: unknown[]) => ({
+      minerva_mail_audit_changes: rows,
+      minerva_mail_audit_changes_aggregate: {
+        aggregate: { count: rows.length },
+      },
+    });
+
+    it("answers every change as CSV, a row each, most confident first", async () => {
+      t().graphql.on(
+        "ListMailAuditChanges",
+        page([
+          change({
+            message: {
+              ...change().message,
+              subject: 'Your bill, "final"',
+              fromName: "=cmd",
+            },
+          }),
+          change({
+            action: "remove",
+            label: { name: "Shopping" },
+            confidence: 0.933,
+          }),
+        ]),
+      );
+
+      const res = await ctx.as(t().http().get(EXPORT));
+
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toMatch(/^text\/csv/);
+      expect(res.headers["content-disposition"]).toBe(
+        'attachment; filename="mail-audit-changes.csv"',
+      );
+      const lines = res.text.split("\r\n");
+      expect(lines[0]).toBe(
+        "received_time,gmail_id,thread_id,from_address,from_name,subject,label,action,rule,confidence,sender_messages,sender_label_messages,labels_now,gmail_link",
+      );
+      expect(lines[1]).toBe(
+        `2026-09-01T00:00:00.000Z,1a0fab8f293aa5b5,1a0fab8f293aa5b5,bill@power.example,'=cmd,"Your bill, ""final""",Bills/Power,add,sender,0.9,30,27,Bills; Shopping,https://mail.google.com/mail/u/0/#all/1a0fab8f293aa5b5`,
+      );
+      expect(lines[2]).toContain(",Shopping,remove,sender,0.933,");
+      expect(lines).toHaveLength(4);
+      expect(lines[3]).toBe("");
+      expect(
+        t().graphql.calls("ListMailAuditChanges")[0].variables,
+      ).toMatchObject({
+        where: { run: { account: { userId: { _eq: USER } } } },
+        orderBy: [
+          { confidence: "desc" },
+          { message: { receivedTime: "desc" } },
+          { messageId: "asc" },
+        ],
+        limit: MAIL_AUDIT_EXPORT_CHUNK,
+        offset: 0,
+      });
+    });
+
+    it("reads in chunks until one comes back short, and names the file for the label", async () => {
+      t().graphql.on("ListMailAuditChanges", (variables) =>
+        page(
+          (variables as { offset: number }).offset === 0
+            ? Array.from({ length: MAIL_AUDIT_EXPORT_CHUNK }, () => change())
+            : [change()],
+        ),
+      );
+
+      const res = await ctx.as(
+        t()
+          .http()
+          .get(EXPORT)
+          .query({ label: "Bills/Power", action: "add", minConfidence: "0.9" }),
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.headers["content-disposition"]).toBe(
+        'attachment; filename="mail-audit-changes-bills-power.csv"',
+      );
+      expect(res.text.split("\r\n")).toHaveLength(MAIL_AUDIT_EXPORT_CHUNK + 3);
+      const calls = t().graphql.calls("ListMailAuditChanges");
+      expect(
+        calls.map((c) => (c.variables as { offset: number }).offset),
+      ).toEqual([0, MAIL_AUDIT_EXPORT_CHUNK]);
+      expect(calls[0].variables).toMatchObject({
+        where: {
+          label: { name: { _eq: "Bills/Power" } },
+          action: { _eq: "add" },
+          confidence: { _gte: 0.9 },
+        },
+      });
+    });
+
+    it("answers just the header when there is nothing to export", async () => {
+      t().graphql.on("ListMailAuditChanges", page([]));
+      const res = await ctx.as(t().http().get(EXPORT));
+      expect(res.status).toBe(200);
+      expect(res.text.split("\r\n")).toHaveLength(2);
+    });
+
+    it.each([
+      ["an unknown action", { action: "move" }],
+      ["a confidence that is not a number", { minConfidence: "high" }],
+      ["a confidence above 1", { minConfidence: "2" }],
+      ["an empty label", { label: "" }],
+    ])("answers 400 for %s and asks Hasura nothing", async (_case, query) => {
+      const res = await ctx.as(t().http().get(EXPORT).query(query));
       expect(res.status).toBe(400);
       expect(t().graphql.request).not.toHaveBeenCalled();
     });

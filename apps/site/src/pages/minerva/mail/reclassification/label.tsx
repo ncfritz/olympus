@@ -22,6 +22,7 @@ import React, { useEffect, useState } from "react";
 type Query = Filters & { label?: string; ready: boolean };
 import mailApi, { type MailAuditChangeSort } from "../../../../api/mailApi";
 import ChangeTag from "../../../../components/minerva/mail/audit/ChangeTag";
+import ExportButton from "../../../../components/minerva/mail/audit/ExportButton";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { gmailLink } from "../../../../utils/mailAudit";
@@ -134,6 +135,11 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
             </Text>
           </Space>
           <Space size={12} wrap={true}>
+            <ExportButton
+              label={label}
+              action={filters.action}
+              minConfidence={filters.minConfidence}
+            />
             <Segmented
               options={ACTIONS}
               value={filters.action ?? "all"}

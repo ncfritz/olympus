@@ -7344,6 +7344,80 @@
         ]
       }
     },
+    "/minerva/mail/audit/changes/export": {
+      "get": {
+        "description": "The change plan for review outside the site (docs/plans/email-management phase 2): every label change the latest audit proposes over the caller's mail, or those for one label, one action or at least a confidence, a row each, most confident first. Columns: received_time, gmail_id, thread_id, from_address, from_name, subject, label, action, rule, confidence, sender_messages, sender_label_messages, labels_now, gmail_link. Metadata only; never message text.",
+        "operationId": "ExportMailAuditChanges",
+        "parameters": [
+          {
+            "name": "minConfidence",
+            "required": false,
+            "in": "query",
+            "description": "Only changes at least this confident, 0 to 1",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Only additions or only removals",
+            "schema": {
+              "$ref": "#/components/schemas/MailAuditAction"
+            }
+          },
+          {
+            "name": "label",
+            "required": false,
+            "in": "query",
+            "description": "Only changes adding or removing this label, by full name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The changes as CSV, as an attachment.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Exports the latest audit's proposed label changes as CSV",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/audit": {
       "get": {
         "description": "The Re-classification page's findings (docs/plans/email-management phase 2): the latest run's totals, every user label with the changes proposed into and out of it, merge candidates and threads whose messages disagree, with stars counted now. Before the first run there is no summary and no proposals.",
@@ -13570,6 +13644,14 @@
           "meeting"
         ]
       },
+      "MailAuditAction": {
+        "type": "string",
+        "enum": [
+          "add",
+          "remove"
+        ],
+        "description": "What a proposed label change does"
+      },
       "MailAuditSummary": {
         "type": "object",
         "properties": {
@@ -14267,14 +14349,6 @@
           "desc_nulls_first",
           "desc_nulls_last"
         ]
-      },
-      "MailAuditAction": {
-        "type": "string",
-        "enum": [
-          "add",
-          "remove"
-        ],
-        "description": "What a proposed label change does"
       },
       "MailAuditMessage": {
         "type": "object",

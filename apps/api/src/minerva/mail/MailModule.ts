@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
 import { RabbitModule } from "../../infra/RabbitModule";
+import { ExportMailAuditChangesController } from "./controllers/ExportMailAuditChangesController";
 import { GetMailAuditController } from "./controllers/GetMailAuditController";
 import { GetMailStatisticsController } from "./controllers/GetMailStatisticsController";
 import { ImportMailAccountController } from "./controllers/ImportMailAccountController";
@@ -30,6 +31,7 @@ import { MailStatisticsService } from "./services/MailStatisticsService";
     MailStatisticsService,
   ],
   controllers: [
+    ExportMailAuditChangesController,
     GetMailAuditController,
     GetMailStatisticsController,
     ImportMailAccountController,

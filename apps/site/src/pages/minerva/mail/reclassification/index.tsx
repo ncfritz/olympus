@@ -15,6 +15,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import mailApi from "../../../../api/mailApi";
 import AuditStrip from "../../../../components/minerva/mail/audit/AuditStrip";
+import ExportButton from "../../../../components/minerva/mail/audit/ExportButton";
 import LabelTreeTable from "../../../../components/minerva/mail/audit/LabelTreeTable";
 import MergeCandidates from "../../../../components/minerva/mail/audit/MergeCandidates";
 import MixedThreads from "../../../../components/minerva/mail/audit/MixedThreads";
@@ -107,6 +108,7 @@ const MailReclassificationPage: React.FunctionComponent = () => {
                 All proposed changes
               </Link>
             )}
+            {summary && <ExportButton />}
             {runButton}
           </Space>
         </Flex>

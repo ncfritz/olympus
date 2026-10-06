@@ -1,5 +1,6 @@
 import {
   client,
+  exportMailAuditChanges,
   getMailAudit,
   getMailStatistics,
   listMailAuditChanges,
@@ -44,6 +45,15 @@ class MailApi {
     startPage: number;
   }) {
     return await listMailAuditChanges({ query });
+  }
+
+  /** The changes as CSV, and the file name the API gives it. */
+  async exportAuditChanges(query: {
+    label?: string;
+    action?: MailAuditAction;
+    minConfidence?: number;
+  }) {
+    return await exportMailAuditChanges({ query });
   }
 }
 

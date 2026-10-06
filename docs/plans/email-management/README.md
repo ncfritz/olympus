@@ -326,27 +326,48 @@ messages have no queue to land in.
 
 **Sign-off:** M1, M2.
 
-## Phase 2 — Audit reports and statistics
+## Phase 2 — Audit reports and statistics — built 2026-10-05, not signed off
 
-Read-only, over metadata alone.
+Read-only, over metadata alone. Measured on a synthetic mailbox the size
+of Neil's (275,358 messages, 482 labels, one sender with 43 %); the real
+numbers come with the sign-off on DEV.
 
-1. **Analyses** (SQL functions or classifier jobs on metadata):
-   - sender consistency: per address, domain and `List-Id`, the share of
-     each label; messages off their sender's main label;
-   - thread consistency: threads whose messages carry different labels;
-   - label usage by year, and labels that fade as another rises;
-   - duplicate roots: the same leaf under two parents, and labels with
-     heavily overlapping senders (merge candidates);
-   - stars: by icon, label, sender and age; near-identical messages
-     starred and not; once the icons have meanings (phase 3), messages in
-     an open state without the attention star, and in a closed state
-     without the done star.
-2. **Operations**: the statistics (KPIs, top senders, top labels, sender
-   and label activity by year) and the audit results, read-only.
-3. **Site**: the Statistics page, as designed. The audit's findings are
-   shown on the Re-classification page without apply buttons until
-   phase 4.
-4. **Export**: the change plan as CSV for review outside the site.
+1. **Analyses**: **built**.
+   - Statistics are SQL functions computed on request
+     (`1791220000000_minerva_mail_statistics`): the summary, top senders
+     and labels, and their mail per year, by range and scope. About 2 s
+     of database time per page.
+   - The audit is a kept run (`1791230000000_minerva_mail_audit`):
+     `mail_run_audit` replaces each account's last run, in about 3.5 s,
+     so the page, the drill-down and the export read one set, and phase 4
+     can add a status to each proposal.
+     - **Sender consistency**: a sender of five or more received messages
+       with one label on four in five of them gets it where it is missing
+       (confidence: the share), and loses a label it has on fewer than one
+       in ten (confidence: one less that share).
+     - **Thread consistency**: threads whose messages carry different
+       user labels.
+     - **Merge candidates**: a duplicated root (a top-level label and
+       another with the same leaf, `Advertisements` and
+       `Accounts/Advertisements`), or labels where three in five of the
+       smaller one's senders (with two messages or more under it) are the
+       larger's, a label and its own parent or child excepted. The same
+       leaf under two parents is often deliberate (`Amazon/Receipts`,
+       `Apple/Receipts`), so it counts only by senders.
+     - **Stars**, live: by label, sender and age, and near-identical mail
+       (one sender, subjects equal once digits are set aside) starred and
+       not. Takeout has no star icon, so stars of any kind until 1b; the
+       state checks wait for label kinds (phase 3).
+   - Label fade shows on the Statistics heatmap and as "no mail in two
+     years" on the label tree, rather than as a rule of its own.
+2. **Operations**: **built**. `GetMailStatistics`; `RunMailAudit`,
+   `GetMailAudit`, `ListMailAuditChanges` (paged; by label, action and
+   confidence).
+3. **Site**: **built**. The Statistics page; the Re-classification page
+   with the audit's strip, label tree, merge candidates, mixed threads
+   and stars, and a label's review. No apply buttons until phase 4.
+4. **Export**: **built**. `ExportMailAuditChanges`: the change plan as
+   CSV, a row per proposed change, with the same filters as the review.
 
 **Sign-off:** M3, M4.
 
