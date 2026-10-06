@@ -6,6 +6,8 @@ import type {
   GmailLabelInfo,
   GmailMailbox,
 } from "../../../src/gmail/GmailClient";
+import type { ClassifierClient } from "../../../src/classifier/ClassifierClient";
+import { GmailMessages } from "../../../src/gmail/GmailMessages";
 import { GmailReconcile } from "../../../src/gmail/GmailReconcile";
 
 /*
@@ -82,8 +84,8 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
     }),
   };
   const mail = {
-    listMailTrainingAccounts: vi.fn(async () => [
-      { id: ACCOUNT_ID, email: EMAIL },
+    listMailSyncAccounts: vi.fn(async () => [
+      { id: ACCOUNT_ID, email: EMAIL, historyId: "100" },
     ]),
     syncMailLabels: vi.fn(async () => ({
       matched: 4,
@@ -122,19 +124,30 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
       };
     }),
   };
-  const reconcile = new GmailReconcile(
+  const classifier = {
+    configured: true,
+    putFeatures: vi.fn(async (_id: string, messages: unknown[]) => ({
+      version: "v1",
+      stored: messages.length,
+    })),
+  };
+  const messages = new GmailMessages(
     amqp as unknown as AmqpConnection,
+    classifier as unknown as ClassifierClient,
+  );
+  const reconcile = new GmailReconcile(
     mail as unknown as MailApi,
     {} as GmailClient,
+    messages,
   );
   const run = () =>
     reconcile.run(EMAIL, {}, mailbox as unknown as GmailMailbox);
-  return { run, mail, mailbox, published };
+  return { run, mail, mailbox, published, classifier };
 };
 
 describe("GmailReconcile", () => {
   it("brings Minerva into step with Gmail and records the historyId", async () => {
-    const { run, mail, published } = setup();
+    const { run, mail, published, classifier } = setup();
 
     const report = await run();
 
@@ -168,6 +181,8 @@ describe("GmailReconcile", () => {
       ],
       deleted: 2,
       added: 1,
+      featurized: 1,
+      featurizeFailed: 0,
       failed: 0,
     });
     expect(mail.syncMailLabels).toHaveBeenCalledWith(
@@ -198,6 +213,13 @@ describe("GmailReconcile", () => {
       flags: { inbox: true, unread: true },
     });
     expect(JSON.stringify(published)).not.toContain("Past the snippet");
+    // The text goes to the classifier alone.
+    expect(classifier.putFeatures).toHaveBeenCalledWith(ACCOUNT_ID, [
+      expect.objectContaining({
+        gmailId: "e",
+        text: expect.stringContaining("Past the snippet"),
+      }),
+    ]);
     expect(mail.updateMailAccountSync).toHaveBeenCalledWith(ACCOUNT_ID, {
       historyId: "12345",
       messagesTotal: 4,

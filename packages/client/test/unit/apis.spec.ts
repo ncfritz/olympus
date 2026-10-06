@@ -86,6 +86,7 @@ const ARGS: Record<string, unknown[]> = {
   importMailAccount: ["owner@example.test", "neil@example.test"],
   listMailTrainingAccounts: [],
   listMailMessageStates: ["account-1", "a"],
+  listMailSyncAccounts: [],
   syncMailLabels: ["account-1", []],
   updateMailAccountSync: [
     "account-1",

@@ -112,6 +112,26 @@ describe("Mail sync", () => {
     }));
   });
 
+  describe("ListMailSyncAccounts", () => {
+    it("lists linked accounts with where their history carries on", async () => {
+      t.graphql.on("ListMailSyncAccounts", {
+        minerva_mail_accounts: [
+          { id: ACCOUNT_ID, email: "owner@example.net", historyId: 30802840 },
+          { id: MISSING, email: "other@example.net", historyId: null },
+        ],
+      });
+      const res = await asAgent("GET", "/v1/minerva/mail/sync/accounts");
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body)).toEqual({
+        accounts: [
+          { id: ACCOUNT_ID, email: "owner@example.net", historyId: "30802840" },
+          { id: MISSING, email: "other@example.net" },
+        ],
+      });
+      expect(t.graphql.calls("ListMailSyncAccounts")).toHaveLength(1);
+    });
+  });
+
   describe("ListMailMessageStates", () => {
     it("pages messages with their labels, categories and flags", async () => {
       t.graphql.on("ListMailMessageStates", {

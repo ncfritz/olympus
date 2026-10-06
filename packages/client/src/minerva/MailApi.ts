@@ -2,6 +2,7 @@ import {
   type GmailLabel,
   importMailAccount,
   listMailMessageStates,
+  listMailSyncAccounts,
   listMailTrainingAccounts,
   syncMailLabels,
   updateMailAccountSync,
@@ -27,6 +28,14 @@ export class MailApi {
   /** Every mail account, with its address. */
   async listMailTrainingAccounts() {
     const response = await listMailTrainingAccounts({
+      client: this.clients.minerva,
+    });
+    return response.data.accounts;
+  }
+
+  /** Every account linked to Gmail, with the historyId to poll from. */
+  async listMailSyncAccounts() {
+    const response = await listMailSyncAccounts({
       client: this.clients.minerva,
     });
     return response.data.accounts;

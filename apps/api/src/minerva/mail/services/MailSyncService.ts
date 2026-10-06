@@ -8,6 +8,7 @@ import {
   ListMailMessageStatesResponse,
   MailAccount,
   MailMessageState,
+  MailSyncAccount,
   SyncMailLabelsResponse,
   UpdateMailAccountSyncRequest,
 } from "@ncfritz/olympus-model";
@@ -74,6 +75,34 @@ const requireAccountId = (accountId: string): string => {
 @Injectable()
 export class MailSyncService {
   constructor(private readonly graphQLClient: GraphQLClient) {}
+
+  /** Every account linked to Gmail, with the historyId to poll from. */
+  async listLinked(): Promise<MailSyncAccount[]> {
+    const query = gql`
+      query ListMailSyncAccounts {
+        minerva_mail_accounts(
+          where: { linkedTime: { _is_null: false } }
+          order_by: { email: asc }
+        ) {
+          id
+          email
+          historyId
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      minerva_mail_accounts: {
+        id: string;
+        email: string;
+        historyId: string | null;
+      }[];
+    }>(query);
+    return response.minerva_mail_accounts.map((a) => ({
+      id: a.id,
+      email: a.email,
+      ...(a.historyId ? { historyId: String(a.historyId) } : {}),
+    }));
+  }
 
   /**
    * A page of the account's messages' labels and flags, by Gmail ID.

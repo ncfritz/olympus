@@ -127,12 +127,26 @@ describe("Gmail and the services listener", () => {
       clientId: "id.apps.googleusercontent.com",
       clientSecret: "the-secret",
       credentialsDir: "data/credentials",
+      pollSeconds: 60,
       scopes: [
         "openid",
         "email",
         "https://www.googleapis.com/auth/gmail.readonly",
       ],
     });
+  });
+
+  it("polls Gmail every MAIL_GMAIL_POLL_SECONDS, 10 at least, or not at all", () => {
+    const gmail = (seconds: string) =>
+      readConfig({
+        MAIL_GOOGLE_OAUTH_CLIENT_ID: "id",
+        MAIL_GOOGLE_OAUTH_CLIENT_SECRET: "secret",
+        MAIL_GMAIL_POLL_SECONDS: seconds,
+      }).gmail;
+    expect(gmail("0")?.pollSeconds).toBe(0);
+    expect(gmail("300")?.pollSeconds).toBe(300);
+    expect(() => gmail("5")).toThrow(/MAIL_GMAIL_POLL_SECONDS/);
+    expect(() => gmail("soon")).toThrow(/MAIL_GMAIL_POLL_SECONDS/);
   });
 
   it("needs both halves of Gmail's client", () => {

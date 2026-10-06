@@ -1,11 +1,7 @@
 import { OlympusClientModule } from "@ncfritz/olympus-client/nest";
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import {
-  ALL_CONFIG,
-  olympusConfig,
-  runtimeConfig,
-} from "../config/configuration";
+import { ClassifierClient } from "../classifier/ClassifierClient";
+import { olympusConfig, runtimeConfig } from "../config/configuration";
 import type {
   OlympusConfigType,
   RuntimeConfigType,
@@ -13,16 +9,19 @@ import type {
 import { RabbitModule } from "../infra/RabbitModule";
 import { GmailClient } from "./GmailClient";
 import { GmailCredentialStore } from "./GmailCredentialStore";
+import { GmailMessages } from "./GmailMessages";
+import { GmailPoll } from "./GmailPoll";
 import { GmailReconcile } from "./GmailReconcile";
 
 /**
- * Reconciling a linked mailbox with Gmail, as a command (src/gmail.ts):
- * Gmail read with the stored credential, changes published to
- * mail.messages, the account's labels and sync through the API.
+ * Keeping linked mailboxes in step with Gmail (docs/plans/email-management
+ * phase 1b): Gmail read with the stored credentials, changes published to
+ * mail.messages, new mail's text to the classifier, the accounts' labels
+ * and sync through the API. The running agent polls with it (AppModule);
+ * the gmail command reconciles or polls once (GmailCommandModule).
  */
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: ALL_CONFIG }),
     RabbitModule,
     OlympusClientModule.forRootAsync({
       inject: [olympusConfig.KEY, runtimeConfig.KEY],
@@ -33,6 +32,14 @@ import { GmailReconcile } from "./GmailReconcile";
       }),
     }),
   ],
-  providers: [GmailCredentialStore, GmailClient, GmailReconcile],
+  providers: [
+    GmailCredentialStore,
+    GmailClient,
+    ClassifierClient,
+    GmailMessages,
+    GmailReconcile,
+    GmailPoll,
+  ],
+  exports: [GmailReconcile, GmailPoll],
 })
 export class GmailSyncModule {}

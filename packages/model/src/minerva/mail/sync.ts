@@ -29,6 +29,31 @@ export class MailMessageStateFlags {
   sent: boolean;
 }
 
+/** A mailbox linked to Gmail, and where its history polling carries on. */
+export class MailSyncAccount {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The account's ID",
+  })
+  id: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The mailbox's address, lower case",
+  })
+  email: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Gmail's historyId to poll from; absent until the first reconcile",
+  })
+  historyId?: string;
+}
+
 /** A message's labels and flags as Minerva has them. */
 export class MailMessageState {
   @ApiProperty({
@@ -165,6 +190,16 @@ export class SyncMailLabelsResponse {
       "Minerva's user labels Gmail no longer has, by name: kept, with their kinds, until their messages say otherwise",
   })
   notInGmail: string[];
+}
+
+export class ListMailSyncAccountsResponse {
+  @ApiProperty({
+    type: () => MailSyncAccount,
+    isArray: true,
+    required: true,
+    description: "Every mail account linked to Gmail, by address",
+  })
+  accounts: MailSyncAccount[];
 }
 
 export class UpdateMailAccountSyncResponse {

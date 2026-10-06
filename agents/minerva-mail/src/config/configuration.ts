@@ -44,6 +44,8 @@ export type GmailConfig = {
   credentialsDir: string;
   /** What a new sign-in asks for. */
   scopes: string[];
+  /** Seconds between history polls of each linked mailbox; 0 turns it off. */
+  pollSeconds: number;
 };
 
 /** The scopes until the first phase that writes (ADR 0030). */
@@ -82,7 +84,8 @@ export type AgentConfig = {
 
 /**
  * MAIL_GOOGLE_OAUTH_CLIENT_ID and MAIL_GOOGLE_OAUTH_CLIENT_SECRET (or
- * _SECRET_FILE), together or not at all; MAIL_CREDENTIALS_DIR.
+ * _SECRET_FILE), together or not at all; MAIL_CREDENTIALS_DIR; and
+ * MAIL_GMAIL_POLL_SECONDS, 60 unless set (0: no polling).
  */
 const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
   const clientId = read.optional("MAIL_GOOGLE_OAUTH_CLIENT_ID");
@@ -98,7 +101,20 @@ const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
     );
     return undefined;
   }
-  return { clientId, clientSecret, credentialsDir, scopes: GMAIL_READ_SCOPES };
+  const poll = read.string("MAIL_GMAIL_POLL_SECONDS", "60");
+  const pollSeconds = Number(poll);
+  if (!/^[0-9]{1,5}$/.test(poll) || (pollSeconds > 0 && pollSeconds < 10)) {
+    read.problems.push(
+      "MAIL_GMAIL_POLL_SECONDS must be 0 (no polling) or a whole number of seconds, 10 or more",
+    );
+  }
+  return {
+    clientId,
+    clientSecret,
+    credentialsDir,
+    scopes: GMAIL_READ_SCOPES,
+    pollSeconds,
+  };
 };
 
 /**

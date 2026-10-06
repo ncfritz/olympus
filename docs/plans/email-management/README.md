@@ -329,10 +329,22 @@ messages have no queue to land in.
    (`1791270000000_minerva_mail_sync`, which also moves the link's
    Google subject into the account's existing `subject`). Mail fetched
    here is not featurized; step 3 does that for new mail.
-3. **Incremental**: `history.list` polling from the `historyId`; added
-   and removed labels, new and deleted messages; new messages fetched,
-   with Gmail's snippet. A `historyId` too old (404) runs the reconcile
-   again.
+3. **Incremental**: **built**. The running agent polls every linked
+   mailbox's `history.list` from its `historyId` every
+   `MAIL_GMAIL_POLL_SECONDS` (60), one poll at a time (`gmail poll` does it
+   once). Each message history names is brought to its state now: new
+   mail, and mail out of Spam or Trash, fetched whole (`format=raw`),
+   published and featurized; changed labels read with `format=minimal`
+   and published as `message.labels`; deleted, or moved to Spam, Trash or
+   the drafts, `message.delete` (the row goes, as at the import). Saved
+   drafts and chats are passed over; a label not seen yet is read and
+   synced first. The new `historyId` is recorded (`UpdateMailAccountSync`,
+   with Gmail's totals) only once everything is published. No `historyId`
+   yet, or a 404 for one too old, runs the reconcile, at most hourly. The
+   agent finds linked accounts with `ListMailSyncAccounts`. The reconcile
+   now featurizes what it fetches too; the 379 messages its first runs
+   fetched were not, and wait for the next featurize of the archive or a
+   backfill.
 4. **Stars**: for each star icon, a `messages.list` with its search
    operator (`has:yellow-star`, `has:red-bang`, `has:green-check`, …)
    records which icon each starred message has, and again on each poll

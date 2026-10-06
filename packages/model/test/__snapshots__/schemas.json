@@ -10041,6 +10041,21 @@
     ],
     "type": "object"
   },
+  "ListMailSyncAccountsResponse": {
+    "properties": {
+      "accounts": {
+        "description": "Every mail account linked to Gmail, by address",
+        "items": {
+          "$ref": "#/components/schemas/MailSyncAccount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "accounts"
+    ],
+    "type": "object"
+  },
   "ListMailTrainingAccountsResponse": {
     "properties": {
       "accounts": {
@@ -12038,6 +12053,27 @@
       "ready"
     ],
     "type": "string"
+  },
+  "MailSyncAccount": {
+    "properties": {
+      "email": {
+        "description": "The mailbox's address, lower case",
+        "type": "string"
+      },
+      "historyId": {
+        "description": "Gmail's historyId to poll from; absent until the first reconcile",
+        "type": "string"
+      },
+      "id": {
+        "description": "The account's ID",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "id"
+    ],
+    "type": "object"
   },
   "MailTrainingAccount": {
     "properties": {

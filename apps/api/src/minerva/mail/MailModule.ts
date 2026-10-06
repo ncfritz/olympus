@@ -16,6 +16,7 @@ import { ListMailMessageStatesController } from "./controllers/ListMailMessageSt
 import { ListMailAuditChangesController } from "./controllers/ListMailAuditChangesController";
 import { ListMailLabelFamiliesController } from "./controllers/ListMailLabelFamiliesController";
 import { ListMailLabelsController } from "./controllers/ListMailLabelsController";
+import { ListMailSyncAccountsController } from "./controllers/ListMailSyncAccountsController";
 import { ListMailTrainingAccountsController } from "./controllers/ListMailTrainingAccountsController";
 import { ListMailTrainingExamplesController } from "./controllers/ListMailTrainingExamplesController";
 import { ListMailTrainingLabelsController } from "./controllers/ListMailTrainingLabelsController";
@@ -78,6 +79,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailAuditChangesController,
     ListMailLabelFamiliesController,
     ListMailLabelsController,
+    ListMailSyncAccountsController,
     ListMailTrainingAccountsController,
     ListMailTrainingExamplesController,
     ListMailTrainingLabelsController,

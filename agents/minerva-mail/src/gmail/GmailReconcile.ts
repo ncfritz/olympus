@@ -1,30 +1,17 @@
-import { AmqpConnection } from "@golevelup/nestjs-rabbitmq";
 import { MailApi } from "@ncfritz/olympus-client";
-import { publishMessage } from "@ncfritz/olympus-messages";
 import { Injectable, Logger } from "@nestjs/common";
-import { mailMessageRoute } from "../messaging";
-import type { MailFlags } from "../sources/MailSourceMessage";
-import { parseRawMessage } from "../sources/parseRawMessage";
-import { noFlags } from "../sources/takeout/takeoutLabels";
-import { toMetadataMessage } from "../takeout/toMetadataMessage";
+import { GmailClient, type GmailMailbox } from "./GmailClient";
+import { GmailMessages } from "./GmailMessages";
 import {
-  GmailClient,
-  type GmailLabelInfo,
-  type GmailMailbox,
-} from "./GmailClient";
-
-/** Gmail's system labels Minerva keeps as flags. */
-const FLAG_LABELS: Record<string, keyof MailFlags> = {
-  INBOX: "inbox",
-  UNREAD: "unread",
-  STARRED: "starred",
-  IMPORTANT: "important",
-  SENT: "sent",
-};
-const CATEGORY = /^CATEGORY_([A-Z]+)$/;
-
-/** Not mail Minerva keeps, as the import skipped them. */
-const LEFT_OUT = ["DRAFT", "CHAT"];
+  applyLabel,
+  CATEGORY,
+  emptyState,
+  FLAG_LABELS,
+  FLAG_NAMES,
+  type GmailState,
+  LEFT_OUT,
+  sortState,
+} from "./gmailState";
 
 /** Outside All Mail or left out: counted, for comparing with the totals. */
 const EXCLUDED = {
@@ -70,15 +57,11 @@ export type GmailReconcileReport = {
   labelChanges: { label: string; added: number; removed: number }[];
   deleted: number;
   added: number;
+  /** New mail's text sent to the classifier; and what it refused. */
+  featurized: number;
+  featurizeFailed: number;
   failed: number;
   seconds: number;
-};
-
-/** A message's labels, categories and flags as Gmail has them. */
-type GmailState = {
-  labels: string[];
-  categories: string[];
-  flags: Record<string, boolean>;
 };
 
 const sameList = (a: string[], b: string[]) =>
@@ -103,9 +86,9 @@ export class GmailReconcile {
   private readonly logger = new Logger(GmailReconcile.name);
 
   constructor(
-    private readonly amqp: AmqpConnection,
     private readonly mail: MailApi,
     private readonly gmail: GmailClient,
+    private readonly messages: GmailMessages,
   ) {}
 
   async run(
@@ -116,10 +99,12 @@ export class GmailReconcile {
     const started = Date.now();
     const progress = options.onProgress ?? (() => undefined);
     const address = email.trim().toLowerCase();
-    const account = (await this.mail.listMailTrainingAccounts()).find(
+    const account = (await this.mail.listMailSyncAccounts()).find(
       (a) => a.email === address,
     );
-    if (!account) throw new Error(`No mail account ${address} in Minerva`);
+    if (!account) {
+      throw new Error(`No mail account ${address} linked to Gmail in Minerva`);
+    }
 
     const profile = await mailbox.profile();
     if (profile.emailAddress.toLowerCase() !== address) {
@@ -158,7 +143,7 @@ export class GmailReconcile {
     const stateOf = (id: string): GmailState => {
       let s = states.get(id);
       if (!s) {
-        s = { labels: [], categories: [], flags: emptyFlags() };
+        s = emptyState();
         states.set(id, s);
       }
       return s;
@@ -170,14 +155,11 @@ export class GmailReconcile {
     for (const label of tracked) {
       for (const id of await mailbox.messageIds(label.id)) {
         if (!kept.has(id)) continue;
-        apply(stateOf(id), label);
+        applyLabel(stateOf(id), label);
       }
       progress("labels", ++done, tracked.length);
     }
-    for (const s of states.values()) {
-      s.labels.sort();
-      s.categories.sort();
-    }
+    for (const s of states.values()) sortState(s);
 
     const report: GmailReconcileReport = {
       accountId: account.id,
@@ -197,6 +179,8 @@ export class GmailReconcile {
       labelChanges: [],
       deleted: 0,
       added: 0,
+      featurized: 0,
+      featurizeFailed: 0,
       failed: 0,
       seconds: 0,
     };
@@ -211,22 +195,17 @@ export class GmailReconcile {
         report.minerva.messages++;
         seen.add(m.gmailId);
         if (!kept.has(m.gmailId)) {
-          await this.publish("delete", {
-            accountId: account.id,
-            source: "gmail",
+          await this.messages.publishDelete(
+            account.id,
+            m.gmailId,
             snapshotTime,
-            gmailId: m.gmailId,
-          });
+          );
           report.deleted++;
           continue;
         }
-        const g = states.get(m.gmailId) ?? {
-          labels: [],
-          categories: [],
-          flags: emptyFlags(),
-        };
+        const g = states.get(m.gmailId) ?? emptyState();
         const theirs = m.flags as unknown as Record<string, boolean>;
-        const flagsDiffering = Object.keys(FLAG_NAMES).filter(
+        const flagsDiffering = FLAG_NAMES.filter(
           (f) => g.flags[f] !== theirs[f],
         );
         const labelsSame = sameList(g.labels, m.labels);
@@ -245,15 +224,12 @@ export class GmailReconcile {
           for (const l of before)
             if (!after.has(l)) count(changes, l).removed++;
         }
-        await this.publish("labels", {
-          accountId: account.id,
-          source: "gmail",
+        await this.messages.publishLabels(
+          account.id,
+          m.gmailId,
+          g,
           snapshotTime,
-          gmailId: m.gmailId,
-          labels: g.labels,
-          categories: g.categories,
-          flags: toFlags(g.flags),
-        });
+        );
         report.relabelled++;
       }
       after = page.nextCursor;
@@ -271,31 +247,16 @@ export class GmailReconcile {
 
     // What Minerva lacks: mail since the archive, fetched whole.
     const missing = [...kept].filter((id) => !seen.has(id));
+    const batch = this.messages.batch(account.id);
     done = 0;
     for (const id of missing) {
       try {
-        const raw = await mailbox.raw(id);
-        const g = states.get(id) ?? {
-          labels: [],
-          categories: [],
-          flags: emptyFlags(),
-        };
-        const { message } = await parseRawMessage(
-          Buffer.from(raw.raw, "base64url"),
-          {
-            gmailId: raw.id,
-            threadId: raw.threadId,
-            receivedAt: new Date(Number(raw.internalDate)).toISOString(),
-            labels: g.labels,
-            flags: { ...noFlags(), ...toFlags(g.flags) },
-            categories: g.categories,
-          },
+        const outcome = await batch.add(
+          mailbox,
+          id,
+          (): GmailState => states.get(id) ?? emptyState(),
         );
-        await this.publish(
-          "upsert",
-          toMetadataMessage(message, account.id, "gmail", new Date()),
-        );
-        report.added++;
+        if (outcome === "added") report.added++;
       } catch (error) {
         report.failed++;
         this.logger.warn(
@@ -304,6 +265,9 @@ export class GmailReconcile {
       }
       progress("added", ++done, missing.length);
     }
+    await batch.flush();
+    report.featurized = batch.featurized;
+    report.featurizeFailed = batch.featurizeFailed;
 
     // Recorded only once everything above is published: a run cut short
     // leaves the last historyId, and runs again.
@@ -318,30 +282,7 @@ export class GmailReconcile {
     report.seconds = Math.round((Date.now() - started) / 1000);
     return report;
   }
-
-  private async publish(
-    action: "upsert" | "labels" | "delete",
-    message: unknown,
-  ): Promise<void> {
-    await publishMessage(
-      this.amqp,
-      mailMessageRoute(action),
-      message as never,
-      {
-        persistent: true,
-        contentType: "application/json",
-      },
-    );
-  }
 }
-
-const FLAG_NAMES: Record<string, true> = {
-  inbox: true,
-  unread: true,
-  starred: true,
-  important: true,
-  sent: true,
-};
 
 const emptyCounts = (): Record<string, number> => ({
   inbox: 0,
@@ -361,35 +302,4 @@ const count = (
     changes.set(label, c);
   }
   return c;
-};
-
-const emptyFlags = (): Record<string, boolean> => ({
-  inbox: false,
-  unread: false,
-  starred: false,
-  important: false,
-  sent: false,
-});
-
-const toFlags = (flags: Record<string, boolean>) => ({
-  inbox: flags.inbox,
-  unread: flags.unread,
-  starred: flags.starred,
-  important: flags.important,
-  sent: flags.sent,
-});
-
-/** What carrying `label` makes of a message's state. */
-const apply = (state: GmailState, label: GmailLabelInfo): void => {
-  const flag = FLAG_LABELS[label.id];
-  if (flag) {
-    state.flags[flag] = true;
-    return;
-  }
-  const category = CATEGORY.exec(label.id);
-  if (category) {
-    state.categories.push(category[1].toLowerCase());
-    return;
-  }
-  if (label.type === "user") state.labels.push(label.name);
 };

@@ -69,14 +69,32 @@ flags compared with Minerva's, publishing `message.labels` where they
 differ and `message.delete` for mail Gmail no longer has (drafts and chats
 included, as the import skips them); mail Minerva lacks is fetched whole
 (`format=raw`), parsed as the import parses it and published as
-`message.upsert`. Requests are spaced 50 ms apart and retried with
+`message.upsert`, its text sent to the classifier when `MAIL_ML_URL` is
+set. Requests are spaced 50 ms apart and retried with
 backoff when Google says to slow down. At the end, if nothing failed, it
 records the `historyId` it started from and Gmail's totals. It prints
 counts as JSON, never content, and is safe to run again; a run cut short
 is finished by the next. It needs the broker, the API and Gmail's client
 (`MAIL_GOOGLE_OAUTH_CLIENT_ID`, `MAIL_GOOGLE_OAUTH_CLIENT_SECRET_FILE`,
-`MAIL_CREDENTIALS_DIR`). New mail is not featurized for the classifier
-yet; that comes with history polling.
+`MAIL_CREDENTIALS_DIR`).
+
+```sh
+pnpm --filter @ncfritz/minerva-mail-agent gmail poll [neil@example.net]
+```
+
+`poll` does once what the running agent does every
+`MAIL_GMAIL_POLL_SECONDS` (60 by default): for each linked mailbox (or
+the one named), `history.list` from the recorded `historyId`, then the
+current state of each message history names. New mail, and mail taken
+out of Spam or Trash, is fetched whole, published and featurized; a
+message whose labels changed is read with a minimal get and published as
+`message.labels`; one deleted, or moved to Spam, Trash or the drafts, as
+`message.delete`. Drafts being saved and chats are passed over. A label
+Minerva has not seen is read and synced first. Once everything is
+published the new `historyId` and Gmail's totals are recorded, so a poll
+that fails part way is repeated. A mailbox with no `historyId` yet, or
+whose history Gmail no longer keeps (404, after about a week), is
+reconciled instead, at most once an hour.
 
 ## Running it
 
@@ -87,17 +105,20 @@ pnpm --filter @ncfritz/minerva-mail-agent dev
 
 ## Configuration
 
-| Variable                                         | What                                     | Default                    |
-| ------------------------------------------------ | ---------------------------------------- | -------------------------- |
-| `LISTEN_PORT`                                    | /metrics                                 | `3105`                     |
-| `LOKI_*`                                         | Logging                                  | (none)                     |
-| `AMQP_*`                                         | The broker `mail.messages` is on         | `/dionysus-dev`            |
-| `API_BASE_URL`                                   | The Olympus API                          | `http://localhost:3100/v1` |
-| `API_CLIENT_*`                                   | This agent's certificate, for `https:`   | (none)                     |
-| `API_CA_CERT`                                    | The services CA                          | (none)                     |
-| `MAIL_ML_URL`                                    | The classifier's services listener       | (none: no `featurize`)     |
-| `MAIL_ML_CLIENT_CERT`, `_KEY`, `MAIL_ML_CA_CERT` | Its client certificate, if not the API's | the `API_*` ones           |
-| `MAIL_ML_TIMEOUT_MS`                             | Per request to the classifier            | `60000`                    |
+| Variable                                         | What                                     | Default                     |
+| ------------------------------------------------ | ---------------------------------------- | --------------------------- |
+| `LISTEN_PORT`                                    | /metrics                                 | `3105`                      |
+| `LOKI_*`                                         | Logging                                  | (none)                      |
+| `AMQP_*`                                         | The broker `mail.messages` is on         | `/dionysus-dev`             |
+| `API_BASE_URL`                                   | The Olympus API                          | `http://localhost:3100/v1`  |
+| `API_CLIENT_*`                                   | This agent's certificate, for `https:`   | (none)                      |
+| `API_CA_CERT`                                    | The services CA                          | (none)                      |
+| `MAIL_ML_URL`                                    | The classifier's services listener       | (none: no `featurize`)      |
+| `MAIL_ML_CLIENT_CERT`, `_KEY`, `MAIL_ML_CA_CERT` | Its client certificate, if not the API's | the `API_*` ones            |
+| `MAIL_ML_TIMEOUT_MS`                             | Per request to the classifier            | `60000`                     |
+| `MAIL_GOOGLE_OAUTH_CLIENT_ID`, `_SECRET(_FILE)`  | Gmail's OAuth client                     | (none: no linking, polling) |
+| `MAIL_CREDENTIALS_DIR`                           | Refresh tokens, one file per mailbox     | `data/credentials`          |
+| `MAIL_GMAIL_POLL_SECONDS`                        | Between history polls; `0` turns it off  | `60`                        |
 
 In production the agent needs a service certificate (CN
 `minerva-mail-agent`), `minerva-mail-agent:agent` in the API's

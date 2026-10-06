@@ -37,6 +37,27 @@ export type GmailRawMessage = {
   raw: string;
 };
 
+/** A message as a history record names it. */
+export type GmailHistoryMessage = {
+  id: string;
+  threadId?: string;
+  labelIds?: string[];
+};
+
+/** One change to the mailbox (history.list's record). */
+export type GmailHistoryRecord = {
+  id: string;
+  messagesAdded?: { message: GmailHistoryMessage }[];
+  messagesDeleted?: { message: GmailHistoryMessage }[];
+  labelsAdded?: { message: GmailHistoryMessage; labelIds: string[] }[];
+  labelsRemoved?: { message: GmailHistoryMessage; labelIds: string[] }[];
+};
+
+/** The status Google answered a failed request with, if any. */
+export const gmailStatusOf = (error: unknown): number | undefined =>
+  (error as { response?: { status?: number }; status?: number })?.response
+    ?.status ?? (error as { status?: number })?.status;
+
 /** How a request is sent; separate so tests can stand in for Google. */
 export type GmailTransport = <T>(
   url: string,
@@ -56,9 +77,7 @@ class Throttle {
   }
 }
 
-const statusOf = (error: unknown): number | undefined =>
-  (error as { response?: { status?: number }; status?: number })?.response
-    ?.status ?? (error as { status?: number })?.status;
+const statusOf = gmailStatusOf;
 
 const reasonOf = (error: unknown): string | undefined =>
   (
@@ -171,6 +190,41 @@ export class GmailMailbox {
       pageToken = body.nextPageToken;
     } while (pageToken);
     return ids;
+  }
+
+  /**
+   * Every change since `startHistoryId`, oldest first, and the mailbox's
+   * historyId now, to carry on from. Gmail answers 404 when the history
+   * that far back is gone (it keeps about a week): reconcile instead.
+   */
+  async history(
+    startHistoryId: string,
+  ): Promise<{ historyId: string; records: GmailHistoryRecord[] }> {
+    const records: GmailHistoryRecord[] = [];
+    let historyId = startHistoryId;
+    let pageToken: string | undefined;
+    do {
+      const body = await this.get<{
+        history?: GmailHistoryRecord[];
+        historyId?: string;
+        nextPageToken?: string;
+      }>("/history", {
+        startHistoryId,
+        maxResults: 500,
+        ...(pageToken ? { pageToken } : {}),
+      });
+      records.push(...(body.history ?? []));
+      if (body.historyId) historyId = body.historyId;
+      pageToken = body.nextPageToken;
+    } while (pageToken);
+    return { historyId, records };
+  }
+
+  /** A message's label IDs alone (format minimal). */
+  minimal(id: string): Promise<{ id: string; labelIds?: string[] }> {
+    return this.get<{ id: string; labelIds?: string[] }>(`/messages/${id}`, {
+      format: "minimal",
+    });
   }
 
   /** A message's RFC 822 text and Gmail's facts about it. */

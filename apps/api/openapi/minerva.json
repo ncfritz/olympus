@@ -8236,6 +8236,55 @@
         ]
       }
     },
+    "/minerva/mail/sync/accounts": {
+      "get": {
+        "description": "For the mail agent (docs/plans/email-management phase 1b): every account linked to Gmail, by address, with the historyId its history polling carries on from (absent until the first reconcile).",
+        "operationId": "ListMailSyncAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The linked accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailSyncAccountsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the mail accounts linked to Gmail",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/training/accounts": {
       "get": {
         "description": "For the mail classifier (ADR 0030, docs/plans/email-management phase 3): every mail account, by address, each trained on its own.",
@@ -16004,6 +16053,42 @@
         },
         "required": [
           "labels"
+        ]
+      },
+      "MailSyncAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The account's ID"
+          },
+          "email": {
+            "type": "string",
+            "description": "The mailbox's address, lower case"
+          },
+          "historyId": {
+            "type": "string",
+            "description": "Gmail's historyId to poll from; absent until the first reconcile"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "ListMailSyncAccountsResponse": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "description": "Every mail account linked to Gmail, by address",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailSyncAccount"
+            }
+          }
+        },
+        "required": [
+          "accounts"
         ]
       },
       "MailTrainingAccount": {
