@@ -1,14 +1,12 @@
 import {
   CheckOutlined,
   ContainerOutlined,
-  DownOutlined,
   EyeOutlined,
   ForwardOutlined,
   HistoryOutlined,
   InboxOutlined,
   MailOutlined,
   ReadOutlined,
-  RightOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import type {
@@ -27,7 +25,6 @@ import {
   Input,
   message,
   Popconfirm,
-  Segmented,
   Select,
   Space,
   Table,
@@ -40,13 +37,15 @@ import {
 import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import type { SortOrder } from "antd/lib/table/interface";
 import React, { useEffect, useRef, useState } from "react";
-import mailApi, { type MailInboxSort } from "../../../api/mailApi";
+import mailApi from "../../../api/mailApi";
 import InboxStrip from "../../../components/minerva/mail/InboxStrip";
 import OpenBills, {
   OpenBillAgesPill,
 } from "../../../components/minerva/mail/OpenBills";
 import {
+  CaretExpandIcon,
   ReceivedCell,
   SenderCell,
   SubjectCell,
@@ -77,11 +76,22 @@ import {
   mailLinkOutcome,
   mailReturnTo,
 } from "../../../utils/mailAccounts";
-import { nextToReview, startOfToday } from "../../../utils/mailInbox";
+import {
+  confidenceText,
+  DEFAULT_ORDER,
+  type InboxOrder,
+  nextToReview,
+  orderOf,
+  sortOrderOf,
+  startOfToday,
+} from "../../../utils/mailInbox";
 
 const { Title, Text } = Typography;
 
 const PAGE_SIZE = 50;
+/** Text sorts A to Z first, numbers and times high first; never unsorted. */
+const TEXT_SORT: SortOrder[] = ["ascend", "descend", "ascend"];
+const NUMBER_SORT: SortOrder[] = ["descend", "ascend", "descend"];
 
 const STATUSES: { label: string; value: MailInboxStatus }[] = [
   { label: "To review", value: "review" },
@@ -101,7 +111,7 @@ type Filters = {
   status: MailInboxStatus;
   search?: string;
   minConfidence?: number;
-  sortBy: MailInboxSort;
+  order: InboxOrder;
   page: number;
 };
 
@@ -122,7 +132,7 @@ const MailInboxPage: React.FunctionComponent = () => {
   const [outcome, setOutcome] = useState<MailLinkOutcome>();
   const [filters, setFilters] = useState<Filters>({
     status: "review",
-    sortBy: "receivedTime",
+    order: DEFAULT_ORDER,
     page: 0,
   });
   const [search, setSearch] = useState("");
@@ -195,7 +205,8 @@ const MailInboxPage: React.FunctionComponent = () => {
           ...(f.search ? { search: f.search } : {}),
           ...(f.minConfidence ? { minConfidence: f.minConfidence } : {}),
           approvedSince: startOfToday(),
-          sortBy: f.sortBy,
+          sortBy: f.order.sortBy,
+          ...(f.order.sort ? { sort: f.order.sort } : {}),
           pageSize: PAGE_SIZE,
           startPage: f.page,
         })
@@ -454,21 +465,6 @@ const MailInboxPage: React.FunctionComponent = () => {
                         }))
                       }
                     />
-                    <Segmented
-                      size={"small"}
-                      options={[
-                        { label: "Newest", value: "receivedTime" },
-                        { label: "Most confident", value: "confidence" },
-                      ]}
-                      value={filters.sortBy}
-                      onChange={(v) =>
-                        setFilters((f) => ({
-                          ...f,
-                          sortBy: v as MailInboxSort,
-                          page: 0,
-                        }))
-                      }
-                    />
                   </Space>
                 )
               }
@@ -568,14 +564,10 @@ const MailInboxPage: React.FunctionComponent = () => {
               }}
               expandable={{
                 expandedRowKeys: expanded,
-                expandIcon: ({ expanded: open, onExpand, record }) => (
-                  <Button
-                    type={"text"}
-                    size={"small"}
-                    icon={open ? <DownOutlined /> : <RightOutlined />}
-                    aria-label={`${open ? "Close" : "Review"} ${record.subject ?? "message"}`}
-                    aria-expanded={open}
-                    onClick={(e) => onExpand(record, e)}
+                expandIcon: (p) => (
+                  <CaretExpandIcon
+                    {...p}
+                    label={p.record.subject ?? "message"}
                   />
                 ),
                 onExpand: (open, m) =>
@@ -608,8 +600,18 @@ const MailInboxPage: React.FunctionComponent = () => {
                 pageSize: PAGE_SIZE,
                 total: inbox?.count ?? 0,
                 showSizeChanger: false,
-                onChange: (p) => setFilters((f) => ({ ...f, page: p - 1 })),
               }}
+              onChange={(pagination, _filters, sorter, extra) =>
+                setFilters((f) =>
+                  extra.action === "sort"
+                    ? {
+                        ...f,
+                        order: orderOf(Array.isArray(sorter) ? {} : sorter),
+                        page: 0,
+                      }
+                    : { ...f, page: (pagination.current ?? 1) - 1 },
+                )
+              }
               locale={{
                 emptyText:
                   filters.status === "review"
@@ -620,7 +622,10 @@ const MailInboxPage: React.FunctionComponent = () => {
                 {
                   title: "From",
                   key: "from",
-                  width: 180,
+                  width: 220,
+                  sorter: true,
+                  sortDirections: TEXT_SORT,
+                  sortOrder: sortOrderOf(filters.order, "from"),
                   render: (_, m) => (
                     <SenderCell
                       name={m.fromName}
@@ -633,6 +638,9 @@ const MailInboxPage: React.FunctionComponent = () => {
                   title: "Subject",
                   key: "subject",
                   ellipsis: true,
+                  sorter: true,
+                  sortDirections: TEXT_SORT,
+                  sortOrder: sortOrderOf(filters.order, "subject"),
                   render: (_, m) => (
                     <SubjectCell
                       subject={m.subject}
@@ -644,13 +652,13 @@ const MailInboxPage: React.FunctionComponent = () => {
                 {
                   title: "Current labels",
                   key: "labels",
-                  width: 200,
+                  width: 160,
                   render: (_, m) => <CurrentLabels labels={m.labels} max={3} />,
                 },
                 {
                   title: "Suggested",
                   key: "suggested",
-                  width: 240,
+                  width: 200,
                   render: (_, m) =>
                     m.decision ? (
                       <Tag
@@ -663,9 +671,26 @@ const MailInboxPage: React.FunctionComponent = () => {
                     ),
                 },
                 {
+                  title: "Confidence",
+                  key: "confidence",
+                  width: 120,
+                  align: "right",
+                  sorter: true,
+                  sortDirections: NUMBER_SORT,
+                  sortOrder: sortOrderOf(filters.order, "confidence"),
+                  render: (_, m) => (
+                    <Text style={{ fontSize: 12 }}>
+                      {confidenceText(m.topScore)}
+                    </Text>
+                  ),
+                },
+                {
                   title: "Received",
-                  key: "received",
-                  width: 96,
+                  key: "receivedTime",
+                  width: 104,
+                  sorter: true,
+                  sortDirections: NUMBER_SORT,
+                  sortOrder: sortOrderOf(filters.order, "receivedTime"),
                   render: (_, m) => (
                     <ReceivedCell time={String(m.receivedTime)} />
                   ),
@@ -673,7 +698,7 @@ const MailInboxPage: React.FunctionComponent = () => {
                 {
                   title: "",
                   key: "actions",
-                  width: 80,
+                  width: 72,
                   render: (_, m) => (
                     <Space size={4}>
                       {!m.decision && (

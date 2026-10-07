@@ -64,7 +64,7 @@ import {
 export type MailAuditChangeSort = "confidence" | "receivedTime";
 
 /** What a page of the inbox is ordered by (`sortBy`). */
-export type MailInboxSort = "receivedTime" | "confidence";
+export type MailInboxSort = "receivedTime" | "confidence" | "from" | "subject";
 
 class MailApi {
   constructor() {
@@ -200,6 +200,7 @@ class MailApi {
     minConfidence?: number;
     approvedSince?: string;
     sortBy?: MailInboxSort;
+    sort?: "asc" | "desc";
     pageSize: number;
     startPage: number;
   }) {

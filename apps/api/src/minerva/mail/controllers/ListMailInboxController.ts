@@ -2,6 +2,7 @@ import {
   ListMailInboxResponse,
   MailInboxSort,
   MailInboxStatus,
+  SortDirection,
 } from "@ncfritz/olympus-model";
 import {
   Controller,
@@ -42,7 +43,7 @@ export class ListMailInboxController {
   @ApiOperation({
     summary: "Lists the inbox with its suggested labels",
     description:
-      "A page of the caller's inbox (docs/plans/email-management phase 5): each message's metadata (never its text), its labels now, the labels the classifier suggested as it arrived (best first, ticked or not, and whether it has each already) and what was decided. `status` is `review` (in the inbox, nothing decided; the default), `unread`, `approved` (since `approvedSince`, a day ago by default, wherever they are now, newest decision first) or `all`; `sortBy` is `receivedTime` (the default) or `confidence` (the best ticked suggestion the message lacks). With the statistics strip's counts.",
+      "A page of the caller's inbox (docs/plans/email-management phase 5): each message's metadata (never its text), its labels now, the labels the classifier suggested as it arrived (best first, ticked or not, and whether it has each already) and what was decided. `status` is `review` (in the inbox, nothing decided; the default), `unread`, `approved` (since `approvedSince`, a day ago by default, wherever they are now, newest decision first) or `all`; `sortBy` is `receivedTime` (the default), `confidence` (the best ticked suggestion the message lacks), `from` (the sender's name, then address) or `subject`, each `sort` `desc` (the default) or `asc`; approved messages are newest decision first unless sorted otherwise. With the statistics strip's counts.",
     operationId: "ListMailInbox",
     tags: ["Mail"],
   })
@@ -110,6 +111,8 @@ export class ListMailInboxController {
       new ParseEnumPipe(MailInboxSort),
     )
     sortBy: MailInboxSort,
+    @Query("sort", new ParseEnumPipe(SortDirection, { optional: true }))
+    sort: SortDirection | undefined,
     @Query("pageSize", new DefaultValuePipe(50), ParseIntPipe)
     pageSize: number,
     @Query("startPage", new DefaultValuePipe(0), ParseIntPipe)
@@ -124,6 +127,7 @@ export class ListMailInboxController {
       minConfidence,
       approvedSince,
       sortBy,
+      ...(sort ? { sort } : {}),
       pageSize,
       startPage,
     });

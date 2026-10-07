@@ -24,10 +24,14 @@ export enum MailInboxStatus {
 
 /** How the inbox is ordered. */
 export enum MailInboxSort {
-  /** Newest first. */
+  /** When it was received. */
   ReceivedTime = "receivedTime",
-  /** The most confident suggestion first, then newest. */
+  /** Its most confident suggestion, then newest. */
   Confidence = "confidence",
+  /** The sender's name, then address, then newest. */
+  From = "from",
+  /** The subject, then newest. */
+  Subject = "subject",
 }
 
 /** What was decided about a message's suggestion. */

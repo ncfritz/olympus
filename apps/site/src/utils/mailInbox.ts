@@ -3,6 +3,8 @@ import type {
   MailInboxMessage,
 } from "@ncfritz/olympus-sdk/minerva";
 import { DateTime } from "luxon";
+import type { Key } from "react";
+import type { MailInboxSort } from "../api/mailApi";
 import type {
   LabelWants,
   PickerMessage,
@@ -211,3 +213,44 @@ export const nextToReview = (
   );
   return at < 0 ? undefined : messages.slice(at + 1).find((m) => !m.decision);
 };
+
+/** The columns the inbox sorts by. */
+const INBOX_SORTS: MailInboxSort[] = [
+  "receivedTime",
+  "confidence",
+  "from",
+  "subject",
+];
+
+/** The inbox's order: a sortable column and its direction. */
+export type InboxOrder = { sortBy: MailInboxSort; sort?: "asc" | "desc" };
+
+/** The inbox's order when no column is chosen: newest first. */
+export const DEFAULT_ORDER: InboxOrder = { sortBy: "receivedTime" };
+
+/**
+ * A column's arrow for the inbox's order: the received column points down
+ * by default, as that is the order the API gives with no direction.
+ */
+export const sortOrderOf = (
+  order: InboxOrder,
+  column: MailInboxSort,
+): "ascend" | "descend" | null => {
+  if (order.sortBy !== column) return null;
+  if (order.sort === "asc") return "ascend";
+  return order.sort === "desc" || column === "receivedTime" ? "descend" : null;
+};
+
+/** The inbox's order from the table's sorter; the default with none. */
+export const orderOf = (sorter: {
+  columnKey?: Key;
+  order?: "ascend" | "descend" | null;
+}): InboxOrder => {
+  const sortBy = INBOX_SORTS.find((s) => s === sorter.columnKey);
+  if (!sortBy || !sorter.order) return DEFAULT_ORDER;
+  return { sortBy, sort: sorter.order === "ascend" ? "asc" : "desc" };
+};
+
+/** A confidence as the inbox shows it: a whole percent, or a dash. */
+export const confidenceText = (score?: number): string =>
+  score === undefined || score === null ? "—" : `${Math.round(score * 100)}%`;

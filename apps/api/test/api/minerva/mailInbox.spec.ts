@@ -352,11 +352,51 @@ describe("Mail inbox", () => {
     });
 
     it.each([
+      [
+        "the sender, A to Z",
+        "?sortBy=from&sort=asc",
+        [
+          { message: { fromName: "asc_nulls_last" } },
+          { message: { fromAddress: "asc_nulls_last" } },
+          { receivedTime: "desc" },
+        ],
+      ],
+      [
+        "the subject, Z to A",
+        "?sortBy=subject&sort=desc",
+        [{ message: { subject: "desc_nulls_last" } }, { receivedTime: "desc" }],
+      ],
+      [
+        "the confidence, lowest first",
+        "?sortBy=confidence&sort=asc",
+        [{ topScore: "asc_nulls_last" }, { receivedTime: "desc" }],
+      ],
+      ["the oldest first", "?sort=asc", [{ receivedTime: "asc" }]],
+      [
+        "approved mail, oldest received first",
+        "?status=approved&sort=asc",
+        [{ receivedTime: "asc" }],
+      ],
+    ])("sorts by %s", async (_case, query, orderBy) => {
+      page([row()]);
+
+      const res = await list(query);
+
+      expect(res.status).toBe(200);
+      const vars = ctx.t.graphql.calls("ListMailInbox")[0].variables as {
+        orderBy: unknown;
+      };
+      expect(vars.orderBy).toEqual(orderBy);
+    });
+
+    it.each([
       ["a confidence past 1", "?minConfidence=2"],
       ["an approvedSince that is not a time", "?approvedSince=yesterday"],
       ["an accountId that is not one", "?accountId=7b2b"],
       ["a page too large", "?pageSize=101"],
       ["an unknown status", "?status=snoozed"],
+      ["an unknown sort", "?sortBy=size"],
+      ["an unknown direction", "?sort=sideways"],
     ])("answers 400 to %s", async (_case, query) => {
       const res = await list(query);
       expect(res.status).toBe(400);

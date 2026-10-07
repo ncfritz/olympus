@@ -321,7 +321,9 @@
   },
   "MailInboxSort": {
     "Confidence": "confidence",
-    "ReceivedTime": "receivedTime"
+    "From": "from",
+    "ReceivedTime": "receivedTime",
+    "Subject": "subject"
   },
   "MailInboxStatus": {
     "All": "all",

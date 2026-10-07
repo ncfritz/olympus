@@ -1,4 +1,5 @@
-import { Badge, Flex, Tooltip, Typography } from "antd";
+import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
+import { Badge, Button, Flex, Tooltip, Typography } from "antd";
 import { DateTime } from "luxon";
 import React from "react";
 
@@ -82,3 +83,28 @@ export const ReceivedCell: React.FunctionComponent<{ time: string }> = ({
     </Tooltip>
   );
 };
+
+export interface CaretExpandIconProps<T> {
+  expanded: boolean;
+  record: T;
+  onExpand: (record: T, e: React.MouseEvent<HTMLElement>) => void;
+  /** Names the row for a screen reader: "Review <label>". */
+  label: string;
+}
+
+/** The mail tables' expand control: a caret, right when closed, down open. */
+export const CaretExpandIcon = <T,>({
+  expanded,
+  record,
+  onExpand,
+  label,
+}: CaretExpandIconProps<T>) => (
+  <Button
+    type={"text"}
+    size={"small"}
+    icon={expanded ? <CaretDownOutlined /> : <CaretRightOutlined />}
+    aria-label={`${expanded ? "Close" : "Review"} ${label}`}
+    aria-expanded={expanded}
+    onClick={(e) => onExpand(record, e)}
+  />
+);

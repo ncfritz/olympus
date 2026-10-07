@@ -12,6 +12,7 @@ import {
   MailInboxDecision,
   MailInboxMessage,
   MailInboxSort,
+  SortDirection,
   MailInboxStatus,
   MailInboxSummary,
   MailLabelChange,
@@ -50,6 +51,8 @@ export type MailInboxQuery = {
   /** When "approved" begins; a day ago by default. */
   approvedSince?: string;
   sortBy: MailInboxSort;
+  /** Descending unless asked; asc or desc only, nulls always last. */
+  sort?: SortDirection;
   pageSize: number;
   startPage: number;
 };
@@ -313,12 +316,29 @@ export class MailInboxService {
           : []),
       ],
     };
+    const dir =
+      q.sort === SortDirection.ASC ||
+      q.sort === SortDirection.ASC_NULL_FIRST ||
+      q.sort === SortDirection.ASC_NULL_LAST
+        ? "asc"
+        : "desc";
+    const last = `${dir}_nulls_last`;
     const orderBy =
-      q.status === MailInboxStatus.Approved
+      q.status === MailInboxStatus.Approved &&
+      q.sortBy === MailInboxSort.ReceivedTime &&
+      !q.sort
         ? [{ decidedTime: "desc" }]
         : q.sortBy === MailInboxSort.Confidence
-          ? [{ topScore: "desc_nulls_last" }, { receivedTime: "desc" }]
-          : [{ receivedTime: "desc" }];
+          ? [{ topScore: last }, { receivedTime: "desc" }]
+          : q.sortBy === MailInboxSort.From
+            ? [
+                { message: { fromName: last } },
+                { message: { fromAddress: last } },
+                { receivedTime: "desc" },
+              ]
+            : q.sortBy === MailInboxSort.Subject
+              ? [{ message: { subject: last } }, { receivedTime: "desc" }]
+              : [{ receivedTime: dir }];
 
     const query = gql`
       query ListMailInbox(

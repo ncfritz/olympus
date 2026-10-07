@@ -4,17 +4,21 @@ import { describe, expect, it } from "vitest";
 import {
   approvalOf,
   chunked,
+  confidenceText,
   containedHtml,
+  DEFAULT_ORDER,
   DEFAULT_APPROVE_OPTIONS,
   flagChangeText,
   gmailIdsByAccount,
   initialWants,
   nextToReview,
   isAmended,
+  orderOf,
   parseApproveOptions,
   pickerSuggestionsOf,
   reasonOf,
   senderOf,
+  sortOrderOf,
   startOfToday,
   suggestedAdds,
   suggestedApprovals,
@@ -182,5 +186,41 @@ describe("nextToReview", () => {
     expect(nextToReview([a, b, c], a)?.gmailId).toBe("1c");
     expect(nextToReview([a, b, c], c)).toBeUndefined();
     expect(nextToReview([a, c], message({ gmailId: "ff" }))).toBeUndefined();
+  });
+});
+
+describe("the inbox's order", () => {
+  it("takes the table's sorter, newest first without one", () => {
+    expect(orderOf({ columnKey: "from", order: "ascend" })).toEqual({
+      sortBy: "from",
+      sort: "asc",
+    });
+    expect(orderOf({ columnKey: "confidence", order: "descend" })).toEqual({
+      sortBy: "confidence",
+      sort: "desc",
+    });
+    expect(orderOf({ columnKey: "subject", order: null })).toEqual(
+      DEFAULT_ORDER,
+    );
+    expect(orderOf({ columnKey: "labels", order: "ascend" })).toEqual(
+      DEFAULT_ORDER,
+    );
+    expect(orderOf({})).toEqual(DEFAULT_ORDER);
+  });
+
+  it("points the chosen column's arrow, received down by default", () => {
+    expect(sortOrderOf(DEFAULT_ORDER, "receivedTime")).toBe("descend");
+    expect(sortOrderOf(DEFAULT_ORDER, "from")).toBeNull();
+    expect(sortOrderOf({ sortBy: "from", sort: "asc" }, "from")).toBe("ascend");
+    expect(
+      sortOrderOf({ sortBy: "receivedTime", sort: "asc" }, "receivedTime"),
+    ).toBe("ascend");
+    expect(sortOrderOf({ sortBy: "subject" }, "subject")).toBeNull();
+  });
+
+  it("shows a confidence as a whole percent, or a dash", () => {
+    expect(confidenceText(0.873)).toBe("87%");
+    expect(confidenceText(1)).toBe("100%");
+    expect(confidenceText(undefined)).toBe("—");
   });
 });
