@@ -371,6 +371,10 @@
     "Building": "building",
     "Ready": "ready"
   },
+  "MailTrainingDecisionKind": {
+    "Amended": "amended",
+    "Approved": "approved"
+  },
   "MediaAssetSearchConfigurationStatus": {
     "ERROR": "error",
     "OK": "ok",

@@ -8475,6 +8475,128 @@
         ]
       }
     },
+    "/minerva/mail/training/inbox": {
+      "get": {
+        "description": "For the mail classifier (docs/plans/email-management phase 5): the Gmail IDs of the account's messages in the inbox with nothing decided, newest first, at most 5000, to score again from their stored features when its model has learned (RecordMailMessageSuggestions).",
+        "operationId": "ListMailInboxToScore",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "query",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The messages to score.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailInboxToScoreResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Lists the inbox's messages to score again",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/training/decisions": {
+      "get": {
+        "description": "For the mail classifier (docs/plans/email-management phase 5): the account's approvals in the inbox in the order they were made, after the cursor, each with its message as a training example (metadata only, its labels now as targets, `decision` saying whether it was amended) and whether it is `ready`: the batch writing its labels has finished, or none was needed. Skips are left out. Learn the ready ones in order and keep the `cursor` of the last learned; pass it as `after` next time.",
+        "operationId": "ListMailTrainingDecisions",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many decisions, 1 to 1000; 500 by default",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "Only decisions after this cursor: a decision's `cursor`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "query",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of approvals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailTrainingDecisionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Lists approvals in the inbox to learn from",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/account/{accountId}/inbox/skip": {
       "post": {
         "description": "The inbox's skip (docs/plans/email-management phase 5): the messages are recorded as skipped, out of To review; Gmail is not changed.",
@@ -17714,6 +17836,138 @@
           "summary"
         ]
       },
+      "ListMailInboxToScoreResponse": {
+        "type": "object",
+        "properties": {
+          "gmailIds": {
+            "description": "Gmail IDs of the account's messages in the inbox with nothing decided, newest first",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailIds"
+        ]
+      },
+      "MailTrainingDecisionKind": {
+        "type": "string",
+        "description": "Its labels approved in the inbox, as suggested or amended; absent when not decided there",
+        "enum": [
+          "approved",
+          "amended"
+        ]
+      },
+      "MailTrainingExample": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID, hexadecimal"
+          },
+          "threadId": {
+            "type": "string",
+            "description": "Its thread"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When it was received"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender's address"
+          },
+          "listId": {
+            "type": "string",
+            "description": "Its List-Id"
+          },
+          "sent": {
+            "type": "boolean",
+            "description": "Whether it was sent from the mailbox"
+          },
+          "topics": {
+            "description": "Its topical labels, by full name, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "families": {
+            "description": "The families of its state labels, by name, sorted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decision": {
+            "description": "Its labels approved in the inbox, as suggested or amended; absent when not decided there",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailTrainingDecisionKind"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gmailId",
+          "threadId",
+          "receivedTime",
+          "sent",
+          "topics",
+          "families"
+        ]
+      },
+      "MailTrainingDecision": {
+        "type": "object",
+        "properties": {
+          "example": {
+            "description": "The message, with its labels now as targets",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailTrainingExample"
+              }
+            ]
+          },
+          "decidedTime": {
+            "type": "string",
+            "description": "When it was approved"
+          },
+          "ready": {
+            "type": "boolean",
+            "description": "Whether its labels are settled: the batch writing them has finished, or none was needed. Learn from it only then"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Where this decision stands in the order: pass as `after` to list those after it"
+          }
+        },
+        "required": [
+          "example",
+          "decidedTime",
+          "ready",
+          "cursor"
+        ]
+      },
+      "ListMailTrainingDecisionsResponse": {
+        "type": "object",
+        "properties": {
+          "decisions": {
+            "description": "Approvals in the order they were made",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailTrainingDecision"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Pass as `after` for the next page; absent on the last"
+          }
+        },
+        "required": [
+          "decisions"
+        ]
+      },
       "SkipMailMessagesRequest": {
         "type": "object",
         "properties": {
@@ -18604,57 +18858,6 @@
         },
         "required": [
           "accounts"
-        ]
-      },
-      "MailTrainingExample": {
-        "type": "object",
-        "properties": {
-          "gmailId": {
-            "type": "string",
-            "description": "The message's Gmail ID, hexadecimal"
-          },
-          "threadId": {
-            "type": "string",
-            "description": "Its thread"
-          },
-          "receivedTime": {
-            "type": "string",
-            "description": "When it was received"
-          },
-          "fromAddress": {
-            "type": "string",
-            "description": "The sender's address"
-          },
-          "listId": {
-            "type": "string",
-            "description": "Its List-Id"
-          },
-          "sent": {
-            "type": "boolean",
-            "description": "Whether it was sent from the mailbox"
-          },
-          "topics": {
-            "description": "Its topical labels, by full name, sorted",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "families": {
-            "description": "The families of its state labels, by name, sorted",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "gmailId",
-          "threadId",
-          "receivedTime",
-          "sent",
-          "topics",
-          "families"
         ]
       },
       "ListMailTrainingExamplesResponse": {

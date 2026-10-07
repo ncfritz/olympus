@@ -1,5 +1,6 @@
 import {
   MailLabelKind,
+  MailTrainingDecisionKind,
   MailTrainingAccount,
   MailTrainingExample,
   MailTrainingFamily,
@@ -30,6 +31,7 @@ export type GraphQlMailTrainingMessage = {
   listId?: string | null;
   sent: boolean;
   messageLabels: { label: GraphQlTrainingLabel }[];
+  inboxDecision?: { decision: string; amended: boolean } | null;
 };
 
 export type GraphQlMailTrainingFamily = {
@@ -87,6 +89,13 @@ export const toTrainingExample = (
     families: sortedUnique(
       targets.flatMap((t) => (t && "family" in t ? [t.family] : [])),
     ),
+    ...(input.inboxDecision?.decision === "approved"
+      ? {
+          decision: input.inboxDecision.amended
+            ? MailTrainingDecisionKind.Amended
+            : MailTrainingDecisionKind.Approved,
+        }
+      : {}),
   };
 };
 

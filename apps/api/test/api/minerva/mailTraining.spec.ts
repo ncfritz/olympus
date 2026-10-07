@@ -200,6 +200,29 @@ describe("Mail training data", () => {
       });
     });
 
+    it("says which were approved in the inbox, and which amended", async () => {
+      t.graphql.on("ListMailTrainingExamples", {
+        minerva_mail_messages: [
+          message("19be0000000000c1", [], {
+            inboxDecision: { decision: "approved", amended: false },
+          }),
+          message("19be0000000000c2", [], {
+            inboxDecision: { decision: "approved", amended: true },
+          }),
+          message("19be0000000000c3", [], {
+            inboxDecision: { decision: "skipped", amended: false },
+          }),
+          message("19be0000000000c4", [], { inboxDecision: null }),
+        ],
+      });
+      const res = await asAgent(`/examples?accountId=${ACCOUNT_ID}`);
+      expect(
+        JSON.parse(res.body).examples.map(
+          (e: { decision?: string }) => e.decision,
+        ),
+      ).toEqual(["approved", "amended", undefined, undefined]);
+    });
+
     it("has no cursor on the last page", async () => {
       t.graphql.on("ListMailTrainingExamples", {
         minerva_mail_messages: [message("19be0000000000b1", [])],
@@ -225,6 +248,121 @@ describe("Mail training data", () => {
       const res = await asAgent(`/examples${query}`);
       expect(res.status).toBe(400);
       expect(t.graphql.calls("DescribeMailTrainingAccount")).toHaveLength(0);
+    });
+  });
+
+  describe("ListMailTrainingDecisions", () => {
+    const decision = (
+      messageId: string,
+      decidedTime: string,
+      batch: { status: string } | null,
+      amended = false,
+    ) => ({
+      messageId,
+      decidedTime,
+      batch,
+      message: message("19be0000000000d1", [topical("Travel")], {
+        inboxDecision: { decision: "approved", amended },
+      }),
+    });
+    const M1 = "7b2b0000-0000-4000-8000-0000000000e1";
+    const M2 = "7b2b0000-0000-4000-8000-0000000000e2";
+
+    it("lists approvals in order, ready once their labels are written", async () => {
+      t.graphql.on("ListMailTrainingDecisions", {
+        minerva_mail_inbox_decisions: [
+          decision(M1, "2026-10-06T08:00:00.123456+00:00", { status: "done" }),
+          decision(
+            M2,
+            "2026-10-06T08:01:00+00:00",
+            { status: "running" },
+            true,
+          ),
+        ],
+      });
+
+      const res = await asAgent(`/decisions?accountId=${ACCOUNT_ID}&limit=2`);
+
+      expect(res.status).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.decisions).toHaveLength(2);
+      expect(body.decisions[0]).toMatchObject({
+        example: {
+          gmailId: "19be0000000000d1",
+          topics: ["Travel"],
+          decision: "approved",
+        },
+        decidedTime: "2026-10-06T08:00:00.123Z",
+        ready: true,
+      });
+      expect(body.decisions[1]).toMatchObject({
+        example: { decision: "amended" },
+        ready: false,
+      });
+      expect(body.nextCursor).toBe(body.decisions[1].cursor);
+
+      // The next page carries on after the cursor given.
+      t.graphql.on("ListMailTrainingDecisions", {
+        minerva_mail_inbox_decisions: [
+          decision(M2, "2026-10-06T08:01:00+00:00", null),
+        ],
+      });
+      const next = await asAgent(
+        `/decisions?accountId=${ACCOUNT_ID}&after=${body.decisions[0].cursor}`,
+      );
+      expect(JSON.parse(next.body).decisions[0].ready).toBe(true);
+      expect(JSON.parse(next.body).nextCursor).toBeUndefined();
+      expect(t.graphql.calls("ListMailTrainingDecisions")[1].variables).toEqual(
+        {
+          where: {
+            accountId: { _eq: ACCOUNT_ID },
+            decision: { _eq: "approved" },
+            _or: [
+              { decidedTime: { _gt: "2026-10-06T08:00:00.123456+00:00" } },
+              {
+                decidedTime: { _eq: "2026-10-06T08:00:00.123456+00:00" },
+                messageId: { _gt: M1 },
+              },
+            ],
+          },
+          limit: 500,
+        },
+      );
+    });
+
+    it.each([
+      ["a cursor that is not one", `?accountId=${ACCOUNT_ID}&after=nonsense`],
+      ["a limit over 1000", `?accountId=${ACCOUNT_ID}&limit=1001`],
+      ["no accountId", ""],
+    ])("answers 400 to %s, before Hasura", async (_case, query) => {
+      const res = await asAgent(`/decisions${query}`);
+      expect(res.status).toBe(400);
+      expect(t.graphql.calls("ListMailTrainingDecisions")).toHaveLength(0);
+    });
+  });
+
+  describe("ListMailInboxToScore", () => {
+    it("lists what is to review in the inbox, newest first", async () => {
+      t.graphql.on("ListMailInboxToScore", {
+        minerva_mail_inbox: [
+          { gmailId: "19be0000000000f2" },
+          { gmailId: "19be0000000000f1" },
+        ],
+      });
+      const res = await asAgent(`/inbox?accountId=${ACCOUNT_ID}`);
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body)).toEqual({
+        gmailIds: ["19be0000000000f2", "19be0000000000f1"],
+      });
+      expect(t.graphql.calls("ListMailInboxToScore")[0].variables).toEqual({
+        accountId: ACCOUNT_ID,
+        limit: 5000,
+      });
+    });
+
+    it("answers 404 for an account that does not exist", async () => {
+      const res = await asAgent(`/inbox?accountId=${MISSING_ID}`);
+      expect(res.status).toBe(404);
     });
   });
 

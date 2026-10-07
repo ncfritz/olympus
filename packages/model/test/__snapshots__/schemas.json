@@ -10252,6 +10252,21 @@
     ],
     "type": "object"
   },
+  "ListMailInboxToScoreResponse": {
+    "properties": {
+      "gmailIds": {
+        "description": "Gmail IDs of the account's messages in the inbox with nothing decided, newest first",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "gmailIds"
+    ],
+    "type": "object"
+  },
   "ListMailLabelFamiliesResponse": {
     "properties": {
       "families": {
@@ -10328,6 +10343,25 @@
     },
     "required": [
       "accounts"
+    ],
+    "type": "object"
+  },
+  "ListMailTrainingDecisionsResponse": {
+    "properties": {
+      "decisions": {
+        "description": "Approvals in the order they were made",
+        "items": {
+          "$ref": "#/components/schemas/MailTrainingDecision"
+        },
+        "type": "array"
+      },
+      "nextCursor": {
+        "description": "Pass as `after` for the next page; absent on the last",
+        "type": "string"
+      }
+    },
+    "required": [
+      "decisions"
     ],
     "type": "object"
   },
@@ -13239,8 +13273,55 @@
     ],
     "type": "object"
   },
+  "MailTrainingDecision": {
+    "properties": {
+      "cursor": {
+        "description": "Where this decision stands in the order: pass as `after` to list those after it",
+        "type": "string"
+      },
+      "decidedTime": {
+        "description": "When it was approved",
+        "type": "string"
+      },
+      "example": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailTrainingExample"
+          }
+        ],
+        "description": "The message, with its labels now as targets"
+      },
+      "ready": {
+        "description": "Whether its labels are settled: the batch writing them has finished, or none was needed. Learn from it only then",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "cursor",
+      "decidedTime",
+      "example",
+      "ready"
+    ],
+    "type": "object"
+  },
+  "MailTrainingDecisionKind": {
+    "description": "What the user decided about a message's suggestion in the inbox",
+    "enum": [
+      "approved",
+      "amended"
+    ],
+    "type": "string"
+  },
   "MailTrainingExample": {
     "properties": {
+      "decision": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailTrainingDecisionKind"
+          }
+        ],
+        "description": "Its labels approved in the inbox, as suggested or amended; absent when not decided there"
+      },
       "families": {
         "description": "The families of its state labels, by name, sorted",
         "items": {
