@@ -1,5 +1,5 @@
 import type { MailInboxMessage } from "@ncfritz/olympus-sdk/minerva";
-import { Tag, Typography } from "antd";
+import { Tag, theme, Typography } from "antd";
 import React from "react";
 import { percent } from "../../../utils/mailAudit";
 import { confidenceSolid } from "../../../utils/mailInbox";
@@ -23,6 +23,9 @@ const CUT: React.CSSProperties = {
   whiteSpace: "nowrap",
   minWidth: 0,
 };
+
+/** A badge's width: "100%" in the code font, so 2 and 3 digits match. */
+const BADGE_WIDTH = 38;
 
 const More: React.FunctionComponent<{ count: number }> = ({ count }) =>
   count > 0 ? (
@@ -67,15 +70,16 @@ export const CurrentLabels: React.FunctionComponent<{
 /**
  * What is suggested to add, as the design draws it: blue with `+` and its
  * confidence, faded when unticked; labels the message has are left out.
- * In `block` (the inbox table) each is grey and full width, its
- * confidence a solid badge at its end, red to yellow to green as it
- * rises.
+ * In `block` (the inbox table) each is grey, full width and without the
+ * `+`, its confidence a fixed-width badge in the code font at its end,
+ * solid red to yellow to green as it rises.
  */
 export const SuggestedLabels: React.FunctionComponent<{
   message: MailInboxMessage;
   max?: number;
   block?: boolean;
 }> = ({ message, max = 2, block = false }) => {
+  const { token } = theme.useToken();
   const adds = message.suggestions.filter((s) => !s.onMessage);
   if (adds.length === 0) {
     return (
@@ -99,7 +103,7 @@ export const SuggestedLabels: React.FunctionComponent<{
               ...(s.ticked ? {} : { opacity: 0.55 }),
             }}
           >
-            <span style={CUT}>+ {s.label}</span>
+            <span style={CUT}>{s.label}</span>
             <span
               style={{
                 ...confidenceSolid(s.score),
@@ -107,7 +111,10 @@ export const SuggestedLabels: React.FunctionComponent<{
                 alignSelf: "stretch",
                 margin: "-1px -1px -1px 0",
                 borderRadius: "0 4px 4px 0",
-                padding: "1px 5px",
+                width: BADGE_WIDTH,
+                padding: "1px 0",
+                textAlign: "center",
+                fontFamily: token.fontFamilyCode,
                 fontSize: 11,
                 fontWeight: 600,
                 lineHeight: "16px",

@@ -20,6 +20,7 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   Alert,
+  Badge,
   Button,
   Drawer,
   Flex,
@@ -350,13 +351,16 @@ const MailInboxPage: React.FunctionComponent = () => {
             </Space>
             <Space wrap={true}>
               <Button
+                type={"text"}
                 icon={<MailOutlined />}
                 onClick={() => setMailboxesOpen(true)}
               >
                 Mailboxes
               </Button>
               <Link href={"/minerva/mail/changes"}>
-                <Button icon={<HistoryOutlined />}>Change log</Button>
+                <Button type={"text"} icon={<HistoryOutlined />}>
+                  Change log
+                </Button>
               </Link>
               <Popconfirm
                 title={`Accept all ${summary?.highConfidence.toLocaleString() ?? ""} at 90% or more?`}
@@ -428,11 +432,27 @@ const MailInboxPage: React.FunctionComponent = () => {
                 ...STATUSES.map((s) => ({
                   key: s.value as string,
                   label:
-                    s.value === "review" && summary
-                      ? `To review · ${summary.toReview}`
-                      : s.value === "unread" && summary
-                        ? `Unread · ${summary.unread}`
-                        : s.label,
+                    s.value === "review" || s.value === "unread" ? (
+                      <Space size={6}>
+                        <span>{s.label}</span>
+                        <Badge
+                          count={
+                            s.value === "review"
+                              ? summary?.toReview
+                              : summary?.unread
+                          }
+                          overflowCount={9999}
+                          size={"small"}
+                          color={
+                            s.value === "review"
+                              ? token.colorPrimary
+                              : token.colorTextTertiary
+                          }
+                        />
+                      </Space>
+                    ) : (
+                      s.label
+                    ),
                 })),
                 {
                   key: "bills",
@@ -635,6 +655,17 @@ const MailInboxPage: React.FunctionComponent = () => {
                   ),
                 },
                 {
+                  title: "Received",
+                  key: "receivedTime",
+                  width: 104,
+                  sorter: true,
+                  sortDirections: NUMBER_SORT,
+                  sortOrder: sortOrderOf(filters.order, "receivedTime"),
+                  render: (_, m) => (
+                    <ReceivedCell time={String(m.receivedTime)} />
+                  ),
+                },
+                {
                   title: "Subject",
                   key: "subject",
                   ellipsis: true,
@@ -706,22 +737,11 @@ const MailInboxPage: React.FunctionComponent = () => {
                   render: (_, m) => confidenceText(m.topScore),
                 },
                 {
-                  title: "Received",
-                  key: "receivedTime",
-                  width: 104,
-                  sorter: true,
-                  sortDirections: NUMBER_SORT,
-                  sortOrder: sortOrderOf(filters.order, "receivedTime"),
-                  render: (_, m) => (
-                    <ReceivedCell time={String(m.receivedTime)} />
-                  ),
-                },
-                {
                   title: "",
                   key: "actions",
-                  width: 72,
+                  width: 84,
                   render: (_, m) => (
-                    <Space size={4}>
+                    <Space size={12}>
                       {!m.decision && (
                         <Tooltip title={"Approve as suggested"}>
                           <Button
