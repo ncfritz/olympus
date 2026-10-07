@@ -13,7 +13,6 @@ import {
   Popconfirm,
   Space,
   Table,
-  type TableProps,
   Tag,
   Tooltip,
   Typography,
@@ -87,8 +86,6 @@ export const OpenBillAgesPill: React.FunctionComponent<{
 );
 
 export interface OpenBillsProps {
-  /** The table header's stickiness, as the page's scroller needs it. */
-  sticky?: TableProps<MailOpenBill>["sticky"];
   /** A bill was marked, so the counts the page shows can follow. */
   onChanged?: () => void;
 }
@@ -97,12 +94,10 @@ export interface OpenBillsProps {
  * The Inbox's Open bills tab (docs/plans/email-management phase 7 step
  * 2): the messages in an open state, oldest first, each one's age
  * coloured green to red, marked done along its family's transition by
- * hand when no payment was found for it.
+ * hand when no payment was found for it. Its rows scroll inside it, in a
+ * parent that fills the page (MailTable.module.css).
  */
-const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
-  sticky,
-  onChanged,
-}) => {
+const OpenBills: React.FunctionComponent<OpenBillsProps> = ({ onChanged }) => {
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState<string>();
   const [opened, setOpened] = useState<MailOpenBill>();
@@ -173,7 +168,7 @@ const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
         rowKey={billKey}
         loading={loading}
         dataSource={found?.bills ?? []}
-        sticky={sticky}
+        scroll={{ y: 1 }}
         tableLayout={"fixed"}
         expandable={{
           expandIcon: (p) => (

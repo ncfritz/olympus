@@ -40,7 +40,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import type { SortOrder } from "antd/lib/table/interface";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import mailApi from "../../../api/mailApi";
 import { ThermometerIcon } from "../../../icons";
 import InboxStrip from "../../../components/minerva/mail/InboxStrip";
@@ -54,6 +54,7 @@ import {
   SenderCell,
   SubjectCell,
 } from "../../../components/minerva/mail/MailCells";
+import tableStyles from "../../../components/minerva/mail/MailTable.module.css";
 import FilterProposals from "../../../components/minerva/mail/FilterProposals";
 import {
   CurrentLabels,
@@ -161,24 +162,6 @@ const MailInboxPage: React.FunctionComponent = () => {
   const [view, setView] = useState<InboxView>("review");
   const [mailboxesOpen, setMailboxesOpen] = useState(false);
   const { token } = theme.useToken();
-
-  // One scroller: what is above the table stays put, and the table's
-  // header sticks under it.
-  const scroller = useRef<HTMLDivElement>(null);
-  const header = useRef<HTMLDivElement>(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
-  useEffect(() => {
-    const el = header.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(() => setHeaderHeight(el.offsetHeight));
-    watch.observe(el);
-    setHeaderHeight(el.offsetHeight);
-    return () => watch.disconnect();
-  }, []);
-  const sticky = {
-    offsetHeader: headerHeight,
-    getContainer: () => scroller.current ?? window,
-  };
 
   const [bills, , , refetchBills] = useFetch<
     Record<string, never>,
@@ -321,23 +304,17 @@ const MailInboxPage: React.FunctionComponent = () => {
           </Space>,
         ]}
       />
+      {/* The page fits the window: what is above the table stays put, and
+          the table's rows scroll above its pagination. */}
       <div
-        ref={scroller}
         style={{
           height: "calc(100vh - 92px)",
-          overflowX: "hidden",
-          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
-        <div
-          ref={header}
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 3,
-            background: token.colorBgContainer,
-          }}
-        >
+        <div style={{ flex: "none", background: token.colorBgContainer }}>
           <Flex
             justify={"space-between"}
             align={"center"}
@@ -586,19 +563,16 @@ const MailInboxPage: React.FunctionComponent = () => {
           </Flex>
         </div>
 
-        <Flex vertical={true} gap={16} style={{ padding: "0 16px 16px" }}>
+        <div className={tableStyles.fill} style={{ padding: "0 16px" }}>
           {view === "bills" ? (
-            <OpenBills
-              sticky={sticky}
-              onChanged={() => void refetchBills(true)}
-            />
+            <OpenBills onChanged={() => void refetchBills(true)} />
           ) : (
             <Table<MailInboxMessage>
               size={"small"}
               loading={loading}
               dataSource={inbox?.messages ?? []}
               rowKey={key}
-              sticky={sticky}
+              scroll={{ y: 1 }}
               tableLayout={"fixed"}
               rowSelection={{
                 columnWidth: SELECTION_COLUMN,
@@ -820,7 +794,7 @@ const MailInboxPage: React.FunctionComponent = () => {
               ]}
             />
           )}
-        </Flex>
+        </div>
       </div>
       <MessageViewer message={opened} onClose={() => setOpened(undefined)} />
       <Drawer

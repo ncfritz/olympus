@@ -1,0 +1,29 @@
+/*
+ * A mail table filling what is left of the page: its header and the
+ * pagination stay put, the rows scroll between them. The table is given
+ * scroll.y so AntD splits header and body; the body's height then comes
+ * from this flex column, not from y.
+ */
+.fill,
+.fill :global(.ant-table-wrapper),
+.fill :global(.ant-table-wrapper > .ant-spin),
+.fill :global(.ant-spin-nested-loading),
+.fill :global(.ant-spin-container),
+.fill :global(.ant-table),
+.fill :global(.ant-table-container) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.fill :global(.ant-table-body) {
+  flex: 1;
+  min-height: 0;
+  max-height: none !important;
+}
+
+.fill :global(.ant-table-pagination.ant-pagination) {
+  flex: none;
+  margin: 8px 0;
+}
