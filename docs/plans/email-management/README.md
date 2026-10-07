@@ -676,7 +676,30 @@ left until phase 5 has decisions to measure them against.
    remote content blocked. **Step 2 built.**
 3. **Learning**: every approval and amendment is a training example,
    corrections weighed more; sender history updates at once, the linear
-   model by `partial_fit`.
+   model by `partial_fit`. **Built** 2026-10-06. The API: training
+   examples carry their inbox `decision` (`approved`, `amended`);
+   `ListMailTrainingDecisions` lists approvals in order after a cursor,
+   each `ready` once the batch writing its labels has finished;
+   `ListMailInboxToScore` gives what is to review. Training weighs an
+   approval 1.5 and a correction 3 (times recency), in sender history and
+   the linear model. The service learns every `LEARN_SECONDS` (60; 0 off):
+   approvals since the serving run began, in order, up to the first not
+   ready, from their stored features (no text): sender history counts each
+   under every key it has, and a correction first halves the history of
+   its most specific key (`CORRECTION_DECAY`), since that sender's mail is
+   labelled differently now; the linear model takes one gradient step on
+   log loss per message (`ONLINE_RATE` 0.5 times its weight) for targets
+   with a model; a label new since the retrain waits for it. What a run
+   learned is in the registry (`online_learned`, `online_cursors`) and
+   replayed when it loads; then the inbox is scored again. Nightly: train,
+   suggest, then `score-inbox` (the DAG's third task). `learn` and
+   `score-inbox` also run alone. **M10 case 1, measured** on the synthetic
+   mailbox (a sender of about 300 consistent messages): two corrections
+   lower its label (0.999 to 0.93) and raise the new one; the third makes
+   the new one a suggestion, the fourth puts it first. A sender with less
+   history moves sooner. The case as written ("twice changes the next
+   suggestion") holds for the scores, not the top label: to settle with
+   Neil at sign-off.
 4. **Site**: the Mail inbox, the home page widget in the middle column,
    and the label picker, as designed.
 

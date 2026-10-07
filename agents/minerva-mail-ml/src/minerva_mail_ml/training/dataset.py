@@ -6,6 +6,10 @@ A target is a topic (`topic:Finance/Utilities`) or a family
 `Paid` teaches "this is a bill", never "this is paid" (ADR 0030, Label
 kinds). Mail sent from the mailbox is left out: suggestions are for mail
 that arrives.
+
+Labels approved in the inbox weigh more than the rest, and a correction
+(approved with other labels than suggested) more again (ADR 0030, The
+classifier; docs/plans/email-management phase 5).
 """
 
 from __future__ import annotations
@@ -22,6 +26,13 @@ from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import Example, Labels
 
 SECONDS_PER_DAY = 86_400.0
+
+# How much an example counts, by what was decided about it in the inbox.
+DECISION_WEIGHTS = {"approved": 1.5, "amended": 3.0}
+
+
+def decision_weight(decision: str | None) -> float:
+    return DECISION_WEIGHTS.get(decision or "", 1.0)
 
 
 def topic_target(name: str) -> str:
@@ -66,6 +77,15 @@ class Dataset:
     targets: list[str]
     # A family's initial label: what is applied when the family is predicted.
     initial_labels: dict[str, str]
+    # How much each example counts (decision_weight); ones when absent.
+    weights: np.ndarray | None = None
+
+    def sample_weights(self) -> np.ndarray:
+        return (
+            self.weights
+            if self.weights is not None
+            else np.ones(len(self.gmail_ids), dtype=np.float64)
+        )
 
     def __len__(self) -> int:
         return len(self.gmail_ids)
@@ -81,6 +101,7 @@ class Dataset:
             y=self.y[rows],
             targets=self.targets,
             initial_labels=self.initial_labels,
+            weights=self.weights[rows] if self.weights is not None else None,
         )
 
 
@@ -101,6 +122,7 @@ def build(
     gmail_ids: list[str] = []
     days: list[float] = []
     keys: list[tuple[str, ...]] = []
+    weights: list[float] = []
     y_rows: list[int] = []
     y_cols: list[int] = []
     for row in store.rows(feature_version, account_id):
@@ -112,6 +134,7 @@ def build(
         gmail_ids.append(row.gmail_id)
         days.append(example.received.timestamp() / SECONDS_PER_DAY)
         keys.append(sender_keys(example.from_address, example.list_id))
+        weights.append(decision_weight(example.decision))
         for target in [topic_target(t) for t in example.topics] + [
             family_target(f) for f in example.families
         ]:
@@ -140,6 +163,7 @@ def build(
         initial_labels={
             family_target(f.name): f.initial_label for f in labels.families
         },
+        weights=np.asarray(weights, dtype=np.float64),
     )
     return dataset.subset(order)
 

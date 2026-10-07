@@ -35,6 +35,30 @@ class Example:
     sent: bool
     topics: tuple[str, ...]
     families: tuple[str, ...]
+    # Approved in the inbox ("approved"), or approved with other labels
+    # ("amended", a correction); None when not decided there.
+    decision: str | None = None
+
+
+@dataclass(frozen=True)
+class Decision:
+    """An approval in the inbox, to learn from at once."""
+
+    example: Example
+    decided: datetime
+    # Its labels are settled: the batch writing them has finished.
+    ready: bool
+    # Where it stands in the order; pass as `after` for those after it.
+    cursor: str
+
+
+@dataclass(frozen=True)
+class ScoredLabel:
+    """A label suggested for new mail, as recorded."""
+
+    label: str
+    score: float
+    ticked: bool
 
 
 @dataclass(frozen=True)
@@ -71,6 +95,7 @@ def _example(raw: dict) -> Example:
         sent=bool(raw["sent"]),
         topics=tuple(raw["topics"]),
         families=tuple(raw["families"]),
+        decision=raw.get("decision"),
     )
 
 
@@ -128,6 +153,9 @@ class OlympusApi:
     def _post(self, path: str, body: dict) -> dict:
         return _checked(self._client.post(path, json=body))
 
+    def _put(self, path: str, body: dict) -> dict:
+        return _checked(self._client.put(path, json=body))
+
     def accounts(self) -> list[Account]:
         body = self._get("/training/accounts")
         return [Account(id=a["id"], email=a["email"]) for a in body["accounts"]]
@@ -145,6 +173,62 @@ class OlympusApi:
             after = body.get("nextCursor")
             if after is None:
                 return
+
+    def decisions(
+        self, account_id: str, after: str | None = None, page: int = 500
+    ) -> Iterator[Decision]:
+        """The account's approvals in the inbox after the cursor, in order."""
+        while True:
+            params: dict = {"accountId": account_id, "limit": page}
+            if after is not None:
+                params["after"] = after
+            body = self._get("/training/decisions", params)
+            for raw in body["decisions"]:
+                yield Decision(
+                    example=_example(raw["example"]),
+                    decided=datetime.fromisoformat(raw["decidedTime"]),
+                    ready=bool(raw["ready"]),
+                    cursor=raw["cursor"],
+                )
+            after = body.get("nextCursor")
+            if after is None:
+                return
+
+    def inbox_to_score(self, account_id: str) -> list[str]:
+        """Gmail IDs of what is to review in the inbox, newest first."""
+        body = self._get("/training/inbox", {"accountId": account_id})
+        return list(body["gmailIds"])
+
+    def record_message_suggestions(
+        self,
+        account_id: str,
+        model_run: str,
+        feature_version: str,
+        messages: list[tuple[str, list[ScoredLabel]]],
+    ) -> int:
+        """Replaces messages' suggestions (up to 500); how many recorded."""
+        body = self._put(
+            f"/account/{account_id}/message-suggestions",
+            {
+                "modelRun": model_run,
+                "featureVersion": feature_version,
+                "messages": [
+                    {
+                        "gmailId": gmail_id,
+                        "suggestions": [
+                            {
+                                "label": s.label,
+                                "score": round(s.score, 4),
+                                "ticked": s.ticked,
+                            }
+                            for s in labels
+                        ],
+                    }
+                    for gmail_id, labels in messages
+                ],
+            },
+        )
+        return body["messages"]
 
     def labels(self, account_id: str) -> Labels:
         body = self._get("/training/labels", {"accountId": account_id})

@@ -15,6 +15,15 @@ def test_defaults() -> None:
     assert config.services_tls is None
     assert config.model_dir == Path("data/models")
     assert config.api is None
+    assert config.learn_seconds == 60
+
+
+def test_reads_how_often_to_learn() -> None:
+    assert read_config({"LEARN_SECONDS": "0"}).learn_seconds == 0
+    assert read_config({"LEARN_SECONDS": "300"}).learn_seconds == 300
+    for bad in ("-1", "often", "86401"):
+        with pytest.raises(ConfigError, match="LEARN_SECONDS"):
+            read_config({"LEARN_SECONDS": bad})
 
 
 def test_lists_every_problem_at_once() -> None:

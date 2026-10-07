@@ -203,6 +203,33 @@ class FeatureStore:
                 counts=_unpack(r[6], np.uint16),
             )
 
+    def rows_by_ids(
+        self, version: str, account_id: str, gmail_ids: Sequence[str]
+    ) -> dict[str, FeatureRow]:
+        """The stored rows of these messages, by Gmail ID; one never stored
+        is missing."""
+        found: dict[str, FeatureRow] = {}
+        ids = list(dict.fromkeys(gmail_ids))
+        for start in range(0, len(ids), 500):
+            chunk = ids[start : start + 500]
+            query = (
+                "SELECT account_id, gmail_id, received_at, from_address, list_id,"
+                " indices, counts FROM message_features WHERE version = ?"
+                " AND account_id = ? AND gmail_id IN"
+                f" ({', '.join('?' for _ in chunk)})"
+            )
+            for r in self._db.execute(query, (version, account_id, *chunk)):
+                found[r[1]] = FeatureRow(
+                    account_id=r[0],
+                    gmail_id=r[1],
+                    received_at=r[2],
+                    from_address=r[3],
+                    list_id=r[4],
+                    indices=_unpack(r[5], np.uint32),
+                    counts=_unpack(r[6], np.uint16),
+                )
+        return found
+
     def matrix(self, rows: Sequence[FeatureRow], n_features: int) -> sparse.csr_matrix:
         """The rows as a sparse count matrix, in order."""
         indptr = np.zeros(len(rows) + 1, dtype=np.int64)

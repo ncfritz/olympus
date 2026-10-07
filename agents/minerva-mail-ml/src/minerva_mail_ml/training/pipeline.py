@@ -105,8 +105,17 @@ def train_dataset(
 
     # 1. The layers, on the training months.
     logger.info("Training on %d messages, %d targets", len(tr), len(data.targets))
-    sender = SenderHistory.fit(tr.keys, tr.days, tr.y, as_of=validation_from)
-    linear = LinearModel.fit(tr.x, tr.y, tr.days, as_of=validation_from, jobs=jobs)
+    sender = SenderHistory.fit(
+        tr.keys, tr.days, tr.y, as_of=validation_from, sample_weight=tr.weights
+    )
+    linear = LinearModel.fit(
+        tr.x,
+        tr.y,
+        tr.days,
+        as_of=validation_from,
+        jobs=jobs,
+        sample_weight=tr.weights,
+    )
 
     # 2. Combiner and thresholds, on the validation months.
     scores, support = sender.score(va.keys)
@@ -118,7 +127,9 @@ def train_dataset(
     # 3. The test months; sender history now knows the validation months.
     before_test = np.concatenate([train, validation])
     known = data.subset(before_test)
-    sender_te = SenderHistory.fit(known.keys, known.days, known.y, as_of=test_from)
+    sender_te = SenderHistory.fit(
+        known.keys, known.days, known.y, as_of=test_from, sample_weight=known.weights
+    )
     scores, support = sender_te.score(te.keys)
     p_te = combiner.probabilities(linear.logits(te.x), scores, support)
     predicted, hits, positives = evaluate(p_te, te.y, cuts)
@@ -187,8 +198,17 @@ def train_dataset(
         feature_version=data.feature_version,
         targets=data.targets,
         labels=labels,
-        sender=SenderHistory.fit(data.keys, data.days, data.y, as_of=end),
-        linear=LinearModel.fit(data.x, data.y, data.days, as_of=end, jobs=jobs),
+        sender=SenderHistory.fit(
+            data.keys, data.days, data.y, as_of=end, sample_weight=data.weights
+        ),
+        linear=LinearModel.fit(
+            data.x,
+            data.y,
+            data.days,
+            as_of=end,
+            jobs=jobs,
+            sample_weight=data.weights,
+        ),
         combiner=combiner,
         thresholds=cuts,
     )

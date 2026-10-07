@@ -189,7 +189,8 @@ def create_services_app(store: FeatureStore, models: ServingModels) -> FastAPI:
             )
             for m in request.messages
         ]
-        found = model.suggest(x, keys)
+        with models.lock(str(request.accountId)):
+            found = model.suggest(x, keys)
         SUGGESTIONS_MADE.inc(len(found))
         return SuggestionsResponse(
             modelRun=run_id,

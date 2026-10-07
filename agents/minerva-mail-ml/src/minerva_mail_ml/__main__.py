@@ -1,7 +1,9 @@
 """Starts the service: `python -m minerva_mail_ml` or `minerva-mail-ml`.
 
 Two listeners in one process: the plain one for /health and /metrics, and
-the services one, mutual TLS, for every route that takes text.
+the services one, mutual TLS, for every route that takes text. With the API
+configured, it also learns from approvals in the inbox every LEARN_SECONDS
+(training/online.py).
 """
 
 from __future__ import annotations
@@ -17,8 +19,10 @@ import uvicorn
 from minerva_mail_ml.app import create_app
 from minerva_mail_ml.config import Config, ConfigError, read_config
 from minerva_mail_ml.features.store import FeatureStore
+from minerva_mail_ml.olympus_api import OlympusApi
 from minerva_mail_ml.services_app import create_services_app
 from minerva_mail_ml.tls import allowed_clients_protocol, services_ssl_context
+from minerva_mail_ml.training.online import learn_all
 from minerva_mail_ml.training.registry import ModelRegistry
 from minerva_mail_ml.training.serving import ServingModels
 
@@ -65,16 +69,43 @@ def servers(
     return [plain, _Server(services_config)]
 
 
-async def serve(running: list[uvicorn.Server]) -> None:
+async def learn_forever(
+    every: int,
+    store: FeatureStore,
+    registry: ModelRegistry,
+    models: ServingModels,
+    api: OlympusApi,
+    stopping: asyncio.Event,
+) -> None:
+    """Learns from approvals in the inbox every `every` seconds, until
+    stopped; a pass that fails is logged and the next one tried."""
+    while not stopping.is_set():
+        try:
+            await asyncio.to_thread(learn_all, store, registry, models, api)
+        except Exception:
+            logger.exception("Learning from the inbox failed")
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(stopping.wait(), timeout=every)
+
+
+async def serve(
+    running: list[uvicorn.Server],
+    learning: tuple | None = None,
+) -> None:
     loop = asyncio.get_running_loop()
+    stopping = asyncio.Event()
 
     def stop() -> None:
+        stopping.set()
         for server in running:
             server.should_exit = True
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop)
-    await asyncio.gather(*(server.serve() for server in running))
+    tasks = [server.serve() for server in running]
+    if learning is not None:
+        tasks.append(learn_forever(*learning, stopping))
+    await asyncio.gather(*tasks)
 
 
 def main() -> None:
@@ -92,15 +123,27 @@ def main() -> None:
     )
     store = FeatureStore(config.store_path)
     registry = ModelRegistry(config.model_dir)
-    running = servers(config, store, ServingModels(registry))
+    models = ServingModels(registry, store)
+    running = servers(config, store, models)
+    api = OlympusApi(config.api) if config.api is not None else None
+    learning = None
+    if api is not None and config.learn_seconds > 0:
+        learning = (config.learn_seconds, store, registry, models, api)
+    else:
+        logger.info(
+            "Not learning from the inbox: %s",
+            "LEARN_SECONDS is 0" if api is not None else "the API is not configured",
+        )
     logger.info(
         "Minerva mail classifier listening on %d%s",
         config.port,
         f", services on {config.services_port}" if len(running) > 1 else "",
     )
     try:
-        asyncio.run(serve(running))
+        asyncio.run(serve(running, learning))
     finally:
+        if api is not None:
+            api.close()
         registry.close()
         store.close()
 

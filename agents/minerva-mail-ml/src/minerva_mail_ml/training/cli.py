@@ -4,6 +4,11 @@
     minerva-mail-ml-train suggest [--account ID]
                                                suggestions over the whole
                                                mailbox, posted to the API
+    minerva-mail-ml-train score-inbox [--account ID]
+                                               what is to review in the inbox
+                                               scored again by the newest model
+    minerva-mail-ml-train learn [--account ID] learn from approvals in the
+                                               inbox once, as the service does
     minerva-mail-ml-train report [--run ID]    a run's evaluation (default:
                                                each account's newest run)
 
@@ -21,12 +26,14 @@ import sys
 from minerva_mail_ml.config import ConfigError, read_config
 from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import OlympusApi
+from minerva_mail_ml.training.online import learn_account, score_inbox
 from minerva_mail_ml.training.pipeline import (
     TrainingError,
     suggest_account,
     train_account,
 )
 from minerva_mail_ml.training.registry import MACRO_MIN, ModelRegistry, Run
+from minerva_mail_ml.training.serving import ServingModels
 from minerva_mail_ml.training.suggest import SuggestError
 
 logger = logging.getLogger("minerva_mail_ml.train")
@@ -96,6 +103,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     suggest.add_argument("--account", help="Only this mail account ID")
     suggest.add_argument("--jobs", type=int, default=-1, help="Threads (default: all)")
+    rescore = commands.add_parser(
+        "score-inbox",
+        help="Score what is to review in the inbox again with the serving model",
+    )
+    rescore.add_argument("--account", help="Only this mail account ID")
+    learn = commands.add_parser(
+        "learn",
+        help="Learn from approvals in the inbox once, as the service does",
+    )
+    learn.add_argument("--account", help="Only this mail account ID")
     shown = commands.add_parser("report", help="A run's evaluation")
     shown.add_argument("--run", help="This run (default: each account's newest)")
     shown.add_argument(
@@ -146,10 +163,27 @@ def main(argv: list[str] | None = None) -> int:
             accounts = (
                 [args.account] if args.account else [a.id for a in api.accounts()]
             )
+            models = ServingModels(registry, store)
             for account in accounts:
                 try:
                     if args.command == "suggest":
                         suggest_account(store, registry, api, account, jobs=args.jobs)
+                    elif args.command == "score-inbox":
+                        scored = score_inbox(store, models, api, account)
+                        logger.info(
+                            "Account %s: scored %d in the inbox", account, scored
+                        )
+                    elif args.command == "learn":
+                        learned = learn_account(store, registry, models, api, account)
+                        logger.info(
+                            "Account %s: learned %d approvals (%d waiting, %d"
+                            " without features), scored %d in the inbox",
+                            account,
+                            learned.learned,
+                            learned.waiting,
+                            learned.without_features,
+                            learned.rescored,
+                        )
                     else:
                         train_account(store, registry, api, account, jobs=args.jobs)
                 except (TrainingError, SuggestError) as error:

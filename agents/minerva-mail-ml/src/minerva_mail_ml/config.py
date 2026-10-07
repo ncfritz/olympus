@@ -15,6 +15,7 @@ DEFAULT_PORT = 3106
 DEFAULT_SERVICES_PORT = 3107
 DEFAULT_STORE = "data/features.sqlite3"
 DEFAULT_MODELS = "data/models"
+DEFAULT_LEARN_SECONDS = 60
 
 
 class ConfigError(ValueError):
@@ -66,6 +67,8 @@ class Config:
     model_dir: Path = Path(DEFAULT_MODELS)
     # None: the API is not configured, so nothing can be trained.
     api: ApiClient | None = field(default=None)
+    # How often the service learns from approvals in the inbox; 0: never.
+    learn_seconds: int = DEFAULT_LEARN_SECONDS
 
 
 def _port(env: Mapping[str, str], name: str, default: int, problems: list[str]) -> int:
@@ -160,6 +163,14 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
 
     services_tls = _services_tls(env, problems)
     api = _api_client(env, problems)
+    raw_learn = env.get("LEARN_SECONDS", str(DEFAULT_LEARN_SECONDS))
+    learn_seconds = DEFAULT_LEARN_SECONDS
+    if raw_learn.isdigit() and int(raw_learn) <= 86_400:
+        learn_seconds = int(raw_learn)
+    else:
+        problems.append(
+            f'LEARN_SECONDS is a whole number of seconds, 0 to 86400, got "{raw_learn}"'
+        )
 
     if problems:
         raise ConfigError(problems)
@@ -173,4 +184,5 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
         services_tls=services_tls,
         model_dir=Path(env.get("MODEL_DIR", DEFAULT_MODELS)),
         api=api,
+        learn_seconds=learn_seconds,
     )

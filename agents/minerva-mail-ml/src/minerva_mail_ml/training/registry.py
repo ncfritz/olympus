@@ -80,6 +80,27 @@ CREATE TABLE IF NOT EXISTS model_run_targets (
     recall_default REAL,
     PRIMARY KEY (run_id, target)
 );
+-- What a serving run has learned since it was trained, from approvals in
+-- the inbox (docs/plans/email-management phase 5), in order: replayed
+-- onto the model when it loads, so a restart loses none of it.
+CREATE TABLE IF NOT EXISTS online_learned (
+    run_id TEXT NOT NULL REFERENCES model_runs (id),
+    seq INTEGER NOT NULL,
+    gmail_id TEXT NOT NULL,
+    -- The targets it has, as indices into the run's targets, comma-separated.
+    targets TEXT NOT NULL,
+    weight REAL NOT NULL,
+    -- Approved with other labels than suggested.
+    correction INTEGER NOT NULL,
+    learned_at TEXT NOT NULL,
+    PRIMARY KEY (run_id, seq)
+);
+-- Where each run has read the account's decisions to.
+CREATE TABLE IF NOT EXISTS online_cursors (
+    run_id TEXT PRIMARY KEY REFERENCES model_runs (id),
+    cursor TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 
@@ -270,6 +291,54 @@ class ModelRegistry:
             result.own_combiner = bool(result.own_combiner)
             out.append(result)
         return out
+
+    def cursor(self, run_id: str) -> str | None:
+        """Where the run has read decisions to; None before it has."""
+        row = self._db.execute(
+            "SELECT cursor FROM online_cursors WHERE run_id = ?", (run_id,)
+        ).fetchone()
+        return row[0] if row else None
+
+    def record_learned(
+        self,
+        run_id: str,
+        learned: list[tuple[str, list[int], float, bool]],
+        cursor: str,
+    ) -> None:
+        """Appends what the run learned, (Gmail ID, target indices, weight,
+        correction) each, and moves its cursor, together."""
+        now = _now()
+        with self._db:
+            start = self._db.execute(
+                "SELECT coalesce(max(seq), -1) + 1 FROM online_learned"
+                " WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()[0]
+            self._db.executemany(
+                "INSERT INTO online_learned (run_id, seq, gmail_id, targets,"
+                " weight, correction, learned_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (run_id, start + i, g, ",".join(map(str, t)), w, int(c), now)
+                    for i, (g, t, w, c) in enumerate(learned)
+                ],
+            )
+            self._db.execute(
+                "INSERT INTO online_cursors (run_id, cursor, updated_at)"
+                " VALUES (?, ?, ?) ON CONFLICT (run_id) DO UPDATE SET"
+                " cursor = excluded.cursor, updated_at = excluded.updated_at",
+                (run_id, cursor, now),
+            )
+
+    def learned(self, run_id: str) -> list[tuple[str, list[int], float, bool]]:
+        """What the run has learned online, in order."""
+        return [
+            (g, [int(t) for t in targets.split(",") if t], w, bool(c))
+            for g, targets, w, c in self._db.execute(
+                "SELECT gmail_id, targets, weight, correction FROM online_learned"
+                " WHERE run_id = ? ORDER BY seq",
+                (run_id,),
+            )
+        ]
 
     def serving(self, account_id: str) -> str | None:
         """The newest ready run of the account."""

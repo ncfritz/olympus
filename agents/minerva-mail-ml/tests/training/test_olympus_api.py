@@ -136,3 +136,59 @@ def test_says_what_the_api_said() -> None:
         _api(handler).create_suggestion_run(ACCOUNT, "model-1", "v1")
     assert error.value.status == 404
     assert "Cannot POST /v1/minerva/mail/suggestion-runs" in str(error.value)
+
+
+def test_reads_decisions_and_the_inbox_and_records_suggestions() -> None:
+    from minerva_mail_ml.olympus_api import ScoredLabel
+
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        path = request.url.path
+        if path == "/v1/minerva/mail/training/decisions":
+            if "after" not in request.url.params:
+                return httpx.Response(
+                    200,
+                    json={
+                        "decisions": [
+                            {
+                                "example": {**_example("a1"), "decision": "amended"},
+                                "decidedTime": "2026-10-06T08:00:00.123Z",
+                                "ready": True,
+                                "cursor": "c1",
+                            }
+                        ],
+                        "nextCursor": "c1",
+                    },
+                )
+            return httpx.Response(200, json={"decisions": []})
+        if path == "/v1/minerva/mail/training/inbox":
+            return httpx.Response(200, json={"gmailIds": ["b2", "b1"]})
+        assert request.method == "PUT"
+        assert path == f"/v1/minerva/mail/account/{ACCOUNT}/message-suggestions"
+        return httpx.Response(200, json={"messages": 1, "suggestions": 1, "skipped": 0})
+
+    api = _api(handler)
+    decisions = list(api.decisions(ACCOUNT))
+    assert [d.cursor for d in decisions] == ["c1"]
+    assert decisions[0].example.decision == "amended"
+    assert decisions[0].ready and decisions[0].decided.year == 2026
+    assert seen[1].url.params["after"] == "c1"
+    assert api.inbox_to_score(ACCOUNT) == ["b2", "b1"]
+    recorded = api.record_message_suggestions(
+        ACCOUNT, "run-1", "v1", [("b2", [ScoredLabel("Travel", 0.91234, True)])]
+    )
+    assert recorded == 1
+    import json
+
+    assert json.loads(seen[-1].content) == {
+        "modelRun": "run-1",
+        "featureVersion": "v1",
+        "messages": [
+            {
+                "gmailId": "b2",
+                "suggestions": [{"label": "Travel", "score": 0.9123, "ticked": True}],
+            }
+        ],
+    }
