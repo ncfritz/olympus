@@ -1,16 +1,57 @@
 import type { MailInboxMessage } from "@ncfritz/olympus-sdk/minerva";
 import { Tag, Typography } from "antd";
 import React from "react";
+import { percent } from "../../../utils/mailAudit";
+import { confidenceColors } from "../../../utils/mailInbox";
 import ChangeTag from "./audit/ChangeTag";
 
 const { Text } = Typography;
 
-/** A message's labels now, as default tags. */
+/** A full-width tag, one to a line, its label cut short if it must be. */
+const BLOCK: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 6,
+  width: "100%",
+  margin: "0 0 4px",
+  minWidth: 0,
+};
+const CUT: React.CSSProperties = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  minWidth: 0,
+};
+
+const More: React.FunctionComponent<{ count: number }> = ({ count }) =>
+  count > 0 ? (
+    <Text type={"secondary"} style={{ fontSize: 12 }}>
+      +{count} more
+    </Text>
+  ) : null;
+
+/**
+ * A message's labels now: default tags, or in `block` (the inbox table)
+ * solid gold, full width, one to a line.
+ */
 export const CurrentLabels: React.FunctionComponent<{
   labels: string[];
   max?: number;
-}> = ({ labels, max = 3 }) =>
-  labels.length ? (
+  block?: boolean;
+}> = ({ labels, max = 3, block = false }) =>
+  labels.length === 0 ? (
+    <Text type={"secondary"}>none</Text>
+  ) : block ? (
+    <>
+      {labels.slice(0, max).map((l) => (
+        <Tag key={l} color={"gold"} variant={"solid"} style={BLOCK} title={l}>
+          <span style={CUT}>{l}</span>
+        </Tag>
+      ))}
+      <More count={labels.length - max} />
+    </>
+  ) : (
     <>
       {labels.slice(0, max).map((l) => (
         <Tag key={l} style={{ marginInlineEnd: 4 }}>
@@ -21,24 +62,55 @@ export const CurrentLabels: React.FunctionComponent<{
         <Text type={"secondary"}>+{labels.length - max}</Text>
       ) : null}
     </>
-  ) : (
-    <Text type={"secondary"}>none</Text>
   );
 
 /**
  * What is suggested to add, as the design draws it: blue with `+` and its
  * confidence, faded when unticked; labels the message has are left out.
+ * In `block` (the inbox table) each is grey and full width, its
+ * confidence a solid badge coloured white to blue as it rises.
  */
 export const SuggestedLabels: React.FunctionComponent<{
   message: MailInboxMessage;
   max?: number;
-}> = ({ message, max = 2 }) => {
+  block?: boolean;
+}> = ({ message, max = 2, block = false }) => {
   const adds = message.suggestions.filter((s) => !s.onMessage);
   if (adds.length === 0) {
     return (
       <Text type={"secondary"}>
         {message.scoredTime ? "no suggestion" : "not scored"}
       </Text>
+    );
+  }
+  if (block) {
+    return (
+      <>
+        {adds.slice(0, max).map((s) => (
+          <Tag
+            key={s.label}
+            variant={"filled"}
+            title={`${s.label}, ${percent(s.score)}${s.ticked ? "" : ", not ticked"}`}
+            style={{ ...BLOCK, ...(s.ticked ? {} : { opacity: 0.55 }) }}
+          >
+            <span style={CUT}>+ {s.label}</span>
+            <span
+              style={{
+                ...confidenceColors(s.score),
+                flex: "none",
+                borderRadius: 4,
+                padding: "0 5px",
+                fontSize: 11,
+                fontWeight: 600,
+                lineHeight: "16px",
+              }}
+            >
+              {percent(s.score)}
+            </span>
+          </Tag>
+        ))}
+        <More count={adds.length - max} />
+      </>
     );
   }
   return (

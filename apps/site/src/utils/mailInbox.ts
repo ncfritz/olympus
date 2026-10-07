@@ -254,3 +254,45 @@ export const orderOf = (sorter: {
 /** A confidence as the inbox shows it: a whole percent, or a dash. */
 export const confidenceText = (score?: number): string =>
   score === undefined || score === null ? "—" : `${Math.round(score * 100)}%`;
+
+/**
+ * The confidence gradient: white up to 50%, then to Ant Design's blue-7 at
+ * 100%, where the suggestions are, so 80% and 95% look apart.
+ */
+const LOW = [255, 255, 255];
+const HIGH = [9, 88, 217];
+const FLOOR = 0.5;
+
+/** A colour channel's share of luminance (WCAG 2). */
+const linear = (c: number) => {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+};
+
+/**
+ * A confidence's colours, white to blue as it rises past half: the background, and
+ * the text (near black or white) with the more contrast against it.
+ * Nothing without a score.
+ */
+export const confidenceColors = (
+  score?: number | null,
+): { background: string; color: string } | undefined => {
+  if (score === undefined || score === null) return undefined;
+  const t = Math.min(1, Math.max(0, (score - FLOOR) / (1 - FLOOR)));
+  const [r, g, b] = LOW.map((low, i) => Math.round(low + (HIGH[i] - low) * t));
+  const lum = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  const onWhite = 1.05 / (lum + 0.05);
+  const onBlack = (lum + 0.05) / 0.05;
+  return {
+    background: `rgb(${r}, ${g}, ${b})`,
+    color: onWhite > onBlack ? "#ffffff" : "rgba(0, 0, 0, 0.88)",
+  };
+};
+
+/** The confidence column's filter: its one chosen floor, else none. */
+export const minConfidenceOf = (
+  values?: readonly unknown[] | null,
+): number | undefined => {
+  const v = Number(values?.[0]);
+  return Number.isFinite(v) && v > 0 ? v : undefined;
+};

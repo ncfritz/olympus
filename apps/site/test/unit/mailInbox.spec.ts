@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   approvalOf,
   chunked,
+  confidenceColors,
   confidenceText,
   containedHtml,
   DEFAULT_ORDER,
@@ -13,6 +14,7 @@ import {
   initialWants,
   nextToReview,
   isAmended,
+  minConfidenceOf,
   orderOf,
   parseApproveOptions,
   pickerSuggestionsOf,
@@ -222,5 +224,29 @@ describe("the inbox's order", () => {
     expect(confidenceText(0.873)).toBe("87%");
     expect(confidenceText(1)).toBe("100%");
     expect(confidenceText(undefined)).toBe("—");
+  });
+});
+
+describe("the confidence gradient", () => {
+  it("runs white to blue from half, the text dark then white for contrast", () => {
+    expect(confidenceColors(0)).toEqual({
+      background: "rgb(255, 255, 255)",
+      color: "rgba(0, 0, 0, 0.88)",
+    });
+    expect(confidenceColors(1)).toEqual({
+      background: "rgb(9, 88, 217)",
+      color: "#ffffff",
+    });
+    expect(confidenceColors(0.5)).toEqual(confidenceColors(0));
+    expect(confidenceColors(0.6)?.color).toBe("rgba(0, 0, 0, 0.88)");
+    expect(confidenceColors(0.95)?.color).toBe("#ffffff");
+    expect(confidenceColors(2)).toEqual(confidenceColors(1));
+    expect(confidenceColors(undefined)).toBeUndefined();
+  });
+
+  it("filters by the one floor chosen, else none", () => {
+    expect(minConfidenceOf([0.9])).toBe(0.9);
+    expect(minConfidenceOf(null)).toBeUndefined();
+    expect(minConfidenceOf([])).toBeUndefined();
   });
 });

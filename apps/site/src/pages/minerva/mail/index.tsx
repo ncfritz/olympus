@@ -25,7 +25,6 @@ import {
   Input,
   message,
   Popconfirm,
-  Select,
   Space,
   Table,
   Tabs,
@@ -77,9 +76,11 @@ import {
   mailReturnTo,
 } from "../../../utils/mailAccounts";
 import {
+  confidenceColors,
   confidenceText,
   DEFAULT_ORDER,
   type InboxOrder,
+  minConfidenceOf,
   nextToReview,
   orderOf,
   sortOrderOf,
@@ -89,6 +90,9 @@ import {
 const { Title, Text } = Typography;
 
 const PAGE_SIZE = 50;
+/** Current labels' width; Suggested has this and room for its badges. */
+const LABELS_WIDTH = 150;
+const BADGE_WIDTH = 40;
 /** Text sorts A to Z first, numbers and times high first; never unsorted. */
 const TEXT_SORT: SortOrder[] = ["ascend", "descend", "ascend"];
 const NUMBER_SORT: SortOrder[] = ["descend", "ascend", "descend"];
@@ -100,11 +104,11 @@ const STATUSES: { label: string; value: MailInboxStatus }[] = [
   { label: "All", value: "all" },
 ];
 
+/** The confidence column's filter: its suggestion to add at least this sure. */
 const CONFIDENCES = [
-  { label: "Any confidence", value: 0 },
-  { label: "≥ 80%", value: 0.8 },
-  { label: "≥ 90%", value: 0.9 },
-  { label: "≥ 95%", value: 0.95 },
+  { text: "≥ 80%", value: 0.8 },
+  { text: "≥ 90%", value: 0.9 },
+  { text: "≥ 95%", value: 0.95 },
 ];
 
 type Filters = {
@@ -452,19 +456,6 @@ const MailInboxPage: React.FunctionComponent = () => {
                         }))
                       }
                     />
-                    <Select
-                      size={"small"}
-                      style={{ width: 145 }}
-                      options={CONFIDENCES}
-                      value={filters.minConfidence ?? 0}
-                      onChange={(v: number) =>
-                        setFilters((f) => ({
-                          ...f,
-                          minConfidence: v || undefined,
-                          page: 0,
-                        }))
-                      }
-                    />
                   </Space>
                 )
               }
@@ -601,7 +592,7 @@ const MailInboxPage: React.FunctionComponent = () => {
                 total: inbox?.count ?? 0,
                 showSizeChanger: false,
               }}
-              onChange={(pagination, _filters, sorter, extra) =>
+              onChange={(pagination, columnFilters, sorter, extra) =>
                 setFilters((f) =>
                   extra.action === "sort"
                     ? {
@@ -609,7 +600,15 @@ const MailInboxPage: React.FunctionComponent = () => {
                         order: orderOf(Array.isArray(sorter) ? {} : sorter),
                         page: 0,
                       }
-                    : { ...f, page: (pagination.current ?? 1) - 1 },
+                    : extra.action === "filter"
+                      ? {
+                          ...f,
+                          minConfidence: minConfidenceOf(
+                            columnFilters.confidence,
+                          ),
+                          page: 0,
+                        }
+                      : { ...f, page: (pagination.current ?? 1) - 1 },
                 )
               }
               locale={{
@@ -652,13 +651,15 @@ const MailInboxPage: React.FunctionComponent = () => {
                 {
                   title: "Current labels",
                   key: "labels",
-                  width: 160,
-                  render: (_, m) => <CurrentLabels labels={m.labels} max={3} />,
+                  width: LABELS_WIDTH,
+                  render: (_, m) => (
+                    <CurrentLabels labels={m.labels} max={3} block={true} />
+                  ),
                 },
                 {
                   title: "Suggested",
                   key: "suggested",
-                  width: 200,
+                  width: LABELS_WIDTH + BADGE_WIDTH,
                   render: (_, m) =>
                     m.decision ? (
                       <Tag
@@ -667,22 +668,26 @@ const MailInboxPage: React.FunctionComponent = () => {
                         {m.decision === "approved" ? "Approved" : "Skipped"}
                       </Tag>
                     ) : (
-                      <SuggestedLabels message={m} max={2} />
+                      <SuggestedLabels message={m} max={2} block={true} />
                     ),
                 },
                 {
                   title: "Confidence",
                   key: "confidence",
-                  width: 120,
+                  width: 136,
                   align: "right",
                   sorter: true,
                   sortDirections: NUMBER_SORT,
                   sortOrder: sortOrderOf(filters.order, "confidence"),
-                  render: (_, m) => (
-                    <Text style={{ fontSize: 12 }}>
-                      {confidenceText(m.topScore)}
-                    </Text>
-                  ),
+                  filters: CONFIDENCES,
+                  filterMultiple: false,
+                  filteredValue: filters.minConfidence
+                    ? [filters.minConfidence]
+                    : null,
+                  onCell: (m) => ({
+                    style: { ...confidenceColors(m.topScore), fontSize: 12 },
+                  }),
+                  render: (_, m) => confidenceText(m.topScore),
                 },
                 {
                   title: "Received",
