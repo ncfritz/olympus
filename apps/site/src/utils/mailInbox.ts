@@ -197,3 +197,17 @@ export const containedHtml = (html: string): string =>
     html.replace(REFRESH, ""),
     "</body></html>",
   ].join("");
+
+/**
+ * The message to open once `current` is reviewed: the next in the list
+ * still undecided, or none at the end.
+ */
+export const nextToReview = (
+  messages: MailInboxMessage[],
+  current: MailInboxMessage,
+): MailInboxMessage | undefined => {
+  const at = messages.findIndex(
+    (m) => m.accountId === current.accountId && m.gmailId === current.gmailId,
+  );
+  return at < 0 ? undefined : messages.slice(at + 1).find((m) => !m.decision);
+};

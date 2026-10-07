@@ -9,6 +9,7 @@ import {
   flagChangeText,
   gmailIdsByAccount,
   initialWants,
+  nextToReview,
   isAmended,
   parseApproveOptions,
   pickerSuggestionsOf,
@@ -167,5 +168,19 @@ describe("containedHtml", () => {
     expect(page).toContain('<base target="_blank">');
     expect(page).not.toMatch(/refresh/i);
     expect(page).toContain("<p>Hi");
+  });
+});
+
+describe("nextToReview", () => {
+  it("opens the next undecided message, and none at the end", () => {
+    const a = message({ gmailId: "1a" });
+    const b = message({
+      gmailId: "1b",
+      decision: "approved",
+    } as Partial<MailInboxMessage>);
+    const c = message({ gmailId: "1c" });
+    expect(nextToReview([a, b, c], a)?.gmailId).toBe("1c");
+    expect(nextToReview([a, b, c], c)).toBeUndefined();
+    expect(nextToReview([a, c], message({ gmailId: "ff" }))).toBeUndefined();
   });
 });

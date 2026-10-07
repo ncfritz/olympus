@@ -1,11 +1,13 @@
 import {
   CheckOutlined,
   ContainerOutlined,
+  DownOutlined,
   EyeOutlined,
   ForwardOutlined,
   HistoryOutlined,
   InboxOutlined,
   ReadOutlined,
+  RightOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import type {
@@ -28,6 +30,7 @@ import {
   Select,
   Space,
   Table,
+  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -65,7 +68,7 @@ import {
   mailLinkOutcome,
   mailReturnTo,
 } from "../../../utils/mailAccounts";
-import { senderOf, startOfToday } from "../../../utils/mailInbox";
+import { nextToReview, senderOf, startOfToday } from "../../../utils/mailInbox";
 
 const { Title, Text } = Typography;
 
@@ -203,7 +206,15 @@ const MailInboxPage: React.FunctionComponent = () => {
   };
 
   const reviewed = (m: MailInboxMessage, done: ReviewOutcome) => {
-    setExpanded((e) => e.filter((k) => k !== key(m)));
+    // Approved: the next message to review opens in its place.
+    const next =
+      done.kind === "approved"
+        ? nextToReview(inbox?.messages ?? [], m)
+        : undefined;
+    setExpanded((e) => [
+      ...e.filter((k) => k !== key(m) && (!next || k !== key(next))),
+      ...(next ? [key(next)] : []),
+    ]);
     message.success(
       done.kind === "skipped"
         ? "Skipped: Gmail unchanged"
@@ -307,69 +318,70 @@ const MailInboxPage: React.FunctionComponent = () => {
           <OpenBills />
           <FilterProposals accounts={accounts} onAllow={connect} />
 
-          <Flex justify={"space-between"} align={"center"} wrap={true} gap={12}>
-            <Segmented
-              options={STATUSES.map((s) => ({
-                value: s.value,
-                label:
-                  s.value === "review" && summary
-                    ? `To review · ${summary.toReview}`
-                    : s.value === "unread" && summary
-                      ? `Unread · ${summary.unread}`
-                      : s.label,
-              }))}
-              value={filters.status}
-              onChange={(v) =>
-                setFilters((f) => ({
-                  ...f,
-                  status: v as MailInboxStatus,
-                  page: 0,
-                }))
-              }
-            />
-            <Space wrap={true}>
-              <Input.Search
-                allowClear={true}
-                placeholder={"Search sender or subject"}
-                style={{ width: 240 }}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onSearch={(v) =>
-                  setFilters((f) => ({
-                    ...f,
-                    search: v.trim() || undefined,
-                    page: 0,
-                  }))
-                }
-              />
-              <Select
-                style={{ width: 150 }}
-                options={CONFIDENCES}
-                value={filters.minConfidence ?? 0}
-                onChange={(v: number) =>
-                  setFilters((f) => ({
-                    ...f,
-                    minConfidence: v || undefined,
-                    page: 0,
-                  }))
-                }
-              />
-              <Segmented
-                options={[
-                  { label: "Newest", value: "receivedTime" },
-                  { label: "Most confident", value: "confidence" },
-                ]}
-                value={filters.sortBy}
-                onChange={(v) =>
-                  setFilters((f) => ({
-                    ...f,
-                    sortBy: v as MailInboxSort,
-                    page: 0,
-                  }))
-                }
-              />
-            </Space>
-          </Flex>
+          <Tabs
+            activeKey={filters.status}
+            onChange={(v) =>
+              setFilters((f) => ({
+                ...f,
+                status: v as MailInboxStatus,
+                page: 0,
+              }))
+            }
+            tabBarStyle={{ marginBottom: 0 }}
+            items={STATUSES.map((s) => ({
+              key: s.value,
+              label:
+                s.value === "review" && summary
+                  ? `To review · ${summary.toReview}`
+                  : s.value === "unread" && summary
+                    ? `Unread · ${summary.unread}`
+                    : s.label,
+            }))}
+            tabBarExtraContent={
+              <Space wrap={true}>
+                <Input.Search
+                  allowClear={true}
+                  placeholder={"Search sender or subject"}
+                  style={{ width: 240 }}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onSearch={(v) =>
+                    setFilters((f) => ({
+                      ...f,
+                      search: v.trim() || undefined,
+                      page: 0,
+                    }))
+                  }
+                />
+                <Select
+                  style={{ width: 150 }}
+                  options={CONFIDENCES}
+                  value={filters.minConfidence ?? 0}
+                  onChange={(v: number) =>
+                    setFilters((f) => ({
+                      ...f,
+                      minConfidence: v || undefined,
+                      page: 0,
+                    }))
+                  }
+                />
+                <Segmented
+                  options={[
+                    { label: "Newest", value: "receivedTime" },
+                    { label: "Most confident", value: "confidence" },
+                  ]}
+                  value={filters.sortBy}
+                  onChange={(v) =>
+                    setFilters((f) => ({
+                      ...f,
+                      sortBy: v as MailInboxSort,
+                      page: 0,
+                    }))
+                  }
+                />
+              </Space>
+            }
+          />
 
           {selected.length > 0 && (
             <Alert
@@ -448,12 +460,24 @@ const MailInboxPage: React.FunctionComponent = () => {
             loading={loading}
             dataSource={inbox?.messages ?? []}
             rowKey={key}
+            // Narrow screens scroll sideways rather than squeeze the subject.
+            scroll={{ x: 1000 }}
             rowSelection={{
               selectedRowKeys: selected.map(key),
               onChange: (_, rows) => setSelected(rows),
             }}
             expandable={{
               expandedRowKeys: expanded,
+              expandIcon: ({ expanded: open, onExpand, record }) => (
+                <Button
+                  type={"text"}
+                  size={"small"}
+                  icon={open ? <DownOutlined /> : <RightOutlined />}
+                  aria-label={`${open ? "Close" : "Review"} ${record.subject ?? "message"}`}
+                  aria-expanded={open}
+                  onClick={(e) => onExpand(record, e)}
+                />
+              ),
               onExpand: (open, m) =>
                 setExpanded((e) =>
                   open ? [...e, key(m)] : e.filter((k) => k !== key(m)),
@@ -496,7 +520,7 @@ const MailInboxPage: React.FunctionComponent = () => {
               {
                 title: "From",
                 key: "from",
-                width: 170,
+                width: 150,
                 ellipsis: true,
                 render: (_, m) => (
                   <Tooltip title={m.fromAddress}>
@@ -512,26 +536,36 @@ const MailInboxPage: React.FunctionComponent = () => {
               {
                 title: "Subject",
                 key: "subject",
+                minWidth: 180,
                 ellipsis: true,
                 render: (_, m) => (
-                  <span>
-                    <span style={{ fontWeight: m.unread ? 600 : 400 }}>
+                  <Flex vertical={true} style={{ minWidth: 0 }}>
+                    <Text
+                      ellipsis={true}
+                      style={{ fontWeight: m.unread ? 600 : 400 }}
+                    >
                       {m.subject ?? "(no subject)"}
-                    </span>
-                    <Text type={"secondary"}> · {m.snippet}</Text>
-                  </span>
+                    </Text>
+                    <Text
+                      type={"secondary"}
+                      ellipsis={true}
+                      style={{ fontSize: 12 }}
+                    >
+                      {m.snippet}
+                    </Text>
+                  </Flex>
                 ),
               },
               {
                 title: "Current labels",
                 key: "labels",
-                width: 180,
-                render: (_, m) => <CurrentLabels labels={m.labels} max={2} />,
+                width: 200,
+                render: (_, m) => <CurrentLabels labels={m.labels} max={3} />,
               },
               {
                 title: "Suggested",
                 key: "suggested",
-                width: 210,
+                width: 240,
                 render: (_, m) =>
                   m.decision ? (
                     <Tag
@@ -540,18 +574,25 @@ const MailInboxPage: React.FunctionComponent = () => {
                       {m.decision === "approved" ? "Approved" : "Skipped"}
                     </Tag>
                   ) : (
-                    <SuggestedLabels message={m} max={1} />
+                    <SuggestedLabels message={m} max={2} />
                   ),
               },
               {
                 title: "Received",
                 key: "received",
-                width: 100,
+                width: 96,
                 render: (_, m) => {
                   const when = DateTime.fromISO(String(m.receivedTime));
-                  return when.hasSame(DateTime.local(), "day")
-                    ? when.toLocaleString(DateTime.TIME_SIMPLE)
-                    : when.toLocaleString(DateTime.DATE_MED);
+                  return (
+                    <Flex vertical={true}>
+                      <Text style={{ fontSize: 12 }}>
+                        {when.toLocaleString(DateTime.DATE_MED)}
+                      </Text>
+                      <Text type={"secondary"} style={{ fontSize: 11 }}>
+                        {when.toLocaleString(DateTime.TIME_SIMPLE)}
+                      </Text>
+                    </Flex>
+                  );
                 },
               },
               {
