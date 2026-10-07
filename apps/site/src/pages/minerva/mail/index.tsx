@@ -7,6 +7,7 @@ import {
   InboxOutlined,
   MailOutlined,
   ReadOutlined,
+  SearchOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import type {
@@ -22,7 +23,6 @@ import {
   Button,
   Drawer,
   Flex,
-  Input,
   message,
   Popconfirm,
   Space,
@@ -39,12 +39,14 @@ import { useRouter } from "next/router";
 import type { SortOrder } from "antd/lib/table/interface";
 import React, { useEffect, useRef, useState } from "react";
 import mailApi from "../../../api/mailApi";
+import { ThermometerIcon } from "../../../icons";
 import InboxStrip from "../../../components/minerva/mail/InboxStrip";
 import OpenBills, {
   OpenBillAgesPill,
 } from "../../../components/minerva/mail/OpenBills";
 import {
   CaretExpandIcon,
+  TextFilterDropdown,
   ReceivedCell,
   SenderCell,
   SubjectCell,
@@ -81,6 +83,7 @@ import {
   DEFAULT_ORDER,
   type InboxOrder,
   minConfidenceOf,
+  textFilterOf,
   nextToReview,
   orderOf,
   sortOrderOf,
@@ -93,6 +96,8 @@ const PAGE_SIZE = 50;
 /** Current labels' width; Suggested has this and room for its badges. */
 const LABELS_WIDTH = 150;
 const BADGE_WIDTH = 40;
+/** The Confidence column: its icon, sorter and filter, and "100%". */
+const CONFIDENCE_WIDTH = 76;
 /** Text sorts A to Z first, numbers and times high first; never unsorted. */
 const TEXT_SORT: SortOrder[] = ["ascend", "descend", "ascend"];
 const NUMBER_SORT: SortOrder[] = ["descend", "ascend", "descend"];
@@ -113,7 +118,10 @@ const CONFIDENCES = [
 
 type Filters = {
   status: MailInboxStatus;
-  search?: string;
+  /** The From column's filter: the sender's name or address contains it. */
+  from?: string;
+  /** The Subject column's filter. */
+  subject?: string;
   minConfidence?: number;
   order: InboxOrder;
   page: number;
@@ -139,7 +147,6 @@ const MailInboxPage: React.FunctionComponent = () => {
     order: DEFAULT_ORDER,
     page: 0,
   });
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MailInboxMessage[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const [opened, setOpened] = useState<MailInboxMessage>();
@@ -206,7 +213,8 @@ const MailInboxPage: React.FunctionComponent = () => {
       (
         await mailApi.listInbox({
           status: f.status,
-          ...(f.search ? { search: f.search } : {}),
+          ...(f.from ? { from: f.from } : {}),
+          ...(f.subject ? { subject: f.subject } : {}),
           ...(f.minConfidence ? { minConfidence: f.minConfidence } : {}),
           approvedSince: startOfToday(),
           sortBy: f.order.sortBy,
@@ -438,27 +446,6 @@ const MailInboxPage: React.FunctionComponent = () => {
                   ),
                 },
               ]}
-              tabBarExtraContent={
-                view === "bills" ? undefined : (
-                  <Space wrap={true}>
-                    <Input.Search
-                      allowClear={true}
-                      placeholder={"Search sender or subject"}
-                      size={"small"}
-                      style={{ width: 140 }}
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      onSearch={(v) =>
-                        setFilters((f) => ({
-                          ...f,
-                          search: v.trim() || undefined,
-                          page: 0,
-                        }))
-                      }
-                    />
-                  </Space>
-                )
-              }
             />
 
             {view !== "bills" && selected.length > 0 && (
@@ -603,6 +590,8 @@ const MailInboxPage: React.FunctionComponent = () => {
                     : extra.action === "filter"
                       ? {
                           ...f,
+                          from: textFilterOf(columnFilters.from),
+                          subject: textFilterOf(columnFilters.subject),
                           minConfidence: minConfidenceOf(
                             columnFilters.confidence,
                           ),
@@ -625,6 +614,18 @@ const MailInboxPage: React.FunctionComponent = () => {
                   sorter: true,
                   sortDirections: TEXT_SORT,
                   sortOrder: sortOrderOf(filters.order, "from"),
+                  filteredValue: filters.from ? [filters.from] : null,
+                  filterIcon: (on) => (
+                    <SearchOutlined
+                      style={on ? { color: token.colorPrimary } : undefined}
+                    />
+                  ),
+                  filterDropdown: (p) => (
+                    <TextFilterDropdown
+                      {...p}
+                      placeholder={"Sender name or address"}
+                    />
+                  ),
                   render: (_, m) => (
                     <SenderCell
                       name={m.fromName}
@@ -640,6 +641,15 @@ const MailInboxPage: React.FunctionComponent = () => {
                   sorter: true,
                   sortDirections: TEXT_SORT,
                   sortOrder: sortOrderOf(filters.order, "subject"),
+                  filteredValue: filters.subject ? [filters.subject] : null,
+                  filterIcon: (on) => (
+                    <SearchOutlined
+                      style={on ? { color: token.colorPrimary } : undefined}
+                    />
+                  ),
+                  filterDropdown: (p) => (
+                    <TextFilterDropdown {...p} placeholder={"Subject"} />
+                  ),
                   render: (_, m) => (
                     <SubjectCell
                       subject={m.subject}
@@ -672,10 +682,16 @@ const MailInboxPage: React.FunctionComponent = () => {
                     ),
                 },
                 {
-                  title: "Confidence",
+                  title: (
+                    <Tooltip title={"Confidence"}>
+                      <span aria-label={"Confidence"}>
+                        <ThermometerIcon />
+                      </span>
+                    </Tooltip>
+                  ),
                   key: "confidence",
-                  width: 136,
-                  align: "right",
+                  width: CONFIDENCE_WIDTH,
+                  align: "center",
                   sorter: true,
                   sortDirections: NUMBER_SORT,
                   sortOrder: sortOrderOf(filters.order, "confidence"),

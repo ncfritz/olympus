@@ -43,10 +43,20 @@ const DEFAULT_APPROVED_HOURS = 24;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GMAIL_ID = /^[0-9a-f]{1,16}$/;
 
+/** A term as an ILIKE pattern that contains it, its wildcards escaped. */
+const likePattern = (term?: string): string | undefined => {
+  const t = term?.trim();
+  return t ? `%${t.replace(/[\\%_]/g, (c) => `\\${c}`)}%` : undefined;
+};
+
 export type MailInboxQuery = {
   status: MailInboxStatus;
   accountId?: string;
   search?: string;
+  /** Only those whose sender's name or address contains this. */
+  from?: string;
+  /** Only those whose subject contains this. */
+  subject?: string;
   minConfidence?: number;
   /** When "approved" begins; a day ago by default. */
   approvedSince?: string;
@@ -253,8 +263,14 @@ export class MailInboxService {
     ) {
       throw new BadRequestException("minConfidence must be from 0 to 1");
     }
-    if (q.search !== undefined && q.search.length > 200) {
-      throw new BadRequestException("search must be at most 200 characters");
+    for (const [name, value] of [
+      ["search", q.search],
+      ["from", q.from],
+      ["subject", q.subject],
+    ] as const) {
+      if (value !== undefined && value.length > 200) {
+        throw new BadRequestException(`${name} must be at most 200 characters`);
+      }
     }
     let since: string;
     if (q.approvedSince !== undefined) {
@@ -290,10 +306,9 @@ export class MailInboxService {
       [MailInboxStatus.Approved]: approved,
       [MailInboxStatus.All]: { inInbox: { _eq: true } },
     };
-    const term = q.search?.trim();
-    const pattern = term
-      ? `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
-      : undefined;
+    const pattern = likePattern(q.search);
+    const fromPattern = likePattern(q.from);
+    const subjectPattern = likePattern(q.subject);
     const where = {
       _and: [
         scope,
@@ -313,6 +328,21 @@ export class MailInboxService {
                 },
               },
             ]
+          : []),
+        ...(fromPattern
+          ? [
+              {
+                message: {
+                  _or: [
+                    { fromAddress: { _ilike: fromPattern } },
+                    { fromName: { _ilike: fromPattern } },
+                  ],
+                },
+              },
+            ]
+          : []),
+        ...(subjectPattern
+          ? [{ message: { subject: { _ilike: subjectPattern } } }]
           : []),
       ],
     };

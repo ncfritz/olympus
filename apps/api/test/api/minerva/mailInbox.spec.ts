@@ -351,6 +351,28 @@ describe("Mail inbox", () => {
       expect(vars.orderBy).toEqual([{ decidedTime: "desc" }]);
     });
 
+    it("filters by sender and by subject apart", async () => {
+      page([row()]);
+
+      const res = await list("?from=air&subject=trip_1");
+
+      expect(res.status).toBe(200);
+      const vars = ctx.t.graphql.calls("ListMailInbox")[0].variables as {
+        where: { _and: Record<string, unknown>[] };
+      };
+      expect(vars.where._and.slice(2)).toEqual([
+        {
+          message: {
+            _or: [
+              { fromAddress: { _ilike: "%air%" } },
+              { fromName: { _ilike: "%air%" } },
+            ],
+          },
+        },
+        { message: { subject: { _ilike: "%trip\\_1%" } } },
+      ]);
+    });
+
     it.each([
       [
         "the sender, A to Z",
@@ -396,6 +418,7 @@ describe("Mail inbox", () => {
       ["a page too large", "?pageSize=101"],
       ["an unknown status", "?status=snoozed"],
       ["an unknown sort", "?sortBy=size"],
+      ["a sender filter too long", `?from=${"a".repeat(201)}`],
       ["an unknown direction", "?sort=sideways"],
     ])("answers 400 to %s", async (_case, query) => {
       const res = await list(query);

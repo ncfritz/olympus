@@ -5,6 +5,7 @@ import type {
 import { DateTime } from "luxon";
 import type { Key } from "react";
 import type { MailInboxSort } from "../api/mailApi";
+import { hueColors, hueSolid } from "./mailPayments";
 import type {
   LabelWants,
   PickerMessage,
@@ -255,39 +256,38 @@ export const orderOf = (sorter: {
 export const confidenceText = (score?: number): string =>
   score === undefined || score === null ? "—" : `${Math.round(score * 100)}%`;
 
-/**
- * The confidence gradient: white up to 50%, then to Ant Design's blue-7 at
- * 100%, where the suggestions are, so 80% and 95% look apart.
- */
-const LOW = [255, 255, 255];
-const HIGH = [9, 88, 217];
-const FLOOR = 0.5;
-
-/** A colour channel's share of luminance (WCAG 2). */
-const linear = (c: number) => {
-  const s = c / 255;
-  return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-};
+/** Where a confidence turns: red to 50%, yellow at 80%, green from 95%. */
+export const CONFIDENCE_RED = 0.5;
+export const CONFIDENCE_YELLOW = 0.8;
+export const CONFIDENCE_GREEN = 0.95;
 
 /**
- * A confidence's colours, white to blue as it rises past half: the background, and
- * the text (near black or white) with the more contrast against it.
- * Nothing without a score.
+ * A confidence's hue on the bills' green, yellow, red scale: red up to
+ * 50%, yellow at 80% (the filter's lowest floor), green from 95%.
  */
+export const confidenceHue = (score: number): number =>
+  score <= CONFIDENCE_RED
+    ? 0
+    : score <= CONFIDENCE_YELLOW
+      ? (60 * (score - CONFIDENCE_RED)) / (CONFIDENCE_YELLOW - CONFIDENCE_RED)
+      : score < CONFIDENCE_GREEN
+        ? 60 +
+          (60 * (score - CONFIDENCE_YELLOW)) /
+            (CONFIDENCE_GREEN - CONFIDENCE_YELLOW)
+        : 120;
+
+/** A confidence cell's colours, as the bills' Open column; none unscored. */
 export const confidenceColors = (
   score?: number | null,
-): { background: string; color: string } | undefined => {
-  if (score === undefined || score === null) return undefined;
-  const t = Math.min(1, Math.max(0, (score - FLOOR) / (1 - FLOOR)));
-  const [r, g, b] = LOW.map((low, i) => Math.round(low + (HIGH[i] - low) * t));
-  const lum = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-  const onWhite = 1.05 / (lum + 0.05);
-  const onBlack = (lum + 0.05) / 0.05;
-  return {
-    background: `rgb(${r}, ${g}, ${b})`,
-    color: onWhite > onBlack ? "#ffffff" : "rgba(0, 0, 0, 0.88)",
-  };
-};
+): { background: string; color: string } | undefined =>
+  score === undefined || score === null
+    ? undefined
+    : hueColors(confidenceHue(score));
+
+/** A confidence badge's colours: the same hue, solid. */
+export const confidenceSolid = (
+  score: number,
+): { background: string; color: string } => hueSolid(confidenceHue(score));
 
 /** The confidence column's filter: its one chosen floor, else none. */
 export const minConfidenceOf = (
@@ -295,4 +295,12 @@ export const minConfidenceOf = (
 ): number | undefined => {
   const v = Number(values?.[0]);
   return Number.isFinite(v) && v > 0 ? v : undefined;
+};
+
+/** A text column's filter: its term, trimmed, else none. */
+export const textFilterOf = (
+  values?: readonly unknown[] | null,
+): string | undefined => {
+  const v = values?.[0];
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
 };

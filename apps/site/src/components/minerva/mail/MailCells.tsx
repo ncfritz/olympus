@@ -1,5 +1,6 @@
 import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
-import { Badge, Button, Flex, Tooltip, Typography } from "antd";
+import { Badge, Button, Flex, Input, Tooltip, Typography } from "antd";
+import type { FilterDropdownProps } from "antd/lib/table/interface";
 import { DateTime } from "luxon";
 import React from "react";
 
@@ -107,4 +108,30 @@ export const CaretExpandIcon = <T,>({
     aria-expanded={expanded}
     onClick={(e) => onExpand(record, e)}
   />
+);
+
+/**
+ * A text column's filter: what the column's values should contain, applied
+ * on Enter; emptied, it clears.
+ */
+export const TextFilterDropdown: React.FunctionComponent<
+  FilterDropdownProps & { placeholder: string }
+> = ({ selectedKeys, setSelectedKeys, confirm, clearFilters, placeholder }) => (
+  <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+    <Input.Search
+      size={"small"}
+      allowClear={true}
+      autoFocus={true}
+      placeholder={placeholder}
+      aria-label={`Filter by ${placeholder.toLowerCase()}`}
+      style={{ width: 220 }}
+      value={String(selectedKeys[0] ?? "")}
+      onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+      onSearch={(v) =>
+        v.trim()
+          ? confirm()
+          : clearFilters?.({ confirm: true, closeDropdown: true })
+      }
+    />
+  </div>
 );

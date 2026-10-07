@@ -20,6 +20,7 @@ import WorkQueueSvg from "./icons/WorkQueue.svg";
 import WorkflowSvg from "./icons/Workflow.svg";
 import MetadataWorkflowSvg from "./icons/MetadataWorkflow.svg";
 import JsonSvg from "./icons/Json.svg";
+import ThermometerSvg from "./icons/Thermometer.svg";
 
 export const MovieIcon = () => <Icon component={MovieSvg} />;
 
@@ -72,3 +73,4 @@ export const ProcessingQueueIcon = () => (
   <Icon component={ProcessingQueueSvg} />
 );
 export const JsonIcon = () => <Icon component={JsonSvg} />;
+export const ThermometerIcon = () => <Icon component={ThermometerSvg} />;

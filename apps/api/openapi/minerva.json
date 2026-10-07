@@ -8416,6 +8416,24 @@
             }
           },
           {
+            "name": "subject",
+            "required": false,
+            "in": "query",
+            "description": "Only those whose subject contains this",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Only those whose sender's name or address contains this",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",

@@ -5,6 +5,8 @@ import {
   approvalOf,
   chunked,
   confidenceColors,
+  confidenceHue,
+  confidenceSolid,
   confidenceText,
   containedHtml,
   DEFAULT_ORDER,
@@ -24,6 +26,7 @@ import {
   startOfToday,
   suggestedAdds,
   suggestedApprovals,
+  textFilterOf,
 } from "../../src/utils/mailInbox";
 
 /* Synthetic mail. */
@@ -227,26 +230,39 @@ describe("the inbox's order", () => {
   });
 });
 
-describe("the confidence gradient", () => {
-  it("runs white to blue from half, the text dark then white for contrast", () => {
-    expect(confidenceColors(0)).toEqual({
-      background: "rgb(255, 255, 255)",
-      color: "rgba(0, 0, 0, 0.88)",
-    });
+describe("the confidence scale", () => {
+  it("runs red to 50%, yellow at 80%, green from 95%", () => {
+    expect(confidenceHue(0.3)).toBe(0);
+    expect(confidenceHue(0.5)).toBe(0);
+    expect(confidenceHue(0.65)).toBeCloseTo(30);
+    expect(confidenceHue(0.8)).toBeCloseTo(60);
+    expect(confidenceHue(0.875)).toBeCloseTo(90);
+    expect(confidenceHue(0.95)).toBe(120);
+    expect(confidenceHue(1)).toBe(120);
+  });
+
+  it("colours a cell as the bills' Open column, a badge solid", () => {
     expect(confidenceColors(1)).toEqual({
-      background: "rgb(9, 88, 217)",
+      background: "hsl(120, 75%, 88%)",
+      color: "hsl(120, 60%, 24%)",
+    });
+    expect(confidenceColors(undefined)).toBeUndefined();
+    expect(confidenceSolid(0.2)).toEqual({
+      background: "hsl(0, 70%, 45%)",
       color: "#ffffff",
     });
-    expect(confidenceColors(0.5)).toEqual(confidenceColors(0));
-    expect(confidenceColors(0.6)?.color).toBe("rgba(0, 0, 0, 0.88)");
-    expect(confidenceColors(0.95)?.color).toBe("#ffffff");
-    expect(confidenceColors(2)).toEqual(confidenceColors(1));
-    expect(confidenceColors(undefined)).toBeUndefined();
+    expect(confidenceSolid(0.8).color).toBe("rgba(0, 0, 0, 0.88)");
   });
 
   it("filters by the one floor chosen, else none", () => {
     expect(minConfidenceOf([0.9])).toBe(0.9);
     expect(minConfidenceOf(null)).toBeUndefined();
     expect(minConfidenceOf([])).toBeUndefined();
+  });
+
+  it("filters a text column by its trimmed term, else none", () => {
+    expect(textFilterOf([" air "])).toBe("air");
+    expect(textFilterOf(["  "])).toBeUndefined();
+    expect(textFilterOf(null)).toBeUndefined();
   });
 });

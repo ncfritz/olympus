@@ -197,6 +197,8 @@ class MailApi {
     status?: MailInboxStatus;
     accountId?: string;
     search?: string;
+    from?: string;
+    subject?: string;
     minConfidence?: number;
     approvedSince?: string;
     sortBy?: MailInboxSort;

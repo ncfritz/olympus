@@ -2,7 +2,7 @@ import type { MailInboxMessage } from "@ncfritz/olympus-sdk/minerva";
 import { Tag, Typography } from "antd";
 import React from "react";
 import { percent } from "../../../utils/mailAudit";
-import { confidenceColors } from "../../../utils/mailInbox";
+import { confidenceSolid } from "../../../utils/mailInbox";
 import ChangeTag from "./audit/ChangeTag";
 
 const { Text } = Typography;
@@ -68,7 +68,8 @@ export const CurrentLabels: React.FunctionComponent<{
  * What is suggested to add, as the design draws it: blue with `+` and its
  * confidence, faded when unticked; labels the message has are left out.
  * In `block` (the inbox table) each is grey and full width, its
- * confidence a solid badge coloured white to blue as it rises.
+ * confidence a solid badge at its end, red to yellow to green as it
+ * rises.
  */
 export const SuggestedLabels: React.FunctionComponent<{
   message: MailInboxMessage;
@@ -91,15 +92,22 @@ export const SuggestedLabels: React.FunctionComponent<{
             key={s.label}
             variant={"filled"}
             title={`${s.label}, ${percent(s.score)}${s.ticked ? "" : ", not ticked"}`}
-            style={{ ...BLOCK, ...(s.ticked ? {} : { opacity: 0.55 }) }}
+            style={{
+              ...BLOCK,
+              paddingInlineEnd: 0,
+              overflow: "hidden",
+              ...(s.ticked ? {} : { opacity: 0.55 }),
+            }}
           >
             <span style={CUT}>+ {s.label}</span>
             <span
               style={{
-                ...confidenceColors(s.score),
+                ...confidenceSolid(s.score),
                 flex: "none",
-                borderRadius: 4,
-                padding: "0 5px",
+                alignSelf: "stretch",
+                margin: "-1px -1px -1px 0",
+                borderRadius: "0 4px 4px 0",
+                padding: "1px 5px",
                 fontSize: 11,
                 fontWeight: 600,
                 lineHeight: "16px",

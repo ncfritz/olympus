@@ -69,6 +69,18 @@ export class ListMailInboxController {
     required: false,
   })
   @ApiQuery({
+    name: "from",
+    description: "Only those whose sender's name or address contains this",
+    type: String,
+    required: false,
+  })
+  @ApiQuery({
+    name: "subject",
+    description: "Only those whose subject contains this",
+    type: String,
+    required: false,
+  })
+  @ApiQuery({
     name: "minConfidence",
     description:
       "Only those with a ticked suggestion to add at least this confident, 0 to 1",
@@ -102,6 +114,8 @@ export class ListMailInboxController {
     status: MailInboxStatus,
     @Query("accountId") accountId: string | undefined,
     @Query("search") search: string | undefined,
+    @Query("from") from: string | undefined,
+    @Query("subject") subject: string | undefined,
     @Query("minConfidence", new ParseFloatPipe({ optional: true }))
     minConfidence: number | undefined,
     @Query("approvedSince") approvedSince: string | undefined,
@@ -124,6 +138,8 @@ export class ListMailInboxController {
       status,
       accountId,
       search,
+      ...(from ? { from } : {}),
+      ...(subject ? { subject } : {}),
       minConfidence,
       approvedSince,
       sortBy,
