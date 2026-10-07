@@ -7,6 +7,7 @@ import {
   InboxOutlined,
   MailOutlined,
   ReadOutlined,
+  ReloadOutlined,
   SearchOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
@@ -21,6 +22,7 @@ import type {
 import {
   Alert,
   Badge,
+  Divider,
   Button,
   Drawer,
   Flex,
@@ -229,6 +231,7 @@ const MailInboxPage: React.FunctionComponent = () => {
       ).data,
   });
   useEffect(() => setSelected([]), [filters]);
+  const none = selected.length === 0;
 
   // What Google's sign-in came back with, shown once.
   useEffect(() => {
@@ -471,76 +474,114 @@ const MailInboxPage: React.FunctionComponent = () => {
               ]}
             />
 
-            {view !== "bills" && selected.length > 0 && (
-              <Alert
-                type={"info"}
-                message={
-                  <Flex justify={"space-between"} align={"center"} wrap={true}>
-                    <Text>{selected.length.toLocaleString()} selected</Text>
-                    <Space wrap={true}>
-                      <Button
-                        type={"primary"}
-                        icon={<CheckOutlined />}
-                        loading={busy}
-                        onClick={() =>
-                          void act(async () => {
-                            const done = await approveSuggested(
-                              selected,
-                              options,
-                            );
-                            return `Approved ${done.messages.toLocaleString()} as suggested.`;
-                          })
-                        }
-                      >
-                        Approve suggested
-                      </Button>
-                      <Button
-                        icon={<ForwardOutlined />}
-                        loading={busy}
-                        onClick={() =>
-                          void act(
-                            async () =>
-                              `Skipped ${(await skipAll(selected)).toLocaleString()}; Gmail unchanged.`,
-                          )
-                        }
-                      >
-                        Skip
-                      </Button>
-                      <Button
-                        icon={<ReadOutlined />}
-                        loading={busy}
-                        onClick={() =>
-                          void act(async () => {
-                            const done = await flagAll(selected, {
-                              markRead: true,
-                            });
-                            return `Marking ${done.messages.toLocaleString()} read.`;
-                          })
-                        }
-                      >
-                        Mark read
-                      </Button>
-                      <Button
-                        icon={<ContainerOutlined />}
-                        loading={busy}
-                        onClick={() =>
-                          void act(async () => {
-                            const done = await flagAll(selected, {
-                              archive: true,
-                            });
-                            return `Archiving ${done.messages.toLocaleString()}.`;
-                          })
-                        }
-                      >
-                        Archive
-                      </Button>
-                      <Button type={"text"} onClick={() => setSelected([])}>
-                        Clear
-                      </Button>
-                    </Space>
-                  </Flex>
-                }
-              />
+            {view !== "bills" && (
+              <Flex
+                align={"center"}
+                gap={4}
+                wrap={true}
+                role={"toolbar"}
+                aria-label={"Selected messages"}
+                style={{ padding: "8px 0" }}
+              >
+                <Button
+                  type={"primary"}
+                  size={"small"}
+                  icon={<CheckOutlined />}
+                  loading={busy}
+                  disabled={none}
+                  onClick={() =>
+                    void act(async () => {
+                      const done = await approveSuggested(selected, options);
+                      return `Approved ${done.messages.toLocaleString()} as suggested.`;
+                    })
+                  }
+                >
+                  Approve suggested
+                </Button>
+                <Divider type={"vertical"} style={{ height: 24 }} />
+                <Space size={8}>
+                  <Button
+                    size={"small"}
+                    icon={<ForwardOutlined />}
+                    loading={busy}
+                    disabled={none}
+                    onClick={() =>
+                      void act(
+                        async () =>
+                          `Skipped ${(await skipAll(selected)).toLocaleString()}; Gmail unchanged.`,
+                      )
+                    }
+                  >
+                    Skip
+                  </Button>
+                  <Button
+                    size={"small"}
+                    icon={<ReadOutlined />}
+                    loading={busy}
+                    disabled={none}
+                    onClick={() =>
+                      void act(async () => {
+                        const done = await flagAll(selected, {
+                          markRead: true,
+                        });
+                        return `Marking ${done.messages.toLocaleString()} read.`;
+                      })
+                    }
+                  >
+                    Mark read
+                  </Button>
+                  <Button
+                    size={"small"}
+                    icon={<ContainerOutlined />}
+                    loading={busy}
+                    disabled={none}
+                    onClick={() =>
+                      void act(async () => {
+                        const done = await flagAll(selected, {
+                          archive: true,
+                        });
+                        return `Archiving ${done.messages.toLocaleString()}.`;
+                      })
+                    }
+                  >
+                    Archive
+                  </Button>
+                </Space>
+                <Divider type={"vertical"} style={{ height: 24 }} />
+                <Text
+                  type={none ? "secondary" : undefined}
+                  style={{ fontSize: 12 }}
+                  aria-live={"polite"}
+                >
+                  {none
+                    ? "None selected"
+                    : `${selected.length.toLocaleString()} selected`}
+                </Text>
+                <Space size={4} style={{ marginInlineStart: "auto" }}>
+                  {!none && (
+                    <Button
+                      type={"text"}
+                      size={"small"}
+                      onClick={() => setSelected([])}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                  <Tooltip title={"Refresh"}>
+                    <Button
+                      type={"text"}
+                      size={"small"}
+                      icon={<ReloadOutlined />}
+                      aria-label={"Refresh"}
+                      loading={loading}
+                      onClick={() => {
+                        void refetch(true);
+                        void refetchBills(true);
+                      }}
+                    />
+                  </Tooltip>
+                </Space>
+              </Flex>
             )}
           </Flex>
         </div>
