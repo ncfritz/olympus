@@ -9784,6 +9784,289 @@
         ]
       }
     },
+    "/minerva/mail/filter-proposals": {
+      "get": {
+        "description": "Filter proposals (docs/plans/email-management phase 7): a sender with at least 20 messages approved in the inbox, at least 99% of which carry one user label now, proposed a filter applying it as the mail arrives. Most approvals first, up to 200; a sender with a filter for the label, or a proposal declined, is left out.",
+        "operationId": "ListMailFilterProposals",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "Only this mail account's",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list, possibly empty.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailFilterProposalsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the Gmail filters worth making",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/filters": {
+      "get": {
+        "description": "The filters made with CreateMailFilter (docs/plans/email-management phase 7), newest first: each a sender, the label it applies, and whether its mail skips the inbox. Inbox mail from the sender carrying the label is handled, out of review.",
+        "operationId": "ListMailFilters",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "Only this mail account's",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list, possibly empty.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailFiltersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the Gmail filters made from proposals",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/filters": {
+      "post": {
+        "description": "Approves a filter proposal (docs/plans/email-management phase 7): the mail agent makes a filter in Gmail applying the label to the sender's mail as it arrives, and archiving it too when `skipInbox`; Minerva keeps it, and the sender's inbox mail carrying the label leaves review. Needs writes on (MINERVA_MAIL_WRITES_ENABLED), the agent's MAIL_FILTERS_ENABLED and a mailbox linked with gmail.settings.basic (\"Allow filters\"). Mail already received is not changed.",
+        "operationId": "CreateMailFilter",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailFilter operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailFilterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The filter was made in Gmail.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailFilterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's, or no such user label."
+          },
+          "409": {
+            "description": "The sender has a filter for the label already, or the mailbox is not linked for filters."
+          },
+          "503": {
+            "description": "Writes or filters are turned off."
+          }
+        },
+        "summary": "Makes a Gmail filter for a sender",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/filter-proposals/dismiss": {
+      "post": {
+        "description": "The sender and label are not proposed a filter again (docs/plans/email-management phase 7). Gmail is not changed.",
+        "operationId": "DismissMailFilterProposal",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the DismissMailFilterProposal operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissMailFilterProposalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The proposal was declined.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissMailFilterProposalResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's, or no such user label."
+          }
+        },
+        "summary": "Declines a filter proposal",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/filter/{filterId}": {
+      "delete": {
+        "description": "The mail agent deletes the filter in Gmail (one already gone there is no error), and Minerva forgets it (docs/plans/email-management phase 7). Mail it labelled keeps its labels; the sender may be proposed again.",
+        "operationId": "DeleteMailFilter",
+        "parameters": [
+          {
+            "name": "filterId",
+            "required": true,
+            "in": "path",
+            "description": "The filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The filter was deleted."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such filter of the caller's."
+          },
+          "503": {
+            "description": "Writes are turned off."
+          }
+        },
+        "summary": "Deletes a Gmail filter made from a proposal",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/payment-matches": {
       "get": {
         "description": "Transitions from payments (docs/plans/email-management phase 7): a message whose subject or snippet reads as a payment made, paired with the newest message before it (within 90 days, from the same sender or domain) in an open state with a transition to a closed one; the pair suggests moving the bill (`Bills/*Payable` to `Bills/*Paid`), applied as an ApplyMailChanges on the bill. A pair declined with DismissMailPaymentMatches gives way to the bill before. Newest confirmation first, up to 500 a page. Computed on read over the whole mailbox: `inInbox=true` keeps it to the inbox's confirmations and is quick.",
@@ -20008,6 +20291,177 @@
           "mismatches",
           "count",
           "counts"
+        ]
+      },
+      "MailFilterProposal": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The account"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "label": {
+            "type": "string",
+            "description": "The label, by full name"
+          },
+          "decisions": {
+            "type": "number",
+            "description": "The sender's messages approved in the inbox"
+          },
+          "kept": {
+            "type": "number",
+            "description": "Of them, those carrying the label now"
+          },
+          "lastDecidedTime": {
+            "type": "string",
+            "description": "The latest approval"
+          }
+        },
+        "required": [
+          "accountId",
+          "fromAddress",
+          "label",
+          "decisions",
+          "kept",
+          "lastDecidedTime"
+        ]
+      },
+      "ListMailFilterProposalsResponse": {
+        "type": "object",
+        "properties": {
+          "proposals": {
+            "description": "The proposals, most approvals first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailFilterProposal"
+            }
+          }
+        },
+        "required": [
+          "proposals"
+        ]
+      },
+      "MailFilter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The account"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "label": {
+            "type": "string",
+            "description": "The label it applies, by full name"
+          },
+          "skipInbox": {
+            "type": "boolean",
+            "description": "Whether its mail skips the inbox"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "When it was made"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "fromAddress",
+          "label",
+          "skipInbox",
+          "createdTime"
+        ]
+      },
+      "ListMailFiltersResponse": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "description": "The filters made, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailFilter"
+            }
+          }
+        },
+        "required": [
+          "filters"
+        ]
+      },
+      "CreateMailFilterRequest": {
+        "type": "object",
+        "properties": {
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender, an address"
+          },
+          "label": {
+            "type": "string",
+            "description": "The user label to apply, by full name"
+          },
+          "skipInbox": {
+            "type": "boolean",
+            "description": "Whether the sender's mail skips the inbox"
+          }
+        },
+        "required": [
+          "fromAddress",
+          "label",
+          "skipInbox"
+        ]
+      },
+      "CreateMailFilterResponse": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "description": "The filter, made in Gmail",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailFilter"
+              }
+            ]
+          }
+        },
+        "required": [
+          "filter"
+        ]
+      },
+      "DismissMailFilterProposalRequest": {
+        "type": "object",
+        "properties": {
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "label": {
+            "type": "string",
+            "description": "The label, by full name"
+          }
+        },
+        "required": [
+          "fromAddress",
+          "label"
+        ]
+      },
+      "DismissMailFilterProposalResponse": {
+        "type": "object",
+        "properties": {
+          "dismissed": {
+            "type": "boolean",
+            "description": "Whether the proposal was recorded as declined"
+          }
+        },
+        "required": [
+          "dismissed"
         ]
       },
       "ListMailPaymentMatchesResponse": {

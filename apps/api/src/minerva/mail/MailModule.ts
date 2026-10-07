@@ -57,6 +57,12 @@ import { MailInboxService } from "./services/MailInboxService";
 import { MailClusterService } from "./services/MailClusterService";
 import { MailStarService } from "./services/MailStarService";
 import { MailPaymentService } from "./services/MailPaymentService";
+import { MailFilterService } from "./services/MailFilterService";
+import { ListMailFilterProposalsController } from "./controllers/ListMailFilterProposalsController";
+import { ListMailFiltersController } from "./controllers/ListMailFiltersController";
+import { CreateMailFilterController } from "./controllers/CreateMailFilterController";
+import { DismissMailFilterProposalController } from "./controllers/DismissMailFilterProposalController";
+import { DeleteMailFilterController } from "./controllers/DeleteMailFilterController";
 import { ListMailPaymentMatchesController } from "./controllers/ListMailPaymentMatchesController";
 import { ListMailOpenBillsController } from "./controllers/ListMailOpenBillsController";
 import { DismissMailPaymentMatchesController } from "./controllers/DismissMailPaymentMatchesController";
@@ -98,6 +104,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailClusterService,
     MailStarService,
     MailPaymentService,
+    MailFilterService,
     MailSyncService,
     MailChangeService,
     MailTrainingService,
@@ -143,6 +150,11 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailTrainingLabelsController,
     PublishMailSuggestionRunController,
     ListMailStarMismatchesController,
+    ListMailFilterProposalsController,
+    ListMailFiltersController,
+    CreateMailFilterController,
+    DismissMailFilterProposalController,
+    DeleteMailFilterController,
     ListMailPaymentMatchesController,
     ListMailOpenBillsController,
     DismissMailPaymentMatchesController,

@@ -118,6 +118,14 @@ call, and published to Minerva as written. Outcomes go back to the API
 A batch the agent is stopped in the middle of stays "Writing" in the
 change log.
 
+## Gmail filters
+
+With `MAIL_FILTERS_ENABLED=true`, linking asks for `gmail.settings.basic`
+as well ("Allow filters"), and the agent makes and deletes filters for
+the API (`POST /v1/gmail-filters`, `DELETE /v1/gmail-filters/:filterId`):
+mail from one sender gets one user label, and skips the inbox when asked.
+A mailbox linked without the scope answers 409.
+
 ## Running it
 
 ```sh

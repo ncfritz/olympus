@@ -149,6 +149,26 @@ describe("Gmail and the services listener", () => {
     );
   });
 
+  it("asks for gmail.settings.basic only when MAIL_FILTERS_ENABLED says so", () => {
+    const gmail = (filters?: string) =>
+      readConfig({
+        MAIL_GOOGLE_OAUTH_CLIENT_ID: "id",
+        MAIL_GOOGLE_OAUTH_CLIENT_SECRET: "secret",
+        MAIL_WRITES_ENABLED: "true",
+        ...(filters ? { MAIL_FILTERS_ENABLED: filters } : {}),
+      }).gmail;
+    const SETTINGS = "https://www.googleapis.com/auth/gmail.settings.basic";
+    expect(gmail()?.filtersEnabled).toBe(false);
+    expect(gmail()?.scopes).not.toContain(SETTINGS);
+    expect(gmail("true")?.scopes).toEqual([
+      "openid",
+      "email",
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.modify",
+      SETTINGS,
+    ]);
+  });
+
   it("polls Gmail every MAIL_GMAIL_POLL_SECONDS, 10 at least, or not at all", () => {
     const gmail = (seconds: string) =>
       readConfig({

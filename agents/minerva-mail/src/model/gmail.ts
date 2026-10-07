@@ -145,3 +145,20 @@ export class GmailMessageContent {
   truncated: boolean;
   attachments: GmailMessageAttachment[];
 }
+
+/** A filter to make in Gmail (phase 7): from a sender, apply a label. */
+export class CreateGmailFilterRequest {
+  /** The mailbox's address. */
+  email: string;
+  /** The sender, as Gmail's `from:` matches it. */
+  from: string;
+  /** The user label to apply, by full name. */
+  label: string;
+  /** Whether mail it matches skips the inbox (archived as it arrives). */
+  skipInbox: boolean;
+}
+
+export class CreateGmailFilterResponse {
+  /** Gmail's ID for the filter. */
+  filterId: string;
+}

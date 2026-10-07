@@ -1,4 +1,10 @@
 import {
+  createMailFilter,
+  type CreateMailFilterRequest,
+  deleteMailFilter,
+  dismissMailFilterProposal,
+  listMailFilterProposals,
+  listMailFilters,
   dismissMailPaymentMatches,
   listMailOpenBills,
   listMailPaymentMatches,
@@ -244,6 +250,40 @@ class MailApi {
     return await listMailClusterSuggestions({
       query: label ? { label } : {},
     });
+  }
+
+  /** Senders worth a Gmail filter. */
+  async listFilterProposals(accountId?: string) {
+    return await listMailFilterProposals({
+      query: accountId ? { accountId } : {},
+    });
+  }
+
+  /** The Gmail filters made from proposals. */
+  async listFilters(accountId?: string) {
+    return await listMailFilters({ query: accountId ? { accountId } : {} });
+  }
+
+  /** Makes a Gmail filter: the sender's mail gets the label. */
+  async createFilter(accountId: string, body: CreateMailFilterRequest) {
+    return await createMailFilter({ path: { accountId }, body });
+  }
+
+  /** Declines a filter proposal; Gmail unchanged. */
+  async dismissFilterProposal(
+    accountId: string,
+    fromAddress: string,
+    label: string,
+  ) {
+    return await dismissMailFilterProposal({
+      path: { accountId },
+      body: { fromAddress, label },
+    });
+  }
+
+  /** Deletes a Gmail filter made from a proposal. */
+  async deleteFilter(filterId: string) {
+    return await deleteMailFilter({ path: { filterId } });
   }
 
   /** Payment confirmations and the open bills they pay. */

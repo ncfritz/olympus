@@ -268,7 +268,12 @@ export class MailInboxService {
       account: { userId: { _eq: userId } },
       ...(q.accountId ? { accountId: { _eq: q.accountId } } : {}),
     };
-    const review = { inInbox: { _eq: true }, decision: { _is_null: true } };
+    // To review: in the inbox, undecided, and not handled by a filter.
+    const review = {
+      inInbox: { _eq: true },
+      decision: { _is_null: true },
+      filtered: { _eq: false },
+    };
     const approved = {
       decision: { _eq: MailInboxDecision.Approved },
       decidedTime: { _gte: since },

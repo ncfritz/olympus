@@ -4484,6 +4484,44 @@
     ],
     "type": "object"
   },
+  "CreateMailFilterRequest": {
+    "properties": {
+      "fromAddress": {
+        "description": "The sender, an address",
+        "type": "string"
+      },
+      "label": {
+        "description": "The user label to apply, by full name",
+        "type": "string"
+      },
+      "skipInbox": {
+        "description": "Whether the sender's mail skips the inbox",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "fromAddress",
+      "label",
+      "skipInbox"
+    ],
+    "type": "object"
+  },
+  "CreateMailFilterResponse": {
+    "properties": {
+      "filter": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailFilter"
+          }
+        ],
+        "description": "The filter, made in Gmail"
+      }
+    },
+    "required": [
+      "filter"
+    ],
+    "type": "object"
+  },
   "CreateMailLabelFamilyRequest": {
     "properties": {
       "initialLabelId": {
@@ -6583,6 +6621,35 @@
     },
     "required": [
       "step"
+    ],
+    "type": "object"
+  },
+  "DismissMailFilterProposalRequest": {
+    "properties": {
+      "fromAddress": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "label": {
+        "description": "The label, by full name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "fromAddress",
+      "label"
+    ],
+    "type": "object"
+  },
+  "DismissMailFilterProposalResponse": {
+    "properties": {
+      "dismissed": {
+        "description": "Whether the proposal was recorded as declined",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "dismissed"
     ],
     "type": "object"
   },
@@ -10440,6 +10507,36 @@
     ],
     "type": "object"
   },
+  "ListMailFilterProposalsResponse": {
+    "properties": {
+      "proposals": {
+        "description": "The proposals, most approvals first",
+        "items": {
+          "$ref": "#/components/schemas/MailFilterProposal"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "proposals"
+    ],
+    "type": "object"
+  },
+  "ListMailFiltersResponse": {
+    "properties": {
+      "filters": {
+        "description": "The filters made, newest first",
+        "items": {
+          "$ref": "#/components/schemas/MailFilter"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "filters"
+    ],
+    "type": "object"
+  },
   "ListMailInboxResponse": {
     "properties": {
       "count": {
@@ -12602,6 +12699,80 @@
       "dismissed"
     ],
     "type": "string"
+  },
+  "MailFilter": {
+    "properties": {
+      "accountId": {
+        "description": "The account",
+        "type": "string"
+      },
+      "createdTime": {
+        "description": "When it was made",
+        "type": "string"
+      },
+      "fromAddress": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "id": {
+        "description": "Its ID",
+        "type": "string"
+      },
+      "label": {
+        "description": "The label it applies, by full name",
+        "type": "string"
+      },
+      "skipInbox": {
+        "description": "Whether its mail skips the inbox",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "accountId",
+      "createdTime",
+      "fromAddress",
+      "id",
+      "label",
+      "skipInbox"
+    ],
+    "type": "object"
+  },
+  "MailFilterProposal": {
+    "properties": {
+      "accountId": {
+        "description": "The account",
+        "type": "string"
+      },
+      "decisions": {
+        "description": "The sender's messages approved in the inbox",
+        "type": "number"
+      },
+      "fromAddress": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "kept": {
+        "description": "Of them, those carrying the label now",
+        "type": "number"
+      },
+      "label": {
+        "description": "The label, by full name",
+        "type": "string"
+      },
+      "lastDecidedTime": {
+        "description": "The latest approval",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "decisions",
+      "fromAddress",
+      "kept",
+      "label",
+      "lastDecidedTime"
+    ],
+    "type": "object"
   },
   "MailInboxApproval": {
     "properties": {

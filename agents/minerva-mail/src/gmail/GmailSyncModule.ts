@@ -8,10 +8,13 @@ import type {
 } from "../config/configuration";
 import { ServicesOnlyGuard } from "../auth/ServicesOnlyGuard";
 import { RabbitModule } from "../infra/RabbitModule";
+import { CreateGmailFilterController } from "./controllers/CreateGmailFilterController";
+import { DeleteGmailFilterController } from "./controllers/DeleteGmailFilterController";
 import { GetGmailMessageController } from "./controllers/GetGmailMessageController";
 import { StartGmailWritesController } from "./controllers/StartGmailWritesController";
 import { GmailClient } from "./GmailClient";
 import { GmailCredentialStore } from "./GmailCredentialStore";
+import { GmailFilters } from "./GmailFilters";
 import { GmailMessageReader } from "./GmailMessageReader";
 import { GmailMessages } from "./GmailMessages";
 import { GmailPoll } from "./GmailPoll";
@@ -50,9 +53,15 @@ import { GmailWriter } from "./GmailWriter";
     GmailWriter,
     GmailSuggestInbox,
     GmailMessageReader,
+    GmailFilters,
     ServicesOnlyGuard,
   ],
-  controllers: [StartGmailWritesController, GetGmailMessageController],
+  controllers: [
+    StartGmailWritesController,
+    GetGmailMessageController,
+    CreateGmailFilterController,
+    DeleteGmailFilterController,
+  ],
   exports: [GmailReconcile, GmailPoll, GmailWriter, GmailSuggestInbox],
 })
 export class GmailSyncModule {}

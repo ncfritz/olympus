@@ -173,6 +173,33 @@ export class MinervaMailAgentClient {
     );
   }
 
+  /**
+   * Makes a Gmail filter: mail from `from` gets `label`, and skips the
+   * inbox when asked. Gmail's ID for it. A mailbox not linked for filters
+   * is a 409, passed on.
+   */
+  async createFilter(filter: {
+    email: string;
+    from: string;
+    label: string;
+    skipInbox: boolean;
+  }): Promise<string> {
+    const body = await this.call<{ filterId: string }>(
+      "CreateGmailFilter",
+      (http) => http.post("/gmail-filters", filter),
+    );
+    return body.filterId;
+  }
+
+  /** Deletes a Gmail filter; one already gone is no error. */
+  async deleteFilter(email: string, filterId: string): Promise<void> {
+    await this.call("DeleteGmailFilter", (http) =>
+      http.delete(`/gmail-filters/${encodeURIComponent(filterId)}`, {
+        params: { email },
+      }),
+    );
+  }
+
   /** Forgets a mailbox's credential at the agent. */
   async deleteAccount(email: string): Promise<void> {
     await this.call("DeleteGmailAccount", (http) =>

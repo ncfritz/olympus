@@ -8,6 +8,12 @@ const { Text } = Typography;
 
 const MODIFY = "https://www.googleapis.com/auth/gmail.modify";
 
+const SETTINGS = "https://www.googleapis.com/auth/gmail.settings.basic";
+
+/** Whether the mailbox's link lets Olympus make Gmail filters. */
+export const canMakeFilters = (a: MailAccount): boolean =>
+  Boolean(a.linkScope?.split(" ").includes(SETTINGS));
+
 /** Whether the mailbox's link lets Olympus change labels in Gmail. */
 export const canChangeLabels = (a: MailAccount): boolean =>
   Boolean(a.linkScope?.split(" ").includes(MODIFY));

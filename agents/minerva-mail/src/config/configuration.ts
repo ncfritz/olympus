@@ -51,6 +51,11 @@ export type GmailConfig = {
    * ask for gmail.modify, and the API's batches are written.
    */
   writesEnabled: boolean;
+  /**
+   * Whether Gmail filters may be made (phase 7): sign-ins then ask for
+   * gmail.settings.basic too.
+   */
+  filtersEnabled: boolean;
 };
 
 /** The scopes until the first phase that writes (ADR 0030). */
@@ -66,6 +71,10 @@ export const GMAIL_MODIFY_SCOPE =
 
 /** The scopes once writes are on (phase 4). */
 export const GMAIL_WRITE_SCOPES = [...GMAIL_READ_SCOPES, GMAIL_MODIFY_SCOPE];
+
+/** What making filters needs (phase 7): the mailbox's basic settings. */
+export const GMAIL_SETTINGS_SCOPE =
+  "https://www.googleapis.com/auth/gmail.settings.basic";
 
 /**
  * The services listener (ADR 0028's, for this agent): its management API
@@ -98,7 +107,7 @@ export type AgentConfig = {
  * MAIL_GOOGLE_OAUTH_CLIENT_ID and MAIL_GOOGLE_OAUTH_CLIENT_SECRET (or
  * _SECRET_FILE), together or not at all; MAIL_CREDENTIALS_DIR; and
  * MAIL_GMAIL_POLL_SECONDS, 60 unless set (0: no polling); and
- * MAIL_WRITES_ENABLED, false unless set.
+ * MAIL_WRITES_ENABLED and MAIL_FILTERS_ENABLED, false unless set.
  */
 const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
   const clientId = read.optional("MAIL_GOOGLE_OAUTH_CLIENT_ID");
@@ -122,13 +131,18 @@ const readGmailConfig = (read: EnvReader): GmailConfig | undefined => {
     );
   }
   const writesEnabled = read.boolean("MAIL_WRITES_ENABLED", false);
+  const filtersEnabled = read.boolean("MAIL_FILTERS_ENABLED", false);
   return {
     clientId,
     clientSecret,
     credentialsDir,
-    scopes: writesEnabled ? GMAIL_WRITE_SCOPES : GMAIL_READ_SCOPES,
+    scopes: [
+      ...(writesEnabled ? GMAIL_WRITE_SCOPES : GMAIL_READ_SCOPES),
+      ...(filtersEnabled ? [GMAIL_SETTINGS_SCOPE] : []),
+    ],
     pollSeconds,
     writesEnabled,
+    filtersEnabled,
   };
 };
 

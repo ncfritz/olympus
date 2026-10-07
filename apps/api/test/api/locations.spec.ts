@@ -621,7 +621,8 @@ describe("Location headers of created resources", () => {
     // nor CreateMailSuggestionRun and CreateMailSuggestions, whose runs and
     // suggestions the classifier only writes (mailSuggestions), nor the
     // cluster runs' creates, whose runs are read only as the newest map
-    // (mailClusters).
+    // (mailClusters), nor CreateMailFilter, whose filters are listed only
+    // (mailFilters).
     // ApplyMailChanges, UndoMailChangeBatch and MergeMailLabels need a
     // signed-in caller too; mailChanges asserts their Location headers.
     const exempt = [
@@ -654,6 +655,7 @@ describe("Location headers of created resources", () => {
       "CreateMailClusters",
       "CreateMailClusterMembers",
       "CreateMailClusterPoints",
+      "CreateMailFilter",
       "ApplyMailChanges",
       "UndoMailChangeBatch",
       "MergeMailLabels",

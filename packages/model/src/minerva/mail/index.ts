@@ -18,3 +18,4 @@ export * from "./inbox";
 export * from "./clusters";
 export * from "./stars";
 export * from "./payments";
+export * from "./filters";

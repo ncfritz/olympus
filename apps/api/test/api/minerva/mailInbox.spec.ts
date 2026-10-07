@@ -236,7 +236,11 @@ describe("Mail inbox", () => {
       };
       expect(vars.where._and).toEqual([
         { account: { userId: { _eq: USER } } },
-        { inInbox: { _eq: true }, decision: { _is_null: true } },
+        {
+          inInbox: { _eq: true },
+          decision: { _is_null: true },
+          filtered: { _eq: false },
+        },
       ]);
       expect(vars.orderBy).toEqual([{ receivedTime: "desc" }]);
     });
@@ -292,7 +296,11 @@ describe("Mail inbox", () => {
           account: { userId: { _eq: USER } },
           accountId: { _eq: ACCOUNT_ID },
         },
-        { inInbox: { _eq: true }, decision: { _is_null: true } },
+        {
+          inInbox: { _eq: true },
+          decision: { _is_null: true },
+          filtered: { _eq: false },
+        },
         { topScore: { _gte: 0.9 } },
         {
           message: {

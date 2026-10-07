@@ -185,6 +185,33 @@ export class GmailMailbox {
     await this.send<unknown>(`/labels/${id}`, {}, { name }, "PATCH");
   }
 
+  /**
+   * Makes a filter (gmail.settings.basic): mail from `from` gets the
+   * labels added and removed as it arrives. Its ID.
+   */
+  async createFilter(
+    from: string,
+    addLabelIds: string[],
+    removeLabelIds: string[],
+  ): Promise<string> {
+    const filter = await this.send<{ id: string }>(
+      "/settings/filters",
+      {},
+      { criteria: { from }, action: { addLabelIds, removeLabelIds } },
+    );
+    return filter.id;
+  }
+
+  /** Deletes a filter; mail it labelled keeps its labels. */
+  async deleteFilter(id: string): Promise<void> {
+    await this.send<unknown>(
+      `/settings/filters/${id}`,
+      {},
+      undefined,
+      "DELETE",
+    );
+  }
+
   /** Deletes a user label (its messages lose it; none are deleted). */
   async deleteLabel(id: string): Promise<void> {
     await this.send<unknown>(`/labels/${id}`, {}, undefined, "DELETE");

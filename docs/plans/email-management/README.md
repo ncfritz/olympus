@@ -869,6 +869,21 @@ already finds each starred message's icon).
    a proposed Gmail filter: from that sender, apply the label, and skip
    the inbox unless unticked. Approving creates the filter (the agent,
    with `gmail.settings.basic`, a further consent, "Allow filters" like
-   "Allow changes"); a filtered sender's new mail leaves review.
+   "Allow changes"); a filtered sender's new mail leaves review. **Built**
+   2026-10-07: `1791370000000_minerva_mail_filters` (`mail_filters`, with
+   Gmail's ID; `mail_filter_dismissals`; the view
+   `mail_filter_proposals`, over approvals in the inbox, the share
+   counted against all the sender's approvals so a filter never labels
+   mail that should not have it; `mail_inbox.filtered`, a message from a
+   filtered sender carrying its label, left out of To review).
+   `ListMailFilterProposals`, `ListMailFilters`, `CreateMailFilter`
+   (writes must be on; a filter Minerva could not keep is taken back out
+   of Gmail), `DismissMailFilterProposal`, `DeleteMailFilter`. The agent's
+   `MAIL_FILTERS_ENABLED` asks for `gmail.settings.basic` at sign-in and
+   makes and deletes filters (`/v1/gmail-filters`). The Inbox page folds
+   the proposals under the strip, each with Skip the inbox (ticked), Make
+   filter and Decline, an "Allow filters" prompt for a mailbox linked
+   without the scope, and the filters made with Delete. Proposals start
+   once senders have 20 approvals in the inbox, so they come with use.
 
 **Sign-off:** M12.
