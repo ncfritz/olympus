@@ -1,4 +1,39 @@
 {
+  "AcceptMailPaymentMatchesRequest": {
+    "properties": {
+      "pairs": {
+        "description": "Up to 1,000 matches, each a bill and its payment",
+        "items": {
+          "$ref": "#/components/schemas/MailPaymentPair"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "pairs"
+    ],
+    "type": "object"
+  },
+  "AcceptMailPaymentMatchesResponse": {
+    "properties": {
+      "accepted": {
+        "description": "Matches accepted: those still matched now",
+        "type": "number"
+      },
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The batch moving the bills; absent when none was accepted"
+      }
+    },
+    "required": [
+      "accepted"
+    ],
+    "type": "object"
+  },
   "AcknowledgeNotificationRequest": {
     "properties": {
       "acknowledged": {
@@ -10659,6 +10694,21 @@
     ],
     "type": "object"
   },
+  "ListMailPaymentExamplesResponse": {
+    "properties": {
+      "examples": {
+        "description": "The account's examples",
+        "items": {
+          "$ref": "#/components/schemas/MailPaymentExample"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "examples"
+    ],
+    "type": "object"
+  },
   "ListMailPaymentMatchesResponse": {
     "properties": {
       "count": {
@@ -13676,6 +13726,23 @@
     ],
     "type": "object"
   },
+  "MailPaymentExample": {
+    "properties": {
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "payment": {
+        "description": "A payment (a match approved), or not (a match declined, or a bill)",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "gmailId",
+      "payment"
+    ],
+    "type": "object"
+  },
   "MailPaymentMatch": {
     "properties": {
       "accountId": {
@@ -13714,6 +13781,14 @@
         "description": "The bill's open state now, by full name",
         "type": "string"
       },
+      "matchedBy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailPaymentMatchedBy"
+          }
+        ],
+        "description": "What found it: its wording, or the classifier"
+      },
       "toLabel": {
         "description": "The closed state it moves to, by full name",
         "type": "string"
@@ -13727,9 +13802,18 @@
       "confirmationGmailId",
       "confirmedTime",
       "fromLabel",
+      "matchedBy",
       "toLabel"
     ],
     "type": "object"
+  },
+  "MailPaymentMatchedBy": {
+    "description": "What found a payment confirmation",
+    "enum": [
+      "wording",
+      "learned"
+    ],
+    "type": "string"
   },
   "MailPaymentPair": {
     "properties": {
@@ -13745,6 +13829,23 @@
     "required": [
       "billGmailId",
       "confirmationGmailId"
+    ],
+    "type": "object"
+  },
+  "MailPaymentScore": {
+    "properties": {
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "score": {
+        "description": "0 to 1",
+        "type": "number"
+      }
+    },
+    "required": [
+      "gmailId",
+      "score"
     ],
     "type": "object"
   },
@@ -21123,6 +21224,43 @@
       "messages",
       "skipped",
       "suggestions"
+    ],
+    "type": "object"
+  },
+  "RecordMailPaymentScoresRequest": {
+    "properties": {
+      "first": {
+        "description": "The first batch of a run: the account's scores before are dropped",
+        "type": "boolean"
+      },
+      "scores": {
+        "description": "Up to 5,000 scores",
+        "items": {
+          "$ref": "#/components/schemas/MailPaymentScore"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "first",
+      "scores"
+    ],
+    "type": "object"
+  },
+  "RecordMailPaymentScoresResponse": {
+    "properties": {
+      "recorded": {
+        "description": "Stored",
+        "type": "number"
+      },
+      "skipped": {
+        "description": "Left out: a message the account does not have",
+        "type": "number"
+      }
+    },
+    "required": [
+      "recorded",
+      "skipped"
     ],
     "type": "object"
   },

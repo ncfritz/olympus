@@ -314,3 +314,24 @@ class OlympusApi:
 
     def publish_cluster_run(self, run_id: str, messages: int) -> None:
         self._post(f"/cluster-run/{run_id}/publish", {"messages": messages})
+
+    def payment_examples(self, account_id: str) -> list[tuple[str, bool]]:
+        """What payments are learned from: (Gmail ID, is a payment)."""
+        body = self._get("/training/payment-examples", {"accountId": account_id})
+        return [(e["gmailId"], bool(e["payment"])) for e in body["examples"]]
+
+    def record_payment_scores(
+        self, account_id: str, scores: list[tuple[str, float]], first: bool
+    ) -> tuple[int, int]:
+        """Posts up to 5,000 payment scores; the first batch of a run
+        replaces the account's. (stored, skipped)."""
+        body = self._put(
+            f"/account/{account_id}/payment-scores",
+            {
+                "first": first,
+                "scores": [
+                    {"gmailId": g, "score": round(float(s), 4)} for g, s in scores
+                ],
+            },
+        )
+        return body["recorded"], body["skipped"]

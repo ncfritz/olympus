@@ -1,4 +1,5 @@
 import {
+  acceptMailPaymentMatches,
   createMailFilter,
   type CreateMailFilterRequest,
   deleteMailFilter,
@@ -303,6 +304,14 @@ class MailApi {
     limit?: number;
   }) {
     return await listMailOpenBills({ query });
+  }
+
+  /** Approves matches: each bill moved along its transition, one batch. */
+  async acceptPaymentMatches(accountId: string, pairs: MailPaymentPair[]) {
+    return await acceptMailPaymentMatches({
+      path: { accountId },
+      body: { pairs },
+    });
   }
 
   /** Records pairs as not a bill and its payment; Gmail unchanged. */

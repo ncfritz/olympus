@@ -864,6 +864,24 @@ already finds each starred message's icon).
 3. **Learned confirmations**: once the rules have matched for a while, the
    pairs Neil approved and declined train a confirmation target, which
    also catches what the wording misses; the rules stay as the reason.
+   **Built** 2026-10-07, ahead of the matches it learns from (Neil):
+   `1791380000000_minerva_mail_payment_learning` (`mail_payment_acceptances`,
+   each match approved with the batch that moved its bill;
+   `mail_payment_scores`; `mail_payment_matches` also matches a message
+   scored 0.8 or more that is not itself in an open state, with
+   `matched_by`, wording or learned). `AcceptMailPaymentMatches` moves
+   the bills in one batch and keeps the matches (the review panel uses
+   it); `ListMailPaymentExamples` and `RecordMailPaymentScores` for the
+   classifier. `minerva-mail-ml-train payments` (the DAG's fourth task,
+   before clustering): a logistic regression (C 10, balanced) over the
+   classifier's features, from the payments approved against those
+   declined and every message in a state; nothing until 10 of each, when
+   the account's scores are cleared and the wording alone matches; the
+   scores from 0.5 posted, replacing the account's, with cross-validated
+   precision and recall at 0.8 logged. On synthetic mail in wording the
+   rules miss, 15 approved payments found the other 15 and took no bill
+   for one. The panel says when the classifier, not the wording, found a
+   payment.
 4. **Filters**: a sender whose suggestions for one label are approved as
    suggested at least 99 % of the time, over at least 20 decisions, gets
    a proposed Gmail filter: from that sender, apply the label, and skip

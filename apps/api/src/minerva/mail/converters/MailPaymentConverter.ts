@@ -1,4 +1,4 @@
-import { MailPaymentMatch } from "@ncfritz/olympus-model";
+import { MailPaymentMatch, MailPaymentMatchedBy } from "@ncfritz/olympus-model";
 import moment from "moment";
 
 /** The fields of a `minerva.mail_payment_matches` row the API reads. */
@@ -11,6 +11,7 @@ export const PAYMENT_MATCH_FIELDS = `
   fromLabel
   toLabel
   billStarred
+  matchedBy
   bill {
     subject
     fromAddress
@@ -27,6 +28,7 @@ export type GraphQlPaymentMatch = {
   fromLabel: string;
   toLabel: string;
   billStarred: boolean;
+  matchedBy: string;
   bill: { subject: string | null; fromAddress: string | null };
 };
 
@@ -41,4 +43,5 @@ export const toPaymentMatch = (m: GraphQlPaymentMatch): MailPaymentMatch => ({
   fromLabel: m.fromLabel,
   toLabel: m.toLabel,
   billStarred: m.billStarred,
+  matchedBy: m.matchedBy as MailPaymentMatchedBy,
 });

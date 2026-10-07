@@ -90,6 +90,16 @@ to 6,000 points) goes with them. All is posted to the API as a run
 (`CreateMailClusterRun`, `CreateMailClusters`, `CreateMailClusterMembers`,
 `CreateMailClusterPoints`, `PublishMailClusterRun`) for the Clusters page.
 
+`minerva-mail-ml-train payments` (or `--account ID`) learns payment
+confirmations (phase 7): a logistic regression over the same features,
+from the matches approved (payments) and declined, with every message in
+a state (bills, not payments), once there are 10 of each. It scores the
+mailbox and posts the scores from 0.5 to the API, replacing the
+account's (`ListMailPaymentExamples`, `RecordMailPaymentScores`); one
+from 0.8 is matched to the bill it pays like one whose wording reads as
+a payment. With too few examples it clears them, and the wording alone
+matches.
+
 `minerva-mail-ml-train report` prints each account's newest run (or
 `--run ID`): its split, the overall and per-label-mean precision and
 recall, and each label with test mail (`--all` for every label).

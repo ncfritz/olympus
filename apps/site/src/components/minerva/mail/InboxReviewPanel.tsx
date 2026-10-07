@@ -38,7 +38,7 @@ import {
   pickerSuggestionsOf,
   reasonOf,
 } from "../../../utils/mailInbox";
-import { paymentChange, paymentText } from "../../../utils/mailPayments";
+import { paymentText } from "../../../utils/mailPayments";
 import {
   loadFromLocalStorage,
   storeToLocalStorage,
@@ -156,7 +156,12 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
       }
       if (payment && markPaid) {
         try {
-          await mailApi.applyChanges(m.accountId, [paymentChange(payment)]);
+          await mailApi.acceptPaymentMatches(m.accountId, [
+            {
+              confirmationGmailId: payment.confirmationGmailId,
+              billGmailId: payment.billGmailId,
+            },
+          ]);
         } catch (error) {
           toast.error(
             `The bill was not marked: ${apiProblems(error).join(" ")}`,
@@ -235,8 +240,9 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
           <Text type={"secondary"} style={{ fontSize: 12 }}>
             {payment.billFromAddress ? `${payment.billFromAddress} · ` : ""}
             {payment.fromLabel} → {payment.toLabel}
-            {payment.billStarred
-              ? "; then set its done star in Gmail"
+            {payment.billStarred ? "; then set its done star in Gmail" : ""}
+            {payment.matchedBy === "learned"
+              ? " · found by the classifier, not its wording"
               : ""}{" "}
             <Button
               type={"link"}

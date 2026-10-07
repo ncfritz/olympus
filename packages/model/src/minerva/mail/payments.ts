@@ -1,7 +1,20 @@
 import { ApiProperty } from "@nestjs/swagger";
 import type { Moment } from "moment";
 import { ApiTimestamp } from "../../decorators";
+import { MailChangeBatch } from "./changes";
 import { MailStarIcon } from "./sync";
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Enums                                                                                                              */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+/** What found a payment confirmation. */
+export enum MailPaymentMatchedBy {
+  /** Its subject or snippet reads as a payment made. */
+  Wording = "wording",
+  /** The classifier, learned from matches approved and declined. */
+  Learned = "learned",
+}
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
@@ -73,6 +86,38 @@ export class MailPaymentMatch {
     description: "Whether the bill is starred (its star to change to done)",
   })
   billStarred: boolean;
+
+  @ApiProperty({
+    enum: () => MailPaymentMatchedBy,
+    enumName: "MailPaymentMatchedBy",
+    enumSchema: { description: "What found a payment confirmation" },
+    required: true,
+    description: "What found it: its wording, or the classifier",
+  })
+  matchedBy: MailPaymentMatchedBy;
+}
+
+/** A message the classifier learns payments from (agents only). */
+export class MailPaymentExample {
+  @ApiProperty({ type: String, required: true, description: "Its Gmail ID" })
+  gmailId: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "A payment (a match approved), or not (a match declined, or a bill)",
+  })
+  payment: boolean;
+}
+
+/** A message's payment score, as the classifier posts it. */
+export class MailPaymentScore {
+  @ApiProperty({ type: String, required: true, description: "Its Gmail ID" })
+  gmailId: string;
+
+  @ApiProperty({ type: Number, required: true, description: "0 to 1" })
+  score: number;
 }
 
 /** A message in an open state: an open bill. */
@@ -163,6 +208,34 @@ export class DismissMailPaymentMatchesRequest {
   pairs: MailPaymentPair[];
 }
 
+export class AcceptMailPaymentMatchesRequest {
+  @ApiProperty({
+    type: () => MailPaymentPair,
+    isArray: true,
+    required: true,
+    description: "Up to 1,000 matches, each a bill and its payment",
+  })
+  pairs: MailPaymentPair[];
+}
+
+export class RecordMailPaymentScoresRequest {
+  @ApiProperty({
+    type: () => MailPaymentScore,
+    isArray: true,
+    required: true,
+    description: "Up to 5,000 scores",
+  })
+  scores: MailPaymentScore[];
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "The first batch of a run: the account's scores before are dropped",
+  })
+  first: boolean;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -211,4 +284,42 @@ export class DismissMailPaymentMatchesResponse {
     description: "Pairs recorded as declined",
   })
   dismissed: number;
+}
+
+export class AcceptMailPaymentMatchesResponse {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Matches accepted: those still matched now",
+  })
+  accepted: number;
+
+  @ApiProperty({
+    type: () => MailChangeBatch,
+    required: false,
+    description: "The batch moving the bills; absent when none was accepted",
+  })
+  batch?: MailChangeBatch;
+}
+
+export class ListMailPaymentExamplesResponse {
+  @ApiProperty({
+    type: () => MailPaymentExample,
+    isArray: true,
+    required: true,
+    description: "The account's examples",
+  })
+  examples: MailPaymentExample[];
+}
+
+export class RecordMailPaymentScoresResponse {
+  @ApiProperty({ type: Number, required: true, description: "Stored" })
+  recorded: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Left out: a message the account does not have",
+  })
+  skipped: number;
 }

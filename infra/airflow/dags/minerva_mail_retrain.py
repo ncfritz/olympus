@@ -1,7 +1,7 @@
 """The mail classifier, retrained nightly (ADR 0030; docs/plans/
 email-management phase 3).
 
-Four tasks, each a command in the classifier's own image with the
+Five tasks, each a command in the classifier's own image with the
 classifier's data directory, so they read the same feature store and the
 same model registry the service serves from:
 
@@ -16,7 +16,10 @@ same model registry the service serves from:
 3. `minerva-mail-ml-train score-inbox` scores what is to review in the
    inbox again with the new model (phase 5). Between retrains the service
    learns from approvals itself.
-4. `minerva-mail-ml-train cluster` groups the mail by its embeddings and
+4. `minerva-mail-ml-train payments` learns what a payment confirmation
+   reads like from the matches approved and declined, and scores the
+   mailbox for the ones the wording misses (phase 7).
+5. `minerva-mail-ml-train cluster` groups the mail by its embeddings and
    posts the clusters and the map to the API, for the Clusters page: what
    unlabelled mail wants a label, and which labels mix kinds of mail
    (phase 6). Last, so a failure here leaves the inbox scored.
@@ -124,5 +127,6 @@ with DAG(
         trainer("train", "Train and evaluate", "run")
         >> trainer("suggest", "Suggest over the mailbox", "suggest")
         >> trainer("score_inbox", "Score the inbox again", "score-inbox")
+        >> trainer("payments", "Learn payments", "payments")
         >> trainer("cluster", "Cluster the mail", "cluster")
     )

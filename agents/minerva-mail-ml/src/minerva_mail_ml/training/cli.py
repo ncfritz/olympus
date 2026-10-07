@@ -9,6 +9,10 @@
                                                scored again by the newest model
     minerva-mail-ml-train learn [--account ID] learn from approvals in the
                                                inbox once, as the service does
+    minerva-mail-ml-train payments [--account ID]
+                                               payment confirmations learned
+                                               from matches approved and
+                                               declined, the mailbox scored
     minerva-mail-ml-train cluster [--account ID]
                                                clusters of the mail by its
                                                embeddings, and the map, posted
@@ -32,6 +36,7 @@ from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import OlympusApi
 from minerva_mail_ml.training.clusters import ClusterError, cluster_account
 from minerva_mail_ml.training.online import learn_account, score_inbox
+from minerva_mail_ml.training.payments import score_account as score_payments
 from minerva_mail_ml.training.pipeline import (
     TrainingError,
     suggest_account,
@@ -124,6 +129,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Learn from approvals in the inbox once, as the service does",
     )
     learn.add_argument("--account", help="Only this mail account ID")
+    payments = commands.add_parser(
+        "payments",
+        help="Learn payment confirmations and score the mailbox for them",
+    )
+    payments.add_argument("--account", help="Only this mail account ID")
     clusters = commands.add_parser(
         "cluster",
         help="Clusters of the mail by its embeddings, and the map, posted to the API",
@@ -189,6 +199,8 @@ def main(argv: list[str] | None = None) -> int:
                         logger.info(
                             "Account %s: scored %d in the inbox", account, scored
                         )
+                    elif args.command == "payments":
+                        score_payments(store, api, account)
                     elif args.command == "cluster":
                         cluster_account(store, api, account)
                     elif args.command == "learn":

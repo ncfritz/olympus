@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MailChangeService } from "../../../src/minerva/mail/services/MailChangeService";
 import { OTHER_USER, signedInApp, USER } from "../../support/signedInApp";
 
 const BASE = "/v1/minerva/mail";
@@ -14,15 +15,25 @@ const match = (overrides: Record<string, unknown> = {}) => ({
   fromLabel: "Bills/*Payable",
   toLabel: "Bills/*Paid",
   billStarred: true,
+  matchedBy: "wording",
   bill: { subject: "Your bill", fromAddress: "billing@power.example" },
   ...overrides,
 });
+
+const changes = { apply: vi.fn() };
 
 const count = (n: number) => ({ aggregate: { count: n } });
 
 /** Transitions from payments (docs/plans/email-management phase 7 step 2). */
 describe("Mail payments", () => {
-  const ctx = signedInApp();
+  const ctx = signedInApp({
+    overrides: [{ provide: MailChangeService, useValue: changes }],
+  });
+
+  beforeEach(() => {
+    changes.apply.mockReset();
+    changes.apply.mockResolvedValue({ id: "batch-1", messages: 1 });
+  });
 
   describe("ListMailPaymentMatches", () => {
     it("lists the caller's matches with each bill", async () => {
@@ -47,6 +58,7 @@ describe("Mail payments", () => {
             fromLabel: "Bills/*Payable",
             toLabel: "Bills/*Paid",
             billStarred: true,
+            matchedBy: "wording",
           },
         ],
         count: 1,
@@ -201,6 +213,81 @@ describe("Mail payments", () => {
       expect(ctx.t.graphql.calls("DescribeMailPaymentMessages")).toHaveLength(
         0,
       );
+    });
+  });
+
+  describe("AcceptMailPaymentMatches", () => {
+    const ACCEPT = `${BASE}/account/${ACCOUNT_ID}/payment-matches/accept`;
+
+    it("moves each bill still matched, in one batch, and keeps the match", async () => {
+      ctx.t.graphql.on("DescribeMailPaymentAcceptance", (vars) => ({
+        minerva_mail_accounts:
+          (vars as { userId: string }).userId === USER
+            ? [{ id: ACCOUNT_ID }]
+            : [],
+        minerva_mail_payment_matches: [
+          {
+            confirmationId: "m-d1",
+            confirmationGmailId: "d1",
+            billId: "m-b1",
+            billGmailId: "b1",
+            fromLabel: "Bills/*Payable",
+            toLabel: "Bills/*Paid",
+          },
+          {
+            confirmationId: "m-d2",
+            confirmationGmailId: "d2",
+            billId: "m-b2",
+            billGmailId: "b2",
+            fromLabel: "Bills/*Payable",
+            toLabel: "Bills/*Paid",
+          },
+        ],
+      }));
+      ctx.t.graphql.on("AcceptMailPaymentMatches", {
+        insert_minerva_mail_payment_acceptances: { affected_rows: 1 },
+      });
+      const res = await ctx.as(
+        ctx.t
+          .http()
+          .post(ACCEPT)
+          .send({
+            pairs: [
+              { confirmationGmailId: "d1", billGmailId: "b1" },
+              // d2 now pays another bill: left out.
+              { confirmationGmailId: "d2", billGmailId: "b0" },
+            ],
+          }),
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.accepted).toBe(1);
+      expect(res.body.batch).toMatchObject({ id: "batch-1" });
+      expect(changes.apply).toHaveBeenCalledWith(USER, ACCOUNT_ID, {
+        changes: [
+          { gmailId: "b1", add: ["Bills/*Paid"], remove: ["Bills/*Payable"] },
+        ],
+      });
+      expect(
+        ctx.t.graphql.calls("AcceptMailPaymentMatches")[0].variables,
+      ).toEqual({
+        rows: [
+          {
+            confirmationId: "m-d1",
+            billId: "m-b1",
+            batchId: "batch-1",
+            userId: USER,
+          },
+        ],
+      });
+
+      await ctx.signInAs(OTHER_USER);
+      const other = await ctx.as(
+        ctx.t
+          .http()
+          .post(ACCEPT)
+          .send({ pairs: [{ confirmationGmailId: "d1", billGmailId: "b1" }] }),
+      );
+      expect(other.status).toBe(404);
     });
   });
 });

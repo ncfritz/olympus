@@ -25,6 +25,7 @@ const match = (
   fromLabel: "Bills/*Payable",
   toLabel: "Bills/*Paid",
   billStarred: false,
+  matchedBy: "wording",
   ...overrides,
 });
 

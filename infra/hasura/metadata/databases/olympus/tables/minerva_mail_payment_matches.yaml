@@ -25,6 +25,8 @@ configuration:
       custom_name: fromLabel
     from_label_id:
       custom_name: fromLabelId
+    matched_by:
+      custom_name: matchedBy
     to_label:
       custom_name: toLabel
     to_label_id:
@@ -41,6 +43,7 @@ configuration:
     confirmed_at: confirmedTime
     from_label: fromLabel
     from_label_id: fromLabelId
+    matched_by: matchedBy
     to_label: toLabel
     to_label_id: toLabelId
   custom_root_fields: {}

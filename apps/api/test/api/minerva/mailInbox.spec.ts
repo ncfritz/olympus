@@ -257,6 +257,7 @@ describe("Mail inbox", () => {
             fromLabel: "Bills/*Payable",
             toLabel: "Bills/*Paid",
             billStarred: false,
+            matchedBy: "learned",
             bill: {
               subject: "Your bill",
               fromAddress: "billing@power.example",
@@ -276,6 +277,7 @@ describe("Mail inbox", () => {
         fromLabel: "Bills/*Payable",
         toLabel: "Bills/*Paid",
         billStarred: false,
+        matchedBy: "learned",
       });
     });
 

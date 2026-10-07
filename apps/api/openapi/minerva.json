@@ -9784,6 +9784,194 @@
         ]
       }
     },
+    "/minerva/mail/account/{accountId}/payment-matches/accept": {
+      "post": {
+        "description": "Up to 1000 pairs, each a payment confirmation and a bill by Gmail ID (docs/plans/email-management phase 7): each bill still matched with its payment moves along its transition (`Bills/*Payable` to `Bills/*Paid`), all in one change batch written to Gmail and undone from the change log; each match is kept as an example the classifier learns payments from. A pair no longer matched is left out.",
+        "operationId": "AcceptMailPaymentMatches",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the AcceptMailPaymentMatches operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptMailPaymentMatchesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The matches still matched were accepted, and the batch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptMailPaymentMatchesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's."
+          },
+          "409": {
+            "description": "The mailbox is linked for reading only."
+          },
+          "503": {
+            "description": "Writes to Gmail are turned off."
+          }
+        },
+        "summary": "Approves payment matches, moving each bill",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/training/payment-examples": {
+      "get": {
+        "description": "For the mail classifier (docs/plans/email-management phase 7 step 3): one account's messages by Gmail ID, each a payment (the confirmation of a match approved) or not (one of a match declined, never approved, or a bill: a message in any state, up to the newest 20,000). Gmail IDs only.",
+        "operationId": "ListMailPaymentExamples",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "query",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account's examples.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailPaymentExamplesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists what the classifier learns payments from",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/payment-scores": {
+      "put": {
+        "description": "For the mail classifier (docs/plans/email-management phase 7 step 3): up to 5000 messages by Gmail ID, each with how likely it is a payment confirmation, 0 to 1. The first batch of a run (`first`) drops the account's scores before, so a run replaces them. A message scored 0.8 or more is matched to the bill it pays as one whose wording reads as a payment. A message the account does not have is skipped and counted.",
+        "operationId": "RecordMailPaymentScores",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the RecordMailPaymentScores operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordMailPaymentScoresRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The scores were stored; some may have been skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordMailPaymentScoresResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Records the classifier's payment scores",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/filter-proposals": {
       "get": {
         "description": "Filter proposals (docs/plans/email-management phase 7): a sender with at least 20 messages approved in the inbox, at least 99% of which carry one user label now, proposed a filter applying it as the mail arrives. Most approvals first, up to 200; a sender with a filter for the label, or a proposal declined, is left out.",
@@ -18802,6 +18990,14 @@
           "skipped"
         ]
       },
+      "MailPaymentMatchedBy": {
+        "type": "string",
+        "description": "What found it: its wording, or the classifier",
+        "enum": [
+          "wording",
+          "learned"
+        ]
+      },
       "MailPaymentMatch": {
         "type": "object",
         "properties": {
@@ -18844,6 +19040,14 @@
           "billStarred": {
             "type": "boolean",
             "description": "Whether the bill is starred (its star to change to done)"
+          },
+          "matchedBy": {
+            "description": "What found it: its wording, or the classifier",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailPaymentMatchedBy"
+              }
+            ]
           }
         },
         "required": [
@@ -18854,7 +19058,8 @@
           "billReceivedTime",
           "fromLabel",
           "toLabel",
-          "billStarred"
+          "billStarred",
+          "matchedBy"
         ]
       },
       "MailInboxMessage": {
@@ -20293,6 +20498,144 @@
           "counts"
         ]
       },
+      "MailPaymentPair": {
+        "type": "object",
+        "properties": {
+          "confirmationGmailId": {
+            "type": "string",
+            "description": "The confirmation's Gmail ID"
+          },
+          "billGmailId": {
+            "type": "string",
+            "description": "The bill's Gmail ID"
+          }
+        },
+        "required": [
+          "confirmationGmailId",
+          "billGmailId"
+        ]
+      },
+      "AcceptMailPaymentMatchesRequest": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "description": "Up to 1,000 matches, each a bill and its payment",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailPaymentPair"
+            }
+          }
+        },
+        "required": [
+          "pairs"
+        ]
+      },
+      "AcceptMailPaymentMatchesResponse": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "number",
+            "description": "Matches accepted: those still matched now"
+          },
+          "batch": {
+            "description": "The batch moving the bills; absent when none was accepted",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "MailPaymentExample": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "payment": {
+            "type": "boolean",
+            "description": "A payment (a match approved), or not (a match declined, or a bill)"
+          }
+        },
+        "required": [
+          "gmailId",
+          "payment"
+        ]
+      },
+      "ListMailPaymentExamplesResponse": {
+        "type": "object",
+        "properties": {
+          "examples": {
+            "description": "The account's examples",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailPaymentExample"
+            }
+          }
+        },
+        "required": [
+          "examples"
+        ]
+      },
+      "MailPaymentScore": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "score": {
+            "type": "number",
+            "description": "0 to 1"
+          }
+        },
+        "required": [
+          "gmailId",
+          "score"
+        ]
+      },
+      "RecordMailPaymentScoresRequest": {
+        "type": "object",
+        "properties": {
+          "scores": {
+            "description": "Up to 5,000 scores",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailPaymentScore"
+            }
+          },
+          "first": {
+            "type": "boolean",
+            "description": "The first batch of a run: the account's scores before are dropped"
+          }
+        },
+        "required": [
+          "scores",
+          "first"
+        ]
+      },
+      "RecordMailPaymentScoresResponse": {
+        "type": "object",
+        "properties": {
+          "recorded": {
+            "type": "number",
+            "description": "Stored"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Left out: a message the account does not have"
+          }
+        },
+        "required": [
+          "recorded",
+          "skipped"
+        ]
+      },
       "MailFilterProposal": {
         "type": "object",
         "properties": {
@@ -20585,23 +20928,6 @@
           "bills",
           "count",
           "ages"
-        ]
-      },
-      "MailPaymentPair": {
-        "type": "object",
-        "properties": {
-          "confirmationGmailId": {
-            "type": "string",
-            "description": "The confirmation's Gmail ID"
-          },
-          "billGmailId": {
-            "type": "string",
-            "description": "The bill's Gmail ID"
-          }
-        },
-        "required": [
-          "confirmationGmailId",
-          "billGmailId"
         ]
       },
       "DismissMailPaymentMatchesRequest": {
