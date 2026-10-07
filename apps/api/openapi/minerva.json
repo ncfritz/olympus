@@ -9701,6 +9701,551 @@
         ]
       }
     },
+    "/minerva/mail/cluster-runs": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 6): a run for one account and embedding version, building until it is published. Its clusters, members and map points are posted to it and show nowhere until PublishMailClusterRun.",
+        "operationId": "CreateMailClusterRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailClusterRun operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailClusterRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The run was begun.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailClusterRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Begins a run of the classifier's clustering",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster-run/{runId}/clusters": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 6): up to 500 clusters, each numbered within the run, with its scope (unlabelled mail, or one label's), name, size, purity, place on the map, top labels and senders (up to 10 each) and what it suggests, if anything. A label's cluster whose label the account no longer has is skipped and counted; a top label it does not have is left out of the counts.",
+        "operationId": "CreateMailClusters",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "The building run",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailClusters operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailClustersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The clusters were stored; some may have been skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailClusterItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such run."
+          },
+          "409": {
+            "description": "The run is published, or a cluster number is in it already."
+          }
+        },
+        "summary": "Adds clusters to a building run",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster-run/{runId}/members": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 6): up to 5000 messages of one cluster, by its number and the messages' Gmail IDs. A message the account does not have is skipped and counted; one posted again is left as it is.",
+        "operationId": "CreateMailClusterMembers",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "The building run",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailClusterMembers operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailClusterMembersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The members were stored; some may have been skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailClusterItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such run, or no such cluster in it."
+          },
+          "409": {
+            "description": "The run is published."
+          }
+        },
+        "summary": "Adds a cluster's messages to a building run",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster-run/{runId}/points": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 6): up to 5000 of the map's points, each a message by Gmail ID, its place on a 0 to 1 square and the number of the cluster it is in, if any. A message the account does not have is skipped and counted; a cluster the run does not have is left off the point. Posting a message again moves it.",
+        "operationId": "CreateMailClusterPoints",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "The building run",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateMailClusterPoints operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMailClusterPointsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The points were stored; some may have been skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMailClusterItemsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such run."
+          },
+          "409": {
+            "description": "The run is published."
+          }
+        },
+        "summary": "Adds map points to a building run",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster-run/{runId}/publish": {
+      "post": {
+        "description": "For the mail classifier (docs/plans/email-management phase 6): the run's clusters and map become the account's, on the Clusters page, and the account's runs before it are dropped, in one transaction.",
+        "operationId": "PublishMailClusterRun",
+        "parameters": [
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "description": "The building run",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the PublishMailClusterRun operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishMailClusterRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The run, published.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishMailClusterRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such run."
+          },
+          "409": {
+            "description": "The run is published already."
+          }
+        },
+        "summary": "Publishes a run of the classifier's clustering",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/clusters": {
+      "get": {
+        "description": "The Clusters page (docs/plans/email-management phase 6): the newest published clustering of one of the caller's accounts (`accountId`, or the one clustered last), its clusters largest first, each with its label mix, purity, top senders and what it suggests, and the map's points, each coloured by its first user label now. Metadata only; never message text. No run yet is an empty map.",
+        "operationId": "GetMailClusterMap",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "The mail account; the one clustered last when absent",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The map, or an empty one before the first run.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMailClusterMapResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets the map of the caller's mail and its clusters",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster/{clusterId}": {
+      "get": {
+        "description": "The Clusters page's side panel (docs/plans/email-management phase 6): the cluster, and its 20 newest messages' metadata (sender, subject, when, labels now). Never message text.",
+        "operationId": "DescribeMailCluster",
+        "parameters": [
+          {
+            "name": "clusterId",
+            "required": true,
+            "in": "path",
+            "description": "The cluster",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cluster and its newest messages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeMailClusterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such cluster of the caller's."
+          }
+        },
+        "summary": "Describes one of the caller's mail clusters",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster/{clusterId}/members": {
+      "get": {
+        "description": "For applying a cluster's suggestion (docs/plans/email-management phase 6): a page of up to 5000 of its messages' Gmail IDs, in a fixed order, and how many it has. The site turns them into a change batch.",
+        "operationId": "ListMailClusterMembers",
+        "parameters": [
+          {
+            "name": "clusterId",
+            "required": true,
+            "in": "path",
+            "description": "The cluster",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "How many to pass over",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "At most this many, up to 5000",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of its messages, and the count of all of them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailClusterMembersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such cluster of the caller's."
+          }
+        },
+        "summary": "Lists a page of a mail cluster's messages",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/cluster-suggestions": {
+      "get": {
+        "description": "Clusters worth a look (docs/plans/email-management phase 6), from each account's newest published run, largest first: unlabelled mail that wants a label of its own (`new-label`), and groups of a label that mixes kinds of mail (`split`). With `label`, only that label's split groups, for the alert on its review.",
+        "operationId": "ListMailClusterSuggestions",
+        "parameters": [
+          {
+            "name": "label",
+            "required": false,
+            "in": "query",
+            "description": "Only this label's split groups, by full name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clusters that suggest something.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailClusterSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the caller's clusters that suggest something",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/account/{accountId}/message-suggestions": {
       "put": {
         "description": "For the mail agent (docs/plans/email-management phase 5): up to 500 messages scored by the serving model as they arrived, each by Gmail ID with up to 20 labels by full name, best first, each with its score and whether it is ticked. Each message's suggestions replace what it had; a message with none was scored and nothing reached the floor. The message need not be stored yet. A label the mailbox does not have, or not the user's own, is skipped and counted.",
@@ -18953,6 +19498,581 @@
         },
         "required": [
           "run"
+        ]
+      },
+      "CreateMailClusterRunRequest": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The mail account"
+          },
+          "embeddingVersion": {
+            "type": "string",
+            "description": "The embeddings it groups by"
+          }
+        },
+        "required": [
+          "accountId",
+          "embeddingVersion"
+        ]
+      },
+      "MailClusterRunStatus": {
+        "type": "string",
+        "description": "Building while the classifier posts to it; ready once published",
+        "enum": [
+          "building",
+          "ready"
+        ]
+      },
+      "MailClusterRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The run's ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The mail account clustered"
+          },
+          "embeddingVersion": {
+            "type": "string",
+            "description": "The embeddings it grouped by"
+          },
+          "status": {
+            "description": "Building while the classifier posts to it; ready once published",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterRunStatus"
+              }
+            ]
+          },
+          "startedTime": {
+            "type": "string",
+            "description": "When the run began"
+          },
+          "finishedTime": {
+            "type": "string",
+            "description": "When it was published"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Messages with a vector, that it clustered"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "embeddingVersion",
+          "status",
+          "startedTime"
+        ]
+      },
+      "CreateMailClusterRunResponse": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "description": "The run, building",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterRun"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "MailClusterScope": {
+        "type": "string",
+        "description": "What a cluster groups: unlabelled mail, or one label's",
+        "enum": [
+          "unlabelled",
+          "label"
+        ]
+      },
+      "MailClusterSuggestion": {
+        "type": "string",
+        "description": "What a cluster suggests",
+        "enum": [
+          "new-label",
+          "split"
+        ]
+      },
+      "MailClusterLabelCount": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The label"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Its messages"
+          }
+        },
+        "required": [
+          "label",
+          "messages"
+        ]
+      },
+      "MailClusterSenderCount": {
+        "type": "object",
+        "properties": {
+          "sender": {
+            "type": "string",
+            "description": "The address"
+          },
+          "messages": {
+            "type": "number",
+            "description": "Its messages"
+          }
+        },
+        "required": [
+          "sender",
+          "messages"
+        ]
+      },
+      "NewMailCluster": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "number",
+            "description": "Its number"
+          },
+          "scope": {
+            "description": "What it groups",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterScope"
+              }
+            ]
+          },
+          "scopeLabel": {
+            "type": "string",
+            "description": "For a label's cluster, the label's full name"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name"
+          },
+          "size": {
+            "type": "number",
+            "description": "Its messages"
+          },
+          "purity": {
+            "type": "number",
+            "description": "0 to 1"
+          },
+          "x": {
+            "type": "number",
+            "description": "0 to 1"
+          },
+          "y": {
+            "type": "number",
+            "description": "0 to 1"
+          },
+          "suggestion": {
+            "description": "What it suggests",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterSuggestion"
+              }
+            ]
+          },
+          "proposedName": {
+            "type": "string",
+            "description": "The label it proposes"
+          },
+          "labels": {
+            "description": "Up to 10 labels",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailClusterLabelCount"
+            }
+          },
+          "senders": {
+            "description": "Up to 10 senders",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailClusterSenderCount"
+            }
+          }
+        },
+        "required": [
+          "number",
+          "scope",
+          "name",
+          "size",
+          "purity",
+          "x",
+          "y",
+          "labels",
+          "senders"
+        ]
+      },
+      "CreateMailClustersRequest": {
+        "type": "object",
+        "properties": {
+          "clusters": {
+            "description": "Up to 500 clusters",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewMailCluster"
+            }
+          }
+        },
+        "required": [
+          "clusters"
+        ]
+      },
+      "CreateMailClusterItemsResponse": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "number",
+            "description": "Stored"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Left out: a message the account does not have, or a cluster or label it does not"
+          }
+        },
+        "required": [
+          "created",
+          "skipped"
+        ]
+      },
+      "CreateMailClusterMembersRequest": {
+        "type": "object",
+        "properties": {
+          "cluster": {
+            "type": "number",
+            "description": "The cluster, by number"
+          },
+          "gmailIds": {
+            "description": "Up to 5,000 of its messages by Gmail ID",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "cluster",
+          "gmailIds"
+        ]
+      },
+      "NewMailClusterPoint": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "x": {
+            "type": "number",
+            "description": "0 to 1"
+          },
+          "y": {
+            "type": "number",
+            "description": "0 to 1"
+          },
+          "cluster": {
+            "type": "number",
+            "description": "The number of the cluster it is in, if any"
+          }
+        },
+        "required": [
+          "gmailId",
+          "x",
+          "y"
+        ]
+      },
+      "CreateMailClusterPointsRequest": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "description": "Up to 5,000 points",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewMailClusterPoint"
+            }
+          }
+        },
+        "required": [
+          "points"
+        ]
+      },
+      "PublishMailClusterRunRequest": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "number",
+            "description": "Messages with a vector, that the run clustered"
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "PublishMailClusterRunResponse": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "description": "The run, published",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterRun"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run"
+        ]
+      },
+      "MailCluster": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "accountId": {
+            "type": "string",
+            "description": "The mail account"
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number within the run"
+          },
+          "scope": {
+            "description": "What it groups",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterScope"
+              }
+            ]
+          },
+          "scopeLabel": {
+            "type": "string",
+            "description": "For a label's cluster, the label"
+          },
+          "name": {
+            "type": "string",
+            "description": "A name from its labels or senders"
+          },
+          "size": {
+            "type": "number",
+            "description": "Its messages"
+          },
+          "purity": {
+            "type": "number",
+            "description": "The share of its messages with its most common label, 0 to 1"
+          },
+          "x": {
+            "type": "number",
+            "description": "Where it sits on the map, 0 to 1 across"
+          },
+          "y": {
+            "type": "number",
+            "description": "Where it sits on the map, 0 to 1 down"
+          },
+          "suggestion": {
+            "description": "What it suggests, if anything",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterSuggestion"
+              }
+            ]
+          },
+          "proposedName": {
+            "type": "string",
+            "description": "The label it proposes, by full name: new, or a sub-label of its label"
+          },
+          "labels": {
+            "description": "Its most common labels, most first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailClusterLabelCount"
+            }
+          },
+          "senders": {
+            "description": "Its top senders, most first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailClusterSenderCount"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "number",
+          "scope",
+          "name",
+          "size",
+          "purity",
+          "x",
+          "y",
+          "labels",
+          "senders"
+        ]
+      },
+      "MailClusterPoint": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "x": {
+            "type": "number",
+            "description": "0 to 1 across"
+          },
+          "y": {
+            "type": "number",
+            "description": "0 to 1 down"
+          },
+          "clusterId": {
+            "type": "string",
+            "description": "The cluster it is in, if any"
+          },
+          "label": {
+            "type": "string",
+            "description": "Its first user label now, for colour; none when unlabelled"
+          }
+        },
+        "required": [
+          "gmailId",
+          "x",
+          "y"
+        ]
+      },
+      "GetMailClusterMapResponse": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "description": "The newest published run; absent before the first",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailClusterRun"
+              }
+            ]
+          },
+          "clusters": {
+            "description": "Its clusters, largest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailCluster"
+            }
+          },
+          "points": {
+            "description": "The map's points",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailClusterPoint"
+            }
+          }
+        },
+        "required": [
+          "clusters",
+          "points"
+        ]
+      },
+      "MailClusterMessage": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When it was received"
+          },
+          "labels": {
+            "description": "Its user labels now",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "receivedTime",
+          "labels"
+        ]
+      },
+      "DescribeMailClusterResponse": {
+        "type": "object",
+        "properties": {
+          "cluster": {
+            "description": "The cluster",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailCluster"
+              }
+            ]
+          },
+          "messages": {
+            "description": "Its newest messages, up to 20",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailClusterMessage"
+            }
+          }
+        },
+        "required": [
+          "cluster",
+          "messages"
+        ]
+      },
+      "ListMailClusterMembersResponse": {
+        "type": "object",
+        "properties": {
+          "gmailIds": {
+            "description": "A page of its messages' Gmail IDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "count": {
+            "type": "number",
+            "description": "All its messages"
+          }
+        },
+        "required": [
+          "gmailIds",
+          "count"
+        ]
+      },
+      "ListMailClusterSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "clusters": {
+            "description": "Clusters that suggest something, largest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailCluster"
+            }
+          }
+        },
+        "required": [
+          "clusters"
         ]
       },
       "NewMailMessageSuggestion": {

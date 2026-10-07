@@ -4384,6 +4384,106 @@
     ],
     "type": "object"
   },
+  "CreateMailClusterItemsResponse": {
+    "properties": {
+      "created": {
+        "description": "Stored",
+        "type": "number"
+      },
+      "skipped": {
+        "description": "Left out: a message the account does not have, or a cluster or label it does not",
+        "type": "number"
+      }
+    },
+    "required": [
+      "created",
+      "skipped"
+    ],
+    "type": "object"
+  },
+  "CreateMailClusterMembersRequest": {
+    "properties": {
+      "cluster": {
+        "description": "The cluster, by number",
+        "type": "number"
+      },
+      "gmailIds": {
+        "description": "Up to 5,000 of its messages by Gmail ID",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "cluster",
+      "gmailIds"
+    ],
+    "type": "object"
+  },
+  "CreateMailClusterPointsRequest": {
+    "properties": {
+      "points": {
+        "description": "Up to 5,000 points",
+        "items": {
+          "$ref": "#/components/schemas/NewMailClusterPoint"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "points"
+    ],
+    "type": "object"
+  },
+  "CreateMailClusterRunRequest": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account",
+        "type": "string"
+      },
+      "embeddingVersion": {
+        "description": "The embeddings it groups by",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "embeddingVersion"
+    ],
+    "type": "object"
+  },
+  "CreateMailClusterRunResponse": {
+    "properties": {
+      "run": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterRun"
+          }
+        ],
+        "description": "The run, building"
+      }
+    },
+    "required": [
+      "run"
+    ],
+    "type": "object"
+  },
+  "CreateMailClustersRequest": {
+    "properties": {
+      "clusters": {
+        "description": "Up to 500 clusters",
+        "items": {
+          "$ref": "#/components/schemas/NewMailCluster"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clusters"
+    ],
+    "type": "object"
+  },
   "CreateMailLabelFamilyRequest": {
     "properties": {
       "initialLabelId": {
@@ -6174,6 +6274,30 @@
     ],
     "type": "object"
   },
+  "DescribeMailClusterResponse": {
+    "properties": {
+      "cluster": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailCluster"
+          }
+        ],
+        "description": "The cluster"
+      },
+      "messages": {
+        "description": "Its newest messages, up to 20",
+        "items": {
+          "$ref": "#/components/schemas/MailClusterMessage"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "cluster",
+      "messages"
+    ],
+    "type": "object"
+  },
   "DescribeMediaAssetWorkflowStepResponse": {
     "properties": {
       "step": {
@@ -7751,6 +7875,37 @@
       "merges",
       "stars",
       "threads"
+    ],
+    "type": "object"
+  },
+  "GetMailClusterMapResponse": {
+    "properties": {
+      "clusters": {
+        "description": "Its clusters, largest first",
+        "items": {
+          "$ref": "#/components/schemas/MailCluster"
+        },
+        "type": "array"
+      },
+      "points": {
+        "description": "The map's points",
+        "items": {
+          "$ref": "#/components/schemas/MailClusterPoint"
+        },
+        "type": "array"
+      },
+      "run": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterRun"
+          }
+        ],
+        "description": "The newest published run; absent before the first"
+      }
+    },
+    "required": [
+      "clusters",
+      "points"
     ],
     "type": "object"
   },
@@ -10223,6 +10378,41 @@
     ],
     "type": "object"
   },
+  "ListMailClusterMembersResponse": {
+    "properties": {
+      "count": {
+        "description": "All its messages",
+        "type": "number"
+      },
+      "gmailIds": {
+        "description": "A page of its messages' Gmail IDs",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "count",
+      "gmailIds"
+    ],
+    "type": "object"
+  },
+  "ListMailClusterSuggestionsResponse": {
+    "properties": {
+      "clusters": {
+        "description": "Clusters that suggest something, largest first",
+        "items": {
+          "$ref": "#/components/schemas/MailCluster"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clusters"
+    ],
+    "type": "object"
+  },
   "ListMailInboxResponse": {
     "properties": {
       "count": {
@@ -12028,6 +12218,259 @@
       "changed",
       "gone",
       "failed"
+    ],
+    "type": "string"
+  },
+  "MailCluster": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account",
+        "type": "string"
+      },
+      "id": {
+        "description": "Its ID",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Its most common labels, most first",
+        "items": {
+          "$ref": "#/components/schemas/MailClusterLabelCount"
+        },
+        "type": "array"
+      },
+      "name": {
+        "description": "A name from its labels or senders",
+        "type": "string"
+      },
+      "number": {
+        "description": "Its number within the run",
+        "type": "number"
+      },
+      "proposedName": {
+        "description": "The label it proposes, by full name: new, or a sub-label of its label",
+        "type": "string"
+      },
+      "purity": {
+        "description": "The share of its messages with its most common label, 0 to 1",
+        "type": "number"
+      },
+      "scope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterScope"
+          }
+        ],
+        "description": "What it groups"
+      },
+      "scopeLabel": {
+        "description": "For a label's cluster, the label",
+        "type": "string"
+      },
+      "senders": {
+        "description": "Its top senders, most first",
+        "items": {
+          "$ref": "#/components/schemas/MailClusterSenderCount"
+        },
+        "type": "array"
+      },
+      "size": {
+        "description": "Its messages",
+        "type": "number"
+      },
+      "suggestion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterSuggestion"
+          }
+        ],
+        "description": "What it suggests, if anything"
+      },
+      "x": {
+        "description": "Where it sits on the map, 0 to 1 across",
+        "type": "number"
+      },
+      "y": {
+        "description": "Where it sits on the map, 0 to 1 down",
+        "type": "number"
+      }
+    },
+    "required": [
+      "accountId",
+      "id",
+      "labels",
+      "name",
+      "number",
+      "purity",
+      "scope",
+      "senders",
+      "size",
+      "x",
+      "y"
+    ],
+    "type": "object"
+  },
+  "MailClusterLabelCount": {
+    "properties": {
+      "label": {
+        "description": "The label",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Its messages",
+        "type": "number"
+      }
+    },
+    "required": [
+      "label",
+      "messages"
+    ],
+    "type": "object"
+  },
+  "MailClusterMessage": {
+    "properties": {
+      "fromAddress": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Its user labels now",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "receivedTime": {
+        "description": "When it was received",
+        "type": "string"
+      },
+      "subject": {
+        "description": "The subject",
+        "type": "string"
+      }
+    },
+    "required": [
+      "gmailId",
+      "labels",
+      "receivedTime"
+    ],
+    "type": "object"
+  },
+  "MailClusterPoint": {
+    "properties": {
+      "clusterId": {
+        "description": "The cluster it is in, if any",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "label": {
+        "description": "Its first user label now, for colour; none when unlabelled",
+        "type": "string"
+      },
+      "x": {
+        "description": "0 to 1 across",
+        "type": "number"
+      },
+      "y": {
+        "description": "0 to 1 down",
+        "type": "number"
+      }
+    },
+    "required": [
+      "gmailId",
+      "x",
+      "y"
+    ],
+    "type": "object"
+  },
+  "MailClusterRun": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account clustered",
+        "type": "string"
+      },
+      "embeddingVersion": {
+        "description": "The embeddings it grouped by",
+        "type": "string"
+      },
+      "finishedTime": {
+        "description": "When it was published",
+        "type": "string"
+      },
+      "id": {
+        "description": "The run's ID",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Messages with a vector, that it clustered",
+        "type": "number"
+      },
+      "startedTime": {
+        "description": "When the run began",
+        "type": "string"
+      },
+      "status": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterRunStatus"
+          }
+        ],
+        "description": "Building while the classifier posts to it; ready once published"
+      }
+    },
+    "required": [
+      "accountId",
+      "embeddingVersion",
+      "id",
+      "startedTime",
+      "status"
+    ],
+    "type": "object"
+  },
+  "MailClusterRunStatus": {
+    "description": "Whether a cluster run is building or ready",
+    "enum": [
+      "building",
+      "ready"
+    ],
+    "type": "string"
+  },
+  "MailClusterScope": {
+    "description": "What a cluster groups: unlabelled mail, or one label's",
+    "enum": [
+      "unlabelled",
+      "label"
+    ],
+    "type": "string"
+  },
+  "MailClusterSenderCount": {
+    "properties": {
+      "messages": {
+        "description": "Its messages",
+        "type": "number"
+      },
+      "sender": {
+        "description": "The address",
+        "type": "string"
+      }
+    },
+    "required": [
+      "messages",
+      "sender"
+    ],
+    "type": "object"
+  },
+  "MailClusterSuggestion": {
+    "description": "What a cluster suggests",
+    "enum": [
+      "new-label",
+      "split"
     ],
     "type": "string"
   },
@@ -15879,6 +16322,110 @@
       "logoPath",
       "name",
       "tvSeriesCount"
+    ],
+    "type": "object"
+  },
+  "NewMailCluster": {
+    "properties": {
+      "labels": {
+        "description": "Up to 10 labels",
+        "items": {
+          "$ref": "#/components/schemas/MailClusterLabelCount"
+        },
+        "type": "array"
+      },
+      "name": {
+        "description": "Its name",
+        "type": "string"
+      },
+      "number": {
+        "description": "Its number",
+        "type": "number"
+      },
+      "proposedName": {
+        "description": "The label it proposes",
+        "type": "string"
+      },
+      "purity": {
+        "description": "0 to 1",
+        "type": "number"
+      },
+      "scope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterScope"
+          }
+        ],
+        "description": "What it groups"
+      },
+      "scopeLabel": {
+        "description": "For a label's cluster, the label's full name",
+        "type": "string"
+      },
+      "senders": {
+        "description": "Up to 10 senders",
+        "items": {
+          "$ref": "#/components/schemas/MailClusterSenderCount"
+        },
+        "type": "array"
+      },
+      "size": {
+        "description": "Its messages",
+        "type": "number"
+      },
+      "suggestion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterSuggestion"
+          }
+        ],
+        "description": "What it suggests"
+      },
+      "x": {
+        "description": "0 to 1",
+        "type": "number"
+      },
+      "y": {
+        "description": "0 to 1",
+        "type": "number"
+      }
+    },
+    "required": [
+      "labels",
+      "name",
+      "number",
+      "purity",
+      "scope",
+      "senders",
+      "size",
+      "x",
+      "y"
+    ],
+    "type": "object"
+  },
+  "NewMailClusterPoint": {
+    "properties": {
+      "cluster": {
+        "description": "The number of the cluster it is in, if any",
+        "type": "number"
+      },
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "x": {
+        "description": "0 to 1",
+        "type": "number"
+      },
+      "y": {
+        "description": "0 to 1",
+        "type": "number"
+      }
+    },
+    "required": [
+      "gmailId",
+      "x",
+      "y"
     ],
     "type": "object"
   },
@@ -19892,6 +20439,34 @@
       "use",
       "x",
       "y"
+    ],
+    "type": "object"
+  },
+  "PublishMailClusterRunRequest": {
+    "properties": {
+      "messages": {
+        "description": "Messages with a vector, that the run clustered",
+        "type": "number"
+      }
+    },
+    "required": [
+      "messages"
+    ],
+    "type": "object"
+  },
+  "PublishMailClusterRunResponse": {
+    "properties": {
+      "run": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailClusterRun"
+          }
+        ],
+        "description": "The run, published"
+      }
+    },
+    "required": [
+      "run"
     ],
     "type": "object"
   },

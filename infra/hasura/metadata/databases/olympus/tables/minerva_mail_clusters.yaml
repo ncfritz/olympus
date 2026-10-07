@@ -1,0 +1,58 @@
+table:
+  name: mail_clusters
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    proposed_name:
+      custom_name: proposedName
+    run_id:
+      custom_name: runId
+    scope_label_id:
+      custom_name: scopeLabelId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    proposed_name: proposedName
+    run_id: runId
+    scope_label_id: scopeLabelId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: run
+    using:
+      foreign_key_constraint_on: run_id
+  - name: scopeLabel
+    using:
+      foreign_key_constraint_on: scope_label_id
+array_relationships:
+  - name: labels
+    using:
+      foreign_key_constraint_on:
+        column: cluster_id
+        table:
+          name: mail_cluster_labels
+          schema: minerva
+  - name: members
+    using:
+      foreign_key_constraint_on:
+        column: cluster_id
+        table:
+          name: mail_cluster_members
+          schema: minerva
+  - name: points
+    using:
+      foreign_key_constraint_on:
+        column: cluster_id
+        table:
+          name: mail_cluster_points
+          schema: minerva
+  - name: senders
+    using:
+      foreign_key_constraint_on:
+        column: cluster_id
+        table:
+          name: mail_cluster_senders
+          schema: minerva

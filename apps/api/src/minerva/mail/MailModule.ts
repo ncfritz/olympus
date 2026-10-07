@@ -54,6 +54,16 @@ import { MailMessageService } from "./services/MailMessageService";
 import { MailStatisticsService } from "./services/MailStatisticsService";
 import { MailSuggestionService } from "./services/MailSuggestionService";
 import { MailInboxService } from "./services/MailInboxService";
+import { MailClusterService } from "./services/MailClusterService";
+import { CreateMailClusterRunController } from "./controllers/CreateMailClusterRunController";
+import { CreateMailClustersController } from "./controllers/CreateMailClustersController";
+import { CreateMailClusterMembersController } from "./controllers/CreateMailClusterMembersController";
+import { CreateMailClusterPointsController } from "./controllers/CreateMailClusterPointsController";
+import { PublishMailClusterRunController } from "./controllers/PublishMailClusterRunController";
+import { GetMailClusterMapController } from "./controllers/GetMailClusterMapController";
+import { DescribeMailClusterController } from "./controllers/DescribeMailClusterController";
+import { ListMailClusterMembersController } from "./controllers/ListMailClusterMembersController";
+import { ListMailClusterSuggestionsController } from "./controllers/ListMailClusterSuggestionsController";
 import { MailSyncService } from "./services/MailSyncService";
 import { MailTrainingService } from "./services/MailTrainingService";
 import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
@@ -79,6 +89,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailStatisticsService,
     MailSuggestionService,
     MailInboxService,
+    MailClusterService,
     MailSyncService,
     MailChangeService,
     MailTrainingService,
@@ -123,6 +134,15 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailTrainingExamplesController,
     ListMailTrainingLabelsController,
     PublishMailSuggestionRunController,
+    CreateMailClusterRunController,
+    CreateMailClustersController,
+    CreateMailClusterMembersController,
+    CreateMailClusterPointsController,
+    PublishMailClusterRunController,
+    GetMailClusterMapController,
+    DescribeMailClusterController,
+    ListMailClusterMembersController,
+    ListMailClusterSuggestionsController,
     RecordMailMessageSuggestionsController,
     RunMailAuditController,
     SyncMailLabelsController,

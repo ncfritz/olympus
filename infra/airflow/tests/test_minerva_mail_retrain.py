@@ -19,18 +19,20 @@ retrain = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(retrain)
 
 
-def test_trains_then_suggests_then_scores_the_inbox_paused() -> None:
+def test_trains_suggests_scores_the_inbox_then_clusters_paused() -> None:
     dag = retrain.dag
     assert dag.is_paused_upon_creation is True
     assert dag.max_active_runs == 1
     train, suggest = dag.get_task("train"), dag.get_task("suggest")
-    inbox = dag.get_task("score_inbox")
+    inbox, cluster = dag.get_task("score_inbox"), dag.get_task("cluster")
     assert train.command == ["minerva-mail-ml-train", "run"]
     assert suggest.command == ["minerva-mail-ml-train", "suggest"]
     assert inbox.command == ["minerva-mail-ml-train", "score-inbox"]
     assert suggest.upstream_task_ids == {"train"}
+    assert cluster.command == ["minerva-mail-ml-train", "cluster"]
     assert inbox.upstream_task_ids == {"suggest"}
-    for task in (train, suggest, inbox):
+    assert cluster.upstream_task_ids == {"score_inbox"}
+    for task in (train, suggest, inbox, cluster):
         assert task.image.endswith(
             "/minerva-mail-ml:" + retrain.ENV["OLYMPUS_TAG"]
         )

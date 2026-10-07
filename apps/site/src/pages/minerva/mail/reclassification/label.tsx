@@ -42,6 +42,7 @@ import mailApi, { type MailAuditChangeSort } from "../../../../api/mailApi";
 import ChangeTag from "../../../../components/minerva/mail/audit/ChangeTag";
 import ExportButton from "../../../../components/minerva/mail/audit/ExportButton";
 import ChangeLabelsDialog from "../../../../components/minerva/mail/ChangeLabelsDialog";
+import SplitAlert from "../../../../components/minerva/mail/clusters/SplitAlert";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { apiProblems } from "../../../../utils/goals";
@@ -454,6 +455,7 @@ const MailLabelReviewPage: React.FunctionComponent = () => {
               </Text>
             </Flex>
           )}
+          <SplitAlert label={label} />
           {selected.length === 0 && openCount ? (
             <Flex
               justify={"flex-end"}

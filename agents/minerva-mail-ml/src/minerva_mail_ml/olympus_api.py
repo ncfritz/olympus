@@ -283,3 +283,34 @@ class OlympusApi:
         self._post(
             f"/suggestion-run/{run_id}/publish", {"messagesScored": messages_scored}
         )
+
+    def create_cluster_run(self, account_id: str, embedding_version: str) -> str:
+        """Begins a building run of clusters; its ID."""
+        body = self._post(
+            "/cluster-runs",
+            {"accountId": account_id, "embeddingVersion": embedding_version},
+        )
+        return body["run"]["id"]
+
+    def create_clusters(self, run_id: str, clusters: list[dict]) -> tuple[int, int]:
+        """Posts clusters as the API takes them (up to 500); (stored, skipped)."""
+        body = self._post(f"/cluster-run/{run_id}/clusters", {"clusters": clusters})
+        return body["created"], body["skipped"]
+
+    def create_cluster_members(
+        self, run_id: str, cluster: int, gmail_ids: list[str]
+    ) -> tuple[int, int]:
+        """Posts up to 5,000 of a cluster's messages; (stored, skipped)."""
+        body = self._post(
+            f"/cluster-run/{run_id}/members",
+            {"cluster": cluster, "gmailIds": gmail_ids},
+        )
+        return body["created"], body["skipped"]
+
+    def create_cluster_points(self, run_id: str, points: list[dict]) -> tuple[int, int]:
+        """Posts up to 5,000 map points; (stored, skipped)."""
+        body = self._post(f"/cluster-run/{run_id}/points", {"points": points})
+        return body["created"], body["skipped"]
+
+    def publish_cluster_run(self, run_id: str, messages: int) -> None:
+        self._post(f"/cluster-run/{run_id}/publish", {"messages": messages})

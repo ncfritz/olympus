@@ -77,6 +77,19 @@ a run (`CreateMailSuggestionRun`, `CreateMailSuggestions`,
 page beside the audit's. It needs a serving model trained on the labels as
 they are now; if they have changed since, train first.
 
+`minerva-mail-ml-train cluster` (or `--account ID`) groups the mail by its
+embeddings (phase 6; needs the archive featurized with `--embed`): the
+vectors reduced to 32 dimensions by PCA, then HDBSCAN over a sample of
+20,000, the rest joining the nearest group. Unlabelled mail is grouped,
+and so is each topic label with 300 or more messages (never a family).
+A group of 30 or more unlabelled messages whose top three sender domains
+send 80% of it suggests a new label, named after its top domain; a label
+with two or more groups of at least a tenth of it each, from different
+domains, suggests a split into sub-labels. A t-SNE map of a sample (2,000
+to 6,000 points) goes with them. All is posted to the API as a run
+(`CreateMailClusterRun`, `CreateMailClusters`, `CreateMailClusterMembers`,
+`CreateMailClusterPoints`, `PublishMailClusterRun`) for the Clusters page.
+
 `minerva-mail-ml-train report` prints each account's newest run (or
 `--run ID`): its split, the overall and per-label-mean precision and
 recall, and each label with test mail (`--all` for every label).

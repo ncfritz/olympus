@@ -1,4 +1,8 @@
 import {
+  describeMailCluster,
+  getMailClusterMap,
+  listMailClusterMembers,
+  listMailClusterSuggestions,
   approveMailMessages,
   type ApproveMailMessagesRequest,
   getMailMessageContent,
@@ -207,6 +211,33 @@ class MailApi {
   /** A message read live from Gmail, to show once. */
   async getMessageContent(accountId: string, gmailId: string) {
     return await getMailMessageContent({ path: { accountId, gmailId } });
+  }
+
+  /** The newest clustering of one mailbox, or of the last clustered. */
+  async getClusterMap(accountId?: string) {
+    return await getMailClusterMap({
+      query: accountId ? { accountId } : {},
+    });
+  }
+
+  /** A cluster, and its newest messages' metadata. */
+  async describeCluster(clusterId: string) {
+    return await describeMailCluster({ path: { clusterId } });
+  }
+
+  /** A page of a cluster's messages' Gmail IDs, and how many it has. */
+  async listClusterMembers(clusterId: string, offset = 0, limit = 5000) {
+    return await listMailClusterMembers({
+      path: { clusterId },
+      query: { offset, limit },
+    });
+  }
+
+  /** The clusters that suggest something; with `label`, its splits. */
+  async listClusterSuggestions(label?: string) {
+    return await listMailClusterSuggestions({
+      query: label ? { label } : {},
+    });
   }
 
   /** The changes as CSV, and the file name the API gives it. */

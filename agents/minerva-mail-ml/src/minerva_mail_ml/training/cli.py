@@ -9,6 +9,10 @@
                                                scored again by the newest model
     minerva-mail-ml-train learn [--account ID] learn from approvals in the
                                                inbox once, as the service does
+    minerva-mail-ml-train cluster [--account ID]
+                                               clusters of the mail by its
+                                               embeddings, and the map, posted
+                                               to the API
     minerva-mail-ml-train report [--run ID]    a run's evaluation (default:
                                                each account's newest run)
 
@@ -26,6 +30,7 @@ import sys
 from minerva_mail_ml.config import ConfigError, read_config
 from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import OlympusApi
+from minerva_mail_ml.training.clusters import ClusterError, cluster_account
 from minerva_mail_ml.training.online import learn_account, score_inbox
 from minerva_mail_ml.training.pipeline import (
     TrainingError,
@@ -119,6 +124,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Learn from approvals in the inbox once, as the service does",
     )
     learn.add_argument("--account", help="Only this mail account ID")
+    clusters = commands.add_parser(
+        "cluster",
+        help="Clusters of the mail by its embeddings, and the map, posted to the API",
+    )
+    clusters.add_argument("--account", help="Only this mail account ID")
     shown = commands.add_parser("report", help="A run's evaluation")
     shown.add_argument("--run", help="This run (default: each account's newest)")
     shown.add_argument(
@@ -179,6 +189,8 @@ def main(argv: list[str] | None = None) -> int:
                         logger.info(
                             "Account %s: scored %d in the inbox", account, scored
                         )
+                    elif args.command == "cluster":
+                        cluster_account(store, api, account)
                     elif args.command == "learn":
                         learned = learn_account(store, registry, models, api, account)
                         logger.info(
@@ -192,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     else:
                         train_account(store, registry, api, account, jobs=args.jobs)
-                except (TrainingError, SuggestError) as error:
+                except (TrainingError, SuggestError, ClusterError) as error:
                     # Not enough mail yet is not an outage; the run says why.
                     logger.warning("Account %s: nothing done: %s", account, error)
                 except Exception:

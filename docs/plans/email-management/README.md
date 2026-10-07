@@ -96,18 +96,18 @@ Secrets arrive as `NAME_FILE` (ADR 0019). Each variable goes into the
 service's `readConfig()` or `configuration.ts`, its `*.env.example`, its
 README table and `infra/docker/env/<env>/`.
 
-| Service           | Variable                      | Default                | What                                                            |
-| ----------------- | ----------------------------- | ---------------------- | --------------------------------------------------------------- |
-| `minerva-mail`    | `GOOGLE_CLIENT_ID`            | —                      | Mail's own OAuth client, not the calendar agent's               |
-| `minerva-mail`    | `GOOGLE_CLIENT_SECRET`        | —                      | Secret `google_mail_client_secret`                              |
-| `minerva-mail`    | `MAIL_QUOTA_UNITS_PER_SECOND` | `150`                  | Kept under Gmail's per-user limit                               |
-| `minerva-mail`    | `MAIL_HISTORY_POLL_SECONDS`   | `60`                   | Incremental sync interval                                       |
-| `minerva-mail`    | `MAIL_WRITES_ENABLED`         | `false`                | Until phase 4; without it, write requests answer 503            |
-| `minerva-mail`    | `MAIL_ML_URL`                 | —                      | The classifier                                                  |
-| `minerva-mail-ml` | `OLYMPUS_API_URL`             | —                      | Metadata and suggestions                                        |
-| `minerva-mail-ml` | `MAIL_ML_STORE`               | `/data/mail-ml.sqlite` | The feature store, on the service's volume                      |
-| `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, no embeddings and no neighbours layer      |
-| `api`             | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked  |
+| Service           | Variable                      | Default                | What                                                           |
+| ----------------- | ----------------------------- | ---------------------- | -------------------------------------------------------------- |
+| `minerva-mail`    | `GOOGLE_CLIENT_ID`            | —                      | Mail's own OAuth client, not the calendar agent's              |
+| `minerva-mail`    | `GOOGLE_CLIENT_SECRET`        | —                      | Secret `google_mail_client_secret`                             |
+| `minerva-mail`    | `MAIL_QUOTA_UNITS_PER_SECOND` | `150`                  | Kept under Gmail's per-user limit                              |
+| `minerva-mail`    | `MAIL_HISTORY_POLL_SECONDS`   | `60`                   | Incremental sync interval                                      |
+| `minerva-mail`    | `MAIL_WRITES_ENABLED`         | `false`                | Until phase 4; without it, write requests answer 503           |
+| `minerva-mail`    | `MAIL_ML_URL`                 | —                      | The classifier                                                 |
+| `minerva-mail-ml` | `OLYMPUS_API_URL`             | —                      | Metadata and suggestions                                       |
+| `minerva-mail-ml` | `MAIL_ML_STORE`               | `/data/mail-ml.sqlite` | The feature store, on the service's volume                     |
+| `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, no embeddings and no neighbours layer    |
+| `api`             | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked |
 
 ## Phase 0 — Decision and scaffolding — done 2026-10-05
 
@@ -612,8 +612,8 @@ left until phase 5 has decisions to measure them against.
    5 · already on 7"; one batch per mailbox. A label's review shows its
    processed bar. **Not yet**: "Often used for this sender" (nothing serves
    a sender's label history; it matters most for one message, the Inbox's
-   panel in phase 5), the split alert (split suggestions come with
-   clustering, phase 6), and the picker's Tab and ⌘↵ keys (design.md,
+   panel in phase 5), the split alert (built with clustering, phase 6),
+   and the picker's Tab and ⌘↵ keys (design.md,
    Open 1).
 
 **Sign-off:** M6, M7, M8.
@@ -748,9 +748,45 @@ left until phase 5 has decisions to measure them against.
    the index. Runs report the embedding version and how many messages had
    a vector.
 2. HDBSCAN over unlabelled mail and within large labels; a 2-D map of
-   sample points per run.
-3. New-label and split suggestions from the clusters.
-4. **Site**: the Clusters page.
+   sample points per run. **Built** 2026-10-06:
+   `minerva-mail-ml-train cluster` (the nightly DAG's fourth task, after
+   inbox scoring) reads the serving features and embeddings, reduces the
+   vectors to 32 dimensions (PCA) and runs HDBSCAN on a sample of at most
+   20,000 per scope, the rest joining the nearest group within its usual
+   radius. Scopes: the unlabelled mail, and each topic label with 300 or
+   more messages (a family's mail is one kind in different states, so
+   never). The map is t-SNE over about one message in 50 (2,000 to 6,000
+   points). `1791340000000_minerva_mail_clusters`: a run per account
+   (`mail_cluster_runs`), its clusters with label and sender counts, their
+   members and the map's points; posted by `CreateMailClusterRun`,
+   `CreateMailClusters`, `CreateMailClusterMembers`,
+   `CreateMailClusterPoints` and `PublishMailClusterRun` (agents only),
+   which drops the account's runs before it. Synthetic mailbox: about six
+   seconds for 6,000 messages.
+3. New-label and split suggestions from the clusters. **Built**: a group
+   of 30 or more unlabelled messages whose top three sender domains send
+   80% of it suggests a new label named after its top domain; a label with
+   two or more groups of at least a tenth of it each, whose top senders'
+   domains differ, suggests each as a sub-label (`Travel/Air`). Read by
+   `GetMailClusterMap`, `DescribeMailCluster` (its 20 newest messages'
+   metadata), `ListMailClusterMembers` (its Gmail IDs, 5,000 a page) and
+   `ListMailClusterSuggestions` (`?label=` for one label's splits).
+   Applying one is an ordinary `ApplyMailChanges` with `newLabels`: a new
+   label added to the cluster's messages, or a split's messages moved from
+   the label into the sub-label, 10,000 a batch, each undoable.
+4. **Site**: the Clusters page. **Built**: the map (Highcharts scatter, a
+   colour per top-level label, the busiest ten, then other labels and
+   unlabelled; the 15 largest clusters, those suggesting first, named
+   where they sit; zoom by dragging); selecting a dot or a name shows the
+   cluster in the side panel, its label mix, purity, top senders, newest
+   messages and suggestion (Create label or Create sub-label, and a link
+   to its re-classification), then the clusters worth a look. The cluster
+   and mailbox are in the address (`?cluster=`, `?accountId=`). A label's
+   review shows the split alert from phase 4 step 4: the proposed
+   sub-labels and their counts, Preview (the map, on the first group) and
+   Create sub-labels. **Not yet**: the Re-classification page's split
+   count and the label tree's "split suggested" flag; colouring by
+   suggested label.
 
 **Sign-off:** M11.
 

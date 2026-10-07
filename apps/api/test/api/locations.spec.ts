@@ -619,7 +619,9 @@ describe("Location headers of created resources", () => {
     // AddCalendar, whose calendar is listed but not described alone, nor
     // CreateMailLabelFamily, whose families are listed only (mailLabels),
     // nor CreateMailSuggestionRun and CreateMailSuggestions, whose runs and
-    // suggestions the classifier only writes (mailSuggestions).
+    // suggestions the classifier only writes (mailSuggestions), nor the
+    // cluster runs' creates, whose runs are read only as the newest map
+    // (mailClusters).
     // ApplyMailChanges, UndoMailChangeBatch and MergeMailLabels need a
     // signed-in caller too; mailChanges asserts their Location headers.
     const exempt = [
@@ -648,6 +650,10 @@ describe("Location headers of created resources", () => {
       "CreateMailLabelFamily",
       "CreateMailSuggestionRun",
       "CreateMailSuggestions",
+      "CreateMailClusterRun",
+      "CreateMailClusters",
+      "CreateMailClusterMembers",
+      "CreateMailClusterPoints",
       "ApplyMailChanges",
       "UndoMailChangeBatch",
       "MergeMailLabels",

@@ -299,6 +299,18 @@
     "Unchanged": "unchanged",
     "Written": "written"
   },
+  "MailClusterRunStatus": {
+    "Building": "building",
+    "Ready": "ready"
+  },
+  "MailClusterScope": {
+    "Label": "label",
+    "Unlabelled": "unlabelled"
+  },
+  "MailClusterSuggestion": {
+    "NewLabel": "new-label",
+    "Split": "split"
+  },
   "MailDecision": {
     "Applied": "applied",
     "Dismissed": "dismissed"
