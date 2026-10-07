@@ -3,6 +3,7 @@ import type { Moment } from "moment";
 import { PaginatedResults } from "../../common";
 import { ApiTimestamp } from "../../decorators";
 import { MailChangeBatch } from "./changes";
+import { MailPaymentMatch } from "./payments";
 import { MailStarIcon } from "./sync";
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -221,6 +222,14 @@ export class MailInboxMessage {
       "For an approval, whether the labels were other than the ticked suggestion's",
   })
   amended?: boolean;
+
+  @ApiProperty({
+    type: () => MailPaymentMatch,
+    required: false,
+    description:
+      "When it reads as a payment of an open bill: the bill, and the state it moves to",
+  })
+  payment?: MailPaymentMatch;
 }
 
 /** The inbox's statistics strip. */

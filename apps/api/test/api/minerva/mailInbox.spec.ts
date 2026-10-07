@@ -241,6 +241,40 @@ describe("Mail inbox", () => {
       expect(vars.orderBy).toEqual([{ receivedTime: "desc" }]);
     });
 
+    it("carries the open bill a payment confirmation pays", async () => {
+      page([
+        row({
+          payment: {
+            accountId: ACCOUNT_ID,
+            confirmationGmailId: "1a",
+            confirmedTime: "2026-10-06T08:00:00+00:00",
+            billGmailId: "0b",
+            billReceivedTime: "2026-09-20T08:00:00+00:00",
+            fromLabel: "Bills/*Payable",
+            toLabel: "Bills/*Paid",
+            billStarred: false,
+            bill: {
+              subject: "Your bill",
+              fromAddress: "billing@power.example",
+            },
+          },
+        }),
+      ]);
+      const res = await list();
+      expect(res.body.messages[0].payment).toEqual({
+        accountId: ACCOUNT_ID,
+        confirmationGmailId: "1a",
+        confirmedTime: "2026-10-06T08:00:00.000Z",
+        billGmailId: "0b",
+        billSubject: "Your bill",
+        billFromAddress: "billing@power.example",
+        billReceivedTime: "2026-09-20T08:00:00.000Z",
+        fromLabel: "Bills/*Payable",
+        toLabel: "Bills/*Paid",
+        billStarred: false,
+      });
+    });
+
     it("filters by search, confidence and account, most confident first", async () => {
       page([]);
 

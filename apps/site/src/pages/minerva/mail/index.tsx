@@ -38,6 +38,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import mailApi, { type MailInboxSort } from "../../../api/mailApi";
 import InboxStrip from "../../../components/minerva/mail/InboxStrip";
+import OpenBills from "../../../components/minerva/mail/OpenBills";
 import {
   CurrentLabels,
   SuggestedLabels,
@@ -302,6 +303,7 @@ const MailInboxPage: React.FunctionComponent = () => {
             />
           )}
           <InboxStrip summary={summary} loading={!inbox && loading} />
+          <OpenBills />
 
           <Flex justify={"space-between"} align={"center"} wrap={true} gap={12}>
             <Segmented

@@ -1,4 +1,8 @@
 import {
+  dismissMailPaymentMatches,
+  listMailOpenBills,
+  listMailPaymentMatches,
+  type MailPaymentPair,
   listMailStarMismatches,
   type MailStarFix,
   describeMailCluster,
@@ -239,6 +243,33 @@ class MailApi {
   async listClusterSuggestions(label?: string) {
     return await listMailClusterSuggestions({
       query: label ? { label } : {},
+    });
+  }
+
+  /** Payment confirmations and the open bills they pay. */
+  async listPaymentMatches(query: {
+    accountId?: string;
+    inInbox?: boolean;
+    offset?: number;
+    limit?: number;
+  }) {
+    return await listMailPaymentMatches({ query });
+  }
+
+  /** Messages in an open state, oldest first, and their ages. */
+  async listOpenBills(query: {
+    accountId?: string;
+    offset?: number;
+    limit?: number;
+  }) {
+    return await listMailOpenBills({ query });
+  }
+
+  /** Records pairs as not a bill and its payment; Gmail unchanged. */
+  async dismissPaymentMatches(accountId: string, pairs: MailPaymentPair[]) {
+    return await dismissMailPaymentMatches({
+      path: { accountId },
+      body: { pairs },
     });
   }
 

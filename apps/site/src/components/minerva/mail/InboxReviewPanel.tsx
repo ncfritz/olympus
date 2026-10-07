@@ -38,6 +38,7 @@ import {
   pickerSuggestionsOf,
   reasonOf,
 } from "../../../utils/mailInbox";
+import { paymentChange, paymentText } from "../../../utils/mailPayments";
 import {
   loadFromLocalStorage,
   storeToLocalStorage,
@@ -105,10 +106,16 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
   const [recent, setRecent] = useState<string[]>([]);
   const [options, setOptions] = useApproveOptions();
   const [busy, setBusy] = useState<"approve" | "skip">();
+  /** A payment's bill: marked paid with the approval, or declined. */
+  const [markPaid, setMarkPaid] = useState(true);
+  const [notThisBill, setNotThisBill] = useState(false);
+  const payment = notThisBill ? undefined : m.payment;
 
   useEffect(() => {
     setWants(initialWants(m));
     setCreated([]);
+    setMarkPaid(true);
+    setNotThisBill(false);
   }, [m.accountId, m.gmailId]);
   useEffect(() => {
     setRecent(loadFromLocalStorage<string[]>(RECENT_KEY, []));
@@ -147,6 +154,15 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
       } catch {
         // Recent labels are a convenience.
       }
+      if (payment && markPaid) {
+        try {
+          await mailApi.applyChanges(m.accountId, [paymentChange(payment)]);
+        } catch (error) {
+          toast.error(
+            `The bill was not marked: ${apiProblems(error).join(" ")}`,
+          );
+        }
+      }
       onDone(m, {
         kind: "approved",
         ...(result.batch ? { batch: result.batch } : {}),
@@ -159,6 +175,22 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
       toast.error(apiProblems(error).join(" "));
     } finally {
       setBusy(undefined);
+    }
+  };
+
+  /** The payment is not that bill's: the one before is offered next time. */
+  const declineBill = async () => {
+    if (!m.payment) return;
+    try {
+      await mailApi.dismissPaymentMatches(m.accountId, [
+        {
+          confirmationGmailId: m.payment.confirmationGmailId,
+          billGmailId: m.payment.billGmailId,
+        },
+      ]);
+      setNotThisBill(true);
+    } catch (error) {
+      toast.error(apiProblems(error).join(" "));
     }
   };
 
@@ -183,6 +215,40 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
         )}
         {m.threadSize > 1 ? ` · ${m.threadSize} in thread` : ""}
       </Text>
+      {payment && (
+        <Flex
+          vertical={true}
+          gap={4}
+          style={{
+            border: "1px solid #ffd591",
+            background: "#fff7e6",
+            borderRadius: 6,
+            padding: "6px 10px",
+          }}
+        >
+          <Checkbox
+            checked={markPaid}
+            onChange={(e) => setMarkPaid(e.target.checked)}
+          >
+            A payment: {paymentText(payment)}
+          </Checkbox>
+          <Text type={"secondary"} style={{ fontSize: 12 }}>
+            {payment.billFromAddress ? `${payment.billFromAddress} · ` : ""}
+            {payment.fromLabel} → {payment.toLabel}
+            {payment.billStarred
+              ? "; then set its done star in Gmail"
+              : ""}{" "}
+            <Button
+              type={"link"}
+              size={"small"}
+              style={{ padding: 0, height: "auto" }}
+              onClick={() => void declineBill()}
+            >
+              Not this bill
+            </Button>
+          </Text>
+        </Flex>
+      )}
       {m.suggestions.length === 0 ? (
         <Text type={"secondary"}>
           {m.scoredTime

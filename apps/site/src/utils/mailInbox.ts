@@ -57,7 +57,13 @@ export const suggestedAdds = (m: MailInboxMessage): string[] =>
 
 /** The picker's starting point: the ticked suggestion, to be applied. */
 export const initialWants = (m: MailInboxMessage): LabelWants =>
-  Object.fromEntries(suggestedAdds(m).map((l) => [l, "all" as const]));
+  Object.fromEntries(
+    suggestedAdds(m)
+      // A payment is not itself a bill: its sender's open state is the
+      // bill's, which the payment moves on instead.
+      .filter((l) => l !== m.payment?.fromLabel)
+      .map((l) => [l, "all" as const]),
+  );
 
 export const pickerMessageOf = (m: MailInboxMessage): PickerMessage => ({
   gmailId: m.gmailId,

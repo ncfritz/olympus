@@ -845,7 +845,22 @@ already finds each starred message's icon).
    Shown on the confirmation in the inbox's review panel and the home
    widget ("Marks _Your bill_ of Sep 3 Paid"), approved with it; and the
    inbox page lists open payables by age. Computed on read from the
-   messages, nothing stored but the decision.
+   messages, nothing stored but the decision. **Built** 2026-10-07:
+   `1791360000000_minerva_mail_payments` (`mail_reads_as_payment`, the
+   wording; the views `mail_payment_matches` and `mail_open_states`;
+   `mail_payment_dismissals`, a pair declined, after which the bill
+   before is offered); `ListMailPaymentMatches`, `ListMailOpenBills`,
+   `DismissMailPaymentMatches`; each inbox message carries its `payment`.
+   The review panel (Inbox and home widget) shows "A payment: Marks _Your
+   October bill_ of Sep 28 Paid", ticked, with Not this bill; approving
+   writes the bill's move as its own batch, and the confirmation does not
+   start with the bill's open state ticked (approving without it records
+   an amendment, which the classifier learns from). The Inbox page's open
+   bills fold under the strip: counts under 30 days, 30 to 90 and older,
+   oldest first, each with Mark Paid. On the synthetic mailbox (275,358
+   messages) the matches over the whole mailbox take about 1.2 s; the
+   inbox's own are looked up by message. Accept all ≥ 90% does not mark
+   bills.
 3. **Learned confirmations**: once the rules have matched for a while, the
    pairs Neil approved and declined train a confirmation target, which
    also catches what the wording misses; the rules stay as the reason.

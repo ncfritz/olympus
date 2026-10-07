@@ -23,6 +23,11 @@ import {
 } from "@ncfritz/olympus-model";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
+import {
+  type GraphQlPaymentMatch,
+  PAYMENT_MATCH_FIELDS,
+  toPaymentMatch,
+} from "../converters/MailPaymentConverter";
 import { MAIL_FLAG_LABELS, MailChangeService } from "./MailChangeService";
 import { MinervaMailAgentClient } from "./MinervaMailAgentClient";
 
@@ -79,6 +84,7 @@ type GraphQlInboxRow = {
       }[];
     } | null;
   };
+  payment: GraphQlPaymentMatch | null;
 };
 
 /** A message an action touches, as Minerva has it. */
@@ -161,6 +167,7 @@ const toMessage = (r: GraphQlInboxRow): MailInboxMessage => {
     ...(r.decision === MailInboxDecision.Approved && r.amended !== null
       ? { amended: r.amended }
       : {}),
+    ...(r.payment ? { payment: toPaymentMatch(r.payment) } : {}),
   };
 };
 
@@ -339,6 +346,9 @@ export class MailInboxService {
           decision
           decidedTime
           amended
+          payment {
+            ${PAYMENT_MATCH_FIELDS}
+          }
           message {
             fromName
             fromAddress

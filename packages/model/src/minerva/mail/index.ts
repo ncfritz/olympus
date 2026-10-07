@@ -17,3 +17,4 @@ export * from "./changes";
 export * from "./inbox";
 export * from "./clusters";
 export * from "./stars";
+export * from "./payments";

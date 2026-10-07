@@ -9784,6 +9784,223 @@
         ]
       }
     },
+    "/minerva/mail/payment-matches": {
+      "get": {
+        "description": "Transitions from payments (docs/plans/email-management phase 7): a message whose subject or snippet reads as a payment made, paired with the newest message before it (within 90 days, from the same sender or domain) in an open state with a transition to a closed one; the pair suggests moving the bill (`Bills/*Payable` to `Bills/*Paid`), applied as an ApplyMailChanges on the bill. A pair declined with DismissMailPaymentMatches gives way to the bill before. Newest confirmation first, up to 500 a page. Computed on read over the whole mailbox: `inInbox=true` keeps it to the inbox's confirmations and is quick.",
+        "operationId": "ListMailPaymentMatches",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "How many to pass over",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "At most this many, up to 500",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "inInbox",
+            "required": false,
+            "in": "query",
+            "description": "Only those whose confirmation is in the inbox, or is not",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "Only this mail account's",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of matches, and how many there are.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailPaymentMatchesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists payment confirmations and the open bills they pay",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/open-bills": {
+      "get": {
+        "description": "The inbox's open payables (docs/plans/email-management phase 7): every message in an open state (`Bills/*Payable`), with the closed state its family's transition leads to and its star, oldest first, up to 500 a page; and how many have been open under 30 days, 30 to 90, and longer.",
+        "operationId": "ListMailOpenBills",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "How many to pass over",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "At most this many, up to 500",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "Only this mail account's",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of open bills, and their ages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailOpenBillsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the messages in an open state, oldest first",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/payment-matches/dismiss": {
+      "post": {
+        "description": "Up to 1000 pairs, each a confirmation and a bill by Gmail ID, recorded as not a bill and its payment (docs/plans/email-management phase 7); the confirmation is then matched with the open bill before, if any. A pair naming a message the account does not have is left out. Gmail is not changed.",
+        "operationId": "DismissMailPaymentMatches",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the DismissMailPaymentMatches operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissMailPaymentMatchesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The pairs were recorded as declined.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissMailPaymentMatchesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's."
+          }
+        },
+        "summary": "Declines payment matches",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/cluster-runs": {
       "post": {
         "description": "For the mail classifier (docs/plans/email-management phase 6): a run for one account and embedding version, building until it is published. Its clusters, members and map points are posted to it and show nowhere until PublishMailClusterRun.",
@@ -18302,6 +18519,61 @@
           "skipped"
         ]
       },
+      "MailPaymentMatch": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The account"
+          },
+          "confirmationGmailId": {
+            "type": "string",
+            "description": "The confirmation's Gmail ID"
+          },
+          "confirmedTime": {
+            "type": "string",
+            "description": "When the confirmation was received"
+          },
+          "billGmailId": {
+            "type": "string",
+            "description": "The bill's Gmail ID"
+          },
+          "billSubject": {
+            "type": "string",
+            "description": "The bill's subject"
+          },
+          "billFromAddress": {
+            "type": "string",
+            "description": "The bill's sender"
+          },
+          "billReceivedTime": {
+            "type": "string",
+            "description": "When the bill was received"
+          },
+          "fromLabel": {
+            "type": "string",
+            "description": "The bill's open state now, by full name"
+          },
+          "toLabel": {
+            "type": "string",
+            "description": "The closed state it moves to, by full name"
+          },
+          "billStarred": {
+            "type": "boolean",
+            "description": "Whether the bill is starred (its star to change to done)"
+          }
+        },
+        "required": [
+          "accountId",
+          "confirmationGmailId",
+          "confirmedTime",
+          "billGmailId",
+          "billReceivedTime",
+          "fromLabel",
+          "toLabel",
+          "billStarred"
+        ]
+      },
       "MailInboxMessage": {
         "type": "object",
         "properties": {
@@ -18398,6 +18670,14 @@
           "amended": {
             "type": "boolean",
             "description": "For an approval, whether the labels were other than the ticked suggestion's"
+          },
+          "payment": {
+            "description": "When it reads as a payment of an open bill: the bill, and the state it moves to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailPaymentMatch"
+              }
+            ]
           }
         },
         "required": [
@@ -19728,6 +20008,173 @@
           "mismatches",
           "count",
           "counts"
+        ]
+      },
+      "ListMailPaymentMatchesResponse": {
+        "type": "object",
+        "properties": {
+          "matches": {
+            "description": "A page of matches, newest confirmation first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailPaymentMatch"
+            }
+          },
+          "count": {
+            "type": "number",
+            "description": "How many match the filters"
+          }
+        },
+        "required": [
+          "matches",
+          "count"
+        ]
+      },
+      "MailOpenBill": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The account"
+          },
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When it was received"
+          },
+          "label": {
+            "type": "string",
+            "description": "Its open state, by full name"
+          },
+          "toLabel": {
+            "type": "string",
+            "description": "The closed state its transition leads to; absent when the family has none from it"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Starred now"
+          },
+          "starIcon": {
+            "description": "Its star icon, when sync found one",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
+              }
+            ]
+          }
+        },
+        "required": [
+          "accountId",
+          "gmailId",
+          "receivedTime",
+          "label",
+          "starred"
+        ]
+      },
+      "MailOpenBillAges": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "number",
+            "description": "Under 30 days"
+          },
+          "quarter": {
+            "type": "number",
+            "description": "30 to 90 days"
+          },
+          "older": {
+            "type": "number",
+            "description": "Over 90 days"
+          }
+        },
+        "required": [
+          "month",
+          "quarter",
+          "older"
+        ]
+      },
+      "ListMailOpenBillsResponse": {
+        "type": "object",
+        "properties": {
+          "bills": {
+            "description": "A page of open bills, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailOpenBill"
+            }
+          },
+          "count": {
+            "type": "number",
+            "description": "All of them"
+          },
+          "ages": {
+            "description": "How long they have been open",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailOpenBillAges"
+              }
+            ]
+          }
+        },
+        "required": [
+          "bills",
+          "count",
+          "ages"
+        ]
+      },
+      "MailPaymentPair": {
+        "type": "object",
+        "properties": {
+          "confirmationGmailId": {
+            "type": "string",
+            "description": "The confirmation's Gmail ID"
+          },
+          "billGmailId": {
+            "type": "string",
+            "description": "The bill's Gmail ID"
+          }
+        },
+        "required": [
+          "confirmationGmailId",
+          "billGmailId"
+        ]
+      },
+      "DismissMailPaymentMatchesRequest": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "description": "Up to 1,000 pairs that are not a bill and its payment",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailPaymentPair"
+            }
+          }
+        },
+        "required": [
+          "pairs"
+        ]
+      },
+      "DismissMailPaymentMatchesResponse": {
+        "type": "object",
+        "properties": {
+          "dismissed": {
+            "type": "number",
+            "description": "Pairs recorded as declined"
+          }
+        },
+        "required": [
+          "dismissed"
         ]
       },
       "CreateMailClusterRunRequest": {

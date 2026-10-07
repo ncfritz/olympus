@@ -53,6 +53,22 @@ describe("approving", () => {
     ]);
   });
 
+  it("does not start a payment off as the bill it pays", () => {
+    const m = message({
+      suggestions: [
+        {
+          label: "Bills/*Payable",
+          score: 0.97,
+          ticked: true,
+          onMessage: false,
+        },
+        { label: "Finance", score: 0.9, ticked: true, onMessage: false },
+      ],
+      payment: { fromLabel: "Bills/*Payable", toLabel: "Bills/*Paid" },
+    } as unknown as Partial<MailInboxMessage>);
+    expect(initialWants(m)).toEqual({ Finance: "all" });
+  });
+
   it("writes what the picker adds and takes off, creating what it made", () => {
     const m = message();
     expect(

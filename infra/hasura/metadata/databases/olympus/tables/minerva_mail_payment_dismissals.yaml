@@ -1,0 +1,26 @@
+table:
+  name: mail_payment_dismissals
+  schema: minerva
+configuration:
+  column_config:
+    bill_id:
+      custom_name: billId
+    confirmation_id:
+      custom_name: confirmationId
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    bill_id: billId
+    confirmation_id: confirmationId
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: bill
+    using:
+      foreign_key_constraint_on: bill_id
+  - name: confirmation
+    using:
+      foreign_key_constraint_on: confirmation_id

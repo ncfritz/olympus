@@ -1,0 +1,74 @@
+table:
+  name: mail_payment_matches
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    bill_gmail_id:
+      custom_name: billGmailId
+    bill_id:
+      custom_name: billId
+    bill_received_at:
+      custom_name: billReceivedTime
+    bill_starred:
+      custom_name: billStarred
+    confirmation_gmail_id:
+      custom_name: confirmationGmailId
+    confirmation_id:
+      custom_name: confirmationId
+    confirmation_in_inbox:
+      custom_name: confirmationInInbox
+    confirmed_at:
+      custom_name: confirmedTime
+    from_label:
+      custom_name: fromLabel
+    from_label_id:
+      custom_name: fromLabelId
+    to_label:
+      custom_name: toLabel
+    to_label_id:
+      custom_name: toLabelId
+  custom_column_names:
+    account_id: accountId
+    bill_gmail_id: billGmailId
+    bill_id: billId
+    bill_received_at: billReceivedTime
+    bill_starred: billStarred
+    confirmation_gmail_id: confirmationGmailId
+    confirmation_id: confirmationId
+    confirmation_in_inbox: confirmationInInbox
+    confirmed_at: confirmedTime
+    from_label: fromLabel
+    from_label_id: fromLabelId
+    to_label: toLabel
+    to_label_id: toLabelId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva
+  - name: bill
+    using:
+      manual_configuration:
+        column_mapping:
+          bill_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_messages
+          schema: minerva
+  - name: confirmation
+    using:
+      manual_configuration:
+        column_mapping:
+          confirmation_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_messages
+          schema: minerva

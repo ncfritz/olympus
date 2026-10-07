@@ -6586,6 +6586,33 @@
     ],
     "type": "object"
   },
+  "DismissMailPaymentMatchesRequest": {
+    "properties": {
+      "pairs": {
+        "description": "Up to 1,000 pairs that are not a bill and its payment",
+        "items": {
+          "$ref": "#/components/schemas/MailPaymentPair"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "pairs"
+    ],
+    "type": "object"
+  },
+  "DismissMailPaymentMatchesResponse": {
+    "properties": {
+      "dismissed": {
+        "description": "Pairs recorded as declined",
+        "type": "number"
+      }
+    },
+    "required": [
+      "dismissed"
+    ],
+    "type": "object"
+  },
   "DismissMailProposalsRequest": {
     "properties": {
       "proposals": {
@@ -10506,6 +10533,55 @@
     ],
     "type": "object"
   },
+  "ListMailOpenBillsResponse": {
+    "properties": {
+      "ages": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailOpenBillAges"
+          }
+        ],
+        "description": "How long they have been open"
+      },
+      "bills": {
+        "description": "A page of open bills, oldest first",
+        "items": {
+          "$ref": "#/components/schemas/MailOpenBill"
+        },
+        "type": "array"
+      },
+      "count": {
+        "description": "All of them",
+        "type": "number"
+      }
+    },
+    "required": [
+      "ages",
+      "bills",
+      "count"
+    ],
+    "type": "object"
+  },
+  "ListMailPaymentMatchesResponse": {
+    "properties": {
+      "count": {
+        "description": "How many match the filters",
+        "type": "number"
+      },
+      "matches": {
+        "description": "A page of matches, newest confirmation first",
+        "items": {
+          "$ref": "#/components/schemas/MailPaymentMatch"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "count",
+      "matches"
+    ],
+    "type": "object"
+  },
   "ListMailStarMismatchesResponse": {
     "properties": {
       "count": {
@@ -12608,6 +12684,14 @@
         },
         "type": "array"
       },
+      "payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailPaymentMatch"
+          }
+        ],
+        "description": "When it reads as a payment of an open bill: the bill, and the state it moves to"
+      },
       "receivedTime": {
         "description": "When Gmail received it",
         "type": "string"
@@ -13344,6 +13428,152 @@
       "sent",
       "starred",
       "unread"
+    ],
+    "type": "object"
+  },
+  "MailOpenBill": {
+    "properties": {
+      "accountId": {
+        "description": "The account",
+        "type": "string"
+      },
+      "fromAddress": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "label": {
+        "description": "Its open state, by full name",
+        "type": "string"
+      },
+      "receivedTime": {
+        "description": "When it was received",
+        "type": "string"
+      },
+      "starIcon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "Its star icon, when sync found one"
+      },
+      "starred": {
+        "description": "Starred now",
+        "type": "boolean"
+      },
+      "subject": {
+        "description": "The subject",
+        "type": "string"
+      },
+      "toLabel": {
+        "description": "The closed state its transition leads to; absent when the family has none from it",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "gmailId",
+      "label",
+      "receivedTime",
+      "starred"
+    ],
+    "type": "object"
+  },
+  "MailOpenBillAges": {
+    "properties": {
+      "month": {
+        "description": "Under 30 days",
+        "type": "number"
+      },
+      "older": {
+        "description": "Over 90 days",
+        "type": "number"
+      },
+      "quarter": {
+        "description": "30 to 90 days",
+        "type": "number"
+      }
+    },
+    "required": [
+      "month",
+      "older",
+      "quarter"
+    ],
+    "type": "object"
+  },
+  "MailPaymentMatch": {
+    "properties": {
+      "accountId": {
+        "description": "The account",
+        "type": "string"
+      },
+      "billFromAddress": {
+        "description": "The bill's sender",
+        "type": "string"
+      },
+      "billGmailId": {
+        "description": "The bill's Gmail ID",
+        "type": "string"
+      },
+      "billReceivedTime": {
+        "description": "When the bill was received",
+        "type": "string"
+      },
+      "billStarred": {
+        "description": "Whether the bill is starred (its star to change to done)",
+        "type": "boolean"
+      },
+      "billSubject": {
+        "description": "The bill's subject",
+        "type": "string"
+      },
+      "confirmationGmailId": {
+        "description": "The confirmation's Gmail ID",
+        "type": "string"
+      },
+      "confirmedTime": {
+        "description": "When the confirmation was received",
+        "type": "string"
+      },
+      "fromLabel": {
+        "description": "The bill's open state now, by full name",
+        "type": "string"
+      },
+      "toLabel": {
+        "description": "The closed state it moves to, by full name",
+        "type": "string"
+      }
+    },
+    "required": [
+      "accountId",
+      "billGmailId",
+      "billReceivedTime",
+      "billStarred",
+      "confirmationGmailId",
+      "confirmedTime",
+      "fromLabel",
+      "toLabel"
+    ],
+    "type": "object"
+  },
+  "MailPaymentPair": {
+    "properties": {
+      "billGmailId": {
+        "description": "The bill's Gmail ID",
+        "type": "string"
+      },
+      "confirmationGmailId": {
+        "description": "The confirmation's Gmail ID",
+        "type": "string"
+      }
+    },
+    "required": [
+      "billGmailId",
+      "confirmationGmailId"
     ],
     "type": "object"
   },
