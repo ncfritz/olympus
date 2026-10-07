@@ -44,6 +44,12 @@ import {
 } from "./MinervaMailAgentClient";
 
 export const MAX_CHANGES = 10_000;
+/**
+ * Gmail's flags a batch may add or remove besides user labels: taking INBOX
+ * off archives, taking UNREAD off marks read. Their ID is their name, and
+ * Gmail reserves the names, so no user label has them.
+ */
+export const MAIL_FLAG_LABELS = ["INBOX", "UNREAD"];
 /** Messages a merge moves at most, in one batch. */
 export const MAX_MERGE = 50_000;
 const LABEL_NAME_MAX = 225;
@@ -851,9 +857,9 @@ export class MailChangeService {
       // still have.
       const after = [
         ...new Set(
-          [...had.filter((l) => !remove.includes(l)), ...add].map((n) =>
-            renamed(n, renames),
-          ),
+          [...had.filter((l) => !remove.includes(l)), ...add]
+            .filter((n) => !MAIL_FLAG_LABELS.includes(n))
+            .map((n) => renamed(n, renames)),
         ),
       ].sort();
       return {
@@ -1418,17 +1424,31 @@ export class MailChangeService {
   }
 
   /**
-   * The labels by name, every one a user label Gmail has, or one the batch
-   * creates first.
+   * The labels by name, every one a user label Gmail has, one the batch
+   * creates first, or one of Gmail's flags a batch may write (INBOX,
+   * UNREAD), whose ID is its name.
    */
   private async writableLabels(
     accountId: string,
     names: string[],
     creating: string[] = [],
   ): Promise<Map<string, GraphQlLabel>> {
-    const labels = await this.labelsByName(accountId, names);
+    const labels = await this.labelsByName(
+      accountId,
+      names.filter((n) => !MAIL_FLAG_LABELS.includes(n)),
+    );
+    for (const flag of MAIL_FLAG_LABELS) {
+      if (names.includes(flag)) {
+        labels.set(flag, {
+          id: "",
+          name: flag,
+          type: "system",
+          gmailLabelId: flag,
+        });
+      }
+    }
     const missing = [...new Set(names)].filter((n) => {
-      if (creating.includes(n)) return false;
+      if (creating.includes(n) || MAIL_FLAG_LABELS.includes(n)) return false;
       const l = labels.get(n);
       return !l || l.type !== "user" || !l.gmailLabelId;
     });
@@ -1658,6 +1678,14 @@ export class MailChangeService {
       const takeBack = gql`
         mutation TakeBackMailDecisions($batchId: uuid!, $messageIds: [uuid!]!) {
           delete_minerva_mail_decisions(
+            where: {
+              batchId: { _eq: $batchId }
+              messageId: { _in: $messageIds }
+            }
+          ) {
+            affected_rows
+          }
+          delete_minerva_mail_inbox_decisions(
             where: {
               batchId: { _eq: $batchId }
               messageId: { _in: $messageIds }

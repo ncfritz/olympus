@@ -384,6 +384,47 @@ describe("Mail changes", () => {
       });
     });
 
+    it("puts an approval's flags back: into the inbox, unread", async () => {
+      linked();
+      labels();
+      toUndo({
+        changes: [
+          {
+            gmailId: "a1",
+            messageId: "msg-a1",
+            status: "written",
+            message: null,
+            labels: [
+              { role: "had", name: "Accounts/A" },
+              { role: "add", name: "Travel" },
+              { role: "remove", name: "INBOX" },
+              { role: "remove", name: "UNREAD" },
+            ],
+          },
+        ],
+      });
+      ctx.t.graphql.on("CreateMailChangeBatch", {
+        insert_minerva_mail_change_batches_one: { id: UNDO_ID },
+      });
+      ctx.t.graphql.on("CreateMailChanges", {
+        insert_minerva_mail_changes: { affected_rows: 1 },
+      });
+
+      expect((await undo()).status).toBe(201);
+      expect(agent.startWrites.mock.calls[0][0].changes).toEqual([
+        {
+          gmailId: "a1",
+          // Flags are never what Gmail must still have.
+          expected: ["Accounts/A", "Travel"],
+          add: [
+            { name: "INBOX", gmailLabelId: "INBOX" },
+            { name: "UNREAD", gmailLabelId: "UNREAD" },
+          ],
+          remove: [{ name: "Travel", gmailLabelId: "Label_2" }],
+        },
+      ]);
+    });
+
     it.each([
       ["an undo", { kind: "undo" }, /An undo cannot be undone/],
       ["a batch still running", { status: "running" }, /not finished/],

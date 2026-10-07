@@ -25,6 +25,7 @@ const MODIFY = "https://www.googleapis.com/auth/gmail.modify";
 
 const LABELS: GmailLabelInfo[] = [
   { id: "INBOX", name: "INBOX", type: "system" },
+  { id: "UNREAD", name: "UNREAD", type: "system" },
   { id: "TRASH", name: "TRASH", type: "system" },
   { id: "Label_1", name: "Accounts/A", type: "user" },
   { id: "Label_2", name: "Travel", type: "user" },
@@ -40,6 +41,12 @@ const GMAIL: Record<string, string[]> = {
   u1: ["Label_1", "Label_2"],
   c1: ["Label_3"],
   t1: ["TRASH", "Label_1"],
+  // In the inbox, unread, with Accounts/A.
+  i1: ["INBOX", "UNREAD", "Label_1"],
+  // Archived and read already, with Accounts/A and Travel.
+  i2: ["Label_1", "Label_2"],
+  // In the inbox; relabelled by hand since (Bills, not Accounts/A).
+  i3: ["INBOX", "UNREAD", "Label_3"],
 };
 
 const change = (
@@ -193,6 +200,48 @@ describe("GmailWriter", () => {
       ["Accounts/A"],
     );
     expect(byId("u1")).toEqual([]);
+  });
+
+  it("archives and marks read with the labels, and only guards the user's labels", async () => {
+    const { writer, open, mailbox, published, reports } = setup();
+    const INBOX = { name: "INBOX", gmailLabelId: "INBOX" };
+    const UNREAD = { name: "UNREAD", gmailLabelId: "UNREAD" };
+
+    const report = await writer.write(
+      request([
+        change("i1", [TRAVEL], [INBOX, UNREAD]),
+        change("i2", [TRAVEL], [INBOX, UNREAD]),
+        change("i3", [TRAVEL], [INBOX, UNREAD]),
+        // Flags alone: archive, labels unchanged.
+        change("w1", [], [INBOX]),
+      ]),
+      open,
+    );
+
+    expect(report.counts).toEqual({
+      written: 2,
+      unchanged: 1,
+      changed: 1,
+      gone: 0,
+      failed: 0,
+    });
+    expect(mailbox.batchModify.mock.calls).toEqual([
+      [["i1"], ["Label_2"], ["INBOX", "UNREAD"]],
+      [["w1"], [], ["INBOX"]],
+    ]);
+    expect(reports().at(-1)?.changes).toEqual(
+      expect.arrayContaining([
+        { gmailId: "i1", status: "written" },
+        { gmailId: "i2", status: "unchanged" },
+        { gmailId: "i3", status: "changed" },
+        { gmailId: "w1", status: "written" },
+      ]),
+    );
+    // Minerva hears the message is out of the inbox and read.
+    expect(published.find((p) => p.body.gmailId === "i1")?.body).toMatchObject({
+      labels: ["Accounts/A", "Travel"],
+      flags: { inbox: false, unread: false },
+    });
   });
 
   it("renames and creates first, writes the messages, then deletes what is empty", async () => {

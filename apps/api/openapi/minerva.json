@@ -8217,6 +8217,326 @@
         ]
       }
     },
+    "/minerva/mail/account/{accountId}/inbox/approve": {
+      "post": {
+        "description": "The inbox's approve (docs/plans/email-management phase 5): each message's user labels to add and remove, as the picker left them (the ticked suggestion, or amended), and optionally archive and mark read, for their whole threads with wholeThread. What Gmail needs changing is written as one batch, followed in the change log; each message in the inbox among them is recorded as approved (amended when its labels are not its ticked suggestion's), and undoing the batch takes that back. Labels made in the picker go in newLabels.",
+        "operationId": "ApproveMailMessages",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ApproveMailMessages operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveMailMessagesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The approvals recorded, and the batch writing them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApproveMailMessagesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's."
+          },
+          "409": {
+            "description": "The mailbox is linked for reading only."
+          },
+          "503": {
+            "description": "Writes to Gmail are turned off, or the agent is not configured."
+          }
+        },
+        "summary": "Approves messages' suggested labels",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/inbox": {
+      "get": {
+        "description": "A page of the caller's inbox (docs/plans/email-management phase 5): each message's metadata (never its text), its labels now, the labels the classifier suggested as it arrived (best first, ticked or not, and whether it has each already) and what was decided. `status` is `review` (in the inbox, nothing decided; the default), `unread`, `approved` (since `approvedSince`, a day ago by default, wherever they are now, newest decision first) or `all`; `sortBy` is `receivedTime` (the default) or `confidence` (the best ticked suggestion the message lacks). With the statistics strip's counts.",
+        "operationId": "ListMailInbox",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Which messages",
+            "schema": {
+              "$ref": "#/components/schemas/MailInboxStatus"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "The field to sort on",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "The number of results to return per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startPage",
+            "required": false,
+            "in": "query",
+            "description": "The results page to start from",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "The sort order to apply to the results",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "approvedSince",
+            "required": false,
+            "in": "query",
+            "description": "Where approved begins, ISO 8601 (the site sends the start of the day)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minConfidence",
+            "required": false,
+            "in": "query",
+            "description": "Only those with a ticked suggestion to add at least this confident, 0 to 1",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Only those whose subject, sender or address contains this",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "Only this mail account's",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the inbox, and its counts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailInboxResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the inbox with its suggested labels",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/inbox/skip": {
+      "post": {
+        "description": "The inbox's skip (docs/plans/email-management phase 5): the messages are recorded as skipped, out of To review; Gmail is not changed.",
+        "operationId": "SkipMailMessages",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the SkipMailMessages operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipMailMessagesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The skips recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkipMailMessagesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's."
+          }
+        },
+        "summary": "Skips messages' suggestions for now",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/minerva/mail/account/{accountId}/inbox/flags": {
+      "post": {
+        "description": "The inbox's Archive and Mark read (docs/plans/email-management phase 5), deciding nothing about their suggestions: the messages (and their threads, with wholeThread) that Minerva has in the inbox or unread are written to Gmail as one batch, which the change log can undo.",
+        "operationId": "UpdateMailMessageFlags",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateMailMessageFlags operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMailMessageFlagsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The batch, if anything needed changing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMailMessageFlagsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's."
+          },
+          "409": {
+            "description": "The mailbox is linked for reading only."
+          },
+          "503": {
+            "description": "Writes to Gmail are turned off, or the agent is not configured."
+          }
+        },
+        "summary": "Archives messages or marks them read",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/account/{accountId}/labels/merge": {
       "post": {
         "description": "Moves every message with the label (and with each of its children whose name under the label kept is a label already) to the label kept, renames its other children under the label kept, and deletes the labels emptied once Gmail says they are (docs/plans/email-management phase 4). One batch, written by the mail agent in the background: renames first, then messages, then deletes. It can be undone from the change log. PreviewMailLabelMerge shows the same plan without changing anything.",
@@ -16530,7 +16850,7 @@
       },
       "MailStarIcon": {
         "type": "string",
-        "description": "A starred message's star icon, by Gmail's search name; absent when not starred or none was found",
+        "description": "Gmail's star icons, by search name",
         "enum": [
           "yellow-star",
           "orange-star",
@@ -16865,6 +17185,401 @@
         },
         "required": [
           "batch"
+        ]
+      },
+      "MailInboxApproval": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "add": {
+            "description": "User labels to add, by full name",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remove": {
+            "description": "User labels to remove, by full name",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "add",
+          "remove"
+        ]
+      },
+      "ApproveMailMessagesRequest": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "description": "Up to 500 messages, each with its labels to add and remove",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailInboxApproval"
+            }
+          },
+          "archive": {
+            "type": "boolean",
+            "description": "Archive them too (take them out of the inbox)"
+          },
+          "markRead": {
+            "type": "boolean",
+            "description": "Mark them read too"
+          },
+          "wholeThread": {
+            "type": "boolean",
+            "description": "Apply the same to every message in their threads, as Gmail labels a conversation"
+          },
+          "newLabels": {
+            "description": "Labels to create in Gmail first (made in the picker)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "messages"
+        ]
+      },
+      "ApproveMailMessagesResponse": {
+        "type": "object",
+        "properties": {
+          "approved": {
+            "type": "number",
+            "description": "Messages in the inbox recorded as approved"
+          },
+          "changed": {
+            "type": "number",
+            "description": "Messages whose labels or flags are written to Gmail"
+          },
+          "batch": {
+            "description": "The batch writing them, followed in the change log; absent when Gmail needed no change",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "approved",
+          "changed"
+        ]
+      },
+      "MailInboxStatus": {
+        "type": "string",
+        "enum": [
+          "review",
+          "unread",
+          "approved",
+          "all"
+        ],
+        "description": "Which of the inbox's messages to list"
+      },
+      "SortDirection": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "asc_nulls_first",
+          "asc_nulls_last",
+          "desc",
+          "desc_nulls_first",
+          "desc_nulls_last"
+        ]
+      },
+      "MailInboxSuggestion": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The label's full name"
+          },
+          "score": {
+            "type": "number",
+            "description": "The serving model's calibrated score, 0 to 1"
+          },
+          "ticked": {
+            "type": "boolean",
+            "description": "At or above the label's threshold: applied on approval unless unticked"
+          },
+          "onMessage": {
+            "type": "boolean",
+            "description": "Whether the message has the label already"
+          }
+        },
+        "required": [
+          "label",
+          "score",
+          "ticked",
+          "onMessage"
+        ]
+      },
+      "MailInboxDecision": {
+        "type": "string",
+        "description": "What was decided; absent while it is to review",
+        "enum": [
+          "approved",
+          "skipped"
+        ]
+      },
+      "MailInboxMessage": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The mail account the message is in"
+          },
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID, hexadecimal"
+          },
+          "threadId": {
+            "type": "string",
+            "description": "Its thread's Gmail ID"
+          },
+          "threadSize": {
+            "type": "number",
+            "description": "Messages in its thread that Minerva keeps"
+          },
+          "fromName": {
+            "type": "string",
+            "description": "The sender's name, if the From header gives one"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender's address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "Gmail's snippet, at most 200 characters"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When Gmail received it"
+          },
+          "inInbox": {
+            "type": "boolean",
+            "description": "Whether it is in the inbox now"
+          },
+          "unread": {
+            "type": "boolean",
+            "description": "Whether it is unread"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Whether it is starred"
+          },
+          "starIcon": {
+            "description": "A starred message's star icon",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
+              }
+            ]
+          },
+          "labels": {
+            "description": "Its user labels now, by full name",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "suggestions": {
+            "description": "The labels suggested for it, best first; empty if it was not scored, or nothing scored high enough",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailInboxSuggestion"
+            }
+          },
+          "scoredTime": {
+            "type": "string",
+            "description": "When it was scored; absent if it has not been"
+          },
+          "topScore": {
+            "type": "number",
+            "description": "Its best ticked suggestion it does not have yet; absent when there is nothing to add"
+          },
+          "decision": {
+            "description": "What was decided; absent while it is to review",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailInboxDecision"
+              }
+            ]
+          },
+          "decidedTime": {
+            "type": "string",
+            "description": "When it was decided"
+          },
+          "amended": {
+            "type": "boolean",
+            "description": "For an approval, whether the labels were other than the ticked suggestion's"
+          }
+        },
+        "required": [
+          "accountId",
+          "gmailId",
+          "threadId",
+          "threadSize",
+          "snippet",
+          "receivedTime",
+          "inInbox",
+          "unread",
+          "starred",
+          "labels",
+          "suggestions"
+        ]
+      },
+      "MailInboxSummary": {
+        "type": "object",
+        "properties": {
+          "inInbox": {
+            "type": "number",
+            "description": "Messages in the inbox"
+          },
+          "toReview": {
+            "type": "number",
+            "description": "In the inbox with nothing decided"
+          },
+          "highConfidence": {
+            "type": "number",
+            "description": "To review with a ticked suggestion of 90% or more that the message does not have"
+          },
+          "noSuggestion": {
+            "type": "number",
+            "description": "To review with no ticked suggestion to add"
+          },
+          "unread": {
+            "type": "number",
+            "description": "In the inbox and unread"
+          },
+          "approved": {
+            "type": "number",
+            "description": "Approved since `approvedSince`"
+          }
+        },
+        "required": [
+          "inInbox",
+          "toReview",
+          "highConfidence",
+          "noSuggestion",
+          "unread",
+          "approved"
+        ]
+      },
+      "ListMailInboxResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "The total number of matching items across all pages"
+          },
+          "messages": {
+            "description": "A page of messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailInboxMessage"
+            }
+          },
+          "summary": {
+            "description": "The counts for the statistics strip",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailInboxSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "count",
+          "messages",
+          "summary"
+        ]
+      },
+      "SkipMailMessagesRequest": {
+        "type": "object",
+        "properties": {
+          "gmailIds": {
+            "description": "Up to 500 messages by Gmail ID",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailIds"
+        ]
+      },
+      "SkipMailMessagesResponse": {
+        "type": "object",
+        "properties": {
+          "skipped": {
+            "type": "number",
+            "description": "Messages recorded as skipped"
+          }
+        },
+        "required": [
+          "skipped"
+        ]
+      },
+      "UpdateMailMessageFlagsRequest": {
+        "type": "object",
+        "properties": {
+          "gmailIds": {
+            "description": "Up to 500 messages by Gmail ID",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "archive": {
+            "type": "boolean",
+            "description": "Archive them (take them out of the inbox)"
+          },
+          "markRead": {
+            "type": "boolean",
+            "description": "Mark them read"
+          },
+          "wholeThread": {
+            "type": "boolean",
+            "description": "The same for every message in their threads"
+          }
+        },
+        "required": [
+          "gmailIds"
+        ]
+      },
+      "UpdateMailMessageFlagsResponse": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "number",
+            "description": "Messages whose flags are written to Gmail"
+          },
+          "batch": {
+            "description": "The batch writing them; absent when they were so already in Minerva",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailChangeBatch"
+              }
+            ]
+          }
+        },
+        "required": [
+          "changed"
         ]
       },
       "MergeMailLabelsRequest": {
@@ -17380,17 +18095,6 @@
         },
         "required": [
           "batch"
-        ]
-      },
-      "SortDirection": {
-        "type": "string",
-        "enum": [
-          "asc",
-          "asc_nulls_first",
-          "asc_nulls_last",
-          "desc",
-          "desc_nulls_first",
-          "desc_nulls_last"
         ]
       },
       "MailAuditMessage": {

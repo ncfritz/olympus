@@ -198,6 +198,65 @@
     ],
     "type": "object"
   },
+  "ApproveMailMessagesRequest": {
+    "properties": {
+      "archive": {
+        "description": "Archive them too (take them out of the inbox)",
+        "type": "boolean"
+      },
+      "markRead": {
+        "description": "Mark them read too",
+        "type": "boolean"
+      },
+      "messages": {
+        "description": "Up to 500 messages, each with its labels to add and remove",
+        "items": {
+          "$ref": "#/components/schemas/MailInboxApproval"
+        },
+        "type": "array"
+      },
+      "newLabels": {
+        "description": "Labels to create in Gmail first (made in the picker)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "wholeThread": {
+        "description": "Apply the same to every message in their threads, as Gmail labels a conversation",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "messages"
+    ],
+    "type": "object"
+  },
+  "ApproveMailMessagesResponse": {
+    "properties": {
+      "approved": {
+        "description": "Messages in the inbox recorded as approved",
+        "type": "number"
+      },
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The batch writing them, followed in the change log; absent when Gmail needed no change"
+      },
+      "changed": {
+        "description": "Messages whose labels or flags are written to Gmail",
+        "type": "number"
+      }
+    },
+    "required": [
+      "approved",
+      "changed"
+    ],
+    "type": "object"
+  },
   "ApproveMediaAssetTranscodeConfigurationRequest": {
     "properties": {
       "audioTrackIndex": {
@@ -10148,6 +10207,35 @@
     ],
     "type": "object"
   },
+  "ListMailInboxResponse": {
+    "properties": {
+      "count": {
+        "description": "The total number of matching items across all pages",
+        "type": "number"
+      },
+      "messages": {
+        "description": "A page of messages",
+        "items": {
+          "$ref": "#/components/schemas/MailInboxMessage"
+        },
+        "type": "array"
+      },
+      "summary": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailInboxSummary"
+          }
+        ],
+        "description": "The counts for the statistics strip"
+      }
+    },
+    "required": [
+      "count",
+      "messages",
+      "summary"
+    ],
+    "type": "object"
+  },
   "ListMailLabelFamiliesResponse": {
     "properties": {
       "families": {
@@ -11900,6 +11988,218 @@
       "dismissed"
     ],
     "type": "string"
+  },
+  "MailInboxApproval": {
+    "properties": {
+      "add": {
+        "description": "User labels to add, by full name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "remove": {
+        "description": "User labels to remove, by full name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "add",
+      "gmailId",
+      "remove"
+    ],
+    "type": "object"
+  },
+  "MailInboxDecision": {
+    "description": "What was decided about a message's suggestion",
+    "enum": [
+      "approved",
+      "skipped"
+    ],
+    "type": "string"
+  },
+  "MailInboxMessage": {
+    "properties": {
+      "accountId": {
+        "description": "The mail account the message is in",
+        "type": "string"
+      },
+      "amended": {
+        "description": "For an approval, whether the labels were other than the ticked suggestion's",
+        "type": "boolean"
+      },
+      "decidedTime": {
+        "description": "When it was decided",
+        "type": "string"
+      },
+      "decision": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailInboxDecision"
+          }
+        ],
+        "description": "What was decided; absent while it is to review"
+      },
+      "fromAddress": {
+        "description": "The sender's address",
+        "type": "string"
+      },
+      "fromName": {
+        "description": "The sender's name, if the From header gives one",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID, hexadecimal",
+        "type": "string"
+      },
+      "inInbox": {
+        "description": "Whether it is in the inbox now",
+        "type": "boolean"
+      },
+      "labels": {
+        "description": "Its user labels now, by full name",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "receivedTime": {
+        "description": "When Gmail received it",
+        "type": "string"
+      },
+      "scoredTime": {
+        "description": "When it was scored; absent if it has not been",
+        "type": "string"
+      },
+      "snippet": {
+        "description": "Gmail's snippet, at most 200 characters",
+        "type": "string"
+      },
+      "starIcon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "A starred message's star icon"
+      },
+      "starred": {
+        "description": "Whether it is starred",
+        "type": "boolean"
+      },
+      "subject": {
+        "description": "The subject",
+        "type": "string"
+      },
+      "suggestions": {
+        "description": "The labels suggested for it, best first; empty if it was not scored, or nothing scored high enough",
+        "items": {
+          "$ref": "#/components/schemas/MailInboxSuggestion"
+        },
+        "type": "array"
+      },
+      "threadId": {
+        "description": "Its thread's Gmail ID",
+        "type": "string"
+      },
+      "threadSize": {
+        "description": "Messages in its thread that Minerva keeps",
+        "type": "number"
+      },
+      "topScore": {
+        "description": "Its best ticked suggestion it does not have yet; absent when there is nothing to add",
+        "type": "number"
+      },
+      "unread": {
+        "description": "Whether it is unread",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "accountId",
+      "gmailId",
+      "inInbox",
+      "labels",
+      "receivedTime",
+      "snippet",
+      "starred",
+      "suggestions",
+      "threadId",
+      "threadSize",
+      "unread"
+    ],
+    "type": "object"
+  },
+  "MailInboxSuggestion": {
+    "properties": {
+      "label": {
+        "description": "The label's full name",
+        "type": "string"
+      },
+      "onMessage": {
+        "description": "Whether the message has the label already",
+        "type": "boolean"
+      },
+      "score": {
+        "description": "The serving model's calibrated score, 0 to 1",
+        "type": "number"
+      },
+      "ticked": {
+        "description": "At or above the label's threshold: applied on approval unless unticked",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "label",
+      "onMessage",
+      "score",
+      "ticked"
+    ],
+    "type": "object"
+  },
+  "MailInboxSummary": {
+    "properties": {
+      "approved": {
+        "description": "Approved since `approvedSince`",
+        "type": "number"
+      },
+      "highConfidence": {
+        "description": "To review with a ticked suggestion of 90% or more that the message does not have",
+        "type": "number"
+      },
+      "inInbox": {
+        "description": "Messages in the inbox",
+        "type": "number"
+      },
+      "noSuggestion": {
+        "description": "To review with no ticked suggestion to add",
+        "type": "number"
+      },
+      "toReview": {
+        "description": "In the inbox with nothing decided",
+        "type": "number"
+      },
+      "unread": {
+        "description": "In the inbox and unread",
+        "type": "number"
+      }
+    },
+    "required": [
+      "approved",
+      "highConfidence",
+      "inInbox",
+      "noSuggestion",
+      "toReview",
+      "unread"
+    ],
+    "type": "object"
   },
   "MailLabel": {
     "properties": {
@@ -21192,6 +21492,33 @@
     ],
     "type": "object"
   },
+  "SkipMailMessagesRequest": {
+    "properties": {
+      "gmailIds": {
+        "description": "Up to 500 messages by Gmail ID",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "gmailIds"
+    ],
+    "type": "object"
+  },
+  "SkipMailMessagesResponse": {
+    "properties": {
+      "skipped": {
+        "description": "Messages recorded as skipped",
+        "type": "number"
+      }
+    },
+    "required": [
+      "skipped"
+    ],
+    "type": "object"
+  },
   "SparseEpisode": {
     "properties": {
       "airDate": {
@@ -23698,6 +24025,53 @@
     },
     "required": [
       "label"
+    ],
+    "type": "object"
+  },
+  "UpdateMailMessageFlagsRequest": {
+    "properties": {
+      "archive": {
+        "description": "Archive them (take them out of the inbox)",
+        "type": "boolean"
+      },
+      "gmailIds": {
+        "description": "Up to 500 messages by Gmail ID",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "markRead": {
+        "description": "Mark them read",
+        "type": "boolean"
+      },
+      "wholeThread": {
+        "description": "The same for every message in their threads",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "gmailIds"
+    ],
+    "type": "object"
+  },
+  "UpdateMailMessageFlagsResponse": {
+    "properties": {
+      "batch": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailChangeBatch"
+          }
+        ],
+        "description": "The batch writing them; absent when they were so already in Minerva"
+      },
+      "changed": {
+        "description": "Messages whose flags are written to Gmail",
+        "type": "number"
+      }
+    },
+    "required": [
+      "changed"
     ],
     "type": "object"
   },

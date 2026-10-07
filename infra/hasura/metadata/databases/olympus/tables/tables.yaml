@@ -147,6 +147,8 @@
 - '!include minerva_mail_change_labels.yaml'
 - '!include minerva_mail_changes.yaml'
 - '!include minerva_mail_decisions.yaml'
+- '!include minerva_mail_inbox.yaml'
+- '!include minerva_mail_inbox_decisions.yaml'
 - '!include minerva_mail_label_families.yaml'
 - '!include minerva_mail_label_statistics_type.yaml'
 - '!include minerva_mail_label_transitions.yaml'

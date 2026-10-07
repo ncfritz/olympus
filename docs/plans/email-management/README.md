@@ -652,7 +652,21 @@ left until phase 5 has decisions to measure them against.
    retrain is step 3's.
 2. **Operations**: the inbox list with suggestions; approve (with
    archive, mark read, whole thread); skip; mark read; archive; open a
-   message (fetched live, not stored).
+   message (fetched live, not stored). **Built so far**: a change batch may
+   take Gmail's `INBOX` and `UNREAD` off (archive, mark read) or put them
+   back, logged and undone like labels; the agent's "changed in Gmail
+   since" guard compares user labels only, as read state changes all the
+   time. `1791330000000_minerva_mail_inbox`: `mail_inbox_decisions`
+   (approved or skipped per message, the model run, amended, the batch)
+   and the `mail_inbox` view (each message in the inbox, or decided: its
+   thread's size, its best ticked suggestion it lacks, its decision).
+   `ListMailInbox` (`review`, `unread`, `approved` since a time, `all`;
+   search, minimum confidence, by received or confidence; the statistics
+   strip's counts). `ApproveMailMessages` (each message's labels from the
+   picker, archive, mark read, whole thread; one batch, and an approval
+   per message in the inbox, amended when its labels are not the ticked
+   suggestion's; undoing the batch takes them back), `SkipMailMessages`,
+   `UpdateMailMessageFlags` (archive or mark read alone).
 3. **Learning**: every approval and amendment is a training example,
    corrections weighed more; sender history updates at once, the linear
    model by `partial_fit`.

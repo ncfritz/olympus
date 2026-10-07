@@ -24,7 +24,7 @@ import {
 } from "./GmailClient";
 import { GmailCredentialStore } from "./GmailCredentialStore";
 import { GmailMessages } from "./GmailMessages";
-import { NOT_KEPT, stateOfLabelIds } from "./gmailState";
+import { NOT_KEPT, stateOfLabelIds, WRITABLE_FLAGS } from "./gmailState";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GMAIL_ID = /^[0-9a-f]{1,16}$/;
@@ -124,9 +124,11 @@ class Reporter {
 /**
  * Writes the API's batches of label changes to Gmail (docs/plans/
  * email-management phase 4; ADR 0030), one batch at a time, in the
- * background. Each message is read first (format minimal): one gone, or
- * in Spam, Trash, the drafts or chats, is gone; one whose user labels are
- * already those wanted is unchanged; one whose labels are not those the
+ * background. A change may take INBOX or UNREAD off (archive, mark read)
+ * or put them back, as well as the user's labels. Each message is read
+ * first (format minimal): one gone, or in Spam, Trash, the drafts or
+ * chats, is gone; one whose labels and flags are already those wanted is
+ * unchanged; one whose labels are not those the
  * API recorded was changed in Gmail since, and is synced to Minerva again
  * instead of written, so a change made by hand is never overwritten. The
  * rest are written with messages.batchModify, those with the same change
@@ -374,9 +376,12 @@ export class GmailWriter {
     // A label the batch created is found by name; one it could not make
     // leaves its changes failed.
     const idOf = (l: { name: string; gmailLabelId?: string }) =>
-      l.gmailLabelId ??
-      [...labels.values()].find((x) => x.name === l.name && x.type === "user")
-        ?.id;
+      WRITABLE_FLAGS.has(l.name)
+        ? l.name
+        : (l.gmailLabelId ??
+          [...labels.values()].find(
+            (x) => x.name === l.name && x.type === "user",
+          )?.id);
     const userNames = (ids: string[]) =>
       ids
         .map((id) => labels.get(id))
@@ -411,13 +416,21 @@ export class GmailWriter {
         }
         const now = userNames(labelIds);
         // What the API recorded, in the names the batch's renames gave.
+        // Flags (archiving, marking read) are not guarded: a message's read
+        // state changes all the time, and taking a flag off is safe.
         const expected = change.expected.map((n) => renames.get(n) ?? n);
-        const removing = change.remove.map((l) => l.name);
+        const isFlag = (l: { name: string }) => WRITABLE_FLAGS.has(l.name);
+        const removing = change.remove
+          .filter((l) => !isFlag(l))
+          .map((l) => l.name);
         const wanted = [
           ...expected.filter((n) => !removing.includes(n)),
-          ...change.add.map((l) => l.name),
+          ...change.add.filter((l) => !isFlag(l)).map((l) => l.name),
         ];
-        if (sameSet(now, wanted)) {
+        const flagsDone =
+          change.add.filter(isFlag).every((l) => labelIds.includes(l.name)) &&
+          change.remove.filter(isFlag).every((l) => !labelIds.includes(l.name));
+        if (sameSet(now, wanted) && flagsDone) {
           await reporter.add(change.gmailId, "unchanged");
           continue;
         }

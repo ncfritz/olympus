@@ -1,3 +1,7 @@
+import { ApproveMailMessagesController } from "./controllers/ApproveMailMessagesController";
+import { ListMailInboxController } from "./controllers/ListMailInboxController";
+import { SkipMailMessagesController } from "./controllers/SkipMailMessagesController";
+import { UpdateMailMessageFlagsController } from "./controllers/UpdateMailMessageFlagsController";
 import { ApplyMailChangesController } from "./controllers/ApplyMailChangesController";
 import { MergeMailLabelsController } from "./controllers/MergeMailLabelsController";
 import { PreviewMailLabelMergeController } from "./controllers/PreviewMailLabelMergeController";
@@ -46,6 +50,7 @@ import { MailMessageQueues } from "./services/MailMessageQueues";
 import { MailMessageService } from "./services/MailMessageService";
 import { MailStatisticsService } from "./services/MailStatisticsService";
 import { MailSuggestionService } from "./services/MailSuggestionService";
+import { MailInboxService } from "./services/MailInboxService";
 import { MailSyncService } from "./services/MailSyncService";
 import { MailTrainingService } from "./services/MailTrainingService";
 import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
@@ -70,6 +75,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailMessageHandler,
     MailStatisticsService,
     MailSuggestionService,
+    MailInboxService,
     MailSyncService,
     MailChangeService,
     MailTrainingService,
@@ -90,6 +96,10 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailAccountsController,
     ListMailMessageStatesController,
     ApplyMailChangesController,
+    ApproveMailMessagesController,
+    ListMailInboxController,
+    SkipMailMessagesController,
+    UpdateMailMessageFlagsController,
     MergeMailLabelsController,
     PreviewMailLabelMergeController,
     ApplyMatchingMailProposalsController,

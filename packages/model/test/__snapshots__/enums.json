@@ -303,6 +303,20 @@
     "Applied": "applied",
     "Dismissed": "dismissed"
   },
+  "MailInboxDecision": {
+    "Approved": "approved",
+    "Skipped": "skipped"
+  },
+  "MailInboxSort": {
+    "Confidence": "confidence",
+    "ReceivedTime": "receivedTime"
+  },
+  "MailInboxStatus": {
+    "All": "all",
+    "Approved": "approved",
+    "Review": "review",
+    "Unread": "unread"
+  },
   "MailLabelKind": {
     "Retired": "retired",
     "State": "state",
