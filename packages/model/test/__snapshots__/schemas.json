@@ -10506,6 +10506,35 @@
     ],
     "type": "object"
   },
+  "ListMailStarMismatchesResponse": {
+    "properties": {
+      "count": {
+        "description": "How many match the filters",
+        "type": "number"
+      },
+      "counts": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarMismatchCounts"
+          }
+        ],
+        "description": "How many of the caller's want each fix, across the filters but the fix"
+      },
+      "mismatches": {
+        "description": "A page of them, newest first",
+        "items": {
+          "$ref": "#/components/schemas/MailStarMismatch"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "count",
+      "counts",
+      "mismatches"
+    ],
+    "type": "object"
+  },
   "ListMailSyncAccountsResponse": {
     "properties": {
       "accounts": {
@@ -11550,6 +11579,22 @@
   },
   "MailAccount": {
     "properties": {
+      "attentionStar": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "The star that marks a message wanting attention (an open state)"
+      },
+      "doneStar": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "The star that marks a message done (a closed state)"
+      },
       "email": {
         "description": "The mailbox's address, lower case",
         "type": "string"
@@ -13435,6 +13480,15 @@
     ],
     "type": "object"
   },
+  "MailStarFix": {
+    "description": "How a message's star is put back in step with its state",
+    "enum": [
+      "star",
+      "attention-icon",
+      "done-icon"
+    ],
+    "type": "string"
+  },
   "MailStarIcon": {
     "description": "Gmail's star icons, by search name",
     "enum": [
@@ -13472,6 +13526,99 @@
       "messages",
       "name",
       "starred"
+    ],
+    "type": "object"
+  },
+  "MailStarMismatch": {
+    "properties": {
+      "accountId": {
+        "description": "The account",
+        "type": "string"
+      },
+      "fix": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarFix"
+          }
+        ],
+        "description": "The fix"
+      },
+      "fromAddress": {
+        "description": "The sender",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "Its Gmail ID",
+        "type": "string"
+      },
+      "label": {
+        "description": "Its state label, by full name",
+        "type": "string"
+      },
+      "receivedTime": {
+        "description": "When it was received",
+        "type": "string"
+      },
+      "starIcon": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "Its star icon now, when sync found one"
+      },
+      "starred": {
+        "description": "Starred now",
+        "type": "boolean"
+      },
+      "stateOpen": {
+        "description": "Whether the state is open (wants attention)",
+        "type": "boolean"
+      },
+      "subject": {
+        "description": "The subject",
+        "type": "string"
+      },
+      "wanted": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailStarIcon"
+          }
+        ],
+        "description": "The star its state wants: the account's attention or done star"
+      }
+    },
+    "required": [
+      "accountId",
+      "fix",
+      "gmailId",
+      "label",
+      "receivedTime",
+      "starred",
+      "stateOpen",
+      "wanted"
+    ],
+    "type": "object"
+  },
+  "MailStarMismatchCounts": {
+    "properties": {
+      "attentionIcon": {
+        "description": "To give the attention star",
+        "type": "number"
+      },
+      "doneIcon": {
+        "description": "To give the done star",
+        "type": "number"
+      },
+      "star": {
+        "description": "To star",
+        "type": "number"
+      }
+    },
+    "required": [
+      "attentionIcon",
+      "doneIcon",
+      "star"
     ],
     "type": "object"
   },

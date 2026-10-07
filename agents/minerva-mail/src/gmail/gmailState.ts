@@ -29,10 +29,12 @@ export const NOT_KEPT = new Set(["SPAM", "TRASH", ...LEFT_OUT]);
 
 /**
  * Gmail's system labels a batch may add or remove, by their ID (which is
- * their name): archiving takes INBOX off, marking read takes UNREAD off.
- * Gmail reserves the names, so no user label has them.
+ * their name): archiving takes INBOX off, marking read takes UNREAD off,
+ * starring adds STARRED (Gmail gives it the first icon in its star
+ * settings; the API sets no icon). Gmail reserves the names, so no user
+ * label has them.
  */
-export const WRITABLE_FLAGS = new Set(["INBOX", "UNREAD"]);
+export const WRITABLE_FLAGS = new Set(["INBOX", "UNREAD", "STARRED"]);
 
 export const FLAG_NAMES = ["inbox", "unread", "starred", "important", "sent"];
 

@@ -22,6 +22,7 @@ import ExportButton from "../../../../components/minerva/mail/audit/ExportButton
 import LabelTreeTable from "../../../../components/minerva/mail/audit/LabelTreeTable";
 import MergeCandidates from "../../../../components/minerva/mail/audit/MergeCandidates";
 import MixedThreads from "../../../../components/minerva/mail/audit/MixedThreads";
+import StarMismatches from "../../../../components/minerva/mail/audit/StarMismatches";
 import StarsPanel from "../../../../components/minerva/mail/audit/StarsPanel";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
@@ -184,6 +185,9 @@ const MailReclassificationPage: React.FunctionComponent = () => {
               </Card>
               <Card size={"small"} title={"Stars"}>
                 <StarsPanel stars={audit.stars} />
+              </Card>
+              <Card size={"small"} title={"Stars and states disagree"}>
+                <StarMismatches />
               </Card>
             </Flex>
           </>

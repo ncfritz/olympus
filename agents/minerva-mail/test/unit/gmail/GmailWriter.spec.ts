@@ -26,6 +26,7 @@ const MODIFY = "https://www.googleapis.com/auth/gmail.modify";
 const LABELS: GmailLabelInfo[] = [
   { id: "INBOX", name: "INBOX", type: "system" },
   { id: "UNREAD", name: "UNREAD", type: "system" },
+  { id: "STARRED", name: "STARRED", type: "system" },
   { id: "TRASH", name: "TRASH", type: "system" },
   { id: "Label_1", name: "Accounts/A", type: "user" },
   { id: "Label_2", name: "Travel", type: "user" },
@@ -241,6 +242,21 @@ describe("GmailWriter", () => {
     expect(published.find((p) => p.body.gmailId === "i1")?.body).toMatchObject({
       labels: ["Accounts/A", "Travel"],
       flags: { inbox: false, unread: false },
+    });
+  });
+
+  it("stars a message, as a flag", async () => {
+    const { writer, open, mailbox, published, reports } = setup();
+    const STARRED = { name: "STARRED", gmailLabelId: "STARRED" };
+
+    await writer.write(request([change("w1", [STARRED], [])]), open);
+
+    expect(mailbox.batchModify.mock.calls).toEqual([[["w1"], ["STARRED"], []]]);
+    expect(reports().at(-1)?.changes).toEqual([
+      { gmailId: "w1", status: "written" },
+    ]);
+    expect(published.find((p) => p.body.gmailId === "w1")?.body).toMatchObject({
+      flags: { starred: true },
     });
   });
 

@@ -38,6 +38,8 @@ const ACCOUNT_FIELDS = `
   syncedTime
   gmailMessagesTotal
   gmailThreadsTotal
+  attentionStar
+  doneStar
   subject
 `;
 

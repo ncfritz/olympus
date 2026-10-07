@@ -355,6 +355,11 @@
     "Older": "older",
     "Year": "year"
   },
+  "MailStarFix": {
+    "AttentionIcon": "attention-icon",
+    "DoneIcon": "done-icon",
+    "Star": "star"
+  },
   "MailStarIcon": {
     "BlueInfo": "blue-info",
     "BlueStar": "blue-star",

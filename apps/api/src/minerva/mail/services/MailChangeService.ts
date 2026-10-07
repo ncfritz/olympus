@@ -46,10 +46,11 @@ import {
 export const MAX_CHANGES = 10_000;
 /**
  * Gmail's flags a batch may add or remove besides user labels: taking INBOX
- * off archives, taking UNREAD off marks read. Their ID is their name, and
- * Gmail reserves the names, so no user label has them.
+ * off archives, taking UNREAD off marks read, adding STARRED stars (with
+ * the first icon in Gmail's star settings: the API sets no icon). Their ID
+ * is their name, and Gmail reserves the names, so no user label has them.
  */
-export const MAIL_FLAG_LABELS = ["INBOX", "UNREAD"];
+export const MAIL_FLAG_LABELS = ["INBOX", "UNREAD", "STARRED"];
 /** Messages a merge moves at most, in one batch. */
 export const MAX_MERGE = 50_000;
 const LABEL_NAME_MAX = 225;
@@ -1426,7 +1427,7 @@ export class MailChangeService {
   /**
    * The labels by name, every one a user label Gmail has, one the batch
    * creates first, or one of Gmail's flags a batch may write (INBOX,
-   * UNREAD), whose ID is its name.
+   * UNREAD, STARRED), whose ID is its name.
    */
   private async writableLabels(
     accountId: string,

@@ -16,3 +16,4 @@ export * from "./sync";
 export * from "./changes";
 export * from "./inbox";
 export * from "./clusters";
+export * from "./stars";

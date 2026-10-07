@@ -171,6 +171,7 @@
 - '!include minerva_mail_sender_year_statistics_type.yaml'
 - '!include minerva_mail_star_age_type.yaml'
 - '!include minerva_mail_star_label_type.yaml'
+- '!include minerva_mail_star_mismatches.yaml'
 - '!include minerva_mail_star_mixed_type.yaml'
 - '!include minerva_mail_star_sender_type.yaml'
 - '!include minerva_mail_statistics_summary_type.yaml'

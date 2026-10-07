@@ -136,6 +136,7 @@ describe("options and words", () => {
   it("shows Gmail's flags as what they did", () => {
     expect(flagChangeText("remove", "INBOX")).toBe("Archived");
     expect(flagChangeText("add", "INBOX")).toBe("Back in the inbox");
+    expect(flagChangeText("add", "STARRED")).toBe("Starred");
     expect(flagChangeText("remove", "UNREAD")).toBe("Marked read");
     expect(flagChangeText("add", "Travel")).toBeUndefined();
   });

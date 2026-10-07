@@ -165,6 +165,9 @@ export const flagChangeText = (
   if (label === "UNREAD") {
     return action === "remove" ? "Marked read" : "Marked unread";
   }
+  if (label === "STARRED") {
+    return action === "add" ? "Starred" : "Unstarred";
+  }
   return undefined;
 };
 

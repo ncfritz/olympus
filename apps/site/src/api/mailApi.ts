@@ -1,4 +1,6 @@
 import {
+  listMailStarMismatches,
+  type MailStarFix,
   describeMailCluster,
   getMailClusterMap,
   listMailClusterMembers,
@@ -238,6 +240,15 @@ class MailApi {
     return await listMailClusterSuggestions({
       query: label ? { label } : {},
     });
+  }
+
+  /** Messages whose state and star disagree, with their fixes. */
+  async listStarMismatches(query: {
+    fix?: MailStarFix;
+    offset?: number;
+    limit?: number;
+  }) {
+    return await listMailStarMismatches({ query });
   }
 
   /** The changes as CSV, and the file name the API gives it. */

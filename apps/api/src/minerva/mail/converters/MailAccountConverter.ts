@@ -1,4 +1,8 @@
-import { MailAccount, MailAccountVerification } from "@ncfritz/olympus-model";
+import {
+  MailAccount,
+  MailAccountVerification,
+  MailStarIcon,
+} from "@ncfritz/olympus-model";
 import moment from "moment";
 
 /** A `minerva.mail_accounts` row as Hasura returns it (custom column names). */
@@ -13,6 +17,8 @@ export type GraphQlMailAccount = {
   syncedTime?: string | null;
   gmailMessagesTotal?: number | null;
   gmailThreadsTotal?: number | null;
+  attentionStar?: string | null;
+  doneStar?: string | null;
 };
 
 export const toDomainObject = (input: GraphQlMailAccount): MailAccount => ({
@@ -29,4 +35,8 @@ export const toDomainObject = (input: GraphQlMailAccount): MailAccount => ({
   ...(typeof input.gmailThreadsTotal === "number"
     ? { gmailThreadsTotal: input.gmailThreadsTotal }
     : {}),
+  ...(input.attentionStar
+    ? { attentionStar: input.attentionStar as MailStarIcon }
+    : {}),
+  ...(input.doneStar ? { doneStar: input.doneStar as MailStarIcon } : {}),
 });

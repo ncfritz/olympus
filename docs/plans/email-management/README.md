@@ -808,17 +808,52 @@ night before. A round of UX changes follows from use.
 
 ## Phase 7 — Workflows, stars and filters
 
-1. **Transitions**: a payment confirmation from a biller with an open
-   `Payable` suggests moving that bill to `Paid` and its star from
-   attention to done, as one suggestion; open payables by age on the
-   inbox page.
-2. **Stars**: new mail in an open state is suggested the attention star;
-   the audit's star disagreements are offered for review. Where the API
-   can only set `STARRED`, the suggestion names the icon to set in Gmail,
-   and the next sync records it.
-3. **Filters**: a sender whose suggestions are accepted nearly always
-   (about 99 % over a minimum count) gets a proposed Gmail filter, created
-   on approval, which takes it out of review. Creating filters needs the
-   `gmail.settings.basic` scope, a further consent.
+Settled with Neil, 2026-10-07: the attention star is the red bang and the
+done star the green check; a payment confirmation is recognised by its
+sender and wording now, and by a learned target later; a filter's action
+(label, and whether to skip the inbox) is chosen per proposal, skipping
+the inbox by default; transitions and stars come first, filters (a new
+consent) after.
+
+Gmail's API writes only `STARRED`, never an icon: setting it gives the
+first star in Gmail's star settings. Where the icon wanted is another, the
+suggestion says which to set in Gmail, and the next sync records it (sync
+already finds each starred message's icon).
+
+1. **Stars**: the account's attention and done icons (`mail_accounts`,
+   red bang and green check by default); `STARRED` a flag a batch may
+   write, beside `INBOX` and `UNREAD`; a message whose state and star
+   disagree (an open state without the attention star, a closed one still
+   carrying it) listed by the audit beside its star statistics and fixed
+   on approval (M12 case 3). **Built** 2026-10-07:
+   `1791350000000_minerva_mail_stars` (`attention_star`, `done_star` on
+   the account; the view `mail_star_mismatches`, each with its fix:
+   `star`, `attention-icon` or `done-icon`; a starred message whose icon
+   sync has not found is left alone); `ListMailStarMismatches`; the
+   agent and `ApplyMailChanges` write `STARRED`. Re-classification's
+   "Stars and states disagree": To star, Attention star and Done star
+   with counts; Star selected and Star all write batches (the change log
+   says "Starred"); the icon fixes link each message to Gmail to set by
+   hand. No setting for the two icons yet (the defaults are Neil's).
+2. **Transitions**: a confirmation is a message whose subject or snippet
+   reads as a payment ("payment received", "thank you for your payment",
+   "payment confirmation", "has been paid", ...) from the sender, or the
+   sender's domain, of a message in an open state with a transition to a
+   closed one, received within 90 days before it; it pairs with the newest
+   such message. The pair is one suggestion: the bill moves along the
+   transition (`Payable` to `Paid`) and its star from attention to done.
+   Shown on the confirmation in the inbox's review panel and the home
+   widget ("Marks _Your bill_ of Sep 3 Paid"), approved with it; and the
+   inbox page lists open payables by age. Computed on read from the
+   messages, nothing stored but the decision.
+3. **Learned confirmations**: once the rules have matched for a while, the
+   pairs Neil approved and declined train a confirmation target, which
+   also catches what the wording misses; the rules stay as the reason.
+4. **Filters**: a sender whose suggestions for one label are approved as
+   suggested at least 99 % of the time, over at least 20 decisions, gets
+   a proposed Gmail filter: from that sender, apply the label, and skip
+   the inbox unless unticked. Approving creates the filter (the agent,
+   with `gmail.settings.basic`, a further consent, "Allow filters" like
+   "Allow changes"); a filtered sender's new mail leaves review.
 
 **Sign-off:** M12.

@@ -55,6 +55,8 @@ import { MailStatisticsService } from "./services/MailStatisticsService";
 import { MailSuggestionService } from "./services/MailSuggestionService";
 import { MailInboxService } from "./services/MailInboxService";
 import { MailClusterService } from "./services/MailClusterService";
+import { MailStarService } from "./services/MailStarService";
+import { ListMailStarMismatchesController } from "./controllers/ListMailStarMismatchesController";
 import { CreateMailClusterRunController } from "./controllers/CreateMailClusterRunController";
 import { CreateMailClustersController } from "./controllers/CreateMailClustersController";
 import { CreateMailClusterMembersController } from "./controllers/CreateMailClusterMembersController";
@@ -90,6 +92,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailSuggestionService,
     MailInboxService,
     MailClusterService,
+    MailStarService,
     MailSyncService,
     MailChangeService,
     MailTrainingService,
@@ -134,6 +137,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailTrainingExamplesController,
     ListMailTrainingLabelsController,
     PublishMailSuggestionRunController,
+    ListMailStarMismatchesController,
     CreateMailClusterRunController,
     CreateMailClustersController,
     CreateMailClusterMembersController,

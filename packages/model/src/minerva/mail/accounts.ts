@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import type { Moment } from "moment";
 import { ApiTimestamp } from "../../decorators";
+import { MailStarIcon } from "./sync";
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Enums                                                                                                              */
@@ -89,6 +90,25 @@ export class MailAccount {
     description: "Gmail's count of its threads, at the last sync",
   })
   gmailThreadsTotal?: number;
+
+  @ApiProperty({
+    enum: () => MailStarIcon,
+    enumName: "MailStarIcon",
+    enumSchema: { description: "Gmail's star icons, by search name" },
+    required: false,
+    description:
+      "The star that marks a message wanting attention (an open state)",
+  })
+  attentionStar?: MailStarIcon;
+
+  @ApiProperty({
+    enum: () => MailStarIcon,
+    enumName: "MailStarIcon",
+    enumSchema: { description: "Gmail's star icons, by search name" },
+    required: false,
+    description: "The star that marks a message done (a closed state)",
+  })
+  doneStar?: MailStarIcon;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

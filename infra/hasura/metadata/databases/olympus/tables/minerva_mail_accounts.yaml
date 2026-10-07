@@ -3,8 +3,12 @@ table:
   schema: minerva
 configuration:
   column_config:
+    attention_star:
+      custom_name: attentionStar
     created_at:
       custom_name: createdTime
+    done_star:
+      custom_name: doneStar
     gmail_messages_total:
       custom_name: gmailMessagesTotal
     gmail_threads_total:
@@ -26,7 +30,9 @@ configuration:
     verified_at:
       custom_name: verifiedTime
   custom_column_names:
+    attention_star: attentionStar
     created_at: createdTime
+    done_star: doneStar
     gmail_messages_total: gmailMessagesTotal
     gmail_threads_total: gmailThreadsTotal
     history_id: historyId

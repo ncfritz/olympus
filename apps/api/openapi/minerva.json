@@ -9701,6 +9701,89 @@
         ]
       }
     },
+    "/minerva/mail/star-mismatches": {
+      "get": {
+        "description": "Stars as states (docs/plans/email-management phase 7): a message in an open state (`Bills/*Payable`) that is not starred, or starred with another icon than the account's attention star, and one in a closed state still carrying the attention star. Each with its fix: `star` (written to Gmail by an ApplyMailChanges adding STARRED), or an icon to set in Gmail by hand (`attention-icon`, `done-icon`; the API writes no icon), which the next sync records. Newest first, up to 500 a page, with each fix's count. Metadata only.",
+        "operationId": "ListMailStarMismatches",
+        "parameters": [
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "How many to pass over",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "At most this many, up to 500",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "fix",
+            "required": false,
+            "in": "query",
+            "description": "Only those wanting this fix",
+            "schema": {
+              "$ref": "#/components/schemas/MailStarFix"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": false,
+            "in": "query",
+            "description": "Only this mail account's",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of mismatches, and the counts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailStarMismatchesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists messages whose state and star disagree",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/cluster-runs": {
       "post": {
         "description": "For the mail classifier (docs/plans/email-management phase 6): a run for one account and embedding version, building until it is published. Its clusters, members and map points are posted to it and show nowhere until PublishMailClusterRun.",
@@ -17465,6 +17548,24 @@
           "consent"
         ]
       },
+      "MailStarIcon": {
+        "type": "string",
+        "description": "Gmail's star icons, by search name",
+        "enum": [
+          "yellow-star",
+          "orange-star",
+          "red-star",
+          "purple-star",
+          "blue-star",
+          "green-star",
+          "red-bang",
+          "orange-guillemet",
+          "yellow-bang",
+          "green-check",
+          "blue-info",
+          "purple-question"
+        ]
+      },
       "MailAccount": {
         "type": "object",
         "properties": {
@@ -17507,6 +17608,22 @@
           "gmailThreadsTotal": {
             "type": "number",
             "description": "Gmail's count of its threads, at the last sync"
+          },
+          "attentionStar": {
+            "description": "The star that marks a message wanting attention (an open state)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
+              }
+            ]
+          },
+          "doneStar": {
+            "description": "The star that marks a message done (a closed state)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
+              }
+            ]
           }
         },
         "required": [
@@ -17577,24 +17694,6 @@
           "starred",
           "important",
           "sent"
-        ]
-      },
-      "MailStarIcon": {
-        "type": "string",
-        "description": "Gmail's star icons, by search name",
-        "enum": [
-          "yellow-star",
-          "orange-star",
-          "red-star",
-          "purple-star",
-          "blue-star",
-          "green-star",
-          "red-bang",
-          "orange-guillemet",
-          "yellow-bang",
-          "green-check",
-          "blue-info",
-          "purple-question"
         ]
       },
       "MailMessageState": {
@@ -19498,6 +19597,137 @@
         },
         "required": [
           "run"
+        ]
+      },
+      "MailStarFix": {
+        "type": "string",
+        "enum": [
+          "star",
+          "attention-icon",
+          "done-icon"
+        ],
+        "description": "How a message's star is put back in step with its state"
+      },
+      "MailStarMismatch": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The account"
+          },
+          "gmailId": {
+            "type": "string",
+            "description": "Its Gmail ID"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When it was received"
+          },
+          "label": {
+            "type": "string",
+            "description": "Its state label, by full name"
+          },
+          "stateOpen": {
+            "type": "boolean",
+            "description": "Whether the state is open (wants attention)"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Starred now"
+          },
+          "starIcon": {
+            "description": "Its star icon now, when sync found one",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
+              }
+            ]
+          },
+          "fix": {
+            "description": "The fix",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarFix"
+              }
+            ]
+          },
+          "wanted": {
+            "description": "The star its state wants: the account's attention or done star",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarIcon"
+              }
+            ]
+          }
+        },
+        "required": [
+          "accountId",
+          "gmailId",
+          "receivedTime",
+          "label",
+          "stateOpen",
+          "starred",
+          "fix",
+          "wanted"
+        ]
+      },
+      "MailStarMismatchCounts": {
+        "type": "object",
+        "properties": {
+          "star": {
+            "type": "number",
+            "description": "To star"
+          },
+          "attentionIcon": {
+            "type": "number",
+            "description": "To give the attention star"
+          },
+          "doneIcon": {
+            "type": "number",
+            "description": "To give the done star"
+          }
+        },
+        "required": [
+          "star",
+          "attentionIcon",
+          "doneIcon"
+        ]
+      },
+      "ListMailStarMismatchesResponse": {
+        "type": "object",
+        "properties": {
+          "mismatches": {
+            "description": "A page of them, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailStarMismatch"
+            }
+          },
+          "count": {
+            "type": "number",
+            "description": "How many match the filters"
+          },
+          "counts": {
+            "description": "How many of the caller's want each fix, across the filters but the fix",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailStarMismatchCounts"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mismatches",
+          "count",
+          "counts"
         ]
       },
       "CreateMailClusterRunRequest": {

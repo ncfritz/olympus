@@ -1,0 +1,47 @@
+table:
+  name: mail_star_mismatches
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    gmail_id:
+      custom_name: gmailId
+    label_id:
+      custom_name: labelId
+    message_id:
+      custom_name: messageId
+    received_at:
+      custom_name: receivedTime
+    star_icon:
+      custom_name: starIcon
+    state_open:
+      custom_name: stateOpen
+  custom_column_names:
+    account_id: accountId
+    gmail_id: gmailId
+    label_id: labelId
+    message_id: messageId
+    received_at: receivedTime
+    star_icon: starIcon
+    state_open: stateOpen
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          message_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_messages
+          schema: minerva
