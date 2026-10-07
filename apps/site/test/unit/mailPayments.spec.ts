@@ -5,6 +5,7 @@ import type {
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import {
+  ageColors,
   billChange,
   openDays,
   paymentChange,
@@ -60,5 +61,13 @@ describe("payments", () => {
     expect(openDays(bill(), DateTime.fromISO("2026-10-01T09:00:00.000Z"))).toBe(
       30,
     );
+  });
+
+  it("colours a bill's age from green through yellow to red", () => {
+    expect(ageColors(0).background).toBe("hsl(120, 75%, 88%)");
+    expect(ageColors(30).background).toBe("hsl(60, 75%, 88%)");
+    expect(ageColors(60).background).toBe("hsl(30, 75%, 88%)");
+    expect(ageColors(140).background).toBe("hsl(0, 75%, 88%)");
+    expect(ageColors(-3)).toEqual(ageColors(0));
   });
 });

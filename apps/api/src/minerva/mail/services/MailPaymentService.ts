@@ -177,6 +177,8 @@ export class MailPaymentService {
           message {
             subject
             fromAddress
+            fromName
+            snippet
           }
         }
         count: minerva_mail_open_states_aggregate(where: $base) {
@@ -209,7 +211,12 @@ export class MailPaymentService {
         toLabel: string | null;
         starred: boolean;
         starIcon: string | null;
-        message: { subject: string | null; fromAddress: string | null };
+        message: {
+          subject: string | null;
+          fromAddress: string | null;
+          fromName: string | null;
+          snippet: string;
+        };
       }[];
       count: Count;
       month: Count;
@@ -231,7 +238,9 @@ export class MailPaymentService {
         ...(b.message.fromAddress
           ? { fromAddress: b.message.fromAddress }
           : {}),
+        ...(b.message.fromName ? { fromName: b.message.fromName } : {}),
         ...(b.message.subject ? { subject: b.message.subject } : {}),
+        snippet: b.message.snippet,
         receivedTime: moment(b.receivedTime),
         label: b.label,
         ...(b.toLabel ? { toLabel: b.toLabel } : {}),

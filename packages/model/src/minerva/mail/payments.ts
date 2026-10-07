@@ -131,8 +131,22 @@ export class MailOpenBill {
   @ApiProperty({ type: String, required: false, description: "The sender" })
   fromAddress?: string;
 
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The sender's display name",
+  })
+  fromName?: string;
+
   @ApiProperty({ type: String, required: false, description: "The subject" })
   subject?: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Gmail's snippet of it, at most 200 characters",
+  })
+  snippet: string;
 
   @ApiTimestamp({ required: true, description: "When it was received" })
   receivedTime: Moment;

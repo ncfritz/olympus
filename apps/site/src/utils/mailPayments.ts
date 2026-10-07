@@ -37,3 +37,29 @@ export const openDays = (b: MailOpenBill, now = DateTime.now()): number =>
     0,
     Math.floor(now.diff(DateTime.fromISO(String(b.receivedTime)), "days").days),
   );
+
+/** Where a bill's age turns: under a month green, to a quarter yellow, red. */
+export const AGE_MONTH = 30;
+export const AGE_QUARTER = 90;
+
+/**
+ * A bill's age as a colour on a green, yellow, red scale: the hue falls
+ * from green at 0 days to yellow at 30 and red from 90; a light background
+ * and a dark text of the same hue.
+ */
+export const ageColors = (
+  days: number,
+): { background: string; color: string } => {
+  const d = Math.max(0, days);
+  const hue =
+    d <= AGE_MONTH
+      ? 120 - 60 * (d / AGE_MONTH)
+      : d <= AGE_QUARTER
+        ? 60 - 60 * ((d - AGE_MONTH) / (AGE_QUARTER - AGE_MONTH))
+        : 0;
+  const h = Math.round(hue);
+  return {
+    background: `hsl(${h}, 75%, 88%)`,
+    color: `hsl(${h}, 60%, 24%)`,
+  };
+};

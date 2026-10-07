@@ -13662,6 +13662,10 @@
         "description": "The sender",
         "type": "string"
       },
+      "fromName": {
+        "description": "The sender's display name",
+        "type": "string"
+      },
       "gmailId": {
         "description": "Its Gmail ID",
         "type": "string"
@@ -13672,6 +13676,10 @@
       },
       "receivedTime": {
         "description": "When it was received",
+        "type": "string"
+      },
+      "snippet": {
+        "description": "Gmail's snippet of it, at most 200 characters",
         "type": "string"
       },
       "starIcon": {
@@ -13700,6 +13708,7 @@
       "gmailId",
       "label",
       "receivedTime",
+      "snippet",
       "starred"
     ],
     "type": "object"

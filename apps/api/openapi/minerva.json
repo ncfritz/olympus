@@ -20842,9 +20842,17 @@
             "type": "string",
             "description": "The sender"
           },
+          "fromName": {
+            "type": "string",
+            "description": "The sender's display name"
+          },
           "subject": {
             "type": "string",
             "description": "The subject"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "Gmail's snippet of it, at most 200 characters"
           },
           "receivedTime": {
             "type": "string",
@@ -20874,6 +20882,7 @@
         "required": [
           "accountId",
           "gmailId",
+          "snippet",
           "receivedTime",
           "label",
           "starred"

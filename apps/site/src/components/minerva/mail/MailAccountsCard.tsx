@@ -27,8 +27,10 @@ const MailAccountsCard: React.FunctionComponent<{
   accounts: MailAccount[];
   loading?: boolean;
   onConnect: (account: MailAccount) => void;
-}> = ({ accounts, loading, onConnect }) => (
-  <Card size={"small"} title={"Mailboxes"} style={{ width: "100%" }}>
+  /** The list alone, for a drawer that has its own title. */
+  bare?: boolean;
+}> = ({ accounts, loading, onConnect, bare = false }) => {
+  const list = (
     <List<MailAccount>
       loading={loading}
       dataSource={accounts}
@@ -89,7 +91,14 @@ const MailAccountsCard: React.FunctionComponent<{
         </List.Item>
       )}
     />
-  </Card>
-);
+  );
+  return bare ? (
+    list
+  ) : (
+    <Card size={"small"} title={"Mailboxes"} style={{ width: "100%" }}>
+      {list}
+    </Card>
+  );
+};
 
 export default MailAccountsCard;

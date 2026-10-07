@@ -102,6 +102,8 @@ describe("Mail payments", () => {
             message: {
               subject: "Old bill",
               fromAddress: "billing@water.example",
+              fromName: "Water Co",
+              snippet: "Your bill is ready",
             },
           },
           {
@@ -112,7 +114,12 @@ describe("Mail payments", () => {
             toLabel: null,
             starred: false,
             starIcon: null,
-            message: { subject: null, fromAddress: null },
+            message: {
+              subject: null,
+              fromAddress: null,
+              fromName: null,
+              snippet: "",
+            },
           },
         ],
         count: count(9),
@@ -128,7 +135,9 @@ describe("Mail payments", () => {
           accountId: ACCOUNT_ID,
           gmailId: "b0",
           fromAddress: "billing@water.example",
+          fromName: "Water Co",
           subject: "Old bill",
+          snippet: "Your bill is ready",
           receivedTime: "2026-06-01T08:00:00.000Z",
           label: "Bills/*Payable",
           toLabel: "Bills/*Paid",
@@ -138,6 +147,7 @@ describe("Mail payments", () => {
         {
           accountId: ACCOUNT_ID,
           gmailId: "x1",
+          snippet: "",
           receivedTime: "2026-10-01T08:00:00.000Z",
           label: "Chores/*To do",
           starred: false,

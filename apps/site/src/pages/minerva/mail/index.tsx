@@ -6,6 +6,7 @@ import {
   ForwardOutlined,
   HistoryOutlined,
   InboxOutlined,
+  MailOutlined,
   ReadOutlined,
   RightOutlined,
   ThunderboltOutlined,
@@ -20,9 +21,8 @@ import type {
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   Alert,
-  Badge,
   Button,
-  Collapse,
+  Drawer,
   Flex,
   Input,
   message,
@@ -43,7 +43,14 @@ import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import mailApi, { type MailInboxSort } from "../../../api/mailApi";
 import InboxStrip from "../../../components/minerva/mail/InboxStrip";
-import OpenBills from "../../../components/minerva/mail/OpenBills";
+import OpenBills, {
+  OpenBillAgesPill,
+} from "../../../components/minerva/mail/OpenBills";
+import {
+  ReceivedCell,
+  SenderCell,
+  SubjectCell,
+} from "../../../components/minerva/mail/MailCells";
 import FilterProposals from "../../../components/minerva/mail/FilterProposals";
 import {
   CurrentLabels,
@@ -70,7 +77,7 @@ import {
   mailLinkOutcome,
   mailReturnTo,
 } from "../../../utils/mailAccounts";
-import { nextToReview, senderOf, startOfToday } from "../../../utils/mailInbox";
+import { nextToReview, startOfToday } from "../../../utils/mailInbox";
 
 const { Title, Text } = Typography;
 
@@ -108,7 +115,7 @@ type InboxView = MailInboxStatus | "bills";
  * message with its labels and what the classifier suggested as it
  * arrived, to approve (writing the labels to Gmail, archiving and marking
  * read as chosen), amend in the label picker, skip or open; and the
- * mailboxes, linked to Gmail here.
+ * mailboxes, linked to Gmail from their drawer.
  */
 const MailInboxPage: React.FunctionComponent = () => {
   const router = useRouter();
@@ -125,6 +132,7 @@ const MailInboxPage: React.FunctionComponent = () => {
   const [busy, setBusy] = useState(false);
   const [options] = useApproveOptions();
   const [view, setView] = useState<InboxView>("review");
+  const [mailboxesOpen, setMailboxesOpen] = useState(false);
   const { token } = theme.useToken();
 
   // One scroller: what is above the table stays put, and the table's
@@ -318,6 +326,12 @@ const MailInboxPage: React.FunctionComponent = () => {
               </Text>
             </Space>
             <Space wrap={true}>
+              <Button
+                icon={<MailOutlined />}
+                onClick={() => setMailboxesOpen(true)}
+              >
+                Mailboxes
+              </Button>
               <Link href={"/minerva/mail/changes"}>
                 <Button icon={<HistoryOutlined />}>Change log</Button>
               </Link>
@@ -354,10 +368,21 @@ const MailInboxPage: React.FunctionComponent = () => {
               />
             )}
             {!accountsLoading && !linked && (
-              <MailAccountsCard
-                accounts={accounts}
-                loading={accountsLoading}
-                onConnect={connect}
+              <Alert
+                type={"info"}
+                showIcon={true}
+                message={
+                  "No mailbox is linked to Gmail yet: link one to see new mail here."
+                }
+                action={
+                  <Button
+                    size={"small"}
+                    type={"primary"}
+                    onClick={() => setMailboxesOpen(true)}
+                  >
+                    Link a mailbox
+                  </Button>
+                }
               />
             )}
             <InboxStrip summary={summary} loading={!inbox && loading} />
@@ -388,7 +413,14 @@ const MailInboxPage: React.FunctionComponent = () => {
                 })),
                 {
                   key: "bills",
-                  label: bills ? `Open bills · ${bills.count}` : "Open bills",
+                  label: (
+                    <Space size={6}>
+                      <span>Open bills</span>
+                      {bills && bills.count > 0 && (
+                        <OpenBillAgesPill ages={bills.ages} />
+                      )}
+                    </Space>
+                  ),
                 },
               ]}
               tabBarExtraContent={
@@ -398,7 +430,7 @@ const MailInboxPage: React.FunctionComponent = () => {
                       allowClear={true}
                       placeholder={"Search sender or subject"}
                       size={"small"}
-                      style={{ width: 180 }}
+                      style={{ width: 140 }}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       onSearch={(v) =>
@@ -519,7 +551,6 @@ const MailInboxPage: React.FunctionComponent = () => {
         <Flex vertical={true} gap={16} style={{ padding: "0 16px 16px" }}>
           {view === "bills" ? (
             <OpenBills
-              embedded={true}
               sticky={sticky}
               onChanged={() => void refetchBills(true)}
             />
@@ -589,17 +620,13 @@ const MailInboxPage: React.FunctionComponent = () => {
                 {
                   title: "From",
                   key: "from",
-                  width: 150,
-                  ellipsis: true,
+                  width: 180,
                   render: (_, m) => (
-                    <Tooltip title={m.fromAddress}>
-                      <Space size={6}>
-                        {m.unread && <Badge color={"#1677ff"} />}
-                        <span style={{ fontWeight: m.unread ? 600 : 400 }}>
-                          {senderOf(m)}
-                        </span>
-                      </Space>
-                    </Tooltip>
+                    <SenderCell
+                      name={m.fromName}
+                      address={m.fromAddress}
+                      unread={m.unread}
+                    />
                   ),
                 },
                 {
@@ -607,21 +634,11 @@ const MailInboxPage: React.FunctionComponent = () => {
                   key: "subject",
                   ellipsis: true,
                   render: (_, m) => (
-                    <Flex vertical={true} style={{ minWidth: 0 }}>
-                      <Text
-                        ellipsis={true}
-                        style={{ fontWeight: m.unread ? 600 : 400 }}
-                      >
-                        {m.subject ?? "(no subject)"}
-                      </Text>
-                      <Text
-                        type={"secondary"}
-                        ellipsis={true}
-                        style={{ fontSize: 12 }}
-                      >
-                        {m.snippet}
-                      </Text>
-                    </Flex>
+                    <SubjectCell
+                      subject={m.subject}
+                      snippet={m.snippet}
+                      unread={m.unread}
+                    />
                   ),
                 },
                 {
@@ -649,19 +666,9 @@ const MailInboxPage: React.FunctionComponent = () => {
                   title: "Received",
                   key: "received",
                   width: 96,
-                  render: (_, m) => {
-                    const when = DateTime.fromISO(String(m.receivedTime));
-                    return (
-                      <Flex vertical={true}>
-                        <Text style={{ fontSize: 12 }}>
-                          {when.toLocaleString(DateTime.DATE_MED)}
-                        </Text>
-                        <Text type={"secondary"} style={{ fontSize: 11 }}>
-                          {when.toLocaleString(DateTime.TIME_SIMPLE)}
-                        </Text>
-                      </Flex>
-                    );
-                  },
+                  render: (_, m) => (
+                    <ReceivedCell time={String(m.receivedTime)} />
+                  ),
                 },
                 {
                   title: "",
@@ -700,28 +707,22 @@ const MailInboxPage: React.FunctionComponent = () => {
               ]}
             />
           )}
-
-          {linked && (
-            <Collapse
-              ghost={true}
-              items={[
-                {
-                  key: "mailboxes",
-                  label: "Mailboxes",
-                  children: (
-                    <MailAccountsCard
-                      accounts={accounts}
-                      loading={accountsLoading}
-                      onConnect={connect}
-                    />
-                  ),
-                },
-              ]}
-            />
-          )}
         </Flex>
       </div>
       <MessageViewer message={opened} onClose={() => setOpened(undefined)} />
+      <Drawer
+        title={"Mailboxes"}
+        open={mailboxesOpen}
+        onClose={() => setMailboxesOpen(false)}
+        width={480}
+      >
+        <MailAccountsCard
+          accounts={accounts}
+          loading={accountsLoading}
+          onConnect={connect}
+          bare={true}
+        />
+      </Drawer>
     </>
   );
 };

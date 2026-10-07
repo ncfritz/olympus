@@ -1,40 +1,78 @@
-import { CheckOutlined, DollarOutlined } from "@ant-design/icons";
+import { CheckOutlined, ExportOutlined } from "@ant-design/icons";
 import type {
   ListMailOpenBillsResponse,
   MailOpenBill,
+  MailOpenBillAges,
 } from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
-  Collapse,
   Empty,
-  Flex,
   message,
   Popconfirm,
   Space,
   Table,
   type TableProps,
   Tag,
-  Typography,
+  Tooltip,
 } from "antd";
-import { DateTime } from "luxon";
 import Link from "next/link";
 import React, { useState } from "react";
 import mailApi from "../../../api/mailApi";
 import { useFetch } from "../../../hooks/useFetch";
 import { apiProblems } from "../../../utils/goals";
 import { gmailLink } from "../../../utils/mailAudit";
-import { billChange, openDays, stateName } from "../../../utils/mailPayments";
+import {
+  ageColors,
+  billChange,
+  openDays,
+  stateName,
+} from "../../../utils/mailPayments";
+import { ReceivedCell, SenderCell, SubjectCell } from "./MailCells";
 
-const { Text } = Typography;
+const PAGE_SIZE = 50;
 
-const PAGE_SIZE = 20;
+/** The pill's sections: under 30 days, 30 to 90, older. */
+const AGES: {
+  key: keyof MailOpenBillAges;
+  title: string;
+  days: number;
+}[] = [
+  { key: "month", title: "under 30 days", days: 0 },
+  { key: "quarter", title: "30 to 90 days", days: 60 },
+  { key: "older", title: "over 90 days", days: 120 },
+];
+
+/**
+ * Open bills by age as one pill: a section each for under 30 days, 30 to
+ * 90 and older, coloured as the table's Open column is.
+ */
+export const OpenBillAgesPill: React.FunctionComponent<{
+  ages: MailOpenBillAges;
+}> = ({ ages }) => (
+  <span
+    style={{
+      display: "inline-flex",
+      borderRadius: 10,
+      overflow: "hidden",
+      fontSize: 11,
+      lineHeight: "18px",
+      verticalAlign: "middle",
+    }}
+  >
+    {AGES.map((a) => (
+      <Tooltip key={a.key} title={`${ages[a.key].toLocaleString()} ${a.title}`}>
+        <span
+          aria-label={`${ages[a.key]} ${a.title}`}
+          style={{ ...ageColors(a.days), padding: "0 7px", fontWeight: 600 }}
+        >
+          {ages[a.key].toLocaleString()}
+        </span>
+      </Tooltip>
+    ))}
+  </span>
+);
 
 export interface OpenBillsProps {
-  /**
-   * The Inbox's Open bills tab: the ages and the table, always shown;
-   * otherwise a fold that shows only with bills open.
-   */
-  embedded?: boolean;
   /** The table header's stickiness, as the page's scroller needs it. */
   sticky?: TableProps<MailOpenBill>["sticky"];
   /** A bill was marked, so the counts the page shows can follow. */
@@ -42,12 +80,12 @@ export interface OpenBillsProps {
 }
 
 /**
- * Open payables by age (docs/plans/email-management phase 7 step 2): the
- * messages in an open state, oldest first, each marked done along its
- * family's transition by hand when no payment was found for it.
+ * The Inbox's Open bills tab (docs/plans/email-management phase 7 step
+ * 2): the messages in an open state, oldest first, each one's age
+ * coloured green to red, marked done along its family's transition by
+ * hand when no payment was found for it.
  */
 const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
-  embedded = false,
   sticky,
   onChanged,
 }) => {
@@ -60,7 +98,6 @@ const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
     dataType: "open bills",
     params: { page },
     watch: [page],
-    quiet: true,
     fetchFunction: async (p) =>
       (
         await mailApi.listOpenBills({
@@ -69,7 +106,6 @@ const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
         })
       ).data,
   });
-  if (!embedded && (!found || found.count === 0)) return null;
 
   const close = async (b: MailOpenBill) => {
     const change = billChange(b);
@@ -96,30 +132,14 @@ const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
     }
   };
 
-  const { month, quarter, older } = found?.ages ?? {
-    month: 0,
-    quarter: 0,
-    older: 0,
-  };
-  const count = found?.count ?? 0;
-  const ages = (
-    <Space size={8} wrap={true}>
-      <Tag>{month.toLocaleString()} under 30 days</Tag>
-      <Tag color={quarter ? "gold" : undefined}>
-        {quarter.toLocaleString()} 30–90 days
-      </Tag>
-      <Tag color={older ? "volcano" : undefined}>
-        {older.toLocaleString()} older
-      </Tag>
-    </Space>
-  );
-  const table = (
+  return (
     <Table<MailOpenBill>
       size={"small"}
       rowKey={(b) => `${b.accountId}:${b.gmailId}`}
       loading={loading}
       dataSource={found?.bills ?? []}
       sticky={sticky}
+      tableLayout={"fixed"}
       locale={{
         emptyText: (
           <Empty
@@ -131,111 +151,85 @@ const OpenBills: React.FunctionComponent<OpenBillsProps> = ({
       pagination={{
         current: page + 1,
         pageSize: PAGE_SIZE,
-        total: count,
+        total: found?.count ?? 0,
         showSizeChanger: false,
         onChange: (p) => setPage(p - 1),
       }}
-      columns={COLUMNS(busy, close)}
-    />
-  );
-
-  if (embedded) {
-    return (
-      <Flex vertical={true} gap={12}>
-        {ages}
-        {table}
-      </Flex>
-    );
-  }
-  return (
-    <Collapse
-      size={"small"}
-      items={[
+      columns={[
         {
-          key: "bills",
-          label: (
-            <Space size={8} wrap={true}>
-              <DollarOutlined />
-              <Text strong={true}>
-                {count.toLocaleString()} open {count === 1 ? "bill" : "bills"}
-              </Text>
-              {ages}
+          title: "Open",
+          key: "age",
+          width: 90,
+          align: "center",
+          onCell: (b) => ({ style: ageColors(openDays(b)) }),
+          render: (_, b) => `${openDays(b)} days`,
+        },
+        {
+          title: "From",
+          key: "from",
+          width: 200,
+          render: (_, b) => (
+            <SenderCell name={b.fromName} address={b.fromAddress} />
+          ),
+        },
+        {
+          title: "Subject",
+          key: "subject",
+          render: (_, b) => (
+            <SubjectCell subject={b.subject} snippet={b.snippet} />
+          ),
+        },
+        {
+          title: "State",
+          key: "state",
+          width: 180,
+          render: (_, b) => <Tag color={"volcano"}>{b.label}</Tag>,
+        },
+        {
+          title: "Received",
+          key: "received",
+          width: 96,
+          render: (_, b) => <ReceivedCell time={String(b.receivedTime)} />,
+        },
+        {
+          title: "",
+          key: "actions",
+          width: 150,
+          render: (_, b) => (
+            <Space size={4}>
+              <Tooltip title={"Open in Gmail"}>
+                <Button
+                  shape={"circle"}
+                  size={"small"}
+                  icon={<ExportOutlined />}
+                  aria-label={`Open ${b.subject ?? "the bill"} in Gmail`}
+                  href={gmailLink(b.gmailId)}
+                  target={"_blank"}
+                  rel={"noreferrer"}
+                />
+              </Tooltip>
+              {b.toLabel && (
+                <Popconfirm
+                  title={`Mark it ${stateName(b.toLabel)}?`}
+                  description={`${b.label} comes off and ${b.toLabel} goes on, in Gmail. It can be undone from the change log.`}
+                  okText={"Mark"}
+                  onConfirm={() => close(b)}
+                >
+                  <Button
+                    size={"small"}
+                    icon={<CheckOutlined />}
+                    loading={busy === b.gmailId}
+                  >
+                    Mark {stateName(b.toLabel)}
+                  </Button>
+                </Popconfirm>
+              )}
             </Space>
           ),
-          children: table,
         },
       ]}
     />
   );
 };
-
-/** The table's columns: a bill's age, sender, subject, state and Mark. */
-const COLUMNS = (
-  busy: string | undefined,
-  close: (b: MailOpenBill) => Promise<void>,
-): TableProps<MailOpenBill>["columns"] => [
-  {
-    title: "Open",
-    key: "age",
-    width: 90,
-    render: (_, b) => `${openDays(b)} days`,
-  },
-  {
-    title: "Received",
-    key: "received",
-    width: 120,
-    render: (_, b) =>
-      DateTime.fromISO(String(b.receivedTime)).toLocaleString(
-        DateTime.DATE_MED,
-      ),
-  },
-  {
-    title: "From",
-    key: "from",
-    ellipsis: true,
-    render: (_, b) => b.fromAddress,
-  },
-  {
-    title: "Subject",
-    key: "subject",
-    ellipsis: true,
-    render: (_, b) => (
-      <a href={gmailLink(b.gmailId)} target={"_blank"} rel={"noreferrer"}>
-        {b.subject ?? "(no subject)"}
-      </a>
-    ),
-  },
-  {
-    title: "State",
-    key: "state",
-    render: (_, b) => <Tag color={"volcano"}>{b.label}</Tag>,
-  },
-  {
-    title: "",
-    key: "close",
-    width: 150,
-    render: (_, b) =>
-      b.toLabel ? (
-        <Popconfirm
-          title={`Mark it ${stateName(b.toLabel)}?`}
-          description={`${b.label} comes off and ${b.toLabel} goes on, in Gmail. It can be undone from the change log.`}
-          okText={"Mark"}
-          onConfirm={() => close(b)}
-        >
-          <Button
-            size={"small"}
-            icon={<CheckOutlined />}
-            loading={busy === b.gmailId}
-          >
-            Mark {stateName(b.toLabel)}
-          </Button>
-        </Popconfirm>
-      ) : (
-        <Flex>
-          <Text type={"secondary"}>No transition</Text>
-        </Flex>
-      ),
-  },
-];
 
 export default OpenBills;
