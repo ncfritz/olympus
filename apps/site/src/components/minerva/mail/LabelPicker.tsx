@@ -1,7 +1,13 @@
-import { PlusOutlined } from "@ant-design/icons";
+import {
+  CloseCircleFilled,
+  PlusCircleFilled,
+  PlusOutlined,
+} from "@ant-design/icons";
 import { Checkbox, Flex, Select, Space, Tag, Typography } from "antd";
 import React, { useMemo, useState } from "react";
 import {
+  type ChangeRow,
+  changeRows,
   countOn,
   describeWant,
   effectiveWant,
@@ -14,8 +20,10 @@ import {
   type PickerOption,
   type PickerSuggestion,
   searchLabels,
+  toggleRow,
   validNewPath,
 } from "../../../utils/labelPicker";
+import { BLOCK, CUT } from "./InboxLabels";
 
 const { Text } = Typography;
 
@@ -37,6 +45,13 @@ export interface LabelPickerProps {
   /** Labels created here, to make in Gmail on apply. */
   created: string[];
   onCreated: (created: string[]) => void;
+  /**
+   * One message's labels stacked under the select (the Inbox's Changes
+   * column), the select showing none of them: those it keeps solid gold,
+   * those going on green, each with a cross to take it off; those coming
+   * off struck through, with a plus to put them back.
+   */
+  stacked?: boolean;
 }
 
 /**
@@ -54,6 +69,7 @@ const LabelPicker: React.FunctionComponent<LabelPickerProps> = ({
   onChange,
   created,
   onCreated,
+  stacked = false,
 }) => {
   const [search, setSearch] = useState("");
   const [notes, setNotes] = useState<string[]>([]);
@@ -198,6 +214,102 @@ const LabelPicker: React.FunctionComponent<LabelPickerProps> = ({
   }, [search, options, suggestions, recent, current, created, messages]);
 
   const effects = labelEffects(messages, wants);
+  const list = stacked && total === 1;
+
+  /** A change list's icon: off, back on, or dropped. */
+  const flip = (row: ChangeRow) => {
+    setNotes([]);
+    if (row.state === "added" && created.includes(row.label)) {
+      onCreated(created.filter((c) => c !== row.label));
+    }
+    onChange(toggleRow(wants, row));
+  };
+
+  if (list) {
+    return (
+      <Flex vertical={true} gap={8} style={{ width: "100%" }}>
+        <Select<string>
+          style={{ width: "100%" }}
+          placeholder={"Add a label, or type a path"}
+          value={null}
+          searchValue={search}
+          onSearch={setSearch}
+          filterOption={false}
+          options={groups}
+          onSelect={pick}
+          showSearch={true}
+          aria-label={"Add a label"}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && search) {
+              e.preventDefault();
+              e.stopPropagation();
+              setSearch("");
+            }
+          }}
+        />
+        {notes.map((n) => (
+          <Text key={n} type={"secondary"} style={{ fontSize: 12 }}>
+            {n}
+          </Text>
+        ))}
+        <div>
+          {changeRows(messages[0], wants).map((row) => {
+            const Icon =
+              row.state === "removed" ? PlusCircleFilled : CloseCircleFilled;
+            const action =
+              row.state === "removed"
+                ? `Put ${row.label} back`
+                : `Take ${row.label} off`;
+            return (
+              <Tag
+                key={row.label}
+                color={
+                  row.state === "kept"
+                    ? "gold"
+                    : row.state === "added"
+                      ? "green"
+                      : undefined
+                }
+                variant={row.state === "removed" ? "filled" : "solid"}
+                style={BLOCK}
+                title={
+                  row.state === "added"
+                    ? `${row.label}, going on`
+                    : row.state === "removed"
+                      ? `${row.label}, coming off`
+                      : row.label
+                }
+              >
+                <span
+                  style={{
+                    ...CUT,
+                    ...(row.state === "removed"
+                      ? { textDecoration: "line-through", opacity: 0.6 }
+                      : {}),
+                  }}
+                >
+                  {row.label}
+                </span>
+                <Icon
+                  role={"button"}
+                  tabIndex={0}
+                  aria-label={action}
+                  style={{ cursor: "pointer", flex: "none" }}
+                  onClick={() => flip(row)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      flip(row);
+                    }
+                  }}
+                />
+              </Tag>
+            );
+          })}
+        </div>
+      </Flex>
+    );
+  }
 
   return (
     <Space direction={"vertical"} style={{ width: "100%" }} size={8}>

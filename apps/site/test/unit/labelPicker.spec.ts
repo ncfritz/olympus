@@ -2,6 +2,7 @@ import type { MailAuditChange, MailLabel } from "@ncfritz/olympus-sdk/minerva";
 import { describe, expect, it } from "vitest";
 import {
   bulkChanges,
+  changeRows,
   describeWant,
   effectiveWant,
   labelEffects,
@@ -14,6 +15,7 @@ import {
   pickLabel,
   RECENT_MAX,
   searchLabels,
+  toggleRow,
   validNewPath,
   withRecent,
 } from "../../src/utils/labelPicker";
@@ -218,5 +220,43 @@ describe("selection helpers", () => {
     expect(withRecent(["a", "b"], ["b", "c"])).toEqual(["b", "c", "a"]);
     const many = Array.from({ length: 20 }, (_, i) => `l${i}`);
     expect(withRecent(many, ["x"])).toHaveLength(RECENT_MAX);
+  });
+});
+
+describe("one message's change list", () => {
+  const m = {
+    gmailId: "1a",
+    accountId: "acc-1",
+    labels: ["Travel", "Bills/*Payable"],
+  };
+
+  it("stacks its labels, kept or coming off, then those going on", () => {
+    expect(
+      changeRows(m, {
+        "Bills/*Payable": "none",
+        Reading: "all",
+        Old: "none",
+        Travel: "keep",
+      }),
+    ).toEqual([
+      { label: "Travel", state: "kept" },
+      { label: "Bills/*Payable", state: "removed" },
+      { label: "Reading", state: "added" },
+    ]);
+  });
+
+  it("takes a label off, puts it back, or drops one it would gain", () => {
+    expect(toggleRow({}, { label: "Travel", state: "kept" })).toEqual({
+      Travel: "none",
+    });
+    expect(
+      toggleRow({ Travel: "none" }, { label: "Travel", state: "removed" }),
+    ).toEqual({});
+    expect(
+      toggleRow(
+        { Reading: "all", Travel: "none" },
+        { label: "Reading", state: "added" },
+      ),
+    ).toEqual({ Travel: "none" });
   });
 });

@@ -8,7 +8,7 @@ import ChangeTag from "./audit/ChangeTag";
 const { Text } = Typography;
 
 /** A full-width tag, one to a line, its label cut short if it must be. */
-const BLOCK: React.CSSProperties = {
+export const BLOCK: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -17,7 +17,7 @@ const BLOCK: React.CSSProperties = {
   margin: "0 0 4px",
   minWidth: 0,
 };
-const CUT: React.CSSProperties = {
+export const CUT: React.CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",

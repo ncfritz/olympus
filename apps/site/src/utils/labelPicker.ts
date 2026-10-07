@@ -337,3 +337,34 @@ export const pickerSuggestions = (
     }))
     .sort((a, b) => b.messages - a.messages || b.confidence - a.confidence);
 };
+
+/** A label in one message's change list: kept, coming off, or going on. */
+export type ChangeRow = { label: string; state: "kept" | "removed" | "added" };
+
+/**
+ * One message's labels as the change list stacks them: those it has, kept
+ * or coming off, in its order, then those going on, as picked.
+ */
+export const changeRows = (
+  message: PickerMessage,
+  wants: LabelWants,
+): ChangeRow[] => [
+  ...message.labels.map((label): ChangeRow => ({
+    label,
+    state: wants[label] === "none" ? "removed" : "kept",
+  })),
+  ...Object.entries(wants)
+    .filter(([label, w]) => w === "all" && !message.labels.includes(label))
+    .map(([label]): ChangeRow => ({ label, state: "added" })),
+];
+
+/**
+ * A change list's icon clicked: a label it has comes off, or goes back
+ * on; one it would gain is dropped.
+ */
+export const toggleRow = (wants: LabelWants, row: ChangeRow): LabelWants => {
+  const next = { ...wants };
+  if (row.state === "kept") next[row.label] = "none";
+  else delete next[row.label];
+  return next;
+};

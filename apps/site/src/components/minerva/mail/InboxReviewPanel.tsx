@@ -99,6 +99,15 @@ const CONFIDENCE_WIDTH = 80;
 const CURRENT_WIDTH = 200;
 const CHANGES_WIDTH = 300;
 const COLUMN_GAP = 16;
+/** Proposed, Current and Changes side by side: the actions end with them. */
+const COLUMNS_WIDTH =
+  PROPOSED_LABEL_WIDTH +
+  8 +
+  CONFIDENCE_WIDTH +
+  COLUMN_GAP +
+  CURRENT_WIDTH +
+  COLUMN_GAP +
+  CHANGES_WIDTH;
 
 /**
  * A message's review (design.md, the widget's and the Inbox's expanded
@@ -317,11 +326,12 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
       onChange={setWants}
       created={created}
       onCreated={setCreated}
+      stacked={columns}
     />
   );
 
   const flags = (
-    <Space size={16} wrap={true}>
+    <Space size={16} wrap={!columns}>
       <Checkbox
         checked={archive}
         onChange={(e) => setArchive(e.target.checked)}
@@ -408,9 +418,14 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
             {picker}
           </Flex>
         </Flex>
-        <Flex justify={"flex-end"} align={"center"} gap={24} wrap={true}>
-          {flags}
-          {buttons}
+        <Flex
+          justify={"flex-end"}
+          style={{ width: COLUMNS_WIDTH, maxWidth: "100%" }}
+        >
+          <Flex vertical={true} align={"flex-start"} gap={8}>
+            {flags}
+            {buttons}
+          </Flex>
         </Flex>
       </Flex>
     );
