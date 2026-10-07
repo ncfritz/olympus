@@ -155,6 +155,8 @@
 - '!include minerva_mail_message_attachments.yaml'
 - '!include minerva_mail_message_labels.yaml'
 - '!include minerva_mail_message_recipients.yaml'
+- '!include minerva_mail_message_scores.yaml'
+- '!include minerva_mail_message_suggestions.yaml'
 - '!include minerva_mail_messages.yaml'
 - '!include minerva_mail_proposals.yaml'
 - '!include minerva_mail_sender_statistics_type.yaml'

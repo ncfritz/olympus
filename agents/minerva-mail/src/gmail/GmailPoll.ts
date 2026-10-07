@@ -41,6 +41,9 @@ export type GmailPollReport = {
   deleted: number;
   featurized: number;
   featurizeFailed: number;
+  /** New mail scored, its suggestions recorded; and what failed. */
+  suggested: number;
+  suggestFailed: number;
   failed: number;
   requests: number;
 };
@@ -108,6 +111,8 @@ export class GmailPoll {
       deleted: 0,
       featurized: 0,
       featurizeFailed: 0,
+      suggested: 0,
+      suggestFailed: 0,
       failed: 0,
       requests: 0,
     };
@@ -247,6 +252,8 @@ export class GmailPoll {
     await batch.flush();
     report.featurized = batch.featurized;
     report.featurizeFailed = batch.featurizeFailed;
+    report.suggested = batch.suggested;
+    report.suggestFailed = batch.suggestFailed;
 
     for (const id of touched) {
       if (deleted.has(id) || added.has(id)) continue;
@@ -318,6 +325,8 @@ export class GmailPoll {
       deleted: result.deleted,
       featurized: result.featurized,
       featurizeFailed: result.featurizeFailed,
+      suggested: result.suggested,
+      suggestFailed: result.suggestFailed,
       failed: result.failed,
       requests: result.gmail.requests,
     };

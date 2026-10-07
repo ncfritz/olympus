@@ -14,6 +14,7 @@ import { GmailCredentialStore } from "./GmailCredentialStore";
 import { GmailMessages } from "./GmailMessages";
 import { GmailPoll } from "./GmailPoll";
 import { GmailReconcile } from "./GmailReconcile";
+import { GmailSuggestInbox } from "./GmailSuggestInbox";
 import { GmailWriter } from "./GmailWriter";
 
 /**
@@ -22,7 +23,8 @@ import { GmailWriter } from "./GmailWriter";
  * mail.messages, new mail's text to the classifier, the accounts' labels
  * and sync through the API; and label changes written to Gmail for the API
  * (phase 4). The running agent polls and writes with it (AppModule); the
- * gmail command reconciles or polls once (GmailCommandModule).
+ * gmail command reconciles, polls once or scores the inbox
+ * (GmailCommandModule).
  */
 @Module({
   imports: [
@@ -44,9 +46,10 @@ import { GmailWriter } from "./GmailWriter";
     GmailReconcile,
     GmailPoll,
     GmailWriter,
+    GmailSuggestInbox,
     ServicesOnlyGuard,
   ],
   controllers: [StartGmailWritesController],
-  exports: [GmailReconcile, GmailPoll, GmailWriter],
+  exports: [GmailReconcile, GmailPoll, GmailWriter, GmailSuggestInbox],
 })
 export class GmailSyncModule {}

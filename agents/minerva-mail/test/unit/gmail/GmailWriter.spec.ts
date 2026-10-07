@@ -131,6 +131,7 @@ const setup = (
     new GmailMessages(
       amqp as unknown as AmqpConnection,
       { configured: false } as unknown as ClassifierClient,
+      {} as MailApi,
     ),
   );
   const open = vi.fn(() => mailbox as unknown as GmailMailbox);

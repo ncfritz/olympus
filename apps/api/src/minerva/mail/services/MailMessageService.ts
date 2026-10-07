@@ -246,9 +246,24 @@ export class MailMessageService {
     const deleted = await this.graphQLClient.request<{
       delete_minerva_mail_messages: { affected_rows: number };
     }>(remove, f);
-    return deleted.delete_minerva_mail_messages.affected_rows > 0
-      ? { result: "written" }
-      : { result: "stale" };
+    if (deleted.delete_minerva_mail_messages.affected_rows === 0) {
+      return { result: "stale" };
+    }
+    // Its suggestions, kept by Gmail ID, go with it.
+    const forget = gql`
+      mutation DeleteMailMessageScore($accountId: uuid!, $gmailId: String!) {
+        delete_minerva_mail_message_scores(
+          where: { accountId: { _eq: $accountId }, gmailId: { _eq: $gmailId } }
+        ) {
+          affected_rows
+        }
+      }
+    `;
+    await this.graphQLClient.request(forget, {
+      accountId: f.accountId,
+      gmailId: f.gmailId,
+    });
+    return { result: "written" };
   }
 
   private async accountExists(accountId: string): Promise<boolean> {

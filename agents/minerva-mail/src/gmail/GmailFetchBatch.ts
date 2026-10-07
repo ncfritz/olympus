@@ -15,12 +15,16 @@ export type GmailFetchOutcome = "added" | "not-kept" | "gone";
 
 /**
  * New mail fetched whole for one account: each message published, and its
- * text, held only until it is sent, featurized in batches.
+ * text, held only until it is sent, featurized and scored in batches (the
+ * suggestions recorded for the inbox).
  */
 export class GmailFetchBatch {
   private pending: ClassifierMessage[] = [];
   featurized = 0;
   featurizeFailed = 0;
+  /** Messages whose suggestions were recorded; and those that failed. */
+  suggested = 0;
+  suggestFailed = 0;
 
   constructor(
     private readonly messages: GmailMessages,
@@ -70,7 +74,10 @@ export class GmailFetchBatch {
     return "added";
   }
 
-  /** Sends what is waiting to the classifier. Its failure fails no sync. */
+  /**
+   * Sends what is waiting to the classifier, to featurize and to score.
+   * Neither failing fails a sync.
+   */
   async flush(): Promise<void> {
     if (this.pending.length === 0) return;
     const sent = this.pending;
@@ -83,6 +90,15 @@ export class GmailFetchBatch {
       this.featurizeFailed += sent.length;
       this.messages.warn(
         `Could not featurize ${sent.length} messages: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    try {
+      this.suggested +=
+        (await this.messages.suggest(this.accountId, sent)) ?? 0;
+    } catch (error) {
+      this.suggestFailed += sent.length;
+      this.messages.warn(
+        `Could not score ${sent.length} messages: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

@@ -63,6 +63,16 @@ object_relationships:
   - name: account
     using:
       foreign_key_constraint_on: account_id
+  - name: score
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: account_id
+          gmail_id: gmail_id
+        insertion_order: null
+        remote_table:
+          name: mail_message_scores
+          schema: minerva
 array_relationships:
   - name: attachments
     using:

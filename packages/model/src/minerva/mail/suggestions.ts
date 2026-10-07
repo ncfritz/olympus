@@ -114,6 +114,49 @@ export class NewMailSuggestion {
   ticked: boolean;
 }
 
+/** A label suggested for new mail, as the mail agent posts it. */
+export class NewMailMessageSuggestion {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The label's full name",
+  })
+  label: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The serving model's calibrated score, 0 to 1",
+  })
+  score: number;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether it is at or above the label's threshold",
+  })
+  ticked: boolean;
+}
+
+/** A message scored as it arrived, with its suggestions best first. */
+export class ScoredMailMessage {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The message's Gmail ID",
+  })
+  gmailId: string;
+
+  @ApiProperty({
+    type: () => NewMailMessageSuggestion,
+    isArray: true,
+    required: true,
+    description:
+      "Up to 20 labels, best first; none when nothing scored high enough",
+  })
+  suggestions: NewMailMessageSuggestion[];
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -160,6 +203,30 @@ export class PublishMailSuggestionRunRequest {
   messagesScored: number;
 }
 
+export class RecordMailMessageSuggestionsRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The classifier's model run that scored them",
+  })
+  modelRun: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The feature version",
+  })
+  featureVersion: string;
+
+  @ApiProperty({
+    type: () => ScoredMailMessage,
+    isArray: true,
+    required: true,
+    description: "Up to 500 messages",
+  })
+  messages: ScoredMailMessage[];
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -195,6 +262,30 @@ export class CreateMailSuggestionsResponse {
     required: true,
     description:
       "Suggestions left out: an unknown message or label, a label that is not the user's, adding a label the message has, or removing one it lacks",
+  })
+  skipped: number;
+}
+
+export class RecordMailMessageSuggestionsResponse {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Messages whose suggestions were stored (or replaced)",
+  })
+  messages: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Suggestions stored",
+  })
+  suggestions: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Suggestions left out: a label the mailbox does not have, or not the user's own",
   })
   skipped: number;
 }

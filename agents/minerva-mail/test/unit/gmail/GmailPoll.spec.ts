@@ -89,6 +89,7 @@ const setup = (
     history?: GmailHistoryRecord[] | Error;
     historyId?: string;
     rawFails?: string;
+    suggestFails?: boolean;
   } = {},
 ) => {
   const published: { key: string; body: Record<string, unknown> }[] = [];
@@ -103,6 +104,22 @@ const setup = (
       version: "v1",
       stored: messages.length,
     })),
+    suggest: vi.fn(async (_id: string, messages: { gmailId: string }[]) => ({
+      modelRun: "6ca3f45f",
+      featureVersion: "v1",
+      messages: messages.map((m) => ({
+        gmailId: m.gmailId,
+        labels: [
+          {
+            label: "Travel",
+            kind: "topic",
+            score: 0.93,
+            threshold: 0.5,
+            ticked: true,
+          },
+        ],
+      })),
+    })),
   };
   const mail = {
     listMailSyncAccounts: vi.fn(async () => [ACCOUNT]),
@@ -112,6 +129,16 @@ const setup = (
       notInGmail: [],
     })),
     updateMailAccountSync: vi.fn(async () => ({})),
+    recordMailMessageSuggestions: vi.fn(
+      async (_id: string, scored: { messages: unknown[] }) => {
+        if (options.suggestFails) throw new Error("status 503");
+        return {
+          messages: scored.messages.length,
+          suggestions: scored.messages.length,
+          skipped: 0,
+        };
+      },
+    ),
   };
   const mailbox = {
     requests: 9,
@@ -149,6 +176,8 @@ const setup = (
       deleted: 0,
       featurized: 2,
       featurizeFailed: 0,
+      suggested: 2,
+      suggestFailed: 0,
       failed: 0,
       gmail: { requests: 2190 },
     })),
@@ -159,6 +188,7 @@ const setup = (
     new GmailMessages(
       amqp as unknown as AmqpConnection,
       classifier as unknown as ClassifierClient,
+      mail as unknown as MailApi,
     ),
     reconcile as unknown as GmailReconcile,
   );
@@ -182,10 +212,19 @@ describe("GmailPoll", () => {
       deleted: 3,
       featurized: 2,
       featurizeFailed: 0,
+      suggested: 2,
+      suggestFailed: 0,
       failed: 0,
       requests: 9,
     });
     expect(mailbox.history).toHaveBeenCalledWith("100");
+    // New mail is scored with the same batch that was featurized.
+    expect(classifier.suggest).toHaveBeenCalledTimes(1);
+    expect(
+      mail.recordMailMessageSuggestions.mock.calls[0][1].messages.map(
+        (m: { gmailId: string }) => m.gmailId,
+      ),
+    ).toEqual(["n1", "r1"]);
     expect(published.map((p) => [p.key, p.body.gmailId])).toEqual([
       ["message.delete", "x1"],
       ["message.upsert", "n1"],
@@ -342,5 +381,21 @@ describe("GmailPoll", () => {
     const report = await poll.pollAccount(ACCOUNT, open);
 
     expect(report).toMatchObject({ outcome: "failed", failed: 1, requests: 9 });
+  });
+
+  it("does not fail a poll when scoring fails", async () => {
+    const { poll, open, mail } = setup({ suggestFails: true });
+
+    const report = await poll.pollAccount(ACCOUNT, open);
+
+    expect(report).toMatchObject({
+      outcome: "polled",
+      added: 2,
+      featurized: 2,
+      suggested: 0,
+      suggestFailed: 2,
+      failed: 0,
+    });
+    expect(mail.updateMailAccountSync).toHaveBeenCalled();
   });
 });

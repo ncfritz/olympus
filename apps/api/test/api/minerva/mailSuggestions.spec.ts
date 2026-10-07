@@ -23,6 +23,7 @@ const M2 = "a1000000-0000-4000-8000-000000000002";
 const RUNS = "/v1/minerva/mail/suggestion-runs";
 const SUGGESTIONS = `/v1/minerva/mail/suggestion-run/${RUN_ID}/suggestions`;
 const PUBLISH = `/v1/minerva/mail/suggestion-run/${RUN_ID}/publish`;
+const SCORED = `/v1/minerva/mail/account/${ACCOUNT_ID}/message-suggestions`;
 
 const run = (overrides: Record<string, unknown> = {}) => ({
   id: RUN_ID,
@@ -59,6 +60,7 @@ describe("Mail suggestions", () => {
     url: string,
     body: unknown,
     name = "agents/minerva-mail-ml",
+    method = "POST",
   ) =>
     new Promise<{ status?: number; body: string }>((resolve, reject) => {
       const payload = JSON.stringify(body);
@@ -67,7 +69,7 @@ describe("Mail suggestions", () => {
           host: "127.0.0.1",
           port,
           path: url,
-          method: "POST",
+          method,
           servername: "localhost",
           ca: fs.readFileSync(path.join(devCa(), "services-ca.crt")),
           ...identity(name),
@@ -103,7 +105,7 @@ describe("Mail suggestions", () => {
         AUTH_MODE_USERS: "enforce",
         AUTH_MODE_SERVICES: "enforce",
         AUTH_SERVICE_ROLES:
-          "minerva-mail-ml:agent,dionysus-asset-agent:content",
+          "minerva-mail-ml:agent,minerva-mail-agent:agent,dionysus-asset-agent:content",
       },
     });
     server = createServicesListener(t.app, servicesConfig());
@@ -148,6 +150,17 @@ describe("Mail suggestions", () => {
     });
     t.graphql.on("CreateMailSuggestions", {
       insert_minerva_mail_suggestions: { affected_rows: 1 },
+    });
+    t.graphql.on("DescribeMailMessageSuggestionLabels", {
+      minerva_mail_labels: [
+        { id: BILLS, name: "Bills" },
+        { id: TRAVEL, name: "Travel" },
+      ],
+    });
+    t.graphql.on("RecordMailMessageSuggestions", {
+      insert_minerva_mail_message_scores: { affected_rows: 2 },
+      delete_minerva_mail_message_suggestions: { affected_rows: 0 },
+      insert_minerva_mail_message_suggestions: { affected_rows: 2 },
     });
     t.graphql.on("PublishMailSuggestionRun", {
       update_minerva_mail_suggestion_runs_by_pk: run({
@@ -348,6 +361,148 @@ describe("Mail suggestions", () => {
       const res = await asAgent(PUBLISH, body);
       expect(res.status).toBe(400);
       expect(t.graphql.calls("DescribeMailSuggestionRun")).toHaveLength(0);
+    });
+  });
+
+  describe("RecordMailMessageSuggestions", () => {
+    const record = (body: unknown) =>
+      asAgent(SCORED, body, "agents/minerva-mail-agent", "PUT");
+
+    it("replaces each message's suggestions, best first, by label name", async () => {
+      const res = await record({
+        modelRun: "6ca3f45f",
+        featureVersion: "v1",
+        messages: [
+          {
+            gmailId: "19be00000000b1",
+            suggestions: [
+              { label: "Travel", score: 0.96249, ticked: true },
+              { label: "Gone/Label", score: 0.4, ticked: false },
+              { label: "Bills", score: 0.2, ticked: false },
+              { label: "Travel", score: 0.1, ticked: false },
+            ],
+          },
+          // Scored, nothing reached the floor.
+          { gmailId: "19be00000000b2", suggestions: [] },
+        ],
+      });
+      expect(res.status).toBe(200);
+      expect(JSON.parse(res.body)).toEqual({
+        messages: 2,
+        suggestions: 2,
+        skipped: 1,
+      });
+      const vars = t.graphql.calls("RecordMailMessageSuggestions")[0]
+        .variables as Record<string, unknown>;
+      expect(vars.gmailIds).toEqual(["19be00000000b1", "19be00000000b2"]);
+      expect(vars.scores).toEqual([
+        expect.objectContaining({
+          accountId: ACCOUNT_ID,
+          gmailId: "19be00000000b1",
+          modelRun: "6ca3f45f",
+          featureVersion: "v1",
+        }),
+        expect.objectContaining({ gmailId: "19be00000000b2" }),
+      ]);
+      expect(vars.suggestions).toEqual([
+        {
+          accountId: ACCOUNT_ID,
+          gmailId: "19be00000000b1",
+          labelId: TRAVEL,
+          rank: 0,
+          score: 0.962,
+          ticked: true,
+        },
+        {
+          accountId: ACCOUNT_ID,
+          gmailId: "19be00000000b1",
+          labelId: BILLS,
+          rank: 1,
+          score: 0.2,
+          ticked: false,
+        },
+      ]);
+    });
+
+    it("answers 404 for an account that does not exist", async () => {
+      const res = await asAgent(
+        "/v1/minerva/mail/account/7b2b0000-0000-4000-8000-0000000000ff/message-suggestions",
+        {
+          modelRun: "r",
+          featureVersion: "v1",
+          messages: [{ gmailId: "19be00000000b1", suggestions: [] }],
+        },
+        "agents/minerva-mail-agent",
+        "PUT",
+      );
+      expect(res.status).toBe(404);
+      expect(t.graphql.calls("RecordMailMessageSuggestions")).toHaveLength(0);
+    });
+
+    const ok = { gmailId: "19be00000000b1", suggestions: [] };
+    it.each([
+      ["no modelRun", { featureVersion: "v1", messages: [ok] }],
+      ["no messages", { modelRun: "r", featureVersion: "v1", messages: [] }],
+      [
+        "more than 500 messages",
+        {
+          modelRun: "r",
+          featureVersion: "v1",
+          messages: Array.from({ length: 501 }, () => ok),
+        },
+      ],
+      [
+        "a Gmail ID that is not one",
+        {
+          modelRun: "r",
+          featureVersion: "v1",
+          messages: [{ gmailId: "xyz", suggestions: [] }],
+        },
+      ],
+      [
+        "a score past 1",
+        {
+          modelRun: "r",
+          featureVersion: "v1",
+          messages: [
+            {
+              gmailId: "19be00000000b1",
+              suggestions: [{ label: "Bills", score: 1.2, ticked: true }],
+            },
+          ],
+        },
+      ],
+      [
+        "more than 20 labels",
+        {
+          modelRun: "r",
+          featureVersion: "v1",
+          messages: [
+            {
+              gmailId: "19be00000000b1",
+              suggestions: Array.from({ length: 21 }, (_, i) => ({
+                label: `L${i}`,
+                score: 0.5,
+                ticked: false,
+              })),
+            },
+          ],
+        },
+      ],
+    ])("answers 400 to %s, before Hasura", async (_case, body) => {
+      const res = await record(body);
+      expect(res.status).toBe(400);
+      expect(t.graphql.calls("DescribeMailSuggestionAccount")).toHaveLength(0);
+    });
+
+    it("answers 403 to a service without the agent role", async () => {
+      const res = await asAgent(
+        SCORED,
+        {},
+        "agents/dionysus-asset-agent",
+        "PUT",
+      );
+      expect(res.status).toBe(403);
     });
   });
 

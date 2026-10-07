@@ -75,6 +75,9 @@ export type GmailReconcileReport = {
   /** New mail's text sent to the classifier; and what it refused. */
   featurized: number;
   featurizeFailed: number;
+  /** New mail scored, its suggestions recorded; and what failed. */
+  suggested: number;
+  suggestFailed: number;
   failed: number;
   seconds: number;
 };
@@ -222,6 +225,8 @@ export class GmailReconcile {
       added: 0,
       featurized: 0,
       featurizeFailed: 0,
+      suggested: 0,
+      suggestFailed: 0,
       failed: 0,
       seconds: 0,
     };
@@ -342,6 +347,8 @@ export class GmailReconcile {
     await batch.flush();
     report.featurized = batch.featurized;
     report.featurizeFailed = batch.featurizeFailed;
+    report.suggested = batch.suggested;
+    report.suggestFailed = batch.suggestFailed;
 
     // Recorded only once everything above is published: a run cut short
     // leaves the last historyId, and runs again.

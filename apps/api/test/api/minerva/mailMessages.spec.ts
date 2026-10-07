@@ -639,6 +639,9 @@ describe("Mail messages consumer", () => {
               : 0,
         },
       }));
+      t.graphql.on("DeleteMailMessageScore", {
+        delete_minerva_mail_message_scores: { affected_rows: 1 },
+      });
       const written = await consumed("delete", "written");
       const stale = await consumed("delete", "stale");
       const gone = {
@@ -659,6 +662,10 @@ describe("Mail messages consumer", () => {
         gmailId: "1a0fab8f293aa5b5",
         snapshotTime: "2026-10-06T18:00:00.000Z",
       });
+      // Its suggestions go with it; a stale delete leaves them.
+      expect(
+        t.graphql.calls("DeleteMailMessageScore").map((c) => c.variables),
+      ).toEqual([{ accountId, gmailId: "1a0fab8f293aa5b5" }]);
       expect(await consumed("delete", "written")).toBe(written + 1);
       expect(await consumed("delete", "stale")).toBe(stale + 1);
     });

@@ -13,11 +13,18 @@ import {
   MailSuggestionRunStatus,
   NewMailSuggestion,
   PublishMailSuggestionRunRequest,
+  RecordMailMessageSuggestionsRequest,
+  RecordMailMessageSuggestionsResponse,
+  ScoredMailMessage,
 } from "@ncfritz/olympus-model";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 
 export const MAX_SUGGESTIONS = 5000;
+/** Messages a RecordMailMessageSuggestions call takes. */
+export const MAX_SCORED_MESSAGES = 500;
+/** Labels suggested for one message. */
+export const MAX_MESSAGE_SUGGESTIONS = 20;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GMAIL_ID = /^[0-9a-f]{1,16}$/;
@@ -70,7 +77,8 @@ const requireRunId = (runId: string): string => {
 };
 
 /**
- * The classifier's suggestions over the whole mailbox (docs/plans/
+ * The classifier's suggestions: new mail's as it arrives (phase 5),
+ * posted by the mail agent, and those over the whole mailbox (docs/plans/
  * email-management phase 4), posted by the classifier service: a run per
  * pass, filled in batches while it builds, then published, which makes
  * its suggestions the account's and drops the runs before it. For agents
@@ -271,6 +279,139 @@ export class MailSuggestionService {
     return toRun(response.update_minerva_mail_suggestion_runs_by_pk);
   }
 
+  /**
+   * Stores new mail's suggestions (docs/plans/email-management phase 5),
+   * each message's replacing what it had: by Gmail ID, whether or not the
+   * message is stored yet, and by label name. A label the mailbox does not
+   * have, or not the user's own, is left out and counted.
+   *
+   * @throws BadRequestException a field is not what it should be
+   * @throws NotFoundException no such account
+   */
+  async recordMessageSuggestions(
+    accountId: string,
+    request: RecordMailMessageSuggestionsRequest,
+  ): Promise<RecordMailMessageSuggestionsResponse> {
+    if (typeof accountId !== "string" || !UUID.test(accountId)) {
+      throw new BadRequestException("accountId must be a mail account ID");
+    }
+    const modelRun = text(request?.modelRun, "modelRun", 100);
+    const featureVersion = text(request.featureVersion, "featureVersion", 50);
+    const messages = request.messages;
+    if (
+      !Array.isArray(messages) ||
+      messages.length < 1 ||
+      messages.length > MAX_SCORED_MESSAGES
+    ) {
+      throw new BadRequestException(
+        `messages must be 1 to ${MAX_SCORED_MESSAGES} messages`,
+      );
+    }
+    messages.forEach((m, i) => validateScored(m, i));
+    await this.requireAccount(accountId);
+
+    const names = [
+      ...new Set(messages.flatMap((m) => m.suggestions.map((s) => s.label))),
+    ];
+    const labels = new Map<string, string>();
+    if (names.length > 0) {
+      const query = gql`
+        query DescribeMailMessageSuggestionLabels(
+          $accountId: uuid!
+          $names: [String!]!
+        ) {
+          minerva_mail_labels(
+            where: {
+              accountId: { _eq: $accountId }
+              name: { _in: $names }
+              type: { _eq: "user" }
+            }
+          ) {
+            id
+            name
+          }
+        }
+      `;
+      const found = await this.graphQLClient.request<{
+        minerva_mail_labels: { id: string; name: string }[];
+      }>(query, { accountId, names });
+      for (const l of found.minerva_mail_labels) labels.set(l.name, l.id);
+    }
+
+    // One entry per message, a later one in the batch winning; each label
+    // once, at its best rank.
+    const byMessage = new Map<string, Record<string, unknown>[]>();
+    let skipped = 0;
+    for (const m of messages) {
+      const rows: Record<string, unknown>[] = [];
+      const seen = new Set<string>();
+      for (const s of m.suggestions) {
+        const labelId = labels.get(s.label);
+        if (!labelId) {
+          skipped++;
+          continue;
+        }
+        if (seen.has(labelId)) continue;
+        seen.add(labelId);
+        rows.push({
+          accountId,
+          gmailId: m.gmailId,
+          labelId,
+          rank: rows.length,
+          score: Math.round(s.score * 1000) / 1000,
+          ticked: s.ticked,
+        });
+      }
+      byMessage.set(m.gmailId, rows);
+    }
+    const gmailIds = [...byMessage.keys()];
+    const suggestions = [...byMessage.values()].flat();
+    const now = new Date().toISOString();
+    const mutation = gql`
+      mutation RecordMailMessageSuggestions(
+        $accountId: uuid!
+        $gmailIds: [String!]!
+        $scores: [minerva_mail_message_scores_insert_input!]!
+        $suggestions: [minerva_mail_message_suggestions_insert_input!]!
+      ) {
+        insert_minerva_mail_message_scores(
+          objects: $scores
+          on_conflict: {
+            constraint: mail_message_scores_pkey
+            update_columns: [modelRun, featureVersion, scoredTime]
+          }
+        ) {
+          affected_rows
+        }
+        delete_minerva_mail_message_suggestions(
+          where: { accountId: { _eq: $accountId }, gmailId: { _in: $gmailIds } }
+        ) {
+          affected_rows
+        }
+        insert_minerva_mail_message_suggestions(objects: $suggestions) {
+          affected_rows
+        }
+      }
+    `;
+    await this.graphQLClient.request(mutation, {
+      accountId,
+      gmailIds,
+      scores: gmailIds.map((gmailId) => ({
+        accountId,
+        gmailId,
+        modelRun,
+        featureVersion,
+        scoredTime: now,
+      })),
+      suggestions,
+    });
+    return {
+      messages: gmailIds.length,
+      suggestions: suggestions.length,
+      skipped,
+    };
+  }
+
   private async requireBuilding(runId: string): Promise<GraphQlRun> {
     const query = gql`
       query DescribeMailSuggestionRun($runId: uuid!) {
@@ -334,4 +475,43 @@ const validate = (s: NewMailSuggestion, i: number): void => {
   if (typeof s.ticked !== "boolean") {
     throw new BadRequestException(`${at}.ticked must be true or false`);
   }
+};
+
+const validateScored = (m: ScoredMailMessage, i: number): void => {
+  const at = `messages[${i}]`;
+  if (!m || typeof m !== "object") {
+    throw new BadRequestException(`${at} must be a message`);
+  }
+  if (typeof m.gmailId !== "string" || !GMAIL_ID.test(m.gmailId)) {
+    throw new BadRequestException(`${at}.gmailId must be a Gmail message ID`);
+  }
+  if (
+    !Array.isArray(m.suggestions) ||
+    m.suggestions.length > MAX_MESSAGE_SUGGESTIONS
+  ) {
+    throw new BadRequestException(
+      `${at}.suggestions must be up to ${MAX_MESSAGE_SUGGESTIONS} labels`,
+    );
+  }
+  m.suggestions.forEach((s, j) => {
+    const where = `${at}.suggestions[${j}]`;
+    if (!s || typeof s !== "object") {
+      throw new BadRequestException(`${where} must be a suggestion`);
+    }
+    if (
+      typeof s.label !== "string" ||
+      s.label.length < 1 ||
+      s.label.length > 225
+    ) {
+      throw new BadRequestException(
+        `${where}.label must be 1 to 225 characters`,
+      );
+    }
+    if (typeof s.score !== "number" || !(s.score >= 0 && s.score <= 1)) {
+      throw new BadRequestException(`${where}.score must be from 0 to 1`);
+    }
+    if (typeof s.ticked !== "boolean") {
+      throw new BadRequestException(`${where}.ticked must be true or false`);
+    }
+  });
 };

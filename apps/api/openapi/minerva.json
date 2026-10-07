@@ -9195,6 +9195,69 @@
         ]
       }
     },
+    "/minerva/mail/account/{accountId}/message-suggestions": {
+      "put": {
+        "description": "For the mail agent (docs/plans/email-management phase 5): up to 500 messages scored by the serving model as they arrived, each by Gmail ID with up to 20 labels by full name, best first, each with its score and whether it is ticked. Each message's suggestions replace what it had; a message with none was scored and nothing reached the floor. The message need not be stored yet. A label the mailbox does not have, or not the user's own, is skipped and counted.",
+        "operationId": "RecordMailMessageSuggestions",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the RecordMailMessageSuggestions operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordMailMessageSuggestionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The suggestions were stored; some may have been skipped.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordMailMessageSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account."
+          }
+        },
+        "summary": "Records new mail's suggested labels",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/audit/runs": {
       "post": {
         "description": "Runs the audit (docs/plans/email-management phase 2) over each of the caller's mail accounts, replacing its last run: label changes proposed from each sender's habits, threads whose messages disagree, and labels that may be one. Read-only towards Gmail. Takes a few seconds on a large mailbox.",
@@ -17777,6 +17840,95 @@
         },
         "required": [
           "run"
+        ]
+      },
+      "NewMailMessageSuggestion": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The label's full name"
+          },
+          "score": {
+            "type": "number",
+            "description": "The serving model's calibrated score, 0 to 1"
+          },
+          "ticked": {
+            "type": "boolean",
+            "description": "Whether it is at or above the label's threshold"
+          }
+        },
+        "required": [
+          "label",
+          "score",
+          "ticked"
+        ]
+      },
+      "ScoredMailMessage": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "suggestions": {
+            "description": "Up to 20 labels, best first; none when nothing scored high enough",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewMailMessageSuggestion"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "suggestions"
+        ]
+      },
+      "RecordMailMessageSuggestionsRequest": {
+        "type": "object",
+        "properties": {
+          "modelRun": {
+            "type": "string",
+            "description": "The classifier's model run that scored them"
+          },
+          "featureVersion": {
+            "type": "string",
+            "description": "The feature version"
+          },
+          "messages": {
+            "description": "Up to 500 messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScoredMailMessage"
+            }
+          }
+        },
+        "required": [
+          "modelRun",
+          "featureVersion",
+          "messages"
+        ]
+      },
+      "RecordMailMessageSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "number",
+            "description": "Messages whose suggestions were stored (or replaced)"
+          },
+          "suggestions": {
+            "type": "number",
+            "description": "Suggestions stored"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Suggestions left out: a label the mailbox does not have, or not the user's own"
+          }
+        },
+        "required": [
+          "messages",
+          "suggestions",
+          "skipped"
         ]
       },
       "MailAuditRun": {

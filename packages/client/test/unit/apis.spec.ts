@@ -89,6 +89,10 @@ const ARGS: Record<string, unknown[]> = {
   listMailSyncAccounts: [],
   updateMailChangeBatch: ["batch-1", { status: "running" }],
   syncMailLabels: ["account-1", []],
+  recordMailMessageSuggestions: [
+    "account-1",
+    { modelRun: "r", featureVersion: "v1", messages: [] },
+  ],
   updateMailAccountSync: [
     "account-1",
     { historyId: "1", messagesTotal: 0, threadsTotal: 0 },

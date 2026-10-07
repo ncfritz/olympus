@@ -4,6 +4,8 @@ import {
   listMailMessageStates,
   listMailSyncAccounts,
   listMailTrainingAccounts,
+  recordMailMessageSuggestions,
+  type RecordMailMessageSuggestionsRequest,
   syncMailLabels,
   updateMailAccountSync,
   updateMailChangeBatch,
@@ -59,6 +61,19 @@ export class MailApi {
       client: this.clients.minerva,
       path: { accountId },
       body: { labels },
+    });
+    return response.data;
+  }
+
+  /** Records new mail's suggested labels, each message's replacing its last. */
+  async recordMailMessageSuggestions(
+    accountId: string,
+    scored: RecordMailMessageSuggestionsRequest,
+  ) {
+    const response = await recordMailMessageSuggestions({
+      client: this.clients.minerva,
+      path: { accountId },
+      body: scored,
     });
     return response.data;
   }

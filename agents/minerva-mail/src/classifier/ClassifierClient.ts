@@ -19,6 +19,23 @@ export type ClassifierMessage = {
   attachmentExtensions: string[];
 };
 
+/** A label the serving model suggests for a message, best first. */
+export type ClassifierSuggestion = {
+  label: string;
+  /** `topic`, or `family` (the label is the family's initial state). */
+  kind: string;
+  score: number;
+  threshold?: number | null;
+  ticked: boolean;
+};
+
+/** Messages scored by the account's serving model. */
+export type ClassifierSuggestions = {
+  modelRun: string;
+  featureVersion: string;
+  messages: { gmailId: string; labels: ClassifierSuggestion[] }[];
+};
+
 export type FeatureVersion = {
   version: string;
   status: "building" | "ready";
@@ -71,6 +88,30 @@ export class ClassifierClient {
         { accountId, messages },
       )
     ).data;
+  }
+
+  /**
+   * Scores messages with the account's serving model; the text is used for
+   * that request and stored nowhere. Undefined while no model is trained
+   * for the account (the classifier's 404).
+   */
+  async suggest(
+    accountId: string,
+    messages: ClassifierMessage[],
+  ): Promise<ClassifierSuggestions | undefined> {
+    try {
+      return (
+        await this.client().post<ClassifierSuggestions>("/suggestions", {
+          accountId,
+          messages,
+        })
+      ).data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return undefined;
+      }
+      throw error;
+    }
   }
 
   /** The versions in the classifier's store. */

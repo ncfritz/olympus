@@ -6,10 +6,12 @@ import { validateEnvironment } from "./config/configuration";
 import { GmailCommandModule } from "./gmail/GmailCommandModule";
 import { GmailPoll } from "./gmail/GmailPoll";
 import { GmailReconcile } from "./gmail/GmailReconcile";
+import { GmailSuggestInbox } from "./gmail/GmailSuggestInbox";
 
 const USAGE = `Usage:
   gmail reconcile <mailbox email>
   gmail poll [mailbox email]
+  gmail suggest <mailbox email>
 
   reconcile  Brings a linked mailbox into step with Gmail: labels get their
              Gmail IDs (new ones added); every message's labels and flags
@@ -25,11 +27,21 @@ const USAGE = `Usage:
              named. Changes since the recorded historyId are published;
              a mailbox without one, or whose history Gmail no longer has,
              is reconciled. Prints counts as JSON.
+
+  suggest    Scores what is in the mailbox's inbox now with the
+             classifier's serving model and records each message's
+             suggested labels, for mail that arrived before new mail was
+             scored as it came (new mail is scored by poll and reconcile).
+             Reads each message whole from Gmail; its text goes only to
+             the classifier. Prints counts as JSON. Safe to run again.
 `;
 
 const main = async (args: string[]): Promise<number> => {
   const [command, email] = args;
-  if ((command === "reconcile" && email) || command === "poll") {
+  if (
+    ((command === "reconcile" || command === "suggest") && email) ||
+    command === "poll"
+  ) {
     const config = validateEnvironment();
     if (!config.gmail) {
       throw new Error(
@@ -40,6 +52,17 @@ const main = async (args: string[]): Promise<number> => {
       logger: ["log", "warn", "error"],
     });
     try {
+      if (command === "suggest") {
+        const report = await app.get(GmailSuggestInbox).run(email, {
+          onProgress: (done, of) => {
+            if (done % 100 === 0 || done === of) {
+              process.stderr.write(`scored: ${done} of ${of}\n`);
+            }
+          },
+        });
+        process.stdout.write(`${JSON.stringify(report, null, 1)}\n`);
+        return 0;
+      }
       if (command === "poll") {
         const poll = app.get(GmailPoll);
         const address = email?.trim().toLowerCase();

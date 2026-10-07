@@ -91,7 +91,9 @@ const RAW = [
   "",
 ].join("\r\n");
 
-const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
+const setup = (
+  options: { rawFails?: boolean; email?: string; noModel?: boolean } = {},
+) => {
   const published: { key: string; body: Record<string, unknown> }[] = [];
   const amqp = {
     publish: vi.fn(async (_exchange: string, key: string, body: never) => {
@@ -102,6 +104,13 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
     listMailSyncAccounts: vi.fn(async () => [
       { id: ACCOUNT_ID, email: EMAIL, historyId: "100" },
     ]),
+    recordMailMessageSuggestions: vi.fn(
+      async (_id: string, scored: { messages: unknown[] }) => ({
+        messages: scored.messages.length,
+        suggestions: scored.messages.length,
+        skipped: 0,
+      }),
+    ),
     syncMailLabels: vi.fn(async () => ({
       matched: 4,
       created: 1,
@@ -155,10 +164,31 @@ const setup = (options: { rawFails?: boolean; email?: string } = {}) => {
       version: "v1",
       stored: messages.length,
     })),
+    suggest: vi.fn(async (_id: string, messages: { gmailId: string }[]) =>
+      options.noModel
+        ? undefined
+        : {
+            modelRun: "6ca3f45f",
+            featureVersion: "v1",
+            messages: messages.map((m) => ({
+              gmailId: m.gmailId,
+              labels: [
+                {
+                  label: "Travel",
+                  kind: "topic",
+                  score: 0.93,
+                  threshold: 0.5,
+                  ticked: true,
+                },
+              ],
+            })),
+          },
+    ),
   };
   const messages = new GmailMessages(
     amqp as unknown as AmqpConnection,
     classifier as unknown as ClassifierClient,
+    mail as unknown as MailApi,
   );
   const reconcile = new GmailReconcile(
     mail as unknown as MailApi,
@@ -215,7 +245,20 @@ describe("GmailReconcile", () => {
       added: 1,
       featurized: 1,
       featurizeFailed: 0,
+      suggested: 1,
+      suggestFailed: 0,
       failed: 0,
+    });
+    // New mail is scored too, its suggestions recorded by label name.
+    expect(mail.recordMailMessageSuggestions).toHaveBeenCalledWith(ACCOUNT_ID, {
+      modelRun: "6ca3f45f",
+      featureVersion: "v1",
+      messages: [
+        {
+          gmailId: "e",
+          suggestions: [{ label: "Travel", score: 0.93, ticked: true }],
+        },
+      ],
     });
     expect(mail.syncMailLabels).toHaveBeenCalledWith(
       ACCOUNT_ID,
@@ -276,5 +319,14 @@ describe("GmailReconcile", () => {
     await expect(run()).rejects.toThrow("reads another mailbox");
     expect(mail.syncMailLabels).not.toHaveBeenCalled();
     expect(published).toEqual([]);
+  });
+
+  it("records no suggestions while the account has no model", async () => {
+    const { run, mail } = setup({ noModel: true });
+
+    const report = await run();
+
+    expect(report).toMatchObject({ added: 1, suggested: 0, suggestFailed: 0 });
+    expect(mail.recordMailMessageSuggestions).not.toHaveBeenCalled();
   });
 });

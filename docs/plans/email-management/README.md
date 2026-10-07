@@ -633,7 +633,23 @@ left until phase 5 has decisions to measure them against.
 
 ## Phase 5 — The inbox
 
-1. **Suggestions for new mail**: scored as it arrives.
+1. **Suggestions for new mail**: scored as it arrives. **Built**
+   2026-10-06. New mail a poll or reconcile fetches is featurized, then
+   scored in the same batch by the classifier's serving model
+   (`POST /v1/suggestions`, the text in memory only), and its labels are
+   recorded with `RecordMailMessageSuggestions` (agents only;
+   `1791320000000_minerva_mail_message_suggestions`: `mail_message_scores`, a
+   row per message scored, by which model run, and
+   `mail_message_suggestions`, its labels best first with score and
+   ticked). Unlike the mailbox-wide run's proposals, these are the whole
+   suggestion, labels the message has already included. Keyed by account
+   and Gmail ID, since the message reaches Minerva through
+   `mail.messages` and may land after its suggestions; deleting a message
+   deletes them. No model for the account yet: nothing is scored, said
+   once. Polls and reconciles report `suggested` and `suggestFailed`; a
+   failure to score fails no sync. `gmail suggest <email>` scores what is
+   in the inbox now (mail from before). Re-scoring after the nightly
+   retrain is step 3's.
 2. **Operations**: the inbox list with suggestions; approve (with
    archive, mark read, whole thread); skip; mark read; archive; open a
    message (fetched live, not stored).

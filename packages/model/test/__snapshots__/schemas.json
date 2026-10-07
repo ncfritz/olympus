@@ -15359,6 +15359,28 @@
     ],
     "type": "object"
   },
+  "NewMailMessageSuggestion": {
+    "properties": {
+      "label": {
+        "description": "The label's full name",
+        "type": "string"
+      },
+      "score": {
+        "description": "The serving model's calibrated score, 0 to 1",
+        "type": "number"
+      },
+      "ticked": {
+        "description": "Whether it is at or above the label's threshold",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "label",
+      "score",
+      "ticked"
+    ],
+    "type": "object"
+  },
   "NewMailSuggestion": {
     "properties": {
       "action": {
@@ -19411,6 +19433,53 @@
     ],
     "type": "object"
   },
+  "RecordMailMessageSuggestionsRequest": {
+    "properties": {
+      "featureVersion": {
+        "description": "The feature version",
+        "type": "string"
+      },
+      "messages": {
+        "description": "Up to 500 messages",
+        "items": {
+          "$ref": "#/components/schemas/ScoredMailMessage"
+        },
+        "type": "array"
+      },
+      "modelRun": {
+        "description": "The classifier's model run that scored them",
+        "type": "string"
+      }
+    },
+    "required": [
+      "featureVersion",
+      "messages",
+      "modelRun"
+    ],
+    "type": "object"
+  },
+  "RecordMailMessageSuggestionsResponse": {
+    "properties": {
+      "messages": {
+        "description": "Messages whose suggestions were stored (or replaced)",
+        "type": "number"
+      },
+      "skipped": {
+        "description": "Suggestions left out: a label the mailbox does not have, or not the user's own",
+        "type": "number"
+      },
+      "suggestions": {
+        "description": "Suggestions stored",
+        "type": "number"
+      }
+    },
+    "required": [
+      "messages",
+      "skipped",
+      "suggestions"
+    ],
+    "type": "object"
+  },
   "RedriveCalendarEventDeadLettersResponse": {
     "properties": {
       "redrive": {
@@ -20432,6 +20501,26 @@
       "5"
     ],
     "type": "string"
+  },
+  "ScoredMailMessage": {
+    "properties": {
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "suggestions": {
+        "description": "Up to 20 labels, best first; none when nothing scored high enough",
+        "items": {
+          "$ref": "#/components/schemas/NewMailMessageSuggestion"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "gmailId",
+      "suggestions"
+    ],
+    "type": "object"
   },
   "SearchExecutionStatus": {
     "description": "The status of the search execution",

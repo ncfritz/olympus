@@ -32,6 +32,7 @@ import { ListMailTrainingAccountsController } from "./controllers/ListMailTraini
 import { ListMailTrainingExamplesController } from "./controllers/ListMailTrainingExamplesController";
 import { ListMailTrainingLabelsController } from "./controllers/ListMailTrainingLabelsController";
 import { PublishMailSuggestionRunController } from "./controllers/PublishMailSuggestionRunController";
+import { RecordMailMessageSuggestionsController } from "./controllers/RecordMailMessageSuggestionsController";
 import { SyncMailLabelsController } from "./controllers/SyncMailLabelsController";
 import { UpdateMailAccountSyncController } from "./controllers/UpdateMailAccountSyncController";
 import { RunMailAuditController } from "./controllers/RunMailAuditController";
@@ -106,6 +107,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailTrainingExamplesController,
     ListMailTrainingLabelsController,
     PublishMailSuggestionRunController,
+    RecordMailMessageSuggestionsController,
     RunMailAuditController,
     SyncMailLabelsController,
     UpdateMailAccountSyncController,
