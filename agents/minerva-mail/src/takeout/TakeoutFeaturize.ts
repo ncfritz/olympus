@@ -20,6 +20,12 @@ export type TakeoutFeaturizeOptions = {
   maxSeconds?: number;
   /** Whether reaching the archive's end marks the version complete. */
   complete?: boolean;
+  /**
+   * Embeddings instead of features (phase 6): the text goes to the
+   * classifier's embedding model, and the end completes the embedding
+   * version rather than the feature version.
+   */
+  embed?: boolean;
   onProgress?: (messages: number, featurized: number, seconds: number) => void;
   progressEvery?: number;
 };
@@ -71,7 +77,8 @@ export const toClassifierMessage = (
 });
 
 /**
- * Featurizes a Takeout archive (docs/plans/email-management phase 3): each
+ * Featurizes a Takeout archive (docs/plans/email-management phase 3), or
+ * embeds it (phase 6, `embed`): each
  * kept message's text, read in memory, is sent in batches to the
  * classifier, which keeps hashed counts and drops the text. The archive is
  * read in place; nothing else sees the text. Resumable from an offset; a
@@ -119,7 +126,9 @@ export class TakeoutFeaturize {
       if (batch.length === 0) return;
       const sent = batch;
       batch = [];
-      const answer = await this.classifier.putFeatures(account.id, sent);
+      const answer = options.embed
+        ? await this.classifier.putEmbeddings(account.id, sent)
+        : await this.classifier.putFeatures(account.id, sent);
       report.version = answer.version;
       report.featurized += answer.stored;
       report.batches++;
@@ -169,14 +178,19 @@ export class TakeoutFeaturize {
     if (report.nextOffset === null && options.complete !== false) {
       // A last slice may send nothing (only chats left, say), and so not
       // learn the version: the one still building is the one to complete.
+      const building = options.embed
+        ? await this.classifier.listEmbeddingVersions()
+        : await this.classifier.listFeatureVersions();
       const version =
         report.version ??
-        (await this.classifier.listFeatureVersions()).find(
-          (v) => v.status === "building",
-        )?.version;
+        building.find((v) => v.status === "building")?.version;
       if (version) {
         report.version = version;
-        await this.classifier.completeFeatures(version);
+        if (options.embed) {
+          await this.classifier.completeEmbeddings(version);
+        } else {
+          await this.classifier.completeFeatures(version);
+        }
         report.completed = true;
       }
     }

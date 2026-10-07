@@ -85,3 +85,24 @@ def test_counts_are_kept_small(store) -> None:
     row = next(store.rows("v1"))
     assert row.counts.dtype == np.uint16
     assert row.indices.dtype == np.uint32
+
+
+def test_keeps_embeddings_by_version_and_message(tmp_path) -> None:
+    import numpy as np
+
+    from minerva_mail_ml.features.store import FeatureStore
+
+    store = FeatureStore(tmp_path / "e.sqlite3")
+    store.begin_embeddings("m-4", "m", 4)
+    vectors = np.array([[1, 2, 3, 4], [-1, -2, -3, -4]], dtype=np.int8)
+    assert store.put_embeddings("m-4", "acc", ["a1", "a2"], vectors) == 2
+    store.put_embeddings("m-4", "acc", ["a1"], vectors[1:])
+    assert store.embeddings("m-4", "acc")["a1"].tolist() == [-1, -2, -3, -4]
+    assert sorted(store.embeddings_by_ids("m-4", "acc", ["a2", "zz"])) == ["a2"]
+    assert store.serving_embeddings() is None
+    assert store.complete_embeddings("m-4")
+    assert store.serving_embeddings() == "m-4"
+    assert store.embedding_dims("m-4") == 4
+    [status] = store.embedding_versions()
+    assert (status.status, status.messages) == ("ready", 2)
+    store.close()

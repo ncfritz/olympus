@@ -18,6 +18,7 @@ import uvicorn
 
 from minerva_mail_ml.app import create_app
 from minerva_mail_ml.config import Config, ConfigError, read_config
+from minerva_mail_ml.features.embed import OllamaEmbedder
 from minerva_mail_ml.features.store import FeatureStore
 from minerva_mail_ml.olympus_api import OlympusApi
 from minerva_mail_ml.services_app import create_services_app
@@ -38,7 +39,10 @@ class _Server(uvicorn.Server):
 
 
 def servers(
-    config: Config, store: FeatureStore, models: ServingModels
+    config: Config,
+    store: FeatureStore,
+    models: ServingModels,
+    embedder: OllamaEmbedder | None = None,
 ) -> list[uvicorn.Server]:
     plain = _Server(
         uvicorn.Config(
@@ -55,7 +59,7 @@ def servers(
         )
         return [plain]
     services_config = uvicorn.Config(
-        create_services_app(store, models),
+        create_services_app(store, models, embedder),
         host="0.0.0.0",
         port=config.services_port,
         log_level=config.log_level,
@@ -124,7 +128,16 @@ def main() -> None:
     store = FeatureStore(config.store_path)
     registry = ModelRegistry(config.model_dir)
     models = ServingModels(registry, store)
-    running = servers(config, store, models)
+    embedder = (
+        OllamaEmbedder(config.ollama_url, config.embed_model)
+        if config.ollama_url
+        else None
+    )
+    if embedder is None:
+        logger.info("No embeddings: OLLAMA_URL is unset")
+    else:
+        logger.info("Embedding with %s as %s", config.embed_model, embedder.version)
+    running = servers(config, store, models, embedder)
     api = OlympusApi(config.api) if config.api is not None else None
     learning = None
     if api is not None and config.learn_seconds > 0:
@@ -144,6 +157,8 @@ def main() -> None:
     finally:
         if api is not None:
             api.close()
+        if embedder is not None:
+            embedder.close()
         registry.close()
         store.close()
 

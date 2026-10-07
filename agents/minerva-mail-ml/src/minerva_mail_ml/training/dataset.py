@@ -79,6 +79,11 @@ class Dataset:
     initial_labels: dict[str, str]
     # How much each example counts (decision_weight); ones when absent.
     weights: np.ndarray | None = None
+    # Each message's embedding (int8) and whether it has one (phase 6);
+    # None when the run has no embedding version.
+    vectors: np.ndarray | None = None
+    has_vector: np.ndarray | None = None
+    embedding_version: str | None = None
 
     def sample_weights(self) -> np.ndarray:
         return (
@@ -102,6 +107,9 @@ class Dataset:
             targets=self.targets,
             initial_labels=self.initial_labels,
             weights=self.weights[rows] if self.weights is not None else None,
+            vectors=self.vectors[rows] if self.vectors is not None else None,
+            has_vector=(self.has_vector[rows] if self.has_vector is not None else None),
+            embedding_version=self.embedding_version,
         )
 
 
@@ -111,6 +119,7 @@ def build(
     account_id: str,
     examples: Iterable[Example],
     labels: Labels,
+    embedding_version: str | None = None,
 ) -> Dataset:
     targets = [topic_target(t) for t in sorted(labels.topics)] + [
         family_target(f.name) for f in sorted(labels.families, key=lambda f: f.name)
@@ -165,6 +174,19 @@ def build(
         },
         weights=np.asarray(weights, dtype=np.float64),
     )
+    if embedding_version is not None:
+        found = store.embeddings(embedding_version, account_id)
+        dims = store.embedding_dims(embedding_version)
+        vectors = np.zeros((len(gmail_ids), dims), dtype=np.int8)
+        has = np.zeros(len(gmail_ids), dtype=bool)
+        for i, g in enumerate(gmail_ids):
+            v = found.get(g)
+            if v is not None:
+                vectors[i] = v
+                has[i] = True
+        dataset.vectors = vectors
+        dataset.has_vector = has
+        dataset.embedding_version = embedding_version
     return dataset.subset(order)
 
 

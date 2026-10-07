@@ -106,7 +106,7 @@ README table and `infra/docker/env/<env>/`.
 | `minerva-mail`    | `MAIL_ML_URL`                 | —                      | The classifier                                                  |
 | `minerva-mail-ml` | `OLYMPUS_API_URL`             | —                      | Metadata and suggestions                                        |
 | `minerva-mail-ml` | `MAIL_ML_STORE`               | `/data/mail-ml.sqlite` | The feature store, on the service's volume                      |
-| `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, embeddings come from a bundled ONNX model |
+| `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, no embeddings and no neighbours layer      |
 | `api`             | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked  |
 
 ## Phase 0 — Decision and scaffolding — done 2026-10-05
@@ -727,7 +727,26 @@ left until phase 5 has decisions to measure them against.
 ## Phase 6 — Embeddings and clusters
 
 1. Embeddings with the text pull of phase 3 (or a second pull), the
-   neighbours layer in the combined score.
+   neighbours layer in the combined score. **Built** 2026-10-06, with Ollama
+   (`nomic-embed-text`, Neil, 2026-10-06; no bundled model). The
+   classifier's `OLLAMA_URL` and `EMBED_MODEL`: vectors cut to 384
+   dimensions (the model is Matryoshka-trained), unit length, int8, in the
+   feature store under an embedding version (`nomic-embed-text-384`),
+   building until the archive's pass completes it. New mail is embedded
+   as it is featurized (`POST /v1/features`; a model that fails fails no
+   featurizing); the archive by `takeout featurize --embed`
+   (`POST /v1/embeddings`, `/complete`, `/versions`). What is read: the
+   subject and the body's first 2,000 characters, with nomic's
+   `classification:` prefix. The neighbours layer: a run trained with a
+   ready embedding version keeps every message's vector and labels; a
+   message scores, per label, the similarity-weighted share of its 25
+   nearest (exact search in chunks), pulled toward the overall rate, and
+   the combiner takes its log-odds and the neighbours' mean similarity as
+   two more inputs (fitted on the same time split; a model from before
+   scores as it did). `/v1/suggestions` embeds what it scores; inbox
+   scoring and online learning read stored vectors, and an approval joins
+   the index. Runs report the embedding version and how many messages had
+   a vector.
 2. HDBSCAN over unlabelled mail and within large labels; a 2-D map of
    sample points per run.
 3. New-label and split suggestions from the clusters.

@@ -9,6 +9,9 @@ for each target it has a model for; a label new since the last retrain
 waits for the next one. A correction (approved with other labels than
 suggested) weighs more than a plain approval, as in training.
 
+With embeddings (phase 6), a decided message joins the neighbours index
+under its labels, or replaces its entry there.
+
 What a run learns is written to the registry and replayed when it loads.
 After learning, what is to review in the inbox is scored again from its
 stored features, so its suggestions follow at once. No text is needed:
@@ -57,6 +60,29 @@ def _inputs(
     return x, keys
 
 
+def _vectors(
+    store: FeatureStore, model: TrainedModel, rows: Sequence[FeatureRow]
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """The messages' stored embeddings in the model's version (int8), and
+    which have one; (None, None) for a model without the neighbours layer."""
+    version = getattr(model, "embedding_version", None)
+    index = model.index
+    if version is None or index is None or not rows:
+        return None, None
+    found = store.embeddings_by_ids(
+        version, model.account_id, [r.gmail_id for r in rows]
+    )
+    dims = index.vectors.shape[1]
+    vectors = np.zeros((len(rows), dims), dtype=np.int8)
+    has = np.zeros(len(rows), dtype=bool)
+    for i, r in enumerate(rows):
+        v = found.get(r.gmail_id)
+        if v is not None and v.shape[0] == dims:
+            vectors[i] = v
+            has[i] = True
+    return vectors, has
+
+
 def target_indices(model: TrainedModel, example: Example) -> list[int]:
     """The model's targets the message has."""
     column = {t: j for j, t in enumerate(model.targets)}
@@ -85,6 +111,11 @@ def apply(
     w = np.asarray(weights, dtype=np.float64)
     model.sender.learn(keys, y, w, corrections)
     model.linear.learn(x, y, w)
+    # The neighbours layer knows a decided message by its labels now.
+    vectors, has = _vectors(store, model, rows)
+    if vectors is not None and has is not None and has.any():
+        keep = np.flatnonzero(has)
+        model.index.learn([rows[i].gmail_id for i in keep], vectors[keep], y[keep])
 
 
 def replay(
@@ -132,8 +163,15 @@ def score_inbox(
     if not rows:
         return 0
     x, keys = _inputs(store, model, rows)
+    vectors, has = _vectors(store, model, rows)
     with models.lock(account_id):
-        suggested = model.suggest(x, keys)
+        suggested = model.suggest(
+            x,
+            keys,
+            vectors=vectors,
+            has_vector=has,
+            gmail_ids=[r.gmail_id for r in rows],
+        )
     recorded = 0
     for start in range(0, len(rows), RECORD_BATCH):
         chunk = list(

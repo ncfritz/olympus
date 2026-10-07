@@ -26,6 +26,8 @@ ADDED_COLUMNS = {
         ("macro_targets", "INTEGER"),
         ("macro_precision", "REAL"),
         ("macro_recall", "REAL"),
+        ("embedding_version", "TEXT"),
+        ("embedded", "INTEGER"),
     ],
 }
 
@@ -54,7 +56,9 @@ CREATE TABLE IF NOT EXISTS model_runs (
     top_one REAL,
     macro_targets INTEGER,
     macro_precision REAL,
-    macro_recall REAL
+    macro_recall REAL,
+    embedding_version TEXT,
+    embedded INTEGER
 );
 CREATE INDEX IF NOT EXISTS model_runs_account
     ON model_runs (account_id, status, finished_at);
@@ -129,6 +133,10 @@ class RunSummary:
     macro_targets: int = 0
     macro_precision: float | None = None
     macro_recall: float | None = None
+    # The embeddings the neighbours layer used, and how many messages had
+    # one; None without embeddings (phase 6).
+    embedding_version: str | None = None
+    embedded: int | None = None
 
 
 @dataclass

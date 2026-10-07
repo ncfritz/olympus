@@ -67,7 +67,13 @@ def report(
         f" recall {_pct(s.recall_default)}\n"
         f"  Per label ({s.macro_targets} with {MACRO_MIN}+ test messages):"
         f" precision {_pct(s.macro_precision)}, recall {_pct(s.macro_recall)}\n"
-        f"  Top suggestion right (labelled test mail): {_pct(s.top_one)}\n\n"
+        f"  Top suggestion right (labelled test mail): {_pct(s.top_one)}\n"
+        + (
+            f"  Neighbours: {s.embedding_version}, {s.embedded} of"
+            f" {s.examples} messages embedded\n\n"
+            if s.embedding_version
+            else "  Neighbours: none (no embeddings ready)\n\n"
+        )
     )
     out.write(
         f"  {'Target':<44} {'train':>6} {'test':>5} {'thresh':>6}"

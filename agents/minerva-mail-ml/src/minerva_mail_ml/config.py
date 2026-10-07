@@ -16,6 +16,7 @@ DEFAULT_SERVICES_PORT = 3107
 DEFAULT_STORE = "data/features.sqlite3"
 DEFAULT_MODELS = "data/models"
 DEFAULT_LEARN_SECONDS = 60
+DEFAULT_EMBED_MODEL = "nomic-embed-text"
 
 
 class ConfigError(ValueError):
@@ -69,6 +70,9 @@ class Config:
     api: ApiClient | None = field(default=None)
     # How often the service learns from approvals in the inbox; 0: never.
     learn_seconds: int = DEFAULT_LEARN_SECONDS
+    # Ollama, for embeddings (phase 6); None: no embeddings, no neighbours.
+    ollama_url: str | None = None
+    embed_model: str = DEFAULT_EMBED_MODEL
 
 
 def _port(env: Mapping[str, str], name: str, default: int, problems: list[str]) -> int:
@@ -172,6 +176,13 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
             f'LEARN_SECONDS is a whole number of seconds, 0 to 86400, got "{raw_learn}"'
         )
 
+    ollama_url = env.get("OLLAMA_URL", "").strip().rstrip("/") or None
+    if ollama_url is not None and not ollama_url.startswith(("http://", "https://")):
+        problems.append(f'OLLAMA_URL is an http(s) URL, got "{ollama_url}"')
+    embed_model = env.get("EMBED_MODEL", DEFAULT_EMBED_MODEL).strip()
+    if not embed_model:
+        problems.append("EMBED_MODEL names an Ollama model")
+
     if problems:
         raise ConfigError(problems)
     return Config(
@@ -185,4 +196,6 @@ def read_config(env: Mapping[str, str] | None = None) -> Config:
         model_dir=Path(env.get("MODEL_DIR", DEFAULT_MODELS)),
         api=api,
         learn_seconds=learn_seconds,
+        ollama_url=ollama_url,
+        embed_model=embed_model or DEFAULT_EMBED_MODEL,
     )

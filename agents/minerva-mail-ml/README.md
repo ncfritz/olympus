@@ -17,12 +17,15 @@ certificate from the services issuer, and only the services in
 `SERVICES_ALLOWED_CLIENTS` (the mail agent), checked as each connection
 opens.
 
-| Route                        | What                                                            |
-| ---------------------------- | --------------------------------------------------------------- |
-| `POST /v1/features`          | A batch of up to 500 messages' text, featurized and stored      |
-| `POST /v1/features/complete` | Marks a feature version built: it serves from then on           |
-| `GET /v1/features/versions`  | The versions in the store, their messages, and which one serves |
-| `POST /v1/suggestions`       | Up to 500 messages' text in, each one's suggested labels out    |
+| Route                          | What                                                            |
+| ------------------------------ | --------------------------------------------------------------- |
+| `POST /v1/features`            | A batch of up to 500 messages' text, featurized and stored      |
+| `POST /v1/features/complete`   | Marks a feature version built: it serves from then on           |
+| `GET /v1/features/versions`    | The versions in the store, their messages, and which one serves |
+| `POST /v1/suggestions`         | Up to 500 messages' text in, each one's suggested labels out    |
+| `POST /v1/embeddings`          | A batch's text embedded by Ollama and stored (the archive pass) |
+| `POST /v1/embeddings/complete` | Marks an embedding version built: training uses it from then on |
+| `GET /v1/embeddings/versions`  | The embedding versions, their messages, and which one serves    |
 
 The feature store is SQLite (`FEATURE_STORE_PATH`): per feature version,
 each message's hashed token counts (subject, the body's first 5,000
@@ -99,20 +102,23 @@ docker buildx bake --load minerva-mail-ml    # from the repository root
 
 ## Configuration
 
-| Variable                   | What                                                    | Default                 |
-| -------------------------- | ------------------------------------------------------- | ----------------------- |
-| `LISTEN_PORT`              | `/health`, `/metrics`                                   | `3106`                  |
-| `SERVICES_LISTEN_PORT`     | The services listener                                   | `3107`                  |
-| `TLS_CERT`, `TLS_KEY`      | Its certificate (all four TLS settings, or none)        | (no services listener)  |
-| `TLS_CA_SERVICES`          | The services chain it trusts                            |                         |
-| `SERVICES_ISSUER`          | The issuing CA's common name a client must come from    |                         |
-| `TLS_CRL_SERVICES`         | Revocation lists, comma-separated: one per authority    | (none)                  |
-| `SERVICES_ALLOWED_CLIENTS` | Services let in, by certificate common name             | `minerva-mail-agent`    |
-| `FEATURE_STORE_PATH`       | The feature store                                       | `data/features.sqlite3` |
-| `MODEL_DIR`                | Model runs and their models                             | `data/models`           |
-| `API_BASE_URL`             | The API's mTLS listener, for training                   | (no training)           |
-| `API_CLIENT_CERT`, `_KEY`  | The classifier's client certificate (all four, or none) |                         |
-| `API_CA_CERT`              | The services chain the API's certificate is from        |                         |
-| `LOG_LEVEL`                | `debug`, `info`, `warning`, `error`                     | `info`                  |
-| `ENVIRONMENT`              | Labels the logs                                         | `development`           |
-| `APP_NAME`                 | The service's name                                      | `minerva-mail-ml`       |
+| Variable                   | What                                                     | Default                 |
+| -------------------------- | -------------------------------------------------------- | ----------------------- |
+| `LISTEN_PORT`              | `/health`, `/metrics`                                    | `3106`                  |
+| `SERVICES_LISTEN_PORT`     | The services listener                                    | `3107`                  |
+| `TLS_CERT`, `TLS_KEY`      | Its certificate (all four TLS settings, or none)         | (no services listener)  |
+| `TLS_CA_SERVICES`          | The services chain it trusts                             |                         |
+| `SERVICES_ISSUER`          | The issuing CA's common name a client must come from     |                         |
+| `TLS_CRL_SERVICES`         | Revocation lists, comma-separated: one per authority     | (none)                  |
+| `SERVICES_ALLOWED_CLIENTS` | Services let in, by certificate common name              | `minerva-mail-agent`    |
+| `FEATURE_STORE_PATH`       | The feature store                                        | `data/features.sqlite3` |
+| `MODEL_DIR`                | Model runs and their models                              | `data/models`           |
+| `API_BASE_URL`             | The API's mTLS listener, for training                    | (no training)           |
+| `API_CLIENT_CERT`, `_KEY`  | The classifier's client certificate (all four, or none)  |                         |
+| `API_CA_CERT`              | The services chain the API's certificate is from         |                         |
+| `LEARN_SECONDS`            | How often to learn from approvals in the inbox; 0: never | `60`                    |
+| `OLLAMA_URL`               | Ollama, for embeddings and the neighbours layer          | (no embeddings)         |
+| `EMBED_MODEL`              | The Ollama model that embeds                             | `nomic-embed-text`      |
+| `LOG_LEVEL`                | `debug`, `info`, `warning`, `error`                      | `info`                  |
+| `ENVIRONMENT`              | Labels the logs                                          | `development`           |
+| `APP_NAME`                 | The service's name                                       | `minerva-mail-ml`       |

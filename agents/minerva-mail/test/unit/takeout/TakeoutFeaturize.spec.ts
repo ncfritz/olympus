@@ -28,6 +28,16 @@ const setup = () => {
       { version: "v0", status: "ready" },
       { version: "v1", status: "building" },
     ]),
+    putEmbeddings: vi.fn(
+      async (_account: string, messages: ClassifierMessage[]) => {
+        batches.push(messages);
+        return { version: "nomic-embed-text-384", stored: messages.length };
+      },
+    ),
+    completeEmbeddings: vi.fn(async (version: string) => ({ version })),
+    listEmbeddingVersions: vi.fn(async () => [
+      { version: "nomic-embed-text-384", status: "building" },
+    ]),
   };
   const mail = {
     importMailAccount: vi.fn(async (email: string) => ({
@@ -103,6 +113,28 @@ describe("TakeoutFeaturize", () => {
     expect(classifier.completeFeatures).toHaveBeenCalledWith("v1");
     // The report is counts: no text in it.
     expect(JSON.stringify(report)).not.toMatch(/bill/i);
+  });
+
+  it("embeds instead, completing the embedding version, with --embed", async () => {
+    const { featurize, batches, classifier } = setup();
+
+    const report = await featurize.run(archive(), {
+      account: "owner@example.net",
+      owner: "neil@example.net",
+      embed: true,
+    });
+
+    expect(report).toMatchObject({
+      version: "nomic-embed-text-384",
+      featurized: 1,
+      completed: true,
+    });
+    expect(batches[0][0]).toMatchObject({ gmailId: "1", subject: "Your bill" });
+    expect(classifier.putFeatures).not.toHaveBeenCalled();
+    expect(classifier.completeFeatures).not.toHaveBeenCalled();
+    expect(classifier.completeEmbeddings).toHaveBeenCalledWith(
+      "nomic-embed-text-384",
+    );
   });
 
   it(`sends batches of ${FEATURIZE_BATCH}`, async () => {

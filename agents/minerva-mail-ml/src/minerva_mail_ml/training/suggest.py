@@ -30,6 +30,7 @@ from minerva_mail_ml.olympus_api import Suggestion
 from minerva_mail_ml.training import dataset as ds
 from minerva_mail_ml.training.linear import LinearModel
 from minerva_mail_ml.training.model import TrainedModel
+from minerva_mail_ml.training.neighbours import index_of, inputs_for
 from minerva_mail_ml.training.sender import SenderHistory
 
 logger = logging.getLogger(__name__)
@@ -68,8 +69,15 @@ def out_of_fold(model: TrainedModel, data: ds.Dataset, jobs: int = -1) -> np.nda
         sender = SenderHistory.fit(rest.keys, rest.days, rest.y, as_of=end)
         linear = LinearModel.fit(rest.x, rest.y, rest.days, as_of=end, jobs=jobs)
         sender_scores, support = sender.score(held_out.keys)
+        near = None
+        if model.combiner.uses_neighbours:
+            near = inputs_for(index_of(rest), held_out)
+            if near is None:
+                raise SuggestError(
+                    "The serving model uses embeddings this mailbox has none of"
+                )
         scores[held] = model.combiner.probabilities(
-            linear.logits(held_out.x), sender_scores, support
+            linear.logits(held_out.x), sender_scores, support, near
         )
         logger.info("Scored fold %d of %d: %d messages", k + 1, FOLDS, held.size)
     return scores

@@ -44,6 +44,25 @@ CREATE TABLE IF NOT EXISTS message_features (
 );
 CREATE INDEX IF NOT EXISTS message_features_received
     ON message_features (version, account_id, received_at);
+-- Embeddings (phase 6): a vector per message from a local model, int8,
+-- under a version naming the model and its dimensions. Building until the
+-- archive's pass completes it, as a feature version is.
+CREATE TABLE IF NOT EXISTS embedding_versions (
+    version TEXT PRIMARY KEY,
+    model TEXT NOT NULL,
+    dims INTEGER NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('building', 'ready')),
+    created_at TEXT NOT NULL,
+    completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS message_embeddings (
+    version TEXT NOT NULL REFERENCES embedding_versions (version),
+    account_id TEXT NOT NULL,
+    gmail_id TEXT NOT NULL,
+    vector BLOB NOT NULL,
+    stored_at TEXT NOT NULL,
+    PRIMARY KEY (version, account_id, gmail_id)
+);
 """
 
 
@@ -58,6 +77,17 @@ class FeatureRow:
     list_id: str | None
     indices: np.ndarray
     counts: np.ndarray
+
+
+@dataclass(frozen=True)
+class EmbeddingVersionStatus:
+    version: str
+    model: str
+    dims: int
+    status: str
+    messages: int
+    created_at: str
+    completed_at: str | None
 
 
 @dataclass(frozen=True)
@@ -228,6 +258,105 @@ class FeatureStore:
                     indices=_unpack(r[5], np.uint32),
                     counts=_unpack(r[6], np.uint16),
                 )
+        return found
+
+    def begin_embeddings(self, version: str, model: str, dims: int) -> None:
+        """Records an embedding version as building, unless it is known."""
+        with self._db:
+            self._db.execute(
+                "INSERT INTO embedding_versions (version, model, dims, status,"
+                " created_at) VALUES (?, ?, ?, 'building', ?)"
+                " ON CONFLICT (version) DO NOTHING",
+                (version, model, dims, _now()),
+            )
+
+    def put_embeddings(
+        self,
+        version: str,
+        account_id: str,
+        gmail_ids: Sequence[str],
+        vectors: np.ndarray,
+    ) -> int:
+        """Stores a vector per message (int8); one stored again is replaced."""
+        if vectors.shape[0] != len(gmail_ids):
+            raise ValueError("one vector per message")
+        if vectors.dtype != np.int8:
+            raise ValueError("vectors are stored quantized, as int8")
+        now = _now()
+        with self._db:
+            self._db.executemany(
+                "INSERT INTO message_embeddings (version, account_id, gmail_id,"
+                " vector, stored_at) VALUES (?, ?, ?, ?, ?)"
+                " ON CONFLICT (version, account_id, gmail_id) DO UPDATE SET"
+                " vector = excluded.vector, stored_at = excluded.stored_at",
+                [
+                    (version, account_id, g, vectors[i].tobytes(), now)
+                    for i, g in enumerate(gmail_ids)
+                ],
+            )
+        return len(gmail_ids)
+
+    def complete_embeddings(self, version: str) -> bool:
+        """Marks an embedding version ready; False if there is none."""
+        with self._db:
+            cursor = self._db.execute(
+                "UPDATE embedding_versions SET status = 'ready', completed_at = ?"
+                " WHERE version = ?",
+                (_now(), version),
+            )
+        return cursor.rowcount == 1
+
+    def serving_embeddings(self) -> str | None:
+        """The newest ready embedding version, which training uses."""
+        row = self._db.execute(
+            "SELECT version FROM embedding_versions WHERE status = 'ready'"
+            " ORDER BY completed_at DESC, version DESC LIMIT 1"
+        ).fetchone()
+        return row[0] if row else None
+
+    def embedding_versions(self) -> list[EmbeddingVersionStatus]:
+        rows = self._db.execute(
+            "SELECT v.version, v.model, v.dims, v.status, count(e.gmail_id),"
+            " v.created_at, v.completed_at FROM embedding_versions v"
+            " LEFT JOIN message_embeddings e ON e.version = v.version"
+            " GROUP BY v.version ORDER BY v.created_at"
+        ).fetchall()
+        return [EmbeddingVersionStatus(*r) for r in rows]
+
+    def embedding_dims(self, version: str) -> int:
+        row = self._db.execute(
+            "SELECT dims FROM embedding_versions WHERE version = ?", (version,)
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"No embedding version {version}")
+        return int(row[0])
+
+    def embeddings(self, version: str, account_id: str) -> dict[str, np.ndarray]:
+        """Every vector of the account in `version`, by Gmail ID (int8)."""
+        return {
+            g: np.frombuffer(v, dtype=np.int8)
+            for g, v in self._db.execute(
+                "SELECT gmail_id, vector FROM message_embeddings"
+                " WHERE version = ? AND account_id = ?",
+                (version, account_id),
+            )
+        }
+
+    def embeddings_by_ids(
+        self, version: str, account_id: str, gmail_ids: Sequence[str]
+    ) -> dict[str, np.ndarray]:
+        """These messages' vectors (int8); one never embedded is missing."""
+        found: dict[str, np.ndarray] = {}
+        ids = list(dict.fromkeys(gmail_ids))
+        for start in range(0, len(ids), 500):
+            chunk = ids[start : start + 500]
+            marks = ", ".join("?" for _ in chunk)
+            for g, v in self._db.execute(
+                "SELECT gmail_id, vector FROM message_embeddings WHERE version = ?"
+                f" AND account_id = ? AND gmail_id IN ({marks})",
+                (version, account_id, *chunk),
+            ):
+                found[g] = np.frombuffer(v, dtype=np.int8)
         return found
 
     def matrix(self, rows: Sequence[FeatureRow], n_features: int) -> sparse.csr_matrix:

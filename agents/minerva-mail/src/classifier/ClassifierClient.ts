@@ -36,6 +36,17 @@ export type ClassifierSuggestions = {
   messages: { gmailId: string; labels: ClassifierSuggestion[] }[];
 };
 
+export type EmbeddingVersion = {
+  version: string;
+  model: string;
+  dims: number;
+  status: "building" | "ready";
+  messages: number;
+  createdTime: string;
+  completedTime?: string | null;
+  serving: boolean;
+};
+
 export type FeatureVersion = {
   version: string;
   status: "building" | "ready";
@@ -112,6 +123,34 @@ export class ClassifierClient {
       }
       throw error;
     }
+  }
+
+  /** Embeds a batch for the embedding version being built (phase 6). */
+  async putEmbeddings(
+    accountId: string,
+    messages: ClassifierMessage[],
+  ): Promise<{ version: string; stored: number }> {
+    return (
+      await this.client().post<{ version: string; stored: number }>(
+        "/embeddings",
+        { accountId, messages },
+      )
+    ).data;
+  }
+
+  /** Marks an embedding version built, so training uses it. */
+  async completeEmbeddings(version: string): Promise<EmbeddingVersion> {
+    return (
+      await this.client().post<EmbeddingVersion>("/embeddings/complete", {
+        version,
+      })
+    ).data;
+  }
+
+  /** The embedding versions in the classifier's store. */
+  async listEmbeddingVersions(): Promise<EmbeddingVersion[]> {
+    return (await this.client().get<EmbeddingVersion[]>("/embeddings/versions"))
+      .data;
   }
 
   /** The versions in the classifier's store. */

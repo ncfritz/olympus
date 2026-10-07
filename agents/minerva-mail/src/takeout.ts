@@ -15,7 +15,7 @@ const USAGE = `Usage:
                  [--offset <bytes>] [--limit <messages>] [--max-seconds <s>]
   takeout featurize <mbox> --account <mailbox email> --owner <Olympus user email>
                  [--offset <bytes>] [--limit <messages>] [--max-seconds <s>]
-                 [--no-complete]
+                 [--no-complete] [--embed]
 
   scan     Reads and parses a Google Takeout mbox as the import will, and
            prints what it found as JSON: counts only, never message
@@ -29,6 +29,9 @@ const USAGE = `Usage:
            (MAIL_ML_URL, over mutual TLS), which keeps hashed counts and
            drops the text. Reaching the archive's end marks the classifier's
            feature version complete, so it serves (--no-complete: not yet).
+           --embed: the text goes to the classifier's embedding model
+           (OLLAMA_URL there) instead, and the end completes the embedding
+           version, which the next training run uses (phase 6).
 
   Both print nextOffset when they stop early; --offset resumes there.
 `;
@@ -104,7 +107,10 @@ const main = async (args: string[]): Promise<number> => {
         account,
         owner,
         complete: !args.includes("--no-complete"),
-        onProgress: progress("featurized"),
+        embed: args.includes("--embed"),
+        onProgress: progress(
+          args.includes("--embed") ? "embedded" : "featurized",
+        ),
       });
       process.stdout.write(`${JSON.stringify(report, null, 1)}\n`);
     } finally {

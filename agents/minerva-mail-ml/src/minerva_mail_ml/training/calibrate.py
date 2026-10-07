@@ -3,9 +3,11 @@ label's threshold (ADR 0030, The classifier).
 
 The combiner is a small logistic regression per target over the linear
 model's log-odds, the sender history's score (as log-odds) and how much
-history stood behind it, fitted on the validation months, which neither
-layer saw. A target with too few validation positives to fit its own uses
-one pooled over every target.
+history stood behind it, and, with embeddings (phase 6), the nearest
+neighbours' score (as log-odds) and how close they were; fitted on the
+validation months, which no layer saw. A combiner fitted without
+neighbours has four inputs and scores as it always has. A target with too
+few validation positives to fit its own uses one pooled over every target.
 
 A target's threshold starts at 0.5: the scores are calibrated, and tuning
 each label on a few validation months chased noise (the first real run,
@@ -26,6 +28,8 @@ from scipy import sparse
 from sklearn.linear_model import LogisticRegression
 
 N_INPUTS = 4
+# With the neighbours layer: its log-odds and its support.
+N_INPUTS_NEIGHBOURS = 6
 MIN_VALIDATION_POSITIVES = 5
 MAX_POOLED_ROWS = 500_000
 TARGET_PRECISION = 0.9
@@ -36,6 +40,11 @@ DEFAULT_THRESHOLD = 0.5
 CLIP = 20.0
 
 
+def _logit(p: np.ndarray) -> np.ndarray:
+    s = np.clip(p.astype(np.float64), 1e-4, 1 - 1e-4)
+    return np.log(s / (1 - s))
+
+
 def _inputs(
     linear_logits: np.ndarray, sender_scores: np.ndarray, support: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -43,10 +52,17 @@ def _inputs(
     trained = np.isfinite(linear_logits).all(axis=0)
     lin = np.where(np.isfinite(linear_logits), linear_logits, 0.0)
     lin = np.clip(lin, -CLIP, CLIP)
-    s = np.clip(sender_scores.astype(np.float64), 1e-4, 1 - 1e-4)
-    sl = np.log(s / (1 - s))
+    sl = _logit(sender_scores)
     ls = np.log1p(support.astype(np.float64))
     return lin, sl, ls, trained.astype(np.float64)
+
+
+@dataclass
+class NeighbourInputs:
+    """The neighbours layer's scores (messages x targets) and support."""
+
+    scores: np.ndarray
+    support: np.ndarray
 
 
 def _fit(features: np.ndarray, y: np.ndarray, weights: np.ndarray | None = None):
@@ -70,8 +86,11 @@ class Combiner:
         support: np.ndarray,
         y: sparse.csr_matrix,
         seed: int = 0,
+        neighbours: NeighbourInputs | None = None,
     ) -> Combiner:
         lin, sl, ls, trained = _inputs(linear_logits, sender_scores, support)
+        nl = _logit(neighbours.scores) if neighbours is not None else None
+        ns = neighbours.support.astype(np.float64) if neighbours is not None else None
         n, t = lin.shape
         yd = y.toarray().astype(np.int8)
         positives = yd.sum(axis=0)
@@ -95,13 +114,15 @@ class Combiner:
                 np.full(len(neg_r), neg_total / max(len(neg_r), 1)),
             ]
         )
-        pooled_features = np.column_stack(
-            [lin[rows, cols], sl[rows, cols], ls[rows], trained[cols]]
-        )
+        columns = [lin[rows, cols], sl[rows, cols], ls[rows], trained[cols]]
+        if nl is not None and ns is not None:
+            columns += [nl[rows, cols], ns[rows]]
+        pooled_features = np.column_stack(columns)
         if len(pos_r) and len(neg_r):
             pooled = _fit(pooled_features, labels, weights)
         else:
-            pooled = (np.array([1.0, 1.0, 0.0, 0.0]), -5.0)
+            fallback = [1.0, 1.0, 0.0, 0.0] + ([1.0, 0.0] if nl is not None else [])
+            pooled = (np.array(fallback), -5.0)
 
         coef = np.tile(pooled[0], (t, 1))
         intercept = np.full(t, pooled[1])
@@ -109,19 +130,28 @@ class Combiner:
         for j in range(t):
             if positives[j] < MIN_VALIDATION_POSITIVES or positives[j] == n:
                 continue
-            features = np.column_stack(
-                [lin[:, j], sl[:, j], ls, np.full(n, trained[j])]
-            )
+            own_columns = [lin[:, j], sl[:, j], ls, np.full(n, trained[j])]
+            if nl is not None and ns is not None:
+                own_columns += [nl[:, j], ns]
+            features = np.column_stack(own_columns)
             coef[j], intercept[j] = _fit(features, yd[:, j])
             own[j] = True
         return cls(coef=coef, intercept=intercept, own=own)
+
+    @property
+    def uses_neighbours(self) -> bool:
+        return self.coef.shape[1] == N_INPUTS_NEIGHBOURS
 
     def probabilities(
         self,
         linear_logits: np.ndarray,
         sender_scores: np.ndarray,
         support: np.ndarray,
+        neighbours: NeighbourInputs | None = None,
     ) -> np.ndarray:
+        """Calibrated scores. A combiner with neighbours needs their inputs;
+        without them (no vector), the overall rate and no support stand in,
+        as for a message the index has nothing near."""
         lin, sl, ls, trained = _inputs(linear_logits, sender_scores, support)
         z = (
             lin * self.coef[:, 0]
@@ -130,6 +160,11 @@ class Combiner:
             + trained * self.coef[:, 3]
             + self.intercept
         )
+        if self.uses_neighbours:
+            if neighbours is None:
+                raise ValueError("This combiner was fitted with neighbours")
+            z += _logit(neighbours.scores) * self.coef[:, 4]
+            z += neighbours.support.astype(np.float64)[:, None] * self.coef[:, 5]
         return 1.0 / (1.0 + np.exp(-np.clip(z, -50, 50)))
 
 

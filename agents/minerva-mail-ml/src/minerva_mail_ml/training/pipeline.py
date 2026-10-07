@@ -5,8 +5,10 @@ drift (ADR 0030): the last six months are the test set, the six before
 them the validation set, and everything older the training set.
 
 1. Sender history and the linear model learn from the training months.
+   With an embedding version ready (phase 6), so does the neighbours
+   layer: an index of the training months' vectors.
 2. The combiner and each target's threshold are fitted on the validation
-   months, which neither layer saw.
+   months, which no layer saw.
 3. The test months are scored, with sender history now including the
    validation months, and precision and recall are written to the run per
    target, at its threshold and at the default 0.5.
@@ -28,6 +30,7 @@ from minerva_mail_ml.training import dataset as ds
 from minerva_mail_ml.training.calibrate import DEFAULT_THRESHOLD, Combiner, thresholds
 from minerva_mail_ml.training.linear import LinearModel
 from minerva_mail_ml.training.model import TrainedModel
+from minerva_mail_ml.training.neighbours import index_of, inputs_for
 from minerva_mail_ml.training.registry import (
     MACRO_MIN,
     ModelRegistry,
@@ -117,11 +120,14 @@ def train_dataset(
         sample_weight=tr.weights,
     )
 
+    index = index_of(tr)
+
     # 2. Combiner and thresholds, on the validation months.
     scores, support = sender.score(va.keys)
     linear_va = linear.logits(va.x)
-    combiner = Combiner.fit(linear_va, scores, support, va.y)
-    p_va = combiner.probabilities(linear_va, scores, support)
+    near_va = inputs_for(index, va)
+    combiner = Combiner.fit(linear_va, scores, support, va.y, neighbours=near_va)
+    p_va = combiner.probabilities(linear_va, scores, support, near_va)
     cuts = thresholds(p_va, va.y)
 
     # 3. The test months; sender history now knows the validation months.
@@ -131,7 +137,8 @@ def train_dataset(
         known.keys, known.days, known.y, as_of=test_from, sample_weight=known.weights
     )
     scores, support = sender_te.score(te.keys)
-    p_te = combiner.probabilities(linear.logits(te.x), scores, support)
+    near_te = inputs_for(index_of(known), te)
+    p_te = combiner.probabilities(linear.logits(te.x), scores, support, near_te)
     predicted, hits, positives = evaluate(p_te, te.y, cuts)
     predicted_d, hits_d, _ = evaluate(p_te, te.y, np.full(len(cuts), DEFAULT_THRESHOLD))
     ticked = p_te >= cuts
@@ -189,6 +196,8 @@ def train_dataset(
         macro_recall=(
             float(np.mean([r.recall or 0.0 for r in macro])) if macro else None
         ),
+        embedding_version=data.embedding_version,
+        embedded=(int(data.has_vector.sum()) if data.has_vector is not None else None),
     )
 
     # 4. Serving: the layers again, on everything.
@@ -211,6 +220,8 @@ def train_dataset(
         ),
         combiner=combiner,
         thresholds=cuts,
+        neighbours=index_of(data),
+        embedding_version=data.embedding_version,
     )
     return model, summary, results
 
@@ -232,7 +243,14 @@ def train_account(
     run_id = registry.begin(account_id, version)
     try:
         labels = api.labels(account_id)
-        data = ds.build(store, version, account_id, api.examples(account_id), labels)
+        data = ds.build(
+            store,
+            version,
+            account_id,
+            api.examples(account_id),
+            labels,
+            embedding_version=store.serving_embeddings(),
+        )
         model, summary, results = train_dataset(data, jobs=jobs)
         registry.finish(run_id, model, summary, results)
     except Exception as error:
@@ -269,7 +287,12 @@ def suggest_account(
     assert isinstance(model, TrainedModel)
     labels = api.labels(account_id)
     data = ds.build(
-        store, model.feature_version, account_id, api.examples(account_id), labels
+        store,
+        model.feature_version,
+        account_id,
+        api.examples(account_id),
+        labels,
+        embedding_version=getattr(model, "embedding_version", None),
     )
     # The run first, so the API is known to take suggestions before the
     # minutes of scoring; a run left building is dropped by the next publish.
