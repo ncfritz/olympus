@@ -293,7 +293,7 @@ messages have no queue to land in.
 
 **M0 signed off 2026-10-05.**
 
-## Phase 1b — Linking and live sync
+## Phase 1b — Linking and live sync — done 2026-10-07
 
 0. **OAuth**: **done** 2026-10-06. A Web application client for mail in
    the calendar agent's Google project, on its Internal consent screen,
@@ -404,7 +404,9 @@ messages have no queue to land in.
   chats in 2,385 threads (Spam, Trash and drafts empty), are 275,735 and
   265,019; Minerva holds exactly 275,735 messages in 265,019 threads.
 
-## Phase 2 — Audit reports and statistics — built 2026-10-05, not signed off
+**M1 and M2 signed off 2026-10-07** (M1 called complete by Neil).
+
+## Phase 2 — Audit reports and statistics — done 2026-10-07
 
 Read-only, over metadata alone. Measured on a synthetic mailbox the size
 of Neil's (275,358 messages, 482 labels, one sender with 43 %); the real
@@ -448,6 +450,8 @@ numbers come with the sign-off on DEV.
    CSV, a row per proposed change, with the same filters as the review.
 
 **Sign-off:** M3, M4.
+
+**M3 and M4 signed off 2026-10-07**: built to spec (Neil).
 
 ## Phase 3 — The classifier — done 2026-10-06
 
@@ -526,7 +530,7 @@ left until phase 5 has decisions to measure them against.
 
 **M5 signed off 2026-10-06.**
 
-## Phase 4 — Re-classification and writes to Gmail
+## Phase 4 — Re-classification and writes to Gmail — done 2026-10-07
 
 1. **Suggestions over the mailbox**: **built** 2026-10-06, before 1b, since
    it needs only the archive. `minerva-mail-ml-train suggest` scores every
@@ -631,7 +635,10 @@ left until phase 5 has decisions to measure them against.
 - **4. Pass.** With `MINERVA_MAIL_WRITES_ENABLED` unset, applying answered
   503 and Gmail was unchanged.
 
-## Phase 5 — The inbox
+**M6, M7 and M8 signed off 2026-10-07**: M6 and M8 confirmed by Neil on
+DEV the night before.
+
+## Phase 5 — The inbox — done 2026-10-07
 
 1. **Suggestions for new mail**: scored as it arrives. **Built**
    2026-10-06. New mail a poll or reconcile fetches is featurized, then
@@ -724,7 +731,11 @@ left until phase 5 has decisions to measure them against.
 
 **Sign-off:** M9, M10.
 
-## Phase 6 — Embeddings and clusters
+**M9 and M10 signed off 2026-10-07.** M10 case 1: Neil accepts the
+slower learning as measured (the scores move on the second correction,
+the top suggestion on the third or fourth); left as it is.
+
+## Phase 6 — Embeddings and clusters — done 2026-10-07
 
 1. Embeddings with the text pull of phase 3 (or a second pull), the
    neighbours layer in the combined score. **Built** 2026-10-06, with Ollama
@@ -791,6 +802,9 @@ left until phase 5 has decisions to measure them against.
    suggested label.
 
 **Sign-off:** M11.
+
+**M11 signed off 2026-10-07**: clusters ran on Neil's mailbox on DEV the
+night before. A round of UX changes follows from use.
 
 ## Phase 7 — Workflows, stars and filters
 
