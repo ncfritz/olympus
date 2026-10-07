@@ -1,5 +1,8 @@
 import { ReloadOutlined, TagsOutlined } from "@ant-design/icons";
-import type { GetMailAuditResponse } from "@ncfritz/olympus-sdk/minerva";
+import type {
+  GetMailAuditResponse,
+  ListMailClusterSuggestionsResponse,
+} from "@ncfritz/olympus-sdk/minerva";
 import {
   Button,
   Card,
@@ -12,7 +15,7 @@ import {
 } from "antd";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import mailApi from "../../../../api/mailApi";
 import AuditStrip from "../../../../components/minerva/mail/audit/AuditStrip";
 import ExportButton from "../../../../components/minerva/mail/audit/ExportButton";
@@ -22,6 +25,7 @@ import MixedThreads from "../../../../components/minerva/mail/audit/MixedThreads
 import StarsPanel from "../../../../components/minerva/mail/audit/StarsPanel";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
+import { splitsByLabel } from "../../../../utils/mailClusters";
 
 const { Title, Text } = Typography;
 
@@ -55,6 +59,22 @@ const MailReclassificationPage: React.FunctionComponent = () => {
       setRunning(false);
     }
   };
+
+  // The clustering's split suggestions (phase 6), for the strip and flags.
+  const [suggestions] = useFetch<
+    Record<string, never>,
+    ListMailClusterSuggestionsResponse | undefined
+  >({
+    dataType: "split suggestions",
+    params: {},
+    watch: [],
+    quiet: true,
+    fetchFunction: async () => (await mailApi.listClusterSuggestions()).data,
+  });
+  const splits = useMemo(
+    () => splitsByLabel(suggestions?.clusters ?? []),
+    [suggestions],
+  );
 
   const summary = audit?.summary;
   const runButton = (
@@ -140,10 +160,14 @@ const MailReclassificationPage: React.FunctionComponent = () => {
             <AuditStrip
               summary={summary}
               highConfidence={audit.highConfidence}
+              splits={{
+                labels: splits.size,
+                groups: [...splits.values()].reduce((n, s) => n + s.groups, 0),
+              }}
             />
             <Flex vertical={true} gap={16} style={{ padding: 16 }}>
               <Card size={"small"} title={"Labels"}>
-                <LabelTreeTable labels={audit.labels} />
+                <LabelTreeTable labels={audit.labels} splits={splits} />
               </Card>
               <Card size={"small"} title={"Merge candidates"}>
                 <MergeCandidates

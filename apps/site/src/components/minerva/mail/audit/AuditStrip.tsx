@@ -10,12 +10,17 @@ const CELL: React.CSSProperties = {
 
 const SMALL: React.CSSProperties = { fontSize: 14, color: "#8c8c8c" };
 
-/** The latest audit's totals, in Goals' strip style. */
+/**
+ * The latest audit's totals, in Goals' strip style, with the labels the
+ * clustering would split (phase 6).
+ */
 const AuditStrip: React.FunctionComponent<{
   summary?: MailAuditSummary;
   highConfidence: number;
+  /** Labels with a split suggestion, and their groups. */
+  splits?: { labels: number; groups: number };
   loading?: boolean;
-}> = ({ summary, highConfidence, loading }) => (
+}> = ({ summary, highConfidence, splits, loading }) => (
   <Row
     style={{
       borderTop: "1px solid #f0f0f0",
@@ -69,6 +74,20 @@ const AuditStrip: React.FunctionComponent<{
       <Statistic
         title={"Merge candidates"}
         value={summary?.merges}
+        loading={loading}
+      />
+    </Col>
+    <Col flex={1} style={CELL}>
+      <Statistic
+        title={"Split suggestions"}
+        value={splits?.labels ?? 0}
+        suffix={
+          splits?.labels ? (
+            <span style={SMALL}>
+              {splits.groups.toLocaleString()} sub-labels
+            </span>
+          ) : undefined
+        }
         loading={loading}
       />
     </Col>

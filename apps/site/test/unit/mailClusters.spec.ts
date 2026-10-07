@@ -12,6 +12,7 @@ import {
   pointGroups,
   purityText,
   reviewHref,
+  splitsByLabel,
   suggestionText,
   UNLABELLED,
   worthALook,
@@ -139,5 +140,13 @@ describe("chunks", () => {
   it("cuts a list into runs", () => {
     expect(chunks([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
     expect(chunks([], 2)).toEqual([]);
+  });
+});
+
+describe("splitsByLabel", () => {
+  it("counts each label's split groups and their messages", () => {
+    const rail = { ...split, id: "c4", size: 300, proposedName: "Travel/Rail" };
+    const splits = splitsByLabel([cluster(), split, rail]);
+    expect([...splits]).toEqual([["Travel", { groups: 2, messages: 700 }]]);
   });
 });

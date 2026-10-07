@@ -784,8 +784,10 @@ left until phase 5 has decisions to measure them against.
    and mailbox are in the address (`?cluster=`, `?accountId=`). A label's
    review shows the split alert from phase 4 step 4: the proposed
    sub-labels and their counts, Preview (the map, on the first group) and
-   Create sub-labels. **Not yet**: the Re-classification page's split
-   count and the label tree's "split suggested" flag; colouring by
+   Create sub-labels. The Re-classification page's strip counts the
+   labels with a split suggestion (and their sub-labels), and the label
+   tree flags each "split suggested", its tooltip giving the groups and
+   messages, with Review to the alert. **Not yet**: colouring the map by
    suggested label.
 
 **Sign-off:** M11.

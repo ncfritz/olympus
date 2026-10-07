@@ -18,6 +18,7 @@ import {
   type LabelNode,
   pruneTree,
 } from "../../../../utils/mailAudit";
+import type { LabelSplit } from "../../../../utils/mailClusters";
 
 const { Text } = Typography;
 
@@ -61,12 +62,15 @@ const ProposedBar: React.FunctionComponent<{
 
 /**
  * Every user label as a tree with its messages, the changes the audit
- * proposes into and out of it, and its flags; a label with proposals links
- * to its review.
+ * proposes into and out of it, and its flags (a split suggested by the
+ * clustering among them); a label with proposals or a split links to its
+ * review, where the split alert is.
  */
 const LabelTreeTable: React.FunctionComponent<{
   labels: MailAuditLabel[];
-}> = ({ labels }) => {
+  /** The labels the clustering would split, by full name. */
+  splits?: Map<string, LabelSplit>;
+}> = ({ labels, splits }) => {
   const [findingsOnly, setFindingsOnly] = useState(true);
   const tree = useMemo(() => labelTree(labels), [labels]);
   const shown = useMemo(
@@ -77,10 +81,11 @@ const LabelTreeTable: React.FunctionComponent<{
             (n) =>
               n.proposedIn + n.proposedOut > 0 ||
               n.mergeCandidate ||
-              isDormant(n),
+              isDormant(n) ||
+              (n.isLabel && !!splits?.has(n.key)),
           )
         : tree,
-    [tree, findingsOnly],
+    [tree, findingsOnly, splits],
   );
   const max = Math.max(
     1,
@@ -156,6 +161,13 @@ const LabelTreeTable: React.FunctionComponent<{
       render: (_, n) => (
         <Space size={4} wrap={true}>
           {n.mergeCandidate && <Tag color={"purple"}>merge candidate</Tag>}
+          {n.isLabel && splits?.has(n.key) && (
+            <Tooltip
+              title={`${splits.get(n.key)?.groups} groups from different senders, ${splits.get(n.key)?.messages.toLocaleString()} messages: a sub-label each`}
+            >
+              <Tag color={"orange"}>split suggested</Tag>
+            </Tooltip>
+          )}
           {isDormant(n) && <Tag>no mail in 2 years</Tag>}
           {n.isLabel && n.messages === 0 && <Tag>empty</Tag>}
         </Space>
@@ -166,7 +178,8 @@ const LabelTreeTable: React.FunctionComponent<{
       key: "review",
       width: 80,
       render: (_, n) =>
-        n.proposedIn + n.proposedOut > 0 ? (
+        n.proposedIn + n.proposedOut > 0 ||
+        (n.isLabel && splits?.has(n.key)) ? (
           <Link href={reviewHref(n.key)}>Review</Link>
         ) : null,
     },

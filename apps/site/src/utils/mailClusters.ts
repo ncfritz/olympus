@@ -150,3 +150,22 @@ export const reviewHref = (c: MailCluster): string =>
 /** Where the map opens on a cluster. */
 export const clusterHref = (c: MailCluster): string =>
   `/minerva/mail/clusters?cluster=${encodeURIComponent(c.id)}`;
+
+/** A label's split suggestion: how many groups, and their messages. */
+export type LabelSplit = { groups: number; messages: number };
+
+/** Each label the clustering would split, from the clusters suggesting. */
+export const splitsByLabel = (
+  clusters: MailCluster[],
+): Map<string, LabelSplit> => {
+  const out = new Map<string, LabelSplit>();
+  for (const c of clusters) {
+    if (c.suggestion !== "split" || !c.scopeLabel) continue;
+    const s = out.get(c.scopeLabel) ?? { groups: 0, messages: 0 };
+    out.set(c.scopeLabel, {
+      groups: s.groups + 1,
+      messages: s.messages + c.size,
+    });
+  }
+  return out;
+};
