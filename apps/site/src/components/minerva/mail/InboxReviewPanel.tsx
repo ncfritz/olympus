@@ -7,11 +7,9 @@ import type {
 import {
   Button,
   Checkbox,
-  Col,
   Flex,
   message as toast,
   Progress,
-  Row,
   Space,
   Tooltip,
   Typography,
@@ -36,6 +34,7 @@ import {
   parseApproveOptions,
   pickerMessageOf,
   pickerSuggestionsOf,
+  confidenceSolid,
   reasonOf,
 } from "../../../utils/mailInbox";
 import { paymentText } from "../../../utils/mailPayments";
@@ -43,6 +42,7 @@ import {
   loadFromLocalStorage,
   storeToLocalStorage,
 } from "../../../utils/storage";
+import { CurrentLabels } from "./InboxLabels";
 import LabelPicker from "./LabelPicker";
 
 const { Text } = Typography;
@@ -56,8 +56,13 @@ export interface InboxReviewPanelProps {
   message: MailInboxMessage;
   /** Every label of the caller's; the message's account's are offered. */
   labels: MailLabel[];
-  /** Side by side (the Inbox page) or stacked (the home widget). */
+  /**
+   * In columns (the Inbox page: Proposed, Current, Changes, the actions
+   * under them) or stacked (the home widget).
+   */
   columns?: boolean;
+  /** Columns only: how far in the table's first data column starts. */
+  indent?: number;
   onOpen: (m: MailInboxMessage) => void;
   onDone: (m: MailInboxMessage, outcome: ReviewOutcome) => void;
 }
@@ -88,23 +93,34 @@ export const useApproveOptions = (): [
   return [options, save];
 };
 
+/** The Inbox's columns: Proposed's label, Current and Changes. */
+const PROPOSED_LABEL_WIDTH = 300;
+const CONFIDENCE_WIDTH = 80;
+const CURRENT_WIDTH = 200;
+const CHANGES_WIDTH = 300;
+const COLUMN_GAP = 16;
+
 /**
  * A message's review (design.md, the widget's and the Inbox's expanded
- * row): who and when; each suggestion with its checkbox, confidence and
- * reason; the label picker; archive, mark read and whole thread; then
- * Approve & apply, Skip and Open message.
+ * row): each suggestion with its checkbox, confidence and reason; the
+ * label picker; archive, mark read and whole thread; then Open message,
+ * Skip and Approve. Archive starts unticked and mark read ticked for each
+ * message; whole thread is remembered.
  */
 const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
   message: m,
   labels,
   columns = false,
+  indent = 0,
   onOpen,
   onDone,
 }) => {
   const [wants, setWants] = useState<LabelWants>(() => initialWants(m));
   const [created, setCreated] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-  const [options, setOptions] = useApproveOptions();
+  const [remembered, remember] = useApproveOptions();
+  const [archive, setArchive] = useState(DEFAULT_APPROVE_OPTIONS.archive);
+  const [markRead, setMarkRead] = useState(DEFAULT_APPROVE_OPTIONS.markRead);
   const [busy, setBusy] = useState<"approve" | "skip">();
   /** A payment's bill: marked paid with the approval, or declined. */
   const [markPaid, setMarkPaid] = useState(true);
@@ -116,6 +132,8 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
     setCreated([]);
     setMarkPaid(true);
     setNotThisBill(false);
+    setArchive(DEFAULT_APPROVE_OPTIONS.archive);
+    setMarkRead(DEFAULT_APPROVE_OPTIONS.markRead);
   }, [m.accountId, m.gmailId]);
   useEffect(() => {
     setRecent(loadFromLocalStorage<string[]>(RECENT_KEY, []));
@@ -143,9 +161,9 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
       const result = (
         await mailApi.approveMessages(m.accountId, {
           messages: [approval],
-          archive: options.archive,
-          markRead: options.markRead,
-          wholeThread: options.wholeThread,
+          archive,
+          markRead,
+          wholeThread: remembered.wholeThread,
           ...(newLabels.length ? { newLabels } : {}),
         })
       ).data;
@@ -211,8 +229,199 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
     }
   };
 
-  const about = (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
+  const paymentBox = payment && (
+    <Flex
+      vertical={true}
+      gap={4}
+      style={{
+        border: "1px solid #ffd591",
+        background: "#fff7e6",
+        borderRadius: 6,
+        padding: "6px 10px",
+      }}
+    >
+      <Checkbox
+        checked={markPaid}
+        onChange={(e) => setMarkPaid(e.target.checked)}
+      >
+        A payment: {paymentText(payment)}
+      </Checkbox>
+      <Text type={"secondary"} style={{ fontSize: 12 }}>
+        {payment.billFromAddress ? `${payment.billFromAddress} · ` : ""}
+        {payment.fromLabel} → {payment.toLabel}
+        {payment.billStarred ? "; then set its done star in Gmail" : ""}
+        {payment.matchedBy === "learned"
+          ? " · found by the classifier, not its wording"
+          : ""}{" "}
+        <Button
+          type={"link"}
+          size={"small"}
+          style={{ padding: 0, height: "auto" }}
+          onClick={() => void declineBill()}
+        >
+          Not this bill
+        </Button>
+      </Text>
+    </Flex>
+  );
+
+  const proposed =
+    m.suggestions.length === 0 ? (
+      <Text type={"secondary"}>
+        {m.scoredTime
+          ? "Nothing scored high enough to suggest."
+          : "Not scored yet: no model serves this mailbox, or it arrived before scoring began."}
+      </Text>
+    ) : (
+      m.suggestions.map((s) => (
+        <Flex key={s.label} align={"center"} gap={8}>
+          <Checkbox
+            checked={
+              s.onMessage ? wants[s.label] !== "none" : wants[s.label] === "all"
+            }
+            disabled={s.onMessage}
+            onChange={(e) => toggle(s.label, e.target.checked)}
+            style={columns ? { width: PROPOSED_LABEL_WIDTH, flex: "none" } : {}}
+          >
+            <Tooltip title={reasonOf(s)}>
+              <span style={{ opacity: s.ticked ? 1 : 0.6 }}>
+                {s.label}
+                {s.onMessage ? <Text type={"secondary"}> · has it</Text> : null}
+              </span>
+            </Tooltip>
+          </Checkbox>
+          <Progress
+            percent={Math.round(s.score * 100)}
+            size={"small"}
+            showInfo={true}
+            style={{
+              width: columns ? CONFIDENCE_WIDTH : 120,
+              margin: 0,
+              marginInlineStart: columns ? 0 : "auto",
+            }}
+            strokeColor={
+              s.ticked ? confidenceSolid(s.score).background : "#bfbfbf"
+            }
+          />
+        </Flex>
+      ))
+    );
+
+  const picker = (
+    <LabelPicker
+      messages={messages}
+      options={offered}
+      suggestions={suggestions}
+      recent={recent}
+      wants={wants}
+      onChange={setWants}
+      created={created}
+      onCreated={setCreated}
+    />
+  );
+
+  const flags = (
+    <Space size={16} wrap={true}>
+      <Checkbox
+        checked={archive}
+        onChange={(e) => setArchive(e.target.checked)}
+      >
+        Archive
+      </Checkbox>
+      <Checkbox
+        checked={markRead}
+        onChange={(e) => setMarkRead(e.target.checked)}
+      >
+        Mark read
+      </Checkbox>
+      <Checkbox
+        checked={remembered.wholeThread}
+        disabled={m.threadSize < 2}
+        onChange={(e) =>
+          remember({ ...remembered, wholeThread: e.target.checked })
+        }
+      >
+        Whole thread{m.threadSize > 1 ? ` (${m.threadSize})` : ""}
+      </Checkbox>
+    </Space>
+  );
+
+  const buttons = (
+    <Space wrap={true}>
+      <Button icon={<EyeOutlined />} onClick={() => onOpen(m)}>
+        Open message
+      </Button>
+      <Button
+        icon={<ForwardOutlined />}
+        loading={busy === "skip"}
+        disabled={busy === "approve"}
+        onClick={() => void skip()}
+      >
+        Skip
+      </Button>
+      <Button
+        type={"primary"}
+        icon={<CheckOutlined />}
+        loading={busy === "approve"}
+        disabled={busy === "skip"}
+        onClick={() => void approve()}
+      >
+        {amended ? "Approve changes" : "Approve & apply"}
+      </Button>
+    </Space>
+  );
+
+  if (columns) {
+    const heading = (title: string) => (
+      <Text strong={true} style={{ fontSize: 12 }}>
+        {title}
+      </Text>
+    );
+    return (
+      <Flex
+        vertical={true}
+        gap={12}
+        style={{ padding: `4px 8px 8px ${indent}px` }}
+      >
+        <Flex gap={COLUMN_GAP} wrap={true} align={"flex-start"}>
+          <Flex
+            vertical={true}
+            gap={8}
+            style={{ width: PROPOSED_LABEL_WIDTH + 8 + CONFIDENCE_WIDTH }}
+          >
+            {heading("Proposed")}
+            {paymentBox}
+            {proposed}
+          </Flex>
+          <Flex vertical={true} gap={8} style={{ width: CURRENT_WIDTH }}>
+            {heading("Current")}
+            <div>
+              <CurrentLabels
+                labels={m.labels}
+                max={m.labels.length}
+                block={true}
+              />
+            </div>
+          </Flex>
+          <Flex vertical={true} gap={8} style={{ width: CHANGES_WIDTH }}>
+            {heading("Changes")}
+            {picker}
+          </Flex>
+        </Flex>
+        <Flex justify={"flex-end"} align={"center"} gap={24} wrap={true}>
+          {flags}
+          {buttons}
+        </Flex>
+      </Flex>
+    );
+  }
+
+  return (
+    <Space
+      direction={"vertical"}
+      size={12}
+      style={{ width: "100%", padding: 8 }}
+    >
       <Text type={"secondary"} style={{ fontSize: 12 }}>
         {m.fromAddress ?? "(no address)"} ·{" "}
         {DateTime.fromISO(String(m.receivedTime)).toLocaleString(
@@ -220,162 +429,11 @@ const InboxReviewPanel: React.FunctionComponent<InboxReviewPanelProps> = ({
         )}
         {m.threadSize > 1 ? ` · ${m.threadSize} in thread` : ""}
       </Text>
-      {payment && (
-        <Flex
-          vertical={true}
-          gap={4}
-          style={{
-            border: "1px solid #ffd591",
-            background: "#fff7e6",
-            borderRadius: 6,
-            padding: "6px 10px",
-          }}
-        >
-          <Checkbox
-            checked={markPaid}
-            onChange={(e) => setMarkPaid(e.target.checked)}
-          >
-            A payment: {paymentText(payment)}
-          </Checkbox>
-          <Text type={"secondary"} style={{ fontSize: 12 }}>
-            {payment.billFromAddress ? `${payment.billFromAddress} · ` : ""}
-            {payment.fromLabel} → {payment.toLabel}
-            {payment.billStarred ? "; then set its done star in Gmail" : ""}
-            {payment.matchedBy === "learned"
-              ? " · found by the classifier, not its wording"
-              : ""}{" "}
-            <Button
-              type={"link"}
-              size={"small"}
-              style={{ padding: 0, height: "auto" }}
-              onClick={() => void declineBill()}
-            >
-              Not this bill
-            </Button>
-          </Text>
-        </Flex>
-      )}
-      {m.suggestions.length === 0 ? (
-        <Text type={"secondary"}>
-          {m.scoredTime
-            ? "Nothing scored high enough to suggest."
-            : "Not scored yet: no model serves this mailbox, or it arrived before scoring began."}
-        </Text>
-      ) : (
-        m.suggestions.map((s) => (
-          <Flex key={s.label} align={"center"} gap={8}>
-            <Checkbox
-              checked={
-                s.onMessage
-                  ? wants[s.label] !== "none"
-                  : wants[s.label] === "all"
-              }
-              disabled={s.onMessage}
-              onChange={(e) => toggle(s.label, e.target.checked)}
-            >
-              <Tooltip title={reasonOf(s)}>
-                <span style={{ opacity: s.ticked ? 1 : 0.6 }}>
-                  {s.label}
-                  {s.onMessage ? (
-                    <Text type={"secondary"}> · has it</Text>
-                  ) : null}
-                </span>
-              </Tooltip>
-            </Checkbox>
-            <Progress
-              percent={Math.round(s.score * 100)}
-              size={"small"}
-              showInfo={true}
-              style={{ width: 120, margin: 0, marginInlineStart: "auto" }}
-              strokeColor={s.ticked ? undefined : "#bfbfbf"}
-            />
-          </Flex>
-        ))
-      )}
-    </Space>
-  );
-
-  const picker = (
-    <Space direction={"vertical"} size={8} style={{ width: "100%" }}>
-      <LabelPicker
-        messages={messages}
-        options={offered}
-        suggestions={suggestions}
-        recent={recent}
-        wants={wants}
-        onChange={setWants}
-        created={created}
-        onCreated={setCreated}
-      />
-      <Space size={16} wrap={true}>
-        <Checkbox
-          checked={options.archive}
-          onChange={(e) =>
-            setOptions({ ...options, archive: e.target.checked })
-          }
-        >
-          Archive
-        </Checkbox>
-        <Checkbox
-          checked={options.markRead}
-          onChange={(e) =>
-            setOptions({ ...options, markRead: e.target.checked })
-          }
-        >
-          Mark read
-        </Checkbox>
-        <Checkbox
-          checked={options.wholeThread}
-          disabled={m.threadSize < 2}
-          onChange={(e) =>
-            setOptions({ ...options, wholeThread: e.target.checked })
-          }
-        >
-          Whole thread
-        </Checkbox>
-      </Space>
-      <Space wrap={true}>
-        <Button
-          type={"primary"}
-          icon={<CheckOutlined />}
-          loading={busy === "approve"}
-          disabled={busy === "skip"}
-          onClick={() => void approve()}
-        >
-          {amended ? "Approve changes" : "Approve & apply"}
-        </Button>
-        <Button
-          icon={<ForwardOutlined />}
-          loading={busy === "skip"}
-          disabled={busy === "approve"}
-          onClick={() => void skip()}
-        >
-          Skip
-        </Button>
-        <Button icon={<EyeOutlined />} onClick={() => onOpen(m)}>
-          Open message
-        </Button>
-      </Space>
-    </Space>
-  );
-
-  return columns ? (
-    <Row gutter={24} style={{ padding: "8px 8px 8px 0" }}>
-      <Col xs={24} md={10}>
-        {about}
-      </Col>
-      <Col xs={24} md={14}>
-        {picker}
-      </Col>
-    </Row>
-  ) : (
-    <Space
-      direction={"vertical"}
-      size={12}
-      style={{ width: "100%", padding: 8 }}
-    >
-      {about}
+      {paymentBox}
+      {proposed}
       {picker}
+      {flags}
+      {buttons}
     </Space>
   );
 };

@@ -94,6 +94,9 @@ import {
 const { Title, Text } = Typography;
 
 const PAGE_SIZE = 50;
+/** The expand and selection columns: the review lines up after them. */
+const EXPAND_COLUMN = 48;
+const SELECTION_COLUMN = 32;
 /** Current labels' width; Suggested has this and room for its badges. */
 const LABELS_WIDTH = 150;
 const BADGE_WIDTH = 40;
@@ -557,10 +560,12 @@ const MailInboxPage: React.FunctionComponent = () => {
               sticky={sticky}
               tableLayout={"fixed"}
               rowSelection={{
+                columnWidth: SELECTION_COLUMN,
                 selectedRowKeys: selected.map(key),
                 onChange: (_, rows) => setSelected(rows),
               }}
               expandable={{
+                columnWidth: EXPAND_COLUMN,
                 expandedRowKeys: expanded,
                 expandIcon: (p) => (
                   <CaretExpandIcon
@@ -588,6 +593,7 @@ const MailInboxPage: React.FunctionComponent = () => {
                       message={m}
                       labels={labels}
                       columns={true}
+                      indent={EXPAND_COLUMN + SELECTION_COLUMN}
                       onOpen={setOpened}
                       onDone={reviewed}
                     />

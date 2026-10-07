@@ -134,13 +134,22 @@ describe("approving", () => {
 describe("options and words", () => {
   it("reads stored options, keeping defaults for anything odd", () => {
     expect(parseApproveOptions(null)).toEqual(DEFAULT_APPROVE_OPTIONS);
+    expect(DEFAULT_APPROVE_OPTIONS).toEqual({
+      archive: false,
+      markRead: true,
+      wholeThread: false,
+    });
+    // Only whole thread is remembered; archive and mark read start afresh.
     expect(
       parseApproveOptions({
-        archive: false,
-        markRead: "yes",
+        archive: true,
+        markRead: false,
         wholeThread: true,
       }),
     ).toEqual({ archive: false, markRead: true, wholeThread: true });
+    expect(parseApproveOptions({ wholeThread: "yes" })).toEqual(
+      DEFAULT_APPROVE_OPTIONS,
+    );
   });
 
   it("begins today at local midnight", () => {

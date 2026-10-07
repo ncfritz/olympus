@@ -30,23 +30,28 @@ export type ApproveOptions = {
 
 export const APPROVE_OPTIONS_KEY = "minerva.mail.approveOptions";
 
+/**
+ * What approving does unless changed: mark read, not archive. Only whole
+ * thread is remembered; archive and mark read start here for each message.
+ */
 export const DEFAULT_APPROVE_OPTIONS: ApproveOptions = {
-  archive: true,
+  archive: false,
   markRead: true,
   wholeThread: false,
 };
 
-/** Options read back from storage, anything unknown left at its default. */
+/**
+ * Options read back from storage: whole thread as remembered, archive and
+ * mark read always their defaults.
+ */
 export const parseApproveOptions = (value: unknown): ApproveOptions => {
   const o = (value ?? {}) as Partial<Record<keyof ApproveOptions, unknown>>;
-  const flag = (key: keyof ApproveOptions) =>
-    typeof o[key] === "boolean"
-      ? (o[key] as boolean)
-      : DEFAULT_APPROVE_OPTIONS[key];
   return {
-    archive: flag("archive"),
-    markRead: flag("markRead"),
-    wholeThread: flag("wholeThread"),
+    ...DEFAULT_APPROVE_OPTIONS,
+    wholeThread:
+      typeof o.wholeThread === "boolean"
+        ? o.wholeThread
+        : DEFAULT_APPROVE_OPTIONS.wholeThread,
   };
 };
 

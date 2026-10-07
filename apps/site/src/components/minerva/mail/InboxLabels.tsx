@@ -112,12 +112,11 @@ export const SuggestedLabels: React.FunctionComponent<{
                 margin: "-1px -1px -1px 0",
                 borderRadius: "0 4px 4px 0",
                 width: BADGE_WIDTH,
-                padding: "1px 0",
-                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 fontFamily: token.fontFamilyCode,
                 fontSize: 11,
-                fontWeight: 600,
-                lineHeight: "16px",
               }}
             >
               {percent(s.score)}
