@@ -666,7 +666,14 @@ left until phase 5 has decisions to measure them against.
    picker, archive, mark read, whole thread; one batch, and an approval
    per message in the inbox, amended when its labels are not the ticked
    suggestion's; undoing the batch takes them back), `SkipMailMessages`,
-   `UpdateMailMessageFlags` (archive or mark read alone).
+   `UpdateMailMessageFlags` (archive or mark read alone). Then
+   `GetMailMessageContent`: the API checks the caller owns the mailbox
+   and asks the agent (`GET /v1/gmail-messages/:gmailId`), which reads
+   the message live (`format=raw`) and returns its headers, text and HTML
+   bodies (each cut at 1,000,000 characters) and what is attached,
+   without the content; nothing stored, logged or cached (`no-store`).
+   The HTML is as sent: the site shows it in a sandboxed frame with
+   remote content blocked. **Step 2 built.**
 3. **Learning**: every approval and amendment is a training example,
    corrections weighed more; sender history updates at once, the linear
    model by `partial_fit`.

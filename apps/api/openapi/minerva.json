@@ -8283,6 +8283,70 @@
         ]
       }
     },
+    "/minerva/mail/account/{accountId}/message/{gmailId}/content": {
+      "get": {
+        "description": "The inbox's Open message (docs/plans/email-management phase 5; ADR 0030): the message read live from Gmail by the mail agent, with its headers, its text and HTML bodies (each at most 1,000,000 characters) and what is attached (not the content). Nothing of it is stored, logged or cached (`Cache-Control: no-store`). The HTML is as sent, not sanitized: show it only in a sandboxed frame with remote content blocked.",
+        "operationId": "GetMailMessageContent",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gmailId",
+            "required": true,
+            "in": "path",
+            "description": "The message's Gmail ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The message as Gmail has it now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMailMessageContentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found\n\nNo such mail account of the caller's, or Gmail has no such message."
+          },
+          "409": {
+            "description": "The mailbox is not linked to Gmail."
+          },
+          "503": {
+            "description": "The mail agent is not configured."
+          }
+        },
+        "summary": "Reads a message from Gmail to show it",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/inbox": {
       "get": {
         "description": "A page of the caller's inbox (docs/plans/email-management phase 5): each message's metadata (never its text), its labels now, the labels the classifier suggested as it arrived (best first, ticked or not, and whether it has each already) and what was decided. `status` is `review` (in the inbox, nothing decided; the default), `unread`, `approved` (since `approvedSince`, a day ago by default, wherever they are now, newest decision first) or `all`; `sortBy` is `receivedTime` (the default) or `confidence` (the best ticked suggestion the message lacks). With the statistics strip's counts.",
@@ -17272,6 +17336,148 @@
         "required": [
           "approved",
           "changed"
+        ]
+      },
+      "MailMessageAddress": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The address"
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name, if given"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "MailMessageAttachmentInfo": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Its file name, if it has one"
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "Its MIME type"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "Its size"
+          },
+          "inline": {
+            "type": "boolean",
+            "description": "Shown in the body (an inline image) rather than attached"
+          }
+        },
+        "required": [
+          "mimeType",
+          "sizeBytes",
+          "inline"
+        ]
+      },
+      "MailMessageContent": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID"
+          },
+          "threadId": {
+            "type": "string",
+            "description": "Its thread's Gmail ID"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "from": {
+            "description": "The sender",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailMessageAddress"
+              }
+            ]
+          },
+          "replyTo": {
+            "description": "Reply-To",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailMessageAddress"
+            }
+          },
+          "to": {
+            "description": "To",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailMessageAddress"
+            }
+          },
+          "cc": {
+            "description": "Cc",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailMessageAddress"
+            }
+          },
+          "sentTime": {
+            "type": "string",
+            "description": "When it was sent, by its Date header"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When Gmail received it"
+          },
+          "text": {
+            "type": "string",
+            "description": "The plain text body, or the HTML's text when it has none; at most 1,000,000 characters"
+          },
+          "html": {
+            "type": "string",
+            "description": "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters"
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether a body was cut at the limit"
+          },
+          "attachments": {
+            "description": "What is attached, without its content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailMessageAttachmentInfo"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "threadId",
+          "replyTo",
+          "to",
+          "cc",
+          "receivedTime",
+          "text",
+          "truncated",
+          "attachments"
+        ]
+      },
+      "GetMailMessageContentResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "description": "The message as Gmail has it now",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MailMessageContent"
+              }
+            ]
+          }
+        },
+        "required": [
+          "content"
         ]
       },
       "MailInboxStatus": {

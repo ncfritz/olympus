@@ -7754,6 +7754,22 @@
     ],
     "type": "object"
   },
+  "GetMailMessageContentResponse": {
+    "properties": {
+      "content": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailMessageContent"
+          }
+        ],
+        "description": "The message as Gmail has it now"
+      }
+    },
+    "required": [
+      "content"
+    ],
+    "type": "object"
+  },
   "GetMailStatisticsResponse": {
     "properties": {
       "labelActivity": {
@@ -12603,6 +12619,132 @@
       "messages",
       "name",
       "year"
+    ],
+    "type": "object"
+  },
+  "MailMessageAddress": {
+    "properties": {
+      "address": {
+        "description": "The address",
+        "type": "string"
+      },
+      "name": {
+        "description": "The display name, if given",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address"
+    ],
+    "type": "object"
+  },
+  "MailMessageAttachmentInfo": {
+    "properties": {
+      "filename": {
+        "description": "Its file name, if it has one",
+        "type": "string"
+      },
+      "inline": {
+        "description": "Shown in the body (an inline image) rather than attached",
+        "type": "boolean"
+      },
+      "mimeType": {
+        "description": "Its MIME type",
+        "type": "string"
+      },
+      "sizeBytes": {
+        "description": "Its size",
+        "type": "number"
+      }
+    },
+    "required": [
+      "inline",
+      "mimeType",
+      "sizeBytes"
+    ],
+    "type": "object"
+  },
+  "MailMessageContent": {
+    "properties": {
+      "attachments": {
+        "description": "What is attached, without its content",
+        "items": {
+          "$ref": "#/components/schemas/MailMessageAttachmentInfo"
+        },
+        "type": "array"
+      },
+      "cc": {
+        "description": "Cc",
+        "items": {
+          "$ref": "#/components/schemas/MailMessageAddress"
+        },
+        "type": "array"
+      },
+      "from": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MailMessageAddress"
+          }
+        ],
+        "description": "The sender"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID",
+        "type": "string"
+      },
+      "html": {
+        "description": "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters",
+        "type": "string"
+      },
+      "receivedTime": {
+        "description": "When Gmail received it",
+        "type": "string"
+      },
+      "replyTo": {
+        "description": "Reply-To",
+        "items": {
+          "$ref": "#/components/schemas/MailMessageAddress"
+        },
+        "type": "array"
+      },
+      "sentTime": {
+        "description": "When it was sent, by its Date header",
+        "type": "string"
+      },
+      "subject": {
+        "description": "The subject",
+        "type": "string"
+      },
+      "text": {
+        "description": "The plain text body, or the HTML's text when it has none; at most 1,000,000 characters",
+        "type": "string"
+      },
+      "threadId": {
+        "description": "Its thread's Gmail ID",
+        "type": "string"
+      },
+      "to": {
+        "description": "To",
+        "items": {
+          "$ref": "#/components/schemas/MailMessageAddress"
+        },
+        "type": "array"
+      },
+      "truncated": {
+        "description": "Whether a body was cut at the limit",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "attachments",
+      "cc",
+      "gmailId",
+      "receivedTime",
+      "replyTo",
+      "text",
+      "threadId",
+      "to",
+      "truncated"
     ],
     "type": "object"
   },

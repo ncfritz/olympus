@@ -8,9 +8,11 @@ import type {
 } from "../config/configuration";
 import { ServicesOnlyGuard } from "../auth/ServicesOnlyGuard";
 import { RabbitModule } from "../infra/RabbitModule";
+import { GetGmailMessageController } from "./controllers/GetGmailMessageController";
 import { StartGmailWritesController } from "./controllers/StartGmailWritesController";
 import { GmailClient } from "./GmailClient";
 import { GmailCredentialStore } from "./GmailCredentialStore";
+import { GmailMessageReader } from "./GmailMessageReader";
 import { GmailMessages } from "./GmailMessages";
 import { GmailPoll } from "./GmailPoll";
 import { GmailReconcile } from "./GmailReconcile";
@@ -21,8 +23,8 @@ import { GmailWriter } from "./GmailWriter";
  * Keeping linked mailboxes in step with Gmail (docs/plans/email-management
  * phase 1b): Gmail read with the stored credentials, changes published to
  * mail.messages, new mail's text to the classifier, the accounts' labels
- * and sync through the API; and label changes written to Gmail for the API
- * (phase 4). The running agent polls and writes with it (AppModule); the
+ * and sync through the API; label changes written to Gmail for the API
+ * (phase 4); and a message read live for the API to show (phase 5). The running agent polls and writes with it (AppModule); the
  * gmail command reconciles, polls once or scores the inbox
  * (GmailCommandModule).
  */
@@ -47,9 +49,10 @@ import { GmailWriter } from "./GmailWriter";
     GmailPoll,
     GmailWriter,
     GmailSuggestInbox,
+    GmailMessageReader,
     ServicesOnlyGuard,
   ],
-  controllers: [StartGmailWritesController],
+  controllers: [StartGmailWritesController, GetGmailMessageController],
   exports: [GmailReconcile, GmailPoll, GmailWriter, GmailSuggestInbox],
 })
 export class GmailSyncModule {}

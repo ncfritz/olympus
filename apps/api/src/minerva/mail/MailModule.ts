@@ -1,4 +1,5 @@
 import { ApproveMailMessagesController } from "./controllers/ApproveMailMessagesController";
+import { GetMailMessageContentController } from "./controllers/GetMailMessageContentController";
 import { ListMailInboxController } from "./controllers/ListMailInboxController";
 import { SkipMailMessagesController } from "./controllers/SkipMailMessagesController";
 import { UpdateMailMessageFlagsController } from "./controllers/UpdateMailMessageFlagsController";
@@ -97,6 +98,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailMessageStatesController,
     ApplyMailChangesController,
     ApproveMailMessagesController,
+    GetMailMessageContentController,
     ListMailInboxController,
     SkipMailMessagesController,
     UpdateMailMessageFlagsController,

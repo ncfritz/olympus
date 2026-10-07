@@ -103,3 +103,45 @@ export class StartGmailWritesResponse {
   /** Changes taken, to be written in the background. */
   accepted: number;
 }
+
+/** A sender or recipient as a message's headers name them. */
+export class GmailMessageAddress {
+  address: string;
+  name?: string;
+}
+
+/** An attachment's description; its content is never sent. */
+export class GmailMessageAttachment {
+  filename?: string;
+  mimeType: string;
+  sizeBytes: number;
+  /** Shown in the body (an inline image) rather than attached. */
+  inline: boolean;
+}
+
+/**
+ * A message read live from Gmail to be shown once (docs/plans/
+ * email-management phase 5): held for the request, stored and logged
+ * nowhere.
+ */
+export class GmailMessageContent {
+  gmailId: string;
+  threadId: string;
+  labelIds: string[];
+  subject?: string;
+  from?: GmailMessageAddress;
+  replyTo: GmailMessageAddress[];
+  to: GmailMessageAddress[];
+  cc: GmailMessageAddress[];
+  /** The Date header, ISO 8601. */
+  sentTime?: string;
+  /** Gmail's received time, ISO 8601. */
+  receivedTime: string;
+  /** The plain text body, or the HTML's text when there is none. */
+  text: string;
+  /** The HTML body as sent, unsanitized: the caller must contain it. */
+  html?: string;
+  /** Whether text or html was cut at the size limit. */
+  truncated: boolean;
+  attachments: GmailMessageAttachment[];
+}

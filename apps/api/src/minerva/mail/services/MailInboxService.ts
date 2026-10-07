@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -7,6 +8,7 @@ import {
   ApproveMailMessagesRequest,
   ApproveMailMessagesResponse,
   ListMailInboxResponse,
+  MailMessageContent,
   MailInboxDecision,
   MailInboxMessage,
   MailInboxSort,
@@ -22,6 +24,7 @@ import {
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment";
 import { MAIL_FLAG_LABELS, MailChangeService } from "./MailChangeService";
+import { MinervaMailAgentClient } from "./MinervaMailAgentClient";
 
 /** Messages an inbox action takes at once. */
 export const MAX_INBOX_MESSAGES = 500;
@@ -211,6 +214,7 @@ export class MailInboxService {
   constructor(
     private readonly graphQLClient: GraphQLClient,
     private readonly changes: MailChangeService,
+    private readonly agent: MinervaMailAgentClient,
   ) {}
 
   /**
@@ -629,6 +633,62 @@ export class MailInboxService {
     if (changes.length === 0) return { changed: 0 };
     const batch = await this.changes.apply(userId, accountId, { changes });
     return { changed: changes.length, batch };
+  }
+
+  /**
+   * A message of the user's, read live from Gmail by the agent to be shown
+   * once: never stored, logged or cached here.
+   *
+   * @throws NotFoundException the account is not the user's, or Gmail has
+   *   no such message
+   * @throws ConflictException the mailbox is not linked to Gmail
+   */
+  async content(
+    userId: string,
+    accountId: string,
+    gmailId: string,
+  ): Promise<MailMessageContent> {
+    this.requireAccountId(accountId);
+    if (typeof gmailId !== "string" || !GMAIL_ID.test(gmailId)) {
+      throw new BadRequestException("gmailId must be a Gmail message ID");
+    }
+    const query = gql`
+      query DescribeMailContentAccount($accountId: uuid!, $userId: uuid!) {
+        minerva_mail_accounts(
+          where: { id: { _eq: $accountId }, userId: { _eq: $userId } }
+        ) {
+          email
+          linkedTime
+        }
+      }
+    `;
+    const account = (
+      await this.graphQLClient.request<{
+        minerva_mail_accounts: { email: string; linkedTime: string | null }[];
+      }>(query, { accountId, userId })
+    ).minerva_mail_accounts[0];
+    if (!account) throw new NotFoundException(`No mail account ${accountId}`);
+    if (!account.linkedTime) {
+      throw new ConflictException(
+        "The mailbox is not linked to Gmail: link it from the Inbox first",
+      );
+    }
+    const m = await this.agent.readMessage(account.email, gmailId);
+    return {
+      gmailId: m.gmailId,
+      threadId: m.threadId,
+      ...(m.subject !== undefined ? { subject: m.subject } : {}),
+      ...(m.from ? { from: m.from } : {}),
+      replyTo: m.replyTo,
+      to: m.to,
+      cc: m.cc,
+      ...(m.sentTime ? { sentTime: moment(m.sentTime) } : {}),
+      receivedTime: moment(m.receivedTime),
+      text: m.text,
+      ...(m.html !== undefined ? { html: m.html } : {}),
+      truncated: m.truncated,
+      attachments: m.attachments,
+    };
   }
 
   private requireAccountId(accountId: string): void {

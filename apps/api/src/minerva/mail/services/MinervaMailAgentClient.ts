@@ -55,6 +55,29 @@ export type AgentGmailChange = {
   remove: AgentGmailLabel[];
 };
 
+/** A message as the agent reads it live from Gmail; never stored. */
+export type AgentGmailMessage = {
+  gmailId: string;
+  threadId: string;
+  labelIds: string[];
+  subject?: string;
+  from?: { address: string; name?: string };
+  replyTo: { address: string; name?: string }[];
+  to: { address: string; name?: string }[];
+  cc: { address: string; name?: string }[];
+  sentTime?: string;
+  receivedTime: string;
+  text: string;
+  html?: string;
+  truncated: boolean;
+  attachments: {
+    filename?: string;
+    mimeType: string;
+    sizeBytes: number;
+    inline: boolean;
+  }[];
+};
+
 /**
  * The mail agent's management API, on its services listener with the API's
  * client certificate (ADR 0030, by ADR 0028's pattern). The API is its only
@@ -132,6 +155,21 @@ export class MinervaMailAgentClient {
   }): Promise<void> {
     await this.call("StartGmailWrites", (http) =>
       http.post("/gmail-writes", writes),
+    );
+  }
+
+  /**
+   * Reads a message live from Gmail, to be shown and dropped. Gmail not
+   * having it is a 404, passed on.
+   */
+  async readMessage(
+    email: string,
+    gmailId: string,
+  ): Promise<AgentGmailMessage> {
+    return this.call<AgentGmailMessage>("GetGmailMessage", (http) =>
+      http.get(`/gmail-messages/${encodeURIComponent(gmailId)}`, {
+        params: { email },
+      }),
     );
   }
 

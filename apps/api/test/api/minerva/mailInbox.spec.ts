@@ -14,6 +14,7 @@ const agent = {
   completeSignIn: vi.fn(),
   deleteAccount: vi.fn(),
   startWrites: vi.fn(),
+  readMessage: vi.fn(),
 };
 
 const count = (n: number) => ({ aggregate: { count: n } });
@@ -592,6 +593,76 @@ describe("Mail inbox", () => {
     it("answers 400 without archive or markRead", async () => {
       const res = await flags({ gmailIds: ["a1"] });
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("GetMailMessageContent", () => {
+    const open = (gmailId = "1a") =>
+      ctx.as(
+        ctx.t
+          .http()
+          .get(`${BASE}/mail/account/${ACCOUNT_ID}/message/${gmailId}/content`),
+      );
+    const account = (linkedTime: string | null = "2026-10-06T01:00:00Z") =>
+      ctx.t.graphql.on("DescribeMailContentAccount", (vars) => ({
+        minerva_mail_accounts:
+          (vars as { userId: string }).userId === USER
+            ? [{ email: "neil@example.com", linkedTime }]
+            : [],
+      }));
+
+    it("reads the message live through the agent, not to be cached", async () => {
+      account();
+      agent.readMessage.mockResolvedValue({
+        gmailId: "1a",
+        threadId: "f1",
+        labelIds: ["INBOX"],
+        subject: "Your trip",
+        from: { address: "trips@example.test", name: "Example Air" },
+        replyTo: [],
+        to: [{ address: "neil@example.com" }],
+        cc: [],
+        sentTime: "2026-10-05T10:00:00.000Z",
+        receivedTime: "2026-10-05T10:00:01.000Z",
+        text: "Your booking is confirmed.",
+        html: "<p>Your booking is confirmed.</p>",
+        truncated: false,
+        attachments: [
+          {
+            filename: "ticket.pdf",
+            mimeType: "application/pdf",
+            sizeBytes: 18,
+            inline: false,
+          },
+        ],
+      });
+
+      const res = await open();
+
+      expect(res.status).toBe(200);
+      expect(res.headers["cache-control"]).toBe("no-store");
+      expect(agent.readMessage).toHaveBeenCalledWith("neil@example.com", "1a");
+      expect(res.body.content).toMatchObject({
+        gmailId: "1a",
+        subject: "Your trip",
+        from: { address: "trips@example.test", name: "Example Air" },
+        text: "Your booking is confirmed.",
+        html: "<p>Your booking is confirmed.</p>",
+        attachments: [{ filename: "ticket.pdf", sizeBytes: 18 }],
+      });
+      // Gmail's label IDs are not passed on.
+      expect(res.body.content.labelIds).toBeUndefined();
+    });
+
+    it("answers 404 for another user's account, 409 when not linked, 400 for an ID that is not one", async () => {
+      ctx.t.graphql.on("DescribeMailContentAccount", {
+        minerva_mail_accounts: [],
+      });
+      expect((await open()).status).toBe(404);
+      account(null);
+      expect((await open()).status).toBe(409);
+      expect((await open("zz")).status).toBe(400);
+      expect(agent.readMessage).not.toHaveBeenCalled();
     });
   });
 });

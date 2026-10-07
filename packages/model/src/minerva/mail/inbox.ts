@@ -293,6 +293,139 @@ export class MailInboxApproval {
   remove: string[];
 }
 
+/** A sender or recipient, as a message's headers name them. */
+export class MailMessageAddress {
+  @ApiProperty({ type: String, required: true, description: "The address" })
+  address: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The display name, if given",
+  })
+  name?: string;
+}
+
+/** What is attached to a message; its content is not sent. */
+export class MailMessageAttachmentInfo {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Its file name, if it has one",
+  })
+  filename?: string;
+
+  @ApiProperty({ type: String, required: true, description: "Its MIME type" })
+  mimeType: string;
+
+  @ApiProperty({ type: Number, required: true, description: "Its size" })
+  sizeBytes: number;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Shown in the body (an inline image) rather than attached",
+  })
+  inline: boolean;
+}
+
+/**
+ * A message read live from Gmail to be shown once: never stored, logged
+ * or cached.
+ */
+export class MailMessageContent {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The message's Gmail ID",
+  })
+  gmailId: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its thread's Gmail ID",
+  })
+  threadId: string;
+
+  @ApiProperty({ type: String, required: false, description: "The subject" })
+  subject?: string;
+
+  @ApiProperty({
+    type: () => MailMessageAddress,
+    required: false,
+    description: "The sender",
+  })
+  from?: MailMessageAddress;
+
+  @ApiProperty({
+    type: () => MailMessageAddress,
+    isArray: true,
+    required: true,
+    description: "Reply-To",
+  })
+  replyTo: MailMessageAddress[];
+
+  @ApiProperty({
+    type: () => MailMessageAddress,
+    isArray: true,
+    required: true,
+    description: "To",
+  })
+  to: MailMessageAddress[];
+
+  @ApiProperty({
+    type: () => MailMessageAddress,
+    isArray: true,
+    required: true,
+    description: "Cc",
+  })
+  cc: MailMessageAddress[];
+
+  @ApiTimestamp({
+    required: false,
+    description: "When it was sent, by its Date header",
+  })
+  sentTime?: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "When Gmail received it",
+  })
+  receivedTime: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The plain text body, or the HTML's text when it has none; at most 1,000,000 characters",
+  })
+  text: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters",
+  })
+  html?: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether a body was cut at the limit",
+  })
+  truncated: boolean;
+
+  @ApiProperty({
+    type: () => MailMessageAttachmentInfo,
+    isArray: true,
+    required: true,
+    description: "What is attached, without its content",
+  })
+  attachments: MailMessageAttachmentInfo[];
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -444,4 +577,13 @@ export class UpdateMailMessageFlagsResponse {
       "The batch writing them; absent when they were so already in Minerva",
   })
   batch?: MailChangeBatch;
+}
+
+export class GetMailMessageContentResponse {
+  @ApiProperty({
+    type: () => MailMessageContent,
+    required: true,
+    description: "The message as Gmail has it now",
+  })
+  content: MailMessageContent;
 }
