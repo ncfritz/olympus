@@ -1,11 +1,60 @@
-import { InboxOutlined } from "@ant-design/icons";
-import type { MailAccount } from "@ncfritz/olympus-sdk/minerva";
-import { Alert, Empty, Flex, message, Space } from "antd";
+import {
+  CheckOutlined,
+  ContainerOutlined,
+  EyeOutlined,
+  ForwardOutlined,
+  HistoryOutlined,
+  InboxOutlined,
+  ReadOutlined,
+  ThunderboltOutlined,
+} from "@ant-design/icons";
+import type {
+  ListMailInboxResponse,
+  MailAccount,
+  MailInboxMessage,
+  MailInboxStatus,
+  MailLabel,
+} from "@ncfritz/olympus-sdk/minerva";
+import {
+  Alert,
+  Badge,
+  Button,
+  Collapse,
+  Flex,
+  Input,
+  message,
+  Popconfirm,
+  Segmented,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
+import { DateTime } from "luxon";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
-import mailApi from "../../../api/mailApi";
+import mailApi, { type MailInboxSort } from "../../../api/mailApi";
+import InboxStrip from "../../../components/minerva/mail/InboxStrip";
+import {
+  CurrentLabels,
+  SuggestedLabels,
+} from "../../../components/minerva/mail/InboxLabels";
+import InboxReviewPanel, {
+  type ReviewOutcome,
+  useApproveOptions,
+} from "../../../components/minerva/mail/InboxReviewPanel";
+import {
+  approveSuggested,
+  flagAll,
+  highConfidenceToReview,
+  skipAll,
+} from "../../../components/minerva/mail/inboxActions";
 import MailAccountsCard from "../../../components/minerva/mail/MailAccountsCard";
 import MailBreadcrumbs from "../../../components/minerva/mail/MailBreadcrumbs";
+import MessageViewer from "../../../components/minerva/mail/MessageViewer";
 import { useFetch } from "../../../hooks/useFetch";
 import { apiProblems } from "../../../utils/goals";
 import {
@@ -14,23 +63,96 @@ import {
   mailLinkOutcome,
   mailReturnTo,
 } from "../../../utils/mailAccounts";
+import { senderOf, startOfToday } from "../../../utils/mailInbox";
+
+const { Title, Text } = Typography;
+
+const PAGE_SIZE = 50;
+
+const STATUSES: { label: string; value: MailInboxStatus }[] = [
+  { label: "To review", value: "review" },
+  { label: "Unread", value: "unread" },
+  { label: "Approved today", value: "approved" },
+  { label: "All", value: "all" },
+];
+
+const CONFIDENCES = [
+  { label: "Any confidence", value: 0 },
+  { label: "≥ 80%", value: 0.8 },
+  { label: "≥ 90%", value: 0.9 },
+  { label: "≥ 95%", value: 0.95 },
+];
+
+type Filters = {
+  status: MailInboxStatus;
+  search?: string;
+  minConfidence?: number;
+  sortBy: MailInboxSort;
+  page: number;
+};
+
+const key = (m: MailInboxMessage) => `${m.accountId}/${m.gmailId}`;
 
 /**
- * Mail's inbox: messages with their current and suggested labels (ADR 0030),
- * from docs/plans/email-management phase 5. Until then, the mailboxes and
- * linking them to Gmail (phase 1b).
+ * Mail's inbox (docs/plans/email-management phase 5; design.md): each
+ * message with its labels and what the classifier suggested as it
+ * arrived, to approve (writing the labels to Gmail, archiving and marking
+ * read as chosen), amend in the label picker, skip or open; and the
+ * mailboxes, linked to Gmail here.
  */
 const MailInboxPage: React.FunctionComponent = () => {
   const router = useRouter();
   const [outcome, setOutcome] = useState<MailLinkOutcome>();
+  const [filters, setFilters] = useState<Filters>({
+    status: "review",
+    sortBy: "receivedTime",
+    page: 0,
+  });
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<MailInboxMessage[]>([]);
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const [opened, setOpened] = useState<MailInboxMessage>();
+  const [busy, setBusy] = useState(false);
+  const [options] = useApproveOptions();
 
-  const [accounts, loading] = useFetch<Record<string, never>, MailAccount[]>({
+  const [accounts, accountsLoading] = useFetch<
+    Record<string, never>,
+    MailAccount[]
+  >({
     dataType: "mail accounts",
     params: {},
     watch: [],
     default: [],
     fetchFunction: async () => (await mailApi.listAccounts()).data.accounts,
   });
+  const [labels] = useFetch<Record<string, never>, MailLabel[]>({
+    dataType: "mail labels",
+    params: {},
+    watch: [],
+    default: [],
+    fetchFunction: async () => (await mailApi.listLabels()).data.labels,
+  });
+  const [inbox, loading, , refetch] = useFetch<
+    Filters,
+    ListMailInboxResponse | undefined
+  >({
+    dataType: "inbox",
+    params: filters,
+    watch: [filters],
+    fetchFunction: async (f) =>
+      (
+        await mailApi.listInbox({
+          status: f.status,
+          ...(f.search ? { search: f.search } : {}),
+          ...(f.minConfidence ? { minConfidence: f.minConfidence } : {}),
+          approvedSince: startOfToday(),
+          sortBy: f.sortBy,
+          pageSize: PAGE_SIZE,
+          startPage: f.page,
+        })
+      ).data,
+  });
+  useEffect(() => setSelected([]), [filters]);
 
   // What Google's sign-in came back with, shown once.
   useEffect(() => {
@@ -39,7 +161,7 @@ const MailInboxPage: React.FunctionComponent = () => {
     if (!said) return;
     setOutcome(said);
     const query = { ...router.query };
-    for (const key of MAIL_LINK_OUTCOME_KEYS) delete query[key];
+    for (const k of MAIL_LINK_OUTCOME_KEYS) delete query[k];
     void router.replace({ query }, undefined, { shallow: true });
   }, [router.isReady, router.query, router]);
 
@@ -55,6 +177,53 @@ const MailInboxPage: React.FunctionComponent = () => {
     }
   };
 
+  /** Runs an action over messages, then reloads once it is written. */
+  const act = async (work: () => Promise<string>) => {
+    setBusy(true);
+    try {
+      message.success(
+        <span>
+          {await work()}{" "}
+          <Link href={"/minerva/mail/changes"}>
+            Follow it in the change log
+          </Link>
+        </span>,
+      );
+      setSelected([]);
+      await refetch(true);
+      // Gmail's side lands a few seconds later.
+      setTimeout(() => void refetch(true), 5000);
+    } catch (error) {
+      message.error(apiProblems(error).join(" "));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reviewed = (m: MailInboxMessage, done: ReviewOutcome) => {
+    setExpanded((e) => e.filter((k) => k !== key(m)));
+    message.success(
+      done.kind === "skipped"
+        ? "Skipped: Gmail unchanged"
+        : done.batch
+          ? "Approved: writing to Gmail"
+          : "Approved: Gmail needed no change",
+    );
+    void refetch(true);
+    setTimeout(() => void refetch(true), 5000);
+  };
+
+  const acceptAll = () =>
+    act(async () => {
+      const found = await highConfidenceToReview();
+      if (found.length === 0) return "Nothing to review at 90% or more.";
+      const done = await approveSuggested(found, options);
+      return `Approved ${done.messages.toLocaleString()} as suggested.`;
+    });
+
+  const summary = inbox?.summary;
+  const linked = accounts.some((a) => a.linkedTime);
+
   return (
     <>
       <MailBreadcrumbs
@@ -65,24 +234,380 @@ const MailInboxPage: React.FunctionComponent = () => {
           </Space>,
         ]}
       />
-      <Flex vertical={true} gap={16} style={{ padding: 16, maxWidth: 880 }}>
-        {outcome && (
-          <Alert
-            type={outcome.type}
-            showIcon={true}
-            closable={true}
-            onClose={() => setOutcome(undefined)}
-            message={outcome.title}
-            description={outcome.description}
+      <div
+        style={{
+          height: "calc(100vh - 92px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+        }}
+      >
+        <Flex
+          justify={"space-between"}
+          align={"center"}
+          wrap={true}
+          gap={12}
+          style={{ padding: 16 }}
+        >
+          <Space align={"baseline"} size={12}>
+            <Title level={3} style={{ margin: 0 }}>
+              Inbox
+            </Title>
+            <Text type={"secondary"} style={{ fontSize: 15 }}>
+              {summary
+                ? `${summary.toReview.toLocaleString()} to review`
+                : "Suggested labels for new mail"}
+            </Text>
+          </Space>
+          <Space wrap={true}>
+            <Link href={"/minerva/mail/changes"}>
+              <Button icon={<HistoryOutlined />}>Change log</Button>
+            </Link>
+            <Popconfirm
+              title={`Accept all ${summary?.highConfidence.toLocaleString() ?? ""} at 90% or more?`}
+              description={`Each gets its ticked suggestion in Gmail${
+                options.archive ? ", archived" : ""
+              }${options.markRead ? ", marked read" : ""}. Each batch can be undone from the change log.`}
+              okText={"Accept all"}
+              onConfirm={() => void acceptAll()}
+              disabled={!summary?.highConfidence}
+            >
+              <Button
+                type={"primary"}
+                icon={<ThunderboltOutlined />}
+                loading={busy}
+                disabled={!summary?.highConfidence}
+              >
+                Accept all ≥ 90%
+              </Button>
+            </Popconfirm>
+          </Space>
+        </Flex>
+
+        <Flex vertical={true} gap={16} style={{ padding: "0 16px 16px" }}>
+          {outcome && (
+            <Alert
+              type={outcome.type}
+              showIcon={true}
+              closable={true}
+              onClose={() => setOutcome(undefined)}
+              message={outcome.title}
+              description={outcome.description}
+            />
+          )}
+          {!accountsLoading && !linked && (
+            <MailAccountsCard
+              accounts={accounts}
+              loading={accountsLoading}
+              onConnect={connect}
+            />
+          )}
+          <InboxStrip summary={summary} loading={!inbox && loading} />
+
+          <Flex justify={"space-between"} align={"center"} wrap={true} gap={12}>
+            <Segmented
+              options={STATUSES.map((s) => ({
+                value: s.value,
+                label:
+                  s.value === "review" && summary
+                    ? `To review · ${summary.toReview}`
+                    : s.value === "unread" && summary
+                      ? `Unread · ${summary.unread}`
+                      : s.label,
+              }))}
+              value={filters.status}
+              onChange={(v) =>
+                setFilters((f) => ({
+                  ...f,
+                  status: v as MailInboxStatus,
+                  page: 0,
+                }))
+              }
+            />
+            <Space wrap={true}>
+              <Input.Search
+                allowClear={true}
+                placeholder={"Search sender or subject"}
+                style={{ width: 240 }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onSearch={(v) =>
+                  setFilters((f) => ({
+                    ...f,
+                    search: v.trim() || undefined,
+                    page: 0,
+                  }))
+                }
+              />
+              <Select
+                style={{ width: 150 }}
+                options={CONFIDENCES}
+                value={filters.minConfidence ?? 0}
+                onChange={(v: number) =>
+                  setFilters((f) => ({
+                    ...f,
+                    minConfidence: v || undefined,
+                    page: 0,
+                  }))
+                }
+              />
+              <Segmented
+                options={[
+                  { label: "Newest", value: "receivedTime" },
+                  { label: "Most confident", value: "confidence" },
+                ]}
+                value={filters.sortBy}
+                onChange={(v) =>
+                  setFilters((f) => ({
+                    ...f,
+                    sortBy: v as MailInboxSort,
+                    page: 0,
+                  }))
+                }
+              />
+            </Space>
+          </Flex>
+
+          {selected.length > 0 && (
+            <Alert
+              type={"info"}
+              message={
+                <Flex justify={"space-between"} align={"center"} wrap={true}>
+                  <Text>{selected.length.toLocaleString()} selected</Text>
+                  <Space wrap={true}>
+                    <Button
+                      type={"primary"}
+                      icon={<CheckOutlined />}
+                      loading={busy}
+                      onClick={() =>
+                        void act(async () => {
+                          const done = await approveSuggested(
+                            selected,
+                            options,
+                          );
+                          return `Approved ${done.messages.toLocaleString()} as suggested.`;
+                        })
+                      }
+                    >
+                      Approve suggested
+                    </Button>
+                    <Button
+                      icon={<ForwardOutlined />}
+                      loading={busy}
+                      onClick={() =>
+                        void act(
+                          async () =>
+                            `Skipped ${(await skipAll(selected)).toLocaleString()}; Gmail unchanged.`,
+                        )
+                      }
+                    >
+                      Skip
+                    </Button>
+                    <Button
+                      icon={<ReadOutlined />}
+                      loading={busy}
+                      onClick={() =>
+                        void act(async () => {
+                          const done = await flagAll(selected, {
+                            markRead: true,
+                          });
+                          return `Marking ${done.messages.toLocaleString()} read.`;
+                        })
+                      }
+                    >
+                      Mark read
+                    </Button>
+                    <Button
+                      icon={<ContainerOutlined />}
+                      loading={busy}
+                      onClick={() =>
+                        void act(async () => {
+                          const done = await flagAll(selected, {
+                            archive: true,
+                          });
+                          return `Archiving ${done.messages.toLocaleString()}.`;
+                        })
+                      }
+                    >
+                      Archive
+                    </Button>
+                    <Button type={"text"} onClick={() => setSelected([])}>
+                      Clear
+                    </Button>
+                  </Space>
+                </Flex>
+              }
+            />
+          )}
+
+          <Table<MailInboxMessage>
+            size={"small"}
+            loading={loading}
+            dataSource={inbox?.messages ?? []}
+            rowKey={key}
+            rowSelection={{
+              selectedRowKeys: selected.map(key),
+              onChange: (_, rows) => setSelected(rows),
+            }}
+            expandable={{
+              expandedRowKeys: expanded,
+              onExpand: (open, m) =>
+                setExpanded((e) =>
+                  open ? [...e, key(m)] : e.filter((k) => k !== key(m)),
+                ),
+              expandedRowRender: (m) =>
+                m.decision ? (
+                  <Text type={"secondary"} style={{ padding: 8 }}>
+                    {m.decision === "approved"
+                      ? `Approved${m.amended ? " with changes" : ""}`
+                      : "Skipped"}{" "}
+                    {m.decidedTime
+                      ? DateTime.fromISO(String(m.decidedTime)).toRelative()
+                      : ""}
+                    .
+                  </Text>
+                ) : (
+                  <InboxReviewPanel
+                    message={m}
+                    labels={labels}
+                    columns={true}
+                    onOpen={setOpened}
+                    onDone={reviewed}
+                  />
+                ),
+            }}
+            pagination={{
+              current: filters.page + 1,
+              pageSize: PAGE_SIZE,
+              total: inbox?.count ?? 0,
+              showSizeChanger: false,
+              onChange: (p) => setFilters((f) => ({ ...f, page: p - 1 })),
+            }}
+            locale={{
+              emptyText:
+                filters.status === "review"
+                  ? "Nothing to review."
+                  : "No messages here.",
+            }}
+            columns={[
+              {
+                title: "From",
+                key: "from",
+                width: 170,
+                ellipsis: true,
+                render: (_, m) => (
+                  <Tooltip title={m.fromAddress}>
+                    <Space size={6}>
+                      {m.unread && <Badge color={"#1677ff"} />}
+                      <span style={{ fontWeight: m.unread ? 600 : 400 }}>
+                        {senderOf(m)}
+                      </span>
+                    </Space>
+                  </Tooltip>
+                ),
+              },
+              {
+                title: "Subject",
+                key: "subject",
+                ellipsis: true,
+                render: (_, m) => (
+                  <span>
+                    <span style={{ fontWeight: m.unread ? 600 : 400 }}>
+                      {m.subject ?? "(no subject)"}
+                    </span>
+                    <Text type={"secondary"}> · {m.snippet}</Text>
+                  </span>
+                ),
+              },
+              {
+                title: "Current labels",
+                key: "labels",
+                width: 180,
+                render: (_, m) => <CurrentLabels labels={m.labels} max={2} />,
+              },
+              {
+                title: "Suggested",
+                key: "suggested",
+                width: 210,
+                render: (_, m) =>
+                  m.decision ? (
+                    <Tag
+                      color={m.decision === "approved" ? "green" : undefined}
+                    >
+                      {m.decision === "approved" ? "Approved" : "Skipped"}
+                    </Tag>
+                  ) : (
+                    <SuggestedLabels message={m} max={1} />
+                  ),
+              },
+              {
+                title: "Received",
+                key: "received",
+                width: 100,
+                render: (_, m) => {
+                  const when = DateTime.fromISO(String(m.receivedTime));
+                  return when.hasSame(DateTime.local(), "day")
+                    ? when.toLocaleString(DateTime.TIME_SIMPLE)
+                    : when.toLocaleString(DateTime.DATE_MED);
+                },
+              },
+              {
+                title: "",
+                key: "actions",
+                width: 80,
+                render: (_, m) => (
+                  <Space size={4}>
+                    {!m.decision && (
+                      <Tooltip title={"Approve as suggested"}>
+                        <Button
+                          shape={"circle"}
+                          size={"small"}
+                          icon={<CheckOutlined />}
+                          aria-label={`Approve ${m.subject ?? "message"} as suggested`}
+                          onClick={() =>
+                            void act(async () => {
+                              await approveSuggested([m], options);
+                              return "Approved as suggested.";
+                            })
+                          }
+                        />
+                      </Tooltip>
+                    )}
+                    <Tooltip title={"Open message"}>
+                      <Button
+                        shape={"circle"}
+                        size={"small"}
+                        icon={<EyeOutlined />}
+                        aria-label={`Open ${m.subject ?? "message"}`}
+                        onClick={() => setOpened(m)}
+                      />
+                    </Tooltip>
+                  </Space>
+                ),
+              },
+            ]}
           />
-        )}
-        <MailAccountsCard
-          accounts={accounts}
-          loading={loading}
-          onConnect={connect}
-        />
-        <Empty description={"Mail's inbox is on its way."} />
-      </Flex>
+
+          {linked && (
+            <Collapse
+              ghost={true}
+              items={[
+                {
+                  key: "mailboxes",
+                  label: "Mailboxes",
+                  children: (
+                    <MailAccountsCard
+                      accounts={accounts}
+                      loading={accountsLoading}
+                      onConnect={connect}
+                    />
+                  ),
+                },
+              ]}
+            />
+          )}
+        </Flex>
+      </div>
+      <MessageViewer message={opened} onClose={() => setOpened(undefined)} />
     </>
   );
 };

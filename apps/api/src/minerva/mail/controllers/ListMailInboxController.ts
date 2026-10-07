@@ -81,14 +81,6 @@ export class ListMailInboxController {
     type: String,
     required: false,
   })
-  @ApiQuery({
-    name: "sortBy",
-    description: "The order",
-    enum: MailInboxSort,
-    enumName: "MailInboxSort",
-    enumSchema: { description: "How the inbox is ordered" },
-    required: false,
-  })
   @ApiPaginationParams()
   @ApiOkResponse({
     description: "A page of the inbox, and its counts.",

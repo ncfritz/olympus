@@ -1,4 +1,12 @@
 import {
+  approveMailMessages,
+  type ApproveMailMessagesRequest,
+  getMailMessageContent,
+  listMailInbox,
+  type MailInboxStatus,
+  skipMailMessages,
+  updateMailMessageFlags,
+  type UpdateMailMessageFlagsRequest,
   applyMailChanges,
   client,
   describeMailChangeBatch,
@@ -37,6 +45,9 @@ import {
 /** Mail (ADR 0030): the caller's own mail, through the API. */
 /** What a page of proposed changes is ordered by (`sortBy`). */
 export type MailAuditChangeSort = "confidence" | "receivedTime";
+
+/** What a page of the inbox is ordered by (`sortBy`). */
+export type MailInboxSort = "receivedTime" | "confidence";
 
 class MailApi {
   constructor() {
@@ -162,6 +173,40 @@ class MailApi {
 
   async undoChangeBatch(batchId: string) {
     return await undoMailChangeBatch({ path: { batchId } });
+  }
+
+  /** A page of the inbox with its suggestions, and the strip's counts. */
+  async listInbox(query: {
+    status?: MailInboxStatus;
+    accountId?: string;
+    search?: string;
+    minConfidence?: number;
+    approvedSince?: string;
+    sortBy?: MailInboxSort;
+    pageSize: number;
+    startPage: number;
+  }) {
+    return await listMailInbox({ query });
+  }
+
+  /** Approves messages' labels, writing them (and archive, read) to Gmail. */
+  async approveMessages(accountId: string, body: ApproveMailMessagesRequest) {
+    return await approveMailMessages({ path: { accountId }, body });
+  }
+
+  /** Leaves messages' suggestions for now; Gmail unchanged. */
+  async skipMessages(accountId: string, gmailIds: string[]) {
+    return await skipMailMessages({ path: { accountId }, body: { gmailIds } });
+  }
+
+  /** Archives messages or marks them read, deciding nothing. */
+  async updateFlags(accountId: string, body: UpdateMailMessageFlagsRequest) {
+    return await updateMailMessageFlags({ path: { accountId }, body });
+  }
+
+  /** A message read live from Gmail, to show once. */
+  async getMessageContent(accountId: string, gmailId: string) {
+    return await getMailMessageContent({ path: { accountId, gmailId } });
   }
 
   /** The changes as CSV, and the file name the API gives it. */

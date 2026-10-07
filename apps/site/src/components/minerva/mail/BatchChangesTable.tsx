@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import mailApi from "../../../api/mailApi";
 import { useFetch } from "../../../hooks/useFetch";
 import { gmailLink } from "../../../utils/mailAudit";
+import { flagChangeText } from "../../../utils/mailInbox";
 import ChangeTag from "./audit/ChangeTag";
 
 const { Text } = Typography;
@@ -102,12 +103,20 @@ const BatchChangesTable: React.FunctionComponent<{
           width: 260,
           render: (_, c) => (
             <>
-              {c.add.map((l) => (
-                <ChangeTag key={`+${l}`} action={"add"} label={l} />
-              ))}
-              {c.remove.map((l) => (
-                <ChangeTag key={`-${l}`} action={"remove"} label={l} />
-              ))}
+              {c.add.map((l) =>
+                flagChangeText("add", l) ? (
+                  <Tag key={`+${l}`}>{flagChangeText("add", l)}</Tag>
+                ) : (
+                  <ChangeTag key={`+${l}`} action={"add"} label={l} />
+                ),
+              )}
+              {c.remove.map((l) =>
+                flagChangeText("remove", l) ? (
+                  <Tag key={`-${l}`}>{flagChangeText("remove", l)}</Tag>
+                ) : (
+                  <ChangeTag key={`-${l}`} action={"remove"} label={l} />
+                ),
+              )}
             </>
           ),
         },

@@ -701,7 +701,26 @@ left until phase 5 has decisions to measure them against.
    suggestion") holds for the scores, not the top label: to settle with
    Neil at sign-off.
 4. **Site**: the Mail inbox, the home page widget in the middle column,
-   and the label picker, as designed.
+   and the label picker, as designed. **Built** 2026-10-06. Mail › Inbox: the
+   statistics strip; To review, Unread, Approved today and All, search,
+   minimum confidence, newest or most confident; a table (From, Subject
+   and snippet, Current labels, Suggested, Received) with Approve as
+   suggested and Open on each row; a selection bar (Approve suggested,
+   Skip, Mark read, Archive); Accept all ≥ 90%; each row expanding into the
+   review panel (who, when, thread; each suggestion with its checkbox,
+   confidence bar and reason; the label picker for one message; Archive,
+   Mark read and Whole thread, remembered in the browser; Approve & apply,
+   Skip, Open message). The mailboxes fold away once one is linked. Open
+   message: headers, attachments by name and size, the HTML in a sandboxed
+   frame (no scripts, forms or same-origin; a policy blocking everything
+   remote, images included; a refresh removed; links to a new tab) and the
+   plain text. The home page's Mail widget, under the calendar: To review,
+   Unread and Approved with counts, Accept all ≥ 90%, ten rows, one
+   expanded at a time into the same panel; approving folds the labels into
+   the row with Undo. The change log shows archiving and marking read as
+   such. Checked rendered against stubbed API answers (synthetic mail);
+   the reason line says the classifier's confidence, not yet sender
+   history's counts ("47 of 48"), which suggestions do not carry.
 
 **Sign-off:** M9, M10.
 
