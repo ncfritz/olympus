@@ -1,5 +1,6 @@
 import {
   BulbOutlined,
+  CloseOutlined,
   CloudUploadOutlined,
   PartitionOutlined,
 } from "@ant-design/icons";
@@ -20,6 +21,7 @@ import {
   Space,
   Spin,
   Tag,
+  Tooltip,
   Typography,
 } from "antd";
 import { DateTime } from "luxon";
@@ -44,6 +46,8 @@ export interface ClusterPanelProps {
   /** The clusters that suggest something, largest first. */
   worthALook: MailCluster[];
   onSelect: (clusterId: string) => void;
+  /** Drops the selection. */
+  onClear: () => void;
 }
 
 /**
@@ -55,6 +59,7 @@ const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
   cluster,
   worthALook,
   onSelect,
+  onClear,
 }) => {
   const [busy, setBusy] = useState(false);
   const [detail, loading] = useFetch<
@@ -94,7 +99,23 @@ const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
 
   return (
     <Flex vertical={true} gap={16}>
-      <Card size={"small"} title={cluster ? cluster.name : "A cluster"}>
+      <Card
+        size={"small"}
+        title={cluster ? cluster.name : "A cluster"}
+        extra={
+          cluster && (
+            <Tooltip title={"Clear the selection (Esc)"}>
+              <Button
+                type={"text"}
+                size={"small"}
+                icon={<CloseOutlined />}
+                aria-label={"Clear the selection"}
+                onClick={onClear}
+              />
+            </Tooltip>
+          )
+        }
+      >
         {!cluster ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}

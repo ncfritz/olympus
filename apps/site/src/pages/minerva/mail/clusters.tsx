@@ -16,7 +16,7 @@ import {
 } from "antd";
 import { DateTime } from "luxon";
 import { useRouter } from "next/router";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import mailApi from "../../../api/mailApi";
 import ClusterMap from "../../../components/minerva/mail/clusters/ClusterMap";
 import ClusterPanel from "../../../components/minerva/mail/clusters/ClusterPanel";
@@ -76,6 +76,16 @@ const MailClustersPage: React.FunctionComponent = () => {
     (clusterId: string) => setQuery({ cluster: clusterId }),
     [setQuery],
   );
+  const clear = useCallback(() => setQuery({ cluster: undefined }), [setQuery]);
+  // Esc drops the selection, unless something else (a dialog) takes it.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) clear();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId, clear]);
 
   const clusters = useMemo(() => map?.clusters ?? [], [map]);
   const selected = clusters.find((c) => c.id === selectedId);
@@ -157,6 +167,7 @@ const MailClustersPage: React.FunctionComponent = () => {
                       points={map?.points ?? []}
                       selectedId={selected?.id}
                       onSelect={select}
+                      onClear={clear}
                     />
                   </Spin>
                 </Card>
@@ -166,6 +177,7 @@ const MailClustersPage: React.FunctionComponent = () => {
                   cluster={selected}
                   worthALook={worthALook(clusters)}
                   onSelect={select}
+                  onClear={clear}
                 />
               </Col>
             </Row>
