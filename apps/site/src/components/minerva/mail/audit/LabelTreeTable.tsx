@@ -40,12 +40,20 @@ const LABEL_WIDTH = 450;
 const PROPOSED_WIDTH = 300;
 const FLAGS_WIDTH = 250;
 const REVIEW_WIDTH = 80;
+/** HC just fits its text: "22,282 (100%)" in the code font. */
+const HC_WIDTH = 112;
 /**
  * Every column's width together: wider than the page at 1440px, so the
  * table scrolls sideways within itself rather than squeezing them.
  */
 const TABLE_WIDTH =
-  LABEL_WIDTH + 110 + PROPOSED_WIDTH + 130 + 150 + FLAGS_WIDTH + REVIEW_WIDTH;
+  LABEL_WIDTH +
+  110 +
+  PROPOSED_WIDTH +
+  HC_WIDTH +
+  150 +
+  FLAGS_WIDTH +
+  REVIEW_WIDTH;
 /** The count beside each proposed bar. */
 const PROPOSED_COUNT_WIDTH = 64;
 
@@ -193,7 +201,7 @@ const LabelTreeTable: React.FunctionComponent<{
       ),
       key: "highConfidence",
       align: "right",
-      width: 130,
+      width: HC_WIDTH,
       sorter: (a, b) => a.highConfidence - b.highConfidence,
       onCell: (n) => {
         const share = highConfidenceShare(n);
