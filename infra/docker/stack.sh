@@ -165,7 +165,8 @@ bootstrap() {
   for dir in postgres rabbitmq/data registry registry-ui \
     dionysus/uploads dionysus/asset-agents/data dionysus/metadata-agents/data \
     dionysus/search-agents/data minerva/credentials/google \
-    minerva/credentials/microsoft olympus/site/olr; do
+    minerva/credentials/microsoft minerva-mail/credentials minerva-mail-ml \
+    olympus/site/olr; do
     mkdir -p "$DATA_DIR/$dir"
   done
   echo "data     $DATA_DIR"
@@ -177,7 +178,8 @@ bootstrap() {
   mkdir -p "$SECRETS_DIR/rabbitmq"
   chmod 700 "$SECRETS_DIR"
   for dir in olympus-api olympus-notification-agent dionysus-asset-agent \
-    dionysus-metadata-agent dionysus-search-agent; do
+    dionysus-metadata-agent dionysus-search-agent minerva-mail-agent \
+    minerva-mail-ml; do
     mkdir -p "$SECRETS_DIR/tls/$dir"
   done
   local name

@@ -109,6 +109,71 @@ README table and `infra/docker/env/<env>/`.
 | `minerva-mail-ml` | `OLLAMA_URL`                  | —                      | Optional; without it, no embeddings and no neighbours layer    |
 | `api`             | `MAIL_SUGGEST_THRESHOLD`      | `0.7`                  | Default per-label threshold for showing a suggestion as ticked |
 
+## Deploying to prod
+
+Mail's first deploy, 2026-10-07: the agent and the classifier join the
+`olympus` stack (`minerva` profile) on the Mac Mini, starting fresh — what
+dev learned (inbox decisions, payment examples, filter dismissals) stays
+in dev; Gmail's labels carry the approvals, and the classifier relearns
+from them. Writes and filters are on from the start.
+
+1. **Secrets** (`${SECRETS_DIR}`, [infra/docker](../../../infra/docker/README.md#secrets)):
+   - `tls/minerva-mail-agent/` and `tls/minerva-mail-ml/`, from the
+     Service Issuing CA: each service's `client.crt` and `client.key`
+     (CN `minerva-mail-agent`, `minerva-mail-ml`; clientAuth) and its
+     listener's `agent.crt` and `agent.key` (serverAuth; SAN the service's
+     name, and for the classifier also `snowball.desktop.ncfritz.net`,
+     `localhost` and `127.0.0.1`, which the Takeout run from the repository
+     dials), with `services-ca.crt` and the three revocation lists. One
+     certificate with both usages, copied to both names, will do.
+   - `minerva_mail_google_oauth_client_secret`: the mail OAuth client's
+     secret, alone in the file.
+   - `stack.sh rabbitmq-users`, for `minerva-mail-agent`'s password and the
+     definitions; RabbitMQ applies them when it restarts (step 4).
+   - `stack.sh bootstrap prod` again makes the new data and TLS directories
+     (`minerva-mail/credentials`, `minerva-mail-ml`); it changes nothing
+     that is there.
+2. **Ollama** on the Mini, outside Docker: installed, running, and
+   `ollama pull nomic-embed-text`. The classifier reaches it at
+   `host.docker.internal:11434`.
+3. **Images**: merge to `main`, then `stack.sh build --push olympus` and
+   `stack.sh build --push data` (the Hasura image carries the migrations)
+   and `rabbitmq`. In `env/prod.env`, `OLYMPUS_TAG`, `HASURA_TAG` and
+   `RABBITMQ_TAG` to the commit; commit it.
+4. **Back up**, then **up**: run the backup DAG once; `stack.sh check`;
+   `stack.sh up` (data first: Hasura applies `1791200000000` to
+   `1791390000000`, all of them `minerva.mail_*`). `stack.sh ps olympus`:
+   `minerva-mail-agent` and `minerva-mail-ml` healthy.
+5. **Dev stops**: the dev mail agent stops (or `MAIL_GMAIL_POLL_SECONDS=0`)
+   before prod links the mailbox, so one agent polls and writes.
+6. **Link**: the Inbox's Mailboxes, Link to Gmail. With writes and filters
+   on, the consent asks for `gmail.modify` and `gmail.settings.basic` too.
+7. **Import and featurize**, from the repository on the machine with the
+   Takeout archive (read in place): `agents/minerva-mail/prod.env` from its
+   `prod.env.example` (prod's broker, API and classifier over the LAN, as
+   the mail agent), then
+
+   ```sh
+   pnpm --filter @ncfritz/minerva-mail-agent build
+   pnpm --filter @ncfritz/minerva-mail-agent takeout:prod import \
+     <takeout>/Mail/mail.mbox --account <gmail address> --owner <your Olympus email>
+   ```
+
+   then the same with `featurize`, and `featurize --embed`. Each resumes
+   with `--offset`. The poller reconciles the mailbox with Gmail after.
+
+8. **Train**: `airflow tasks test minerva_mail_retrain <task> <date>` for
+   `train`, `suggest`, `score_inbox`, `payments` and `cluster`, in that
+   order; then unpause the DAG.
+9. **Check**: run the audit; the Inbox shows suggestions; approve one and
+   see it in the change log and in Gmail; Open bills, Clusters and the
+   home widget load.
+
+**Rollback**: `OLYMPUS_TAG` back, and the flags off
+(`MINERVA_MAIL_WRITES_ENABLED`, `MAIL_WRITES_ENABLED`,
+`MAIL_FILTERS_ENABLED`). The mail tables can stay: nothing outside mail
+reads them.
+
 ## Phase 0 — Decision and scaffolding — done 2026-10-05
 
 1. **ADR 0030 accepted**: **done** 2026-10-05.

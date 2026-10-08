@@ -22,6 +22,7 @@
     "start:local": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file=local.env dist/main.js",
     "dev": "NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --env-file dev.env --watch",
     "takeout": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file-if-exists=dev.env dist/takeout.js",
+    "takeout:prod": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file=prod.env dist/takeout.js",
     "gmail": "NODE_EXTRA_CA_CERTS=./ca_roots.pem node --env-file-if-exists=dev.env dist/gmail.js",
     "dev:local": "NODE_EXTRA_CA_CERTS=./ca_roots.pem nest start --env-file local.env --watch"
   },
