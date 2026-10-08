@@ -293,11 +293,6 @@ const SignedInMail = () => {
                     >
                       {senderOf(m)}
                     </span>
-                    <span className={styles.date}>
-                      {received.hasSame(DateTime.local(), "day")
-                        ? received.toLocaleString(DateTime.TIME_SIMPLE)
-                        : received.toFormat("LLL d")}
-                    </span>
                   </span>
                   <span className={styles.subject}>
                     {m.subject ?? "(no subject)"}
@@ -345,16 +340,23 @@ const SignedInMail = () => {
                     )}
                   </span>
                 </span>
-                {k === "review" && !done && (
-                  <Button
-                    shape={"circle"}
-                    icon={<CheckOutlined />}
-                    loading={busy === k2}
-                    aria-label={`Approve ${m.subject ?? "message"} as suggested`}
-                    onClick={() => void accept(m)}
-                    style={{ color: "#6b6b6b" }}
-                  />
-                )}
+                <span className={styles.side}>
+                  <span className={styles.date}>
+                    {received.hasSame(DateTime.local(), "day")
+                      ? received.toLocaleString(DateTime.TIME_SIMPLE)
+                      : received.toFormat("LLL d")}
+                  </span>
+                  {k === "review" && !done && (
+                    <Button
+                      shape={"circle"}
+                      icon={<CheckOutlined />}
+                      loading={busy === k2}
+                      aria-label={`Approve ${m.subject ?? "message"} as suggested`}
+                      onClick={() => void accept(m)}
+                      style={{ color: "#6b6b6b" }}
+                    />
+                  )}
+                </span>
               </div>
               {expanded && (
                 <div className={styles.panel}>

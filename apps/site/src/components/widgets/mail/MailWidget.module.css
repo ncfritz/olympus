@@ -102,6 +102,16 @@
   color: #8c8c8c;
 }
 
+/* The row's right: its time, and under it the approve button. */
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
 .subject {
   overflow: hidden;
   text-overflow: ellipsis;
