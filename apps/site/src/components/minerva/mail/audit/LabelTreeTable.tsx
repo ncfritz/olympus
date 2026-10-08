@@ -41,7 +41,7 @@ const PROPOSED_WIDTH = 400;
 const FLAGS_WIDTH = 250;
 const REVIEW_WIDTH = 80;
 /** HC: the count over its share, "22,282" and "(100%)" in the code font. */
-const HC_WIDTH = 60;
+const HC_WIDTH = 75;
 /** Processed's progress bar: at most this wide, the column what is left. */
 const PROCESSED_BAR_WIDTH = 350;
 /** The least room Processed's bar is given. */
@@ -199,7 +199,7 @@ const LabelTreeTable: React.FunctionComponent<{
     {
       title: (
         <Tooltip title={"High confidence: the proposals at 90% or more"}>
-          <Space size={1}>
+          <Space size={4}>
             <ThermometerIcon />
             <span>HC</span>
           </Space>
@@ -208,8 +208,6 @@ const LabelTreeTable: React.FunctionComponent<{
       key: "highConfidence",
       align: "right",
       width: HC_WIDTH,
-      // Tighter at the sides, so the thermometer, HC and the sorter fit.
-      onHeaderCell: () => ({ style: { paddingInline: 4 } }),
       sorter: (a, b) => a.highConfidence - b.highConfidence,
       onCell: (n) => {
         const share = highConfidenceShare(n);
