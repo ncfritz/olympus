@@ -37,15 +37,17 @@ const reviewHref = (name: string) =>
 
 /** The columns' widths; Processed takes what is left. */
 const LABEL_WIDTH = 250;
-const PROPOSED_WIDTH = 300;
+const PROPOSED_WIDTH = 400;
 const FLAGS_WIDTH = 250;
 const REVIEW_WIDTH = 80;
 /** HC: the count over its share, "22,282" and "(100%)" in the code font. */
 const HC_WIDTH = 60;
-/** Processed's progress bar, at most; the column takes what is left. */
-const PROCESSED_BAR_WIDTH = 120;
+/** Processed's progress bar: at most this wide, the column what is left. */
+const PROCESSED_BAR_WIDTH = 350;
+/** The least room Processed's bar is given. */
+const PROCESSED_MIN_WIDTH = 120;
 /**
- * The table's least width: every column's, and Processed's bar. Wider
+ * The table's least width: every column's, and Processed's least. Wider
  * than the table's space (at 1440px), it scrolls sideways within itself;
  * narrower, the table fills the space and Processed takes the rest.
  */
@@ -54,7 +56,7 @@ const TABLE_WIDTH =
   110 +
   PROPOSED_WIDTH +
   HC_WIDTH +
-  PROCESSED_BAR_WIDTH +
+  PROCESSED_MIN_WIDTH +
   16 +
   FLAGS_WIDTH +
   REVIEW_WIDTH;
