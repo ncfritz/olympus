@@ -238,8 +238,8 @@ services:
     volumes:
       - ${DATA_DIR:?}/minerva-mail:/data
       # Its client certificate for the API and the classifier
-      # (client.crt, client.key), its services listener's (agent.crt,
-      # agent.key), the services CA and the three revocation lists.
+      # (client.crt, client.key), its services listener's (server.crt,
+      # server.key), the services CA and the three revocation lists.
       - ${SECRETS_DIR:?}/tls/minerva-mail-agent:/run/secrets/tls:ro
     stop_grace_period: 30s
     networks:
@@ -272,7 +272,7 @@ services:
     volumes:
       - ${DATA_DIR:?}/minerva-mail-ml:/var/lib/minerva-mail-ml
       # Its client certificate for the API (client.crt, client.key), its
-      # services listener's (agent.crt, agent.key), the services CA and
+      # services listener's (server.crt, server.key), the services CA and
       # the three revocation lists: the retrain mounts the same directory.
       - ${SECRETS_DIR:?}/tls/minerva-mail-ml:/run/secrets/tls:ro
     # Ollama runs on the host, outside Docker.

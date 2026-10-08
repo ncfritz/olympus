@@ -121,7 +121,7 @@ from them. Writes and filters are on from the start.
    - `tls/minerva-mail-agent/` and `tls/minerva-mail-ml/`, from the
      Service Issuing CA: each service's `client.crt` and `client.key`
      (CN `minerva-mail-agent`, `minerva-mail-ml`; clientAuth) and its
-     listener's `agent.crt` and `agent.key` (SAN the same name;
+     listener's `server.crt` and `server.key` (SAN the same name;
      serverAuth), with `services-ca.crt` and the three revocation lists.
      One certificate with both usages, copied to both names, will do.
    - `minerva_mail_google_oauth_client_secret`: the mail OAuth client's
