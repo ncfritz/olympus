@@ -40,8 +40,11 @@ const LABEL_WIDTH = 250;
 const PROPOSED_WIDTH = 400;
 const FLAGS_WIDTH = 250;
 const REVIEW_WIDTH = 80;
-/** HC: the count over its share, "22,282" and "(100%)" in the code font. */
-const HC_WIDTH = 75;
+/**
+ * HC: the count and its share on one line in the code font, up to
+ * "9,999 (99%)"; a larger count puts its share on the line below.
+ */
+const HC_WIDTH = 90;
 /** Processed's progress bar: at most this wide, the column what is left. */
 const PROCESSED_BAR_WIDTH = 350;
 /** The least room Processed's bar is given. */
@@ -218,10 +221,9 @@ const LabelTreeTable: React.FunctionComponent<{
       render: (_, n) => {
         const share = highConfidenceShare(n);
         return n.highConfidence > 0 && share !== undefined ? (
-          <Flex vertical={true} align={"flex-end"}>
-            <Mono>{n.highConfidence.toLocaleString()}</Mono>
-            <Mono>({Math.round(share * 100)}%)</Mono>
-          </Flex>
+          <Mono>
+            {n.highConfidence.toLocaleString()} ({Math.round(share * 100)}%)
+          </Mono>
         ) : (
           ""
         );
