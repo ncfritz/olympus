@@ -121,11 +121,9 @@ from them. Writes and filters are on from the start.
    - `tls/minerva-mail-agent/` and `tls/minerva-mail-ml/`, from the
      Service Issuing CA: each service's `client.crt` and `client.key`
      (CN `minerva-mail-agent`, `minerva-mail-ml`; clientAuth) and its
-     listener's `agent.crt` and `agent.key` (serverAuth; SAN the service's
-     name, and for the classifier also `snowball.desktop.ncfritz.net`,
-     `localhost` and `127.0.0.1`, which the Takeout run from the repository
-     dials), with `services-ca.crt` and the three revocation lists. One
-     certificate with both usages, copied to both names, will do.
+     listener's `agent.crt` and `agent.key` (SAN the same name;
+     serverAuth), with `services-ca.crt` and the three revocation lists.
+     One certificate with both usages, copied to both names, will do.
    - `minerva_mail_google_oauth_client_secret`: the mail OAuth client's
      secret, alone in the file.
    - `stack.sh rabbitmq-users`, for `minerva-mail-agent`'s password and the
@@ -148,15 +146,16 @@ from them. Writes and filters are on from the start.
    before prod links the mailbox, so one agent polls and writes.
 6. **Link**: the Inbox's Mailboxes, Link to Gmail. With writes and filters
    on, the consent asks for `gmail.modify` and `gmail.settings.basic` too.
-7. **Import and featurize**, from the repository on the machine with the
-   Takeout archive (read in place): `agents/minerva-mail/prod.env` from its
-   `prod.env.example` (prod's broker, API and classifier over the LAN, as
-   the mail agent), then
+7. **Import and featurize**, in a one-off copy of the agent's container on
+   the stack's network (its settings, broker user and certificates; the
+   classifier's listener stays off the LAN), with the Takeout archive
+   copied to the Mini's disk and mounted read-only:
 
    ```sh
-   pnpm --filter @ncfritz/minerva-mail-agent build
-   pnpm --filter @ncfritz/minerva-mail-agent takeout:prod import \
-     <takeout>/Mail/mail.mbox --account <gmail address> --owner <your Olympus email>
+   infra/docker/stack.sh compose olympus run --rm \
+     -v <takeout>/Mail:/takeout:ro minerva-mail-agent \
+     node dist/takeout.js import /takeout/mail.mbox \
+     --account <gmail address> --owner <your Olympus email>
    ```
 
    then the same with `featurize`, and `featurize --embed`. Each resumes

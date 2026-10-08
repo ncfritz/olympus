@@ -275,11 +275,6 @@ services:
       # services listener's (agent.crt, agent.key), the services CA and
       # the three revocation lists: the retrain mounts the same directory.
       - ${SECRETS_DIR:?}/tls/minerva-mail-ml:/run/secrets/tls:ro
-    ports:
-      # The services listener, for the Takeout featurize run from the
-      # repository (agents/minerva-mail, prod.env.example): mutual TLS, the
-      # mail agent's certificate alone gets in.
-      - "${LAN_BIND:-127.0.0.1}:3107:3107"
     # Ollama runs on the host, outside Docker.
     extra_hosts:
       - host.docker.internal:host-gateway
