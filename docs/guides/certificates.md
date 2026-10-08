@@ -21,7 +21,7 @@ ncfritz.net Root CA 1
 │   └── ncfritz.net Issuing CA 2 - G1     server certificates, api.olympus…
 └── ncfritz.net Intermediate CA 2
     ├── ncfritz.net Device Issuing CA 1   people's devices (the border)
-    └── ncfritz.net Service Issuing CA 1  services (the API's 3443)
+    └── ncfritz.net Service Issuing CA 1  services: client certificates
 ```
 
 Everything is ECDSA P-256. ADR 0018 calls the last two Olympus Services
@@ -55,7 +55,14 @@ be reissued.
 
 ## The API's server certificate
 
-Signed by **Service Issuing CA 1**, template `[default] TLS_server`:
+Signed by **Issuing CA 2**, template `[default] TLS_server`, like every
+server certificate (each agent's listener too); service certificates, the
+client half, come from Service Issuing CA 1. The two are under different
+intermediates, so a CA file a caller verifies a listener with
+(`API_CA_CERT`, `<SERVICE>_CA_CERT`) holds Root CA 1, Intermediate CA 1
+and Issuing CA 2 — or `server.crt` carries Intermediate CA 1 and Issuing
+CA 2 after the certificate, and the CA file only needs the root.
+`stack.sh check` verifies each call both ways round.
 
 - `CN = olympus-api`, `O = ncfritz.net`.
 - Subject alternative names, all of them — a client verifies the name it

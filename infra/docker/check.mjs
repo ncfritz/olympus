@@ -6,21 +6,28 @@
 // empty, which is how a moved data directory starts over unnoticed), and
 // every certificate a service is pointed at is the one it should be:
 //
-//   server.crt  CN and SAN the service's name (the name the others call it
-//               by), serverAuth, its key beside it as server.key
-//   client.crt  CN the service's name (who it is to the API and to other
-//               listeners), clientAuth, client.key beside it
+//   server.crt  SAN and CN the service's name (the name the others call
+//               it by), serverAuth, its key beside it as server.key
+//   client.crt  CN the service's name (who it is to the listeners it
+//               calls), clientAuth, client.key beside it
 //
-// both issued by a CA in the services-ca.crt the service trusts (and,
-// when TLS_SERVICES_ISSUER is set, by that CA, or a warning), unexpired, and named by the
-// convention (docs/conventions/general.md, Deployment). One line a
-// finding, "problem: ", "warning: " or "ok: ", for stack.sh to count; a
-// problem is something that will fail, a warning something that differs
-// from the convention but works.
+// unexpired and named by the convention (docs/conventions/general.md,
+// Deployment). Then each call between two services in the stack is
+// checked from both ends, as Node will check it: the listener's server
+// certificate chains to a root in the CA file the caller verifies it with,
+// and the caller's client certificate to a root in the listener's
+// TLS_CA_SERVICES, from the issuer the listener requires. Server and
+// client certificates come from different CAs; each is checked against
+// what its verifier trusts, not against its own directory's CA file.
 //
-// Reads the settings from the environment: TLS_SERVICES_ISSUER (the
-// issuing CA's CN) and TLS_CLIENT_OU (the OU every client certificate on
-// this host carries), both optional.
+// One line a finding, "problem: ", "warning: " or "ok: ", for stack.sh to
+// count; a problem is something that will fail, a warning something that
+// differs from the convention but works.
+//
+// Settings, from the environment, all optional: TLS_SERVER_ISSUER and
+// TLS_SERVICES_ISSUER, the CNs of the CAs this host's server and client
+// certificates come from (a warning when one differs), and TLS_CLIENT_OU,
+// the OU its client certificates carry.
 import { X509Certificate, createPrivateKey } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, join, posix } from "node:path";
@@ -138,16 +145,62 @@ const exists = (path) => {
   }
 };
 
+const safely = (fn) => {
+  try {
+    return fn();
+  } catch {
+    return false;
+  }
+};
+
 /**
- * One certificate and its key: read, matched, issued by one of the CAs,
- * for the usage, named for the service, in date. Pushes findings.
+ * Whether a certificate chains to a root in a CA file, the way Node
+ * verifies a peer: up through the certificates the peer presents after its
+ * own and those in the CA file, to a self-signed one that is in the CA
+ * file. Node does not accept a chain that stops at an intermediate.
+ */
+export const chainsTo = (leaf, presented, anchors) => {
+  const pool = [...presented, ...anchors];
+  const trusted = (c) =>
+    anchors.some((a) => a.fingerprint256 === c.fingerprint256);
+  let current = leaf;
+  for (let depth = 0; depth < 8; depth++) {
+    if (
+      trusted(current) &&
+      safely(
+        () => current.checkIssued(current) && current.verify(current.publicKey),
+      )
+    ) {
+      return true;
+    }
+    const issuer = pool.find(
+      (c) =>
+        c.fingerprint256 !== current.fingerprint256 &&
+        safely(() => current.checkIssued(c) && current.verify(c.publicKey)),
+    );
+    if (!issuer) return false;
+    current = issuer;
+  }
+  return false;
+};
+
+/** A certificate file: its first certificate, and the chain after it. */
+const readChain = (path) => {
+  const [cert, ...presented] = certificates(readFileSync(path, "utf8"));
+  return { cert, presented };
+};
+
+/**
+ * One certificate and its key, on its own: read, matched, for the usage,
+ * named for the service, from the expected issuer, in date. Whether it
+ * verifies is a question for whoever it is presented to (checkStack).
+ * Pushes findings; returns the certificate and the chain after it.
  */
 export const checkPair = ({
   label,
   service,
   certPath,
   keyPath,
-  cas,
   usage,
   requireSan,
   requireCn,
@@ -157,16 +210,17 @@ export const checkPair = ({
   report,
 }) => {
   const where = `${service}: ${label}`;
-  let cert;
+  let chain;
   try {
-    [cert] = certificates(readFileSync(certPath, "utf8"));
+    chain = readChain(certPath);
   } catch (e) {
     report.problem(`${where} unreadable (${certPath}): ${e.message}`);
-    return;
+    return undefined;
   }
+  const { cert } = chain;
   if (!cert) {
     report.problem(`${where} holds no certificate (${certPath})`);
-    return;
+    return undefined;
   }
   const subject = oneLine(cert.subject);
   const sans = dnsNames(cert);
@@ -209,19 +263,6 @@ export const checkPair = ({
       `${where}'s subject is ${subject}; this host's client certificates carry OU=${ou}`,
     );
   }
-
-  const issuedBy = cas.find((ca) => {
-    try {
-      return cert.checkIssued(ca) && cert.verify(ca.publicKey);
-    } catch {
-      return false;
-    }
-  });
-  if (cas.length && !issuedBy) {
-    report.problem(
-      `${where} (issuer ${oneLine(cert.issuer)}) was not issued by a CA in services-ca.crt`,
-    );
-  }
   if (issuerCn && attribute(cert.issuer, "CN") !== issuerCn) {
     report.warning(
       `${where}'s issuer is ${oneLine(cert.issuer)}; expected CN=${issuerCn}`,
@@ -243,10 +284,37 @@ export const checkPair = ({
     `${where} ${subject}; SAN ${sans.length ? sans.join(", ") : "none"}; ` +
       `issuer ${attribute(cert.issuer, "CN") ?? oneLine(cert.issuer)}; until ${until}`,
   );
+  return chain;
 };
 
-/** Every finding for a stack's resolved compose configuration. */
-export const checkStack = (config, { issuerCn, ou, now } = {}) => {
+/** The names a listener accepts callers by, from its settings. */
+const allowedCallers = (env) =>
+  [
+    "AUTH_SERVICE_ROLES",
+    "AUTH_SERVICE_CLIENTS",
+    "SERVICES_ALLOWED_CLIENTS",
+  ].flatMap((k) =>
+    String(env?.[k] ?? "")
+      .split(",")
+      .map((x) => x.trim().split(":")[0])
+      .filter(Boolean),
+  );
+
+/** The issuer a listener requires of its callers' certificates. */
+const requiredIssuer = (env) =>
+  env?.AUTH_SERVICES_ISSUER || env?.SERVICES_ISSUER || undefined;
+
+/**
+ * Every finding for a stack's resolved compose configuration.
+ *
+ * serverIssuer and clientIssuer are the CNs of the CAs this host's server
+ * and client certificates come from (a warning when one differs); ou is
+ * the OU its client certificates carry.
+ */
+export const checkStack = (
+  config,
+  { serverIssuer, clientIssuer, ou, now } = {},
+) => {
   const lines = [];
   const report = {
     problem: (text) => lines.push(`problem: ${text}`),
@@ -254,6 +322,8 @@ export const checkStack = (config, { issuerCn, ou, now } = {}) => {
     ok: (text) => lines.push(`ok: ${text}`),
   };
   const services = Object.entries(config.services ?? {});
+  /** name -> { env, file(path) -> host path, server, clients: path -> chain } */
+  const loaded = new Map();
 
   for (const [name, service] of services) {
     const binds = (service.volumes ?? []).filter((v) => v.type === "bind");
@@ -273,7 +343,8 @@ export const checkStack = (config, { issuerCn, ou, now } = {}) => {
       }
     }
 
-    const settings = tlsSettings(service.environment);
+    const env = service.environment ?? {};
+    const settings = tlsSettings(env);
     if (!settings.names.length) continue;
     for (const text of namingProblems(name, settings)) report.problem(text);
     const dir = binds.find((v) => v.target === TLS_TARGET)?.source;
@@ -306,80 +377,115 @@ export const checkStack = (config, { issuerCn, ou, now } = {}) => {
     }
     if (missing) continue;
 
-    const cas = [...settings.cas].flatMap((path) => {
-      try {
-        return certificates(readFileSync(host(path), "utf8"));
-      } catch {
-        return [];
+    for (const path of settings.cas) {
+      if (
+        !safely(() => certificates(readFileSync(host(path), "utf8")).length)
+      ) {
+        report.problem(`${name}: no certificate in ${host(path)}`);
       }
-    });
-    if (settings.cas.size && !cas.length) {
-      report.problem(
-        `${name}: no certificate in ${[...settings.cas].map(host).join(", ")}`,
-      );
     }
 
+    const entry = { env, host, server: undefined, clients: new Map() };
+    loaded.set(name, entry);
     if (settings.server.cert && settings.server.key) {
-      checkPair({
+      entry.server = checkPair({
         label: basename(settings.server.cert),
         service: name,
         certPath: host(settings.server.cert),
         keyPath: host(settings.server.key),
-        cas,
         usage: SERVER_AUTH,
         requireSan: true,
         requireCn: false,
-        issuerCn,
+        issuerCn: serverIssuer,
         now,
         report,
       });
     }
-    const clientCerts = [...(settings.client.cert ?? [])];
     const clientKeys = [...(settings.client.key ?? [])];
-    for (const [i, path] of clientCerts.entries()) {
-      checkPair({
-        label: basename(path),
-        service: name,
-        certPath: host(path),
-        keyPath: host(
-          clientKeys[i] ?? clientKeys[0] ?? path.replace(/\.crt$/, ".key"),
-        ),
-        cas,
-        usage: CLIENT_AUTH,
-        requireSan: false,
-        requireCn: true,
-        issuerCn,
-        ou,
-        now,
-        report,
-      });
+    for (const [i, path] of [...(settings.client.cert ?? [])].entries()) {
+      entry.clients.set(
+        path,
+        checkPair({
+          label: basename(path),
+          service: name,
+          certPath: host(path),
+          keyPath: host(
+            clientKeys[i] ?? clientKeys[0] ?? path.replace(/\.crt$/, ".key"),
+          ),
+          usage: CLIENT_AUTH,
+          requireSan: false,
+          requireCn: true,
+          issuerCn: clientIssuer,
+          ou,
+          now,
+          report,
+        }),
+      );
     }
   }
 
-  // Who calls whom: a service with a client certificate that calls another
-  // service's listener has to be on that listener's list.
-  const allowed = (env, keys) =>
-    keys.flatMap((k) =>
-      String(env?.[k] ?? "")
-        .split(",")
-        .map((x) => x.trim().split(":")[0])
-        .filter(Boolean),
-    );
+  // Each call between two services in the stack, both ways round: the
+  // caller verifies the listener's server certificate against the CA file
+  // it calls with (<PREFIX>_CA_CERT for <PREFIX>_URL, or API_CA_CERT), and
+  // the listener verifies the caller's client certificate against its
+  // TLS_CA_SERVICES, from the issuer it requires, and has it on its list.
+  const anchorsOf = (entry, path) =>
+    path
+      ? safely(() => certificates(readFileSync(entry.host(path), "utf8"))) || []
+      : [];
   for (const [caller, service] of services) {
     const env = service.environment ?? {};
-    if (!tlsSettings(env).client.cert) continue;
-    for (const value of Object.values(env)) {
+    for (const [key, value] of Object.entries(env)) {
       const match = /^https:\/\/([^/:]+)/.exec(String(value));
-      const callee = match && services.find(([n]) => n === match[1]);
-      if (!callee || callee[0] === caller) continue;
-      const list = allowed(callee[1].environment, [
-        "AUTH_SERVICE_ROLES",
-        "AUTH_SERVICE_CLIENTS",
-        "SERVICES_ALLOWED_CLIENTS",
-      ]);
+      const callee = match?.[1];
+      if (!callee || callee === caller || !services.some(([n]) => n === callee))
+        continue;
+      const prefix = key.replace(/_(BASE_)?URL$/, "");
+      const from = loaded.get(caller);
+      const to = loaded.get(callee);
+      const calls = `${caller} calls ${callee} (${key})`;
+
+      const caPath = env[`${prefix}_CA_CERT`] ?? env.API_CA_CERT;
+      if (from && to?.server?.cert && caPath) {
+        const { cert, presented } = to.server;
+        if (chainsTo(cert, presented, anchorsOf(from, caPath))) {
+          report.ok(`${calls}: ${callee}'s server certificate verifies`);
+        } else {
+          report.problem(
+            `${calls}: ${callee}'s server certificate (issuer ${oneLine(cert.issuer)}) ` +
+              `does not chain to a root in ${from.host(caPath)}, which ${caller} verifies it with`,
+          );
+        }
+      }
+
+      const clientPath = env[`${prefix}_CLIENT_CERT`] ?? env.API_CLIENT_CERT;
+      const client = clientPath && from?.clients.get(clientPath);
+      if (!client || !to) continue;
+      const toEnv = to.env;
+      const listenerCa = toEnv.TLS_CA_SERVICES;
+      if (listenerCa) {
+        if (
+          chainsTo(client.cert, client.presented, anchorsOf(to, listenerCa))
+        ) {
+          report.ok(`${calls}: ${caller}'s client certificate verifies`);
+        } else {
+          report.problem(
+            `${calls}: ${caller}'s client certificate (issuer ${oneLine(client.cert.issuer)}) ` +
+              `does not chain to a root in ${to.host(listenerCa)}, which ${callee} verifies it with`,
+          );
+        }
+      }
+      const issuer = requiredIssuer(toEnv);
+      if (issuer && attribute(client.cert.issuer, "CN") !== issuer) {
+        report.problem(
+          `${calls}: ${caller}'s client certificate is from ${attribute(client.cert.issuer, "CN")}; ` +
+            `${callee} accepts only ${issuer}`,
+        );
+      }
+      const list = allowedCallers(toEnv);
       if (list.length && !list.includes(caller)) {
         report.warning(
-          `${caller} calls ${callee[0]}, whose listener does not list it`,
+          `${calls}: ${callee}'s listener does not list ${caller}`,
         );
       }
     }
@@ -393,7 +499,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     .on("data", (d) => (input += d))
     .on("end", () => {
       const lines = checkStack(JSON.parse(input), {
-        issuerCn: process.env.TLS_SERVICES_ISSUER || undefined,
+        serverIssuer: process.env.TLS_SERVER_ISSUER || undefined,
+        clientIssuer: process.env.TLS_SERVICES_ISSUER || undefined,
         ou: process.env.TLS_CLIENT_OU || undefined,
       });
       if (lines.length) console.log(lines.join("\n"));

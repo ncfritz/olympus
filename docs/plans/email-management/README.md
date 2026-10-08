@@ -118,13 +118,14 @@ in dev; Gmail's labels carry the approvals, and the classifier relearns
 from them. Writes and filters are on from the start.
 
 1. **Secrets** (`${SECRETS_DIR}`, [infra/docker](../../../infra/docker/README.md#secrets)):
-   - `tls/minerva-mail-agent/` and `tls/minerva-mail-agent-ml/`, from the
-     Service Issuing CA: each service's `client.crt` and `client.key`
-     (CN `minerva-mail-agent`, `minerva-mail-agent-ml`; OU `prod`;
-     clientAuth) and its
-     listener's `server.crt` and `server.key` (SAN the same name;
-     serverAuth), with `services-ca.crt` and the three revocation lists.
-     One certificate with both usages, copied to both names, will do.
+   - `tls/minerva-mail-agent/` and `tls/minerva-mail-agent-ml/`: each
+     service's `client.crt` and `client.key` from Service Issuing CA 1 (CN
+     `minerva-mail-agent`, `minerva-mail-agent-ml`; OU `prod`; clientAuth),
+     its listener's `server.crt` and `server.key` from Issuing CA 2 (SAN
+     and CN the same name; serverAuth), `services-ca.crt` and the three
+     revocation lists. The API's and the mail agent's `services-ca.crt`
+     verify the listeners they call, so they hold Issuing CA 2's chain as
+     well as the service CA's.
    - `minerva_mail_google_oauth_client_secret`: the mail OAuth client's
      secret, alone in the file.
    - `stack.sh rabbitmq-users`, for `minerva-mail-agent`'s password and the

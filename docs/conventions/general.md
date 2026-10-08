@@ -62,10 +62,11 @@ every new one ([infra/docker](../../infra/docker/README.md)):
   `/run/secrets/tls`, under these names and no others: **[checked]**
   - `server.crt`, `server.key`: its listener's (`TLS_CERT`, `TLS_KEY`).
     SAN `DNS:<service>` and any other name it is reached by, CN
-    `<service>`, serverAuth.
+    `<service>`, serverAuth, from the server issuing CA (`Issuing CA 2`).
   - `client.crt`, `client.key`: what it presents when it calls a
     listener (`API_CLIENT_*`, `<SERVICE>_CLIENT_*`). CN `<service>`, OU
-    the deployment (`prod`, `nas`), clientAuth.
+    the deployment (`prod`, `nas`), clientAuth, from `Service Issuing CA
+1`, the only issuer a listener accepts a caller from.
   - `services-ca.crt` and the three revocation lists
     ([certificates](../guides/certificates.md)).
 - **Data** of Olympus's own services is in

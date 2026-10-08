@@ -538,14 +538,23 @@ it bind-mounts and every certificate a service is pointed at
 (`check.mjs`):
 
 - each `server.crt`: its key, serverAuth, SAN `DNS:<service>`, CN the same
-  (a warning if not);
+  and issuer `TLS_SERVER_ISSUER` (warnings if not);
 - each `client.crt`: its key, clientAuth, CN `<service>`, OU
-  `TLS_CLIENT_OU` (a warning if not);
-- both issued by a CA in the service's `services-ca.crt` and by
-  `TLS_SERVICES_ISSUER` (a warning if not), in date (a warning inside 30
-  days);
-- the convention's file names, and that a service calling another's
-  listener is on that listener's list (a warning).
+  `TLS_CLIENT_OU` and issuer `TLS_SERVICES_ISSUER` (warnings if not);
+- both in date (a warning inside 30 days), under the convention's names;
+- each call between two services in the stack, from both ends, as Node
+  checks it: the listener's `server.crt` (with any chain after it in the
+  file) chains to a root in the CA file the caller verifies it with
+  (`<PREFIX>_CA_CERT` for `<PREFIX>_URL`, else `API_CA_CERT`); the
+  caller's `client.crt` chains to a root in the listener's
+  `TLS_CA_SERVICES` and comes from the listener's `AUTH_SERVICES_ISSUER`
+  (or `SERVICES_ISSUER`); and the listener lists the caller (a warning).
+
+Server certificates come from `Issuing CA 2`, service certificates from
+`Service Issuing CA 1`, so a server certificate is never checked against
+its own directory's `services-ca.crt` — that file is what the listener
+checks its callers with. A CA file has to hold the root: Node does not
+accept a chain that ends at an intermediate.
 
 A problem fails the check (and so `up`); a warning is shown and passes.
 `-v` lists every certificate it read, with its subject, SAN, issuer and
