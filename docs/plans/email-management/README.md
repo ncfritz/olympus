@@ -177,6 +177,18 @@ from them. Writes and filters are on from the start.
 `MAIL_FILTERS_ENABLED`). The mail tables can stay: nothing outside mail
 reads them.
 
+**TODO (CA infrastructure)**: the classifier calls the API with X.509
+strict mode off (`api_ssl_context` in `agents/minerva-mail-ml`). Python
+3.13 turns it on by default, and the server branch (Intermediate CA 1,
+Issuing CA 2 and every server certificate under them) has no Authority
+Key Identifiers, so strict mode refuses the API's certificate that the
+Node agents accept; the API logged `alert certificate unknown` every
+`LEARN_SECONDS`. When the CA infrastructure is built, renew Intermediate
+CA 1 and Issuing CA 2 with their keys and reissue the server certificates,
+all with Authority Key Identifiers; then remove the
+`VERIFY_X509_STRICT` line and its test. `stack.sh check` warns about each
+chain until then.
+
 ## Phase 0 — Decision and scaffolding — done 2026-10-05
 
 1. **ADR 0030 accepted**: **done** 2026-10-05.

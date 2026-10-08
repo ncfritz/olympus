@@ -126,6 +126,29 @@ def _checked(response: httpx.Response) -> dict:
     )
 
 
+def api_ssl_context(config: ApiClient) -> ssl.SSLContext:
+    """The context the API's mTLS listener is called with: its chain, its
+    name and this service's client certificate.
+
+    Python 3.13's create_default_context() verifies in OpenSSL's X.509
+    strict mode (RFC 5280), which Node does not. The home lab's server
+    branch (Intermediate CA 1, Issuing CA 2 and the server certificates
+    under them) has no Authority Key Identifiers, so strict mode refuses
+    the API's certificate that every Node agent accepts. Strict mode is
+    off here, and only here; the chain, the hostname and the dates are
+    still checked, as Node checks them.
+
+    TODO(ca): turn strict mode back on once the server branch is reissued
+    with Authority Key Identifiers, with the CA infrastructure
+    (docs/plans/email-management, Deploying to prod; `stack.sh check`
+    warns until then).
+    """
+    context = ssl.create_default_context(cafile=str(config.ca))
+    context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    context.load_cert_chain(str(config.cert), str(config.key))
+    return context
+
+
 class OlympusApi:
     def __init__(
         self,
@@ -135,8 +158,7 @@ class OlympusApi:
     ) -> None:
         verify: ssl.SSLContext | bool = True
         if transport is None:
-            verify = ssl.create_default_context(cafile=str(config.ca))
-            verify.load_cert_chain(str(config.cert), str(config.key))
+            verify = api_ssl_context(config)
         self._client = httpx.Client(
             base_url=config.base_url + "/minerva/mail",
             verify=verify,
