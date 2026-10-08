@@ -62,6 +62,9 @@
   height: 8px;
   flex-shrink: 0;
   border-radius: 4px;
+  /* At the row's top, centred on the sender's line. */
+  align-self: flex-start;
+  margin-top: 7px;
 }
 
 .unread {
