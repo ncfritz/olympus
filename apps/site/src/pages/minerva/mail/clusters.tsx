@@ -3,23 +3,14 @@ import type {
   GetMailClusterMapResponse,
   ListMailAccountsResponse,
 } from "@ncfritz/olympus-sdk/minerva";
-import {
-  Card,
-  Col,
-  Empty,
-  Flex,
-  Row,
-  Select,
-  Space,
-  Spin,
-  Typography,
-} from "antd";
+import { Empty, Flex, Select, Space, Spin, Typography } from "antd";
 import { DateTime } from "luxon";
 import { useRouter } from "next/router";
 import React, { useCallback, useEffect, useMemo } from "react";
 import mailApi from "../../../api/mailApi";
 import ClusterMap from "../../../components/minerva/mail/clusters/ClusterMap";
 import ClusterPanel from "../../../components/minerva/mail/clusters/ClusterPanel";
+import tableStyles from "../../../components/minerva/mail/MailTable.module.css";
 import MailBreadcrumbs from "../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../hooks/useFetch";
 import { worthALook } from "../../../utils/mailClusters";
@@ -102,19 +93,15 @@ const MailClustersPage: React.FunctionComponent = () => {
           </Space>,
         ]}
       />
-      <div
-        style={{
-          height: "calc(100vh - 92px)",
-          overflowX: "hidden",
-          overflowY: "auto",
-        }}
-      >
+      {/* The page fits the window: the map fills its column, and only
+          the panel's details scroll. */}
+      <div className={tableStyles.page}>
         <Flex
           justify={"space-between"}
           align={"center"}
           wrap={true}
           gap={12}
-          style={{ padding: 16 }}
+          style={{ padding: 16, flex: "none" }}
         >
           <Space align={"baseline"} size={12}>
             <Title level={3} style={{ margin: 0 }}>
@@ -145,7 +132,15 @@ const MailClustersPage: React.FunctionComponent = () => {
             />
           )}
         </Flex>
-        <div style={{ padding: "0 16px 16px" }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            padding: "0 16px 16px",
+          }}
+        >
           {loading && !map ? (
             <Flex justify={"center"} style={{ padding: 48 }}>
               <Spin />
@@ -158,29 +153,28 @@ const MailClustersPage: React.FunctionComponent = () => {
               }
             />
           ) : (
-            <Row gutter={[16, 16]}>
-              <Col xs={24} xl={16}>
-                <Card size={"small"}>
-                  <Spin spinning={loading}>
-                    <ClusterMap
-                      clusters={clusters}
-                      points={map?.points ?? []}
-                      selectedId={selected?.id}
-                      onSelect={select}
-                      onClear={clear}
-                    />
-                  </Spin>
-                </Card>
-              </Col>
-              <Col xs={24} xl={8}>
+            <Flex gap={16} style={{ flex: 1, minHeight: 0 }}>
+              <div
+                className={tableStyles.column}
+                style={{ flex: 2, minWidth: 0 }}
+              >
+                <ClusterMap
+                  clusters={clusters}
+                  points={map?.points ?? []}
+                  selectedId={selected?.id}
+                  onSelect={select}
+                  onClear={clear}
+                />
+              </div>
+              <div className={tableStyles.column} style={{ minWidth: 0 }}>
                 <ClusterPanel
                   cluster={selected}
                   worthALook={worthALook(clusters)}
                   onSelect={select}
                   onClear={clear}
                 />
-              </Col>
-            </Row>
+              </div>
+            </Flex>
           )}
         </div>
       </div>

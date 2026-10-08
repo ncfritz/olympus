@@ -21,6 +21,7 @@ export interface ClusterMapProps {
   onSelect: (clusterId: string) => void;
   /** The selection dropped: the selected cluster or the map's ground clicked. */
   onClear: () => void;
+  /** Its height; by default, its container's. */
   height?: number;
 }
 
@@ -48,7 +49,7 @@ const ClusterMap: React.FunctionComponent<ClusterMapProps> = ({
   selectedId,
   onSelect,
   onClear,
-  height = 560,
+  height,
 }) => {
   const [zoom, setZoom] = useState<Zoom>();
   const chart = useRef<HighchartsReact.RefObject>(null);
@@ -98,9 +99,11 @@ const ClusterMap: React.FunctionComponent<ClusterMapProps> = ({
     };
     const faded = selectedId !== undefined;
     return {
-      ...baseChart(height),
+      ...baseChart(height ?? 0),
       chart: {
-        ...baseChart(height).chart,
+        ...baseChart(height ?? 0).chart,
+        // Without a height, the container's: the map fills its column.
+        height: height ?? null,
         type: "scatter",
         zooming: {
           type: "xy",
@@ -210,8 +213,13 @@ const ClusterMap: React.FunctionComponent<ClusterMapProps> = ({
   }, [clusters, points, selectedId, onSelect, onClear, height, zoom]);
 
   return (
-    <Flex vertical={true} gap={4}>
-      <Flex justify={"space-between"} align={"center"} gap={8}>
+    <Flex vertical={true} gap={4} style={{ flex: 1, minHeight: 0 }}>
+      <Flex
+        justify={"space-between"}
+        align={"center"}
+        gap={8}
+        style={{ flex: "none" }}
+      >
         <Text type={"secondary"} style={{ fontSize: 12 }}>
           Scroll or drag to zoom, shift and drag to pan; click a cluster again,
           or the map, to clear it.
@@ -234,6 +242,7 @@ const ClusterMap: React.FunctionComponent<ClusterMapProps> = ({
         ref={chart}
         highcharts={Highcharts}
         options={options}
+        containerProps={{ style: { flex: 1, minHeight: 0 } }}
         // One to one, so the selected cluster's series is added and dropped
         // with the selection rather than ignored.
         updateArgs={[true, true, false]}

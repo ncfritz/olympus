@@ -21,10 +21,12 @@ import {
   Space,
   Spin,
   Tag,
+  theme,
   Tooltip,
   Typography,
 } from "antd";
 import { DateTime } from "luxon";
+import tableStyles from "../MailTable.module.css";
 import Link from "next/link";
 import React, { useState } from "react";
 import mailApi from "../../../../api/mailApi";
@@ -40,6 +42,15 @@ import { applyCluster } from "./applyCluster";
 
 const { Text } = Typography;
 
+/** A card filling the panel, its body a column. */
+const FILL: React.CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  display: "flex",
+  flexDirection: "column",
+};
+const FILL_BODY: React.CSSProperties = { ...FILL, padding: 0 };
+
 export interface ClusterPanelProps {
   /** The selected cluster, if any. */
   cluster?: MailCluster;
@@ -51,9 +62,11 @@ export interface ClusterPanelProps {
 }
 
 /**
- * The Clusters page's side panel: the selected cluster's label mix and
- * purity, top senders, newest messages and the suggestion it leads to;
- * then the clusters worth a look.
+ * The Clusters page's side panel, the page's height: the selected
+ * cluster's size, groups and purity fixed at its top, and under them, the
+ * one part that scrolls, its label mix, top senders, the suggestion it
+ * leads to and its newest messages. With none selected, the clusters
+ * worth a look.
  */
 const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
   cluster,
@@ -61,6 +74,7 @@ const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
   onSelect,
   onClear,
 }) => {
+  const { token } = theme.useToken();
   const [busy, setBusy] = useState(false);
   const [detail, loading] = useFetch<
     { clusterId?: string },
@@ -98,10 +112,13 @@ const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
   const shown = detail?.cluster.id === cluster?.id ? detail : undefined;
 
   return (
-    <Flex vertical={true} gap={16}>
+    <div className={tableStyles.column} style={{ gap: 16 }}>
       <Card
         size={"small"}
+        variant={"borderless"}
         title={cluster ? cluster.name : "A cluster"}
+        style={cluster ? FILL : undefined}
+        styles={cluster ? { body: FILL_BODY } : undefined}
         extra={
           cluster && (
             <Tooltip title={"Clear the selection (Esc)"}>
@@ -122,8 +139,12 @@ const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
             description={"Select a dot or a cluster's name on the map."}
           />
         ) : (
-          <Flex vertical={true} gap={12}>
-            <Descriptions size={"small"} column={1}>
+          <>
+            <Descriptions
+              size={"small"}
+              column={1}
+              style={{ flex: "none", padding: "12px 12px 0" }}
+            >
               <Descriptions.Item label={"Messages"}>
                 {cluster.size.toLocaleString()}
               </Descriptions.Item>
@@ -136,152 +157,177 @@ const ClusterPanel: React.FunctionComponent<ClusterPanelProps> = ({
                 {purityText(cluster)}
               </Descriptions.Item>
             </Descriptions>
-            {cluster.labels.length > 0 && (
+            <Flex
+              vertical={true}
+              gap={12}
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: "auto",
+                padding: "8px 12px 12px",
+              }}
+            >
+              {cluster.labels.length > 0 && (
+                <div>
+                  <Text strong={true}>Label mix</Text>
+                  {cluster.labels.map((l) => (
+                    <Flex key={l.label} align={"center"} gap={8}>
+                      <Text ellipsis={true} style={{ width: 140 }}>
+                        {l.label}
+                      </Text>
+                      <Progress
+                        percent={Math.round((100 * l.messages) / cluster.size)}
+                        size={"small"}
+                        style={{ margin: 0, flex: 1 }}
+                      />
+                    </Flex>
+                  ))}
+                </div>
+              )}
               <div>
-                <Text strong={true}>Label mix</Text>
-                {cluster.labels.map((l) => (
-                  <Flex key={l.label} align={"center"} gap={8}>
-                    <Text ellipsis={true} style={{ width: 140 }}>
-                      {l.label}
+                <Text strong={true}>Top senders</Text>
+                {cluster.senders.map((s) => (
+                  <Flex key={s.sender} justify={"space-between"} gap={8}>
+                    <Text ellipsis={true}>{s.sender}</Text>
+                    <Text type={"secondary"}>
+                      {s.messages.toLocaleString()}
                     </Text>
-                    <Progress
-                      percent={Math.round((100 * l.messages) / cluster.size)}
-                      size={"small"}
-                      style={{ margin: 0, flex: 1 }}
-                    />
                   </Flex>
                 ))}
               </div>
-            )}
-            <div>
-              <Text strong={true}>Top senders</Text>
-              {cluster.senders.map((s) => (
-                <Flex key={s.sender} justify={"space-between"} gap={8}>
-                  <Text ellipsis={true}>{s.sender}</Text>
-                  <Text type={"secondary"}>{s.messages.toLocaleString()}</Text>
-                </Flex>
-              ))}
-            </div>
-            {suggestion && (
-              <Card size={"small"} type={"inner"}>
-                <Space direction={"vertical"} size={8}>
-                  <Space>
-                    {cluster.suggestion === "split" ? (
-                      <PartitionOutlined />
-                    ) : (
-                      <BulbOutlined />
-                    )}
-                    <Text strong={true}>{suggestion}</Text>
-                  </Space>
-                  <Space wrap={true}>
-                    <Popconfirm
-                      title={
-                        cluster.suggestion === "split"
-                          ? `Move to ${cluster.proposedName}?`
-                          : `Create ${cluster.proposedName}?`
-                      }
-                      description={applyText(cluster)}
-                      okText={"Apply"}
-                      onConfirm={() => apply(cluster)}
-                    >
-                      <Button
-                        type={"primary"}
-                        icon={<CloudUploadOutlined />}
-                        loading={busy}
-                      >
-                        {cluster.suggestion === "split"
-                          ? "Create sub-label"
-                          : "Create label"}
-                      </Button>
-                    </Popconfirm>
-                    <Link href={reviewHref(cluster)}>Re-classification</Link>
-                  </Space>
-                </Space>
-              </Card>
-            )}
-            <div>
-              <Text strong={true}>Newest messages</Text>
-              {loading && !shown ? (
-                <Flex justify={"center"}>
-                  <Spin />
-                </Flex>
-              ) : (
-                <List
+              {suggestion && (
+                <Card
                   size={"small"}
-                  dataSource={shown?.messages ?? []}
-                  renderItem={(m) => (
-                    <List.Item>
-                      <Flex vertical={true} style={{ minWidth: 0 }}>
-                        <Text ellipsis={true}>
-                          {m.subject ?? "(no subject)"}
-                        </Text>
-                        <Text type={"secondary"} ellipsis={true}>
-                          {m.fromAddress} ·{" "}
-                          {DateTime.fromISO(m.receivedTime).toLocaleString(
-                            DateTime.DATE_MED,
-                          )}
-                        </Text>
-                        <Space size={2} wrap={true}>
-                          {m.labels.map((l) => (
-                            <Tag key={l}>{l}</Tag>
-                          ))}
-                        </Space>
-                      </Flex>
-                    </List.Item>
-                  )}
-                />
-              )}
-            </div>
-          </Flex>
-        )}
-      </Card>
-      <Card size={"small"} title={"Worth a look"}>
-        {worthALook.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={"Nothing suggests a new label or a split."}
-          />
-        ) : (
-          <List
-            size={"small"}
-            dataSource={worthALook}
-            renderItem={(c) => (
-              <List.Item
-                actions={[
-                  <Button
-                    key={"show"}
-                    type={"link"}
-                    size={"small"}
-                    onClick={() => onSelect(c.id)}
-                    aria-label={`Show ${c.name} on the map`}
-                  >
-                    Show
-                  </Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  title={
-                    <Space size={6}>
-                      {c.suggestion === "split" ? (
+                  variant={"borderless"}
+                  style={{ background: token.colorFillAlter }}
+                >
+                  <Space direction={"vertical"} size={8}>
+                    <Space>
+                      {cluster.suggestion === "split" ? (
                         <PartitionOutlined />
                       ) : (
                         <BulbOutlined />
                       )}
-                      <span>{c.proposedName}</span>
+                      <Text strong={true}>{suggestion}</Text>
                     </Space>
-                  }
-                  description={`${c.size.toLocaleString()} messages · ${
-                    c.suggestion === "split"
-                      ? `split from ${c.scopeLabel}`
-                      : c.name
-                  }`}
-                />
-              </List.Item>
-            )}
-          />
+                    <Space wrap={true}>
+                      <Popconfirm
+                        title={
+                          cluster.suggestion === "split"
+                            ? `Move to ${cluster.proposedName}?`
+                            : `Create ${cluster.proposedName}?`
+                        }
+                        description={applyText(cluster)}
+                        okText={"Apply"}
+                        onConfirm={() => apply(cluster)}
+                      >
+                        <Button
+                          type={"primary"}
+                          icon={<CloudUploadOutlined />}
+                          loading={busy}
+                        >
+                          {cluster.suggestion === "split"
+                            ? "Create sub-label"
+                            : "Create label"}
+                        </Button>
+                      </Popconfirm>
+                      <Link href={reviewHref(cluster)}>Re-classification</Link>
+                    </Space>
+                  </Space>
+                </Card>
+              )}
+              <div>
+                <Text strong={true}>Newest messages</Text>
+                {loading && !shown ? (
+                  <Flex justify={"center"}>
+                    <Spin />
+                  </Flex>
+                ) : (
+                  <List
+                    size={"small"}
+                    dataSource={shown?.messages ?? []}
+                    renderItem={(m) => (
+                      <List.Item>
+                        <Flex vertical={true} style={{ minWidth: 0 }}>
+                          <Text ellipsis={true}>
+                            {m.subject ?? "(no subject)"}
+                          </Text>
+                          <Text type={"secondary"} ellipsis={true}>
+                            {m.fromAddress} ·{" "}
+                            {DateTime.fromISO(m.receivedTime).toLocaleString(
+                              DateTime.DATE_MED,
+                            )}
+                          </Text>
+                          <Space size={2} wrap={true}>
+                            {m.labels.map((l) => (
+                              <Tag key={l}>{l}</Tag>
+                            ))}
+                          </Space>
+                        </Flex>
+                      </List.Item>
+                    )}
+                  />
+                )}
+              </div>
+            </Flex>
+          </>
         )}
       </Card>
-    </Flex>
+      {!cluster && (
+        <Card
+          size={"small"}
+          variant={"borderless"}
+          title={"Worth a look"}
+          style={FILL}
+          styles={{ body: { ...FILL_BODY, overflowY: "auto", padding: 12 } }}
+        >
+          {worthALook.length === 0 ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={"Nothing suggests a new label or a split."}
+            />
+          ) : (
+            <List
+              size={"small"}
+              dataSource={worthALook}
+              renderItem={(c) => (
+                <List.Item
+                  actions={[
+                    <Button
+                      key={"show"}
+                      type={"link"}
+                      size={"small"}
+                      onClick={() => onSelect(c.id)}
+                      aria-label={`Show ${c.name} on the map`}
+                    >
+                      Show
+                    </Button>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={
+                      <Space size={6}>
+                        {c.suggestion === "split" ? (
+                          <PartitionOutlined />
+                        ) : (
+                          <BulbOutlined />
+                        )}
+                        <span>{c.proposedName}</span>
+                      </Space>
+                    }
+                    description={`${c.size.toLocaleString()} messages · ${
+                      c.suggestion === "split"
+                        ? `split from ${c.scopeLabel}`
+                        : c.name
+                    }`}
+                  />
+                </List.Item>
+              )}
+            />
+          )}
+        </Card>
+      )}
+    </div>
   );
 };
 
