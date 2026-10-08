@@ -1,4 +1,4 @@
-import { FilterFilled, SearchOutlined } from "@ant-design/icons";
+import { FilterFilled } from "@ant-design/icons";
 import type { MailAuditLabel } from "@ncfritz/olympus-sdk/minerva";
 import {
   Flex,
@@ -35,23 +35,27 @@ const { Text } = Typography;
 const reviewHref = (name: string) =>
   `/minerva/mail/reclassification/label?name=${encodeURIComponent(name)}`;
 
-/** The columns' widths (Label, Proposed in / out and Flags as asked). */
-const LABEL_WIDTH = 450;
+/** The columns' widths; Processed takes what is left. */
+const LABEL_WIDTH = 250;
 const PROPOSED_WIDTH = 300;
 const FLAGS_WIDTH = 250;
 const REVIEW_WIDTH = 80;
-/** HC just fits its text: "22,282 (100%)" in the code font. */
-const HC_WIDTH = 112;
+/** HC: the count over its share, "22,282" and "(100%)" in the code font. */
+const HC_WIDTH = 60;
+/** Processed's progress bar, at most; the column takes what is left. */
+const PROCESSED_BAR_WIDTH = 120;
 /**
- * Every column's width together: wider than the page at 1440px, so the
- * table scrolls sideways within itself rather than squeezing them.
+ * The table's least width: every column's, and Processed's bar. Wider
+ * than the table's space (at 1440px), it scrolls sideways within itself;
+ * narrower, the table fills the space and Processed takes the rest.
  */
 const TABLE_WIDTH =
   LABEL_WIDTH +
   110 +
   PROPOSED_WIDTH +
   HC_WIDTH +
-  150 +
+  PROCESSED_BAR_WIDTH +
+  16 +
   FLAGS_WIDTH +
   REVIEW_WIDTH;
 /** The count beside each proposed bar. */
@@ -147,7 +151,7 @@ const LabelTreeTable: React.FunctionComponent<{
     1,
     ...labels.map((l) => Math.max(l.proposedIn, l.proposedOut)),
   );
-  const filterIcon = (on: boolean, Icon = SearchOutlined) => (
+  const filterIcon = (on: boolean, Icon = FilterFilled) => (
     <Icon style={on ? { color: token.colorPrimary } : undefined} />
   );
 
@@ -157,7 +161,7 @@ const LabelTreeTable: React.FunctionComponent<{
       key: "label",
       width: LABEL_WIDTH,
       filteredValue: search ? [search] : null,
-      filterIcon: (on) => filterIcon(on),
+      filterIcon: (on) => filterIcon(on, FilterFilled),
       filterDropdown: (p) => (
         <TextFilterDropdown {...p} placeholder={"Label name"} />
       ),
@@ -193,7 +197,7 @@ const LabelTreeTable: React.FunctionComponent<{
     {
       title: (
         <Tooltip title={"High confidence: the proposals at 90% or more"}>
-          <Space size={4}>
+          <Space size={1}>
             <ThermometerIcon />
             <span>HC</span>
           </Space>
@@ -202,6 +206,8 @@ const LabelTreeTable: React.FunctionComponent<{
       key: "highConfidence",
       align: "right",
       width: HC_WIDTH,
+      // Tighter at the sides, so the thermometer, HC and the sorter fit.
+      onHeaderCell: () => ({ style: { paddingInline: 4 } }),
       sorter: (a, b) => a.highConfidence - b.highConfidence,
       onCell: (n) => {
         const share = highConfidenceShare(n);
@@ -212,9 +218,10 @@ const LabelTreeTable: React.FunctionComponent<{
       render: (_, n) => {
         const share = highConfidenceShare(n);
         return n.highConfidence > 0 && share !== undefined ? (
-          <Mono>
-            {n.highConfidence.toLocaleString()} ({Math.round(share * 100)}%)
-          </Mono>
+          <Flex vertical={true} align={"flex-end"}>
+            <Mono>{n.highConfidence.toLocaleString()}</Mono>
+            <Mono>({Math.round(share * 100)}%)</Mono>
+          </Flex>
         ) : (
           ""
         );
@@ -223,7 +230,6 @@ const LabelTreeTable: React.FunctionComponent<{
     {
       title: "Processed",
       key: "processed",
-      width: 150,
       sorter: (a, b) => a.processed - b.processed,
       render: (_, n) => {
         const total = n.proposedIn + n.proposedOut;
@@ -237,7 +243,11 @@ const LabelTreeTable: React.FunctionComponent<{
               percent={done}
               size={"small"}
               showInfo={true}
-              style={{ margin: 0, width: 120 }}
+              style={{
+                margin: 0,
+                width: "100%",
+                maxWidth: PROCESSED_BAR_WIDTH,
+              }}
             />
           </Tooltip>
         );
