@@ -549,6 +549,13 @@ it bind-mounts and every certificate a service is pointed at
   caller's `client.crt` chains to a root in the listener's
   `TLS_CA_SERVICES` and comes from the listener's `AUTH_SERVICES_ISSUER`
   (or `SERVICES_ISSUER`); and the listener lists the caller (a warning).
+- each server chain against OpenSSL's X.509 strict mode (RFC 5280), a
+  warning: every certificate but the root has an Authority Key
+  Identifier, and every CA critical Basic Constraints, a Key Usage and a
+  Subject Key Identifier. Node does not enforce it; Python 3.13's
+  `ssl.create_default_context()` does, so the classifier refuses a chain
+  the agents accept, and the listener logs only `alert certificate
+unknown`.
 
 Server certificates come from `Issuing CA 2`, service certificates from
 `Service Issuing CA 1`, so a server certificate is never checked against

@@ -21,7 +21,9 @@ import { fileURLToPath } from "node:url";
 import tls from "node:tls";
 import {
   certificates,
+  chainTo,
   chainsTo,
+  strictProblems,
   checkStack,
   namingProblems,
   tlsSettings,
@@ -39,7 +41,12 @@ const ec = ["-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-nodes"];
  * A CA, self-signed or issued by a parent, and a function issuing from it
  * into a directory.
  */
-const authority = (dir, cn = "Test Service Issuing CA", parent) => {
+const authority = (
+  dir,
+  cn = "Test Service Issuing CA",
+  parent,
+  caExtensions = "basicConstraints=critical,CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\n",
+) => {
   mkdirSync(dir, { recursive: true });
   const slug = cn.replace(/\W+/g, "-");
   const key = join(dir, `${slug}.key`);
@@ -64,10 +71,7 @@ const authority = (dir, cn = "Test Service Issuing CA", parent) => {
       "-subj",
       `/CN=${cn}`,
     );
-    writeFileSync(
-      ext,
-      "basicConstraints=critical,CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\n",
-    );
+    writeFileSync(ext, caExtensions);
     openssl(
       "x509",
       "-req",
@@ -101,7 +105,7 @@ const authority = (dir, cn = "Test Service Issuing CA", parent) => {
       ...caExt,
     );
   }
-  const issue = (out, name, { subject, usage, san, days = 90 }) => {
+  const issue = (out, name, { subject, usage, san, days = 90, extra = "" }) => {
     mkdirSync(out, { recursive: true });
     const k = join(out, `${name}.key`);
     const csr = join(out, `${name}.csr`);
@@ -109,7 +113,7 @@ const authority = (dir, cn = "Test Service Issuing CA", parent) => {
     openssl("req", "-new", ...ec, "-keyout", k, "-out", csr, "-subj", subject);
     writeFileSync(
       ext,
-      `extendedKeyUsage=${usage}\n${san ? `subjectAltName=${san}\n` : ""}`,
+      `extendedKeyUsage=${usage}\n${san ? `subjectAltName=${san}\n` : ""}${extra}`,
     );
     openssl(
       "x509",
@@ -519,6 +523,60 @@ test("chainsTo agrees with Node's own TLS handshake", async () => {
         .join(" + ")}`,
     );
   }
+});
+
+test("a server chain X.509 strict mode refuses warns: Python callers will", () => {
+  // Python 3.13's ssl.create_default_context() verifies in strict mode, so
+  // the classifier refused the API's certificate for want of an Authority
+  // Key Identifier while every Node caller took it.
+  const dir = mkdtempSync(join(tmpdir(), "check-"));
+  const cas = hierarchy(dir);
+  const config = pair(dir, cas);
+  cas.servers.issue(join(dir, "tls", "api"), "server", {
+    subject: "/CN=api",
+    usage: "serverAuth",
+    san: "DNS:api",
+    extra: "authorityKeyIdentifier=none\nsubjectKeyIdentifier=none\n",
+  });
+  const lines = checkStack(config);
+  assert.deepEqual(problems(lines), []);
+  assert.ok(
+    warnings(lines).some((l) =>
+      /agent calls api \(API_BASE_URL\): api's server certificate chain fails X\.509 strict mode.*api has no Authority Key Identifier/.test(
+        l,
+      ),
+    ),
+    lines.join("\n"),
+  );
+  assert.ok(
+    !warnings(lines).some((l) => /agent's server certificate chain/.test(l)),
+    lines.join("\n"),
+  );
+});
+
+test("a CA whose Basic Constraints are not critical fails strict mode", () => {
+  const dir = mkdtempSync(join(tmpdir(), "check-"));
+  const root = authority(join(dir, "ca"), "Test Root CA");
+  const loose = authority(
+    join(dir, "ca"),
+    "Loose Issuing CA",
+    root,
+    "basicConstraints=CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\n",
+  );
+  loose.issue(join(dir, "leaf"), "server", {
+    subject: "/CN=api",
+    usage: "serverAuth",
+    san: "DNS:api",
+  });
+  const path = chainTo(
+    certificates(readFileSync(join(dir, "leaf", "server.crt"), "utf8"))[0],
+    [],
+    certificates(bundle(root, loose)),
+  );
+  assert.ok(path);
+  assert.deepEqual(strictProblems(path), [
+    "Loose Issuing CA's Basic Constraints are not critical",
+  ]);
 });
 
 // ---- The repository's own files.

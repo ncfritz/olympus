@@ -154,15 +154,17 @@ const safely = (fn) => {
 };
 
 /**
- * Whether a certificate chains to a root in a CA file, the way Node
+ * The chain from a certificate to a root in a CA file, the way Node
  * verifies a peer: up through the certificates the peer presents after its
  * own and those in the CA file, to a self-signed one that is in the CA
- * file. Node does not accept a chain that stops at an intermediate.
+ * file -- or undefined. Node does not accept a chain that stops at an
+ * intermediate.
  */
-export const chainsTo = (leaf, presented, anchors) => {
+export const chainTo = (leaf, presented, anchors) => {
   const pool = [...presented, ...anchors];
   const trusted = (c) =>
     anchors.some((a) => a.fingerprint256 === c.fingerprint256);
+  const path = [leaf];
   let current = leaf;
   for (let depth = 0; depth < 8; depth++) {
     if (
@@ -171,18 +173,64 @@ export const chainsTo = (leaf, presented, anchors) => {
         () => current.checkIssued(current) && current.verify(current.publicKey),
       )
     ) {
-      return true;
+      return path;
     }
     const issuer = pool.find(
       (c) =>
         c.fingerprint256 !== current.fingerprint256 &&
         safely(() => current.checkIssued(c) && current.verify(c.publicKey)),
     );
-    if (!issuer) return false;
+    if (!issuer) return undefined;
+    path.push(issuer);
     current = issuer;
   }
-  return false;
+  return undefined;
 };
+
+/** Whether a certificate chains to a root in a CA file (chainTo). */
+export const chainsTo = (leaf, presented, anchors) =>
+  chainTo(leaf, presented, anchors) !== undefined;
+
+/** An extension's OID as it appears in DER: 2.5.29.<n>. */
+const extension = (n) => Buffer.from([0x06, 0x03, 0x55, 0x1d, n]);
+const AUTHORITY_KEY_ID = 0x23;
+const SUBJECT_KEY_ID = 0x0e;
+const KEY_USAGE = 0x0f;
+const BASIC_CONSTRAINTS = 0x13;
+const has = (cert, n) => cert.raw.includes(extension(n));
+/** An extension marked critical: its OID followed by BOOLEAN TRUE. */
+const critical = (cert, n) => {
+  const at = cert.raw.indexOf(extension(n));
+  return (
+    at >= 0 &&
+    cert.raw[at + 5] === 0x01 &&
+    cert.raw[at + 6] === 0x01 &&
+    cert.raw[at + 7] === 0xff
+  );
+};
+
+/**
+ * What OpenSSL's X.509 strict mode (RFC 5280) refuses in a chain, which
+ * Node accepts: Python 3.13's ssl.create_default_context() turns it on, so
+ * a Python caller (the classifier) refuses a chain Node is happy with, and
+ * the listener sees only "alert certificate unknown".
+ */
+export const strictProblems = (path) =>
+  path.flatMap((cert) => {
+    const name = attribute(cert.subject, "CN") ?? oneLine(cert.subject);
+    const selfSigned = safely(() => cert.checkIssued(cert));
+    const out = [];
+    if (!selfSigned && !has(cert, AUTHORITY_KEY_ID))
+      out.push(`${name} has no Authority Key Identifier`);
+    if (cert.ca) {
+      if (!critical(cert, BASIC_CONSTRAINTS))
+        out.push(`${name}'s Basic Constraints are not critical`);
+      if (!has(cert, KEY_USAGE)) out.push(`${name} has no Key Usage`);
+      if (!has(cert, SUBJECT_KEY_ID))
+        out.push(`${name} has no Subject Key Identifier`);
+    }
+    return out;
+  });
 
 /** A certificate file: its first certificate, and the chain after it. */
 const readChain = (path) => {
@@ -448,8 +496,16 @@ export const checkStack = (
       const caPath = env[`${prefix}_CA_CERT`] ?? env.API_CA_CERT;
       if (from && to?.server?.cert && caPath) {
         const { cert, presented } = to.server;
-        if (chainsTo(cert, presented, anchorsOf(from, caPath))) {
+        const path = chainTo(cert, presented, anchorsOf(from, caPath));
+        if (path) {
           report.ok(`${calls}: ${callee}'s server certificate verifies`);
+          const strict = strictProblems(path);
+          if (strict.length) {
+            report.warning(
+              `${calls}: ${callee}'s server certificate chain fails X.509 strict mode, ` +
+                `which a Python caller refuses ("certificate unknown" at ${callee}): ${strict.join("; ")}`,
+            );
+          }
         } else {
           report.problem(
             `${calls}: ${callee}'s server certificate (issuer ${oneLine(cert.issuer)}) ` +
