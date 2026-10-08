@@ -1,7 +1,7 @@
 import {
   CheckOutlined,
-  DownOutlined,
-  RightOutlined,
+  CaretDownOutlined,
+  CaretRightOutlined,
   ThunderboltOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
@@ -57,6 +57,12 @@ const TAB_KEY = "mail.widget.tab";
 const LIMIT = 10;
 const RELOAD_MS = 2 * 60 * 1000;
 const INBOX = "/minerva/mail";
+/**
+ * Where a row's text starts: its padding (8), the caret (24), the gaps
+ * (10 each) and the unread dot (8); the review lines up with it, as the
+ * Inbox's lines up with the sender.
+ */
+const TEXT_INDENT = 8 + 24 + 10 + 8 + 10;
 
 const key = (m: MailInboxMessage) => `${m.accountId}/${m.gmailId}`;
 
@@ -260,6 +266,23 @@ const SignedInMail = () => {
           return (
             <React.Fragment key={k2}>
               <div className={styles.row}>
+                {!done && !m.decision ? (
+                  <Button
+                    type={"text"}
+                    size={"small"}
+                    className={styles.caret}
+                    icon={
+                      expanded ? <CaretDownOutlined /> : <CaretRightOutlined />
+                    }
+                    aria-label={
+                      expanded ? "Close the review" : "Review this message"
+                    }
+                    aria-expanded={expanded}
+                    onClick={() => setOpen(expanded ? undefined : k2)}
+                  />
+                ) : (
+                  <span className={styles.caret} />
+                )}
                 <span
                   className={`${styles.dot} ${m.unread && !done ? styles.unread : ""}`}
                 />
@@ -332,24 +355,14 @@ const SignedInMail = () => {
                     style={{ color: "#6b6b6b" }}
                   />
                 )}
-                {!done && !m.decision && (
-                  <Button
-                    type={"text"}
-                    size={"small"}
-                    icon={expanded ? <DownOutlined /> : <RightOutlined />}
-                    aria-label={
-                      expanded ? "Close the review" : "Review this message"
-                    }
-                    aria-expanded={expanded}
-                    onClick={() => setOpen(expanded ? undefined : k2)}
-                  />
-                )}
               </div>
               {expanded && (
                 <div className={styles.panel}>
                   <InboxReviewPanel
                     message={m}
                     labels={labels}
+                    columns={true}
+                    indent={TEXT_INDENT}
                     onOpen={setOpened}
                     onDone={fold}
                   />
