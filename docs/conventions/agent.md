@@ -121,6 +121,10 @@ export class GmailHandler extends SmtpHandler {
 - Credentials come from the environment, never source. Every variable is
   in `dev.env.example` and the README table.
 - Log the AMQP URI only as `amqp.redactedUri`.
+- Deployed, its TLS files are `server.crt`/`server.key` and
+  `client.crt`/`client.key`, and its data is under
+  `${DATA_DIR}/olympus/agents/<folder>`
+  ([general](general.md#deployment)).
 
 ## Errors and observability
 

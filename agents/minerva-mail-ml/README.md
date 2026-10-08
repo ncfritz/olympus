@@ -38,7 +38,7 @@ new one is complete.
 `minerva-mail-ml-train run` trains every mail account (or `--account ID`)
 on the serving feature version, with the metadata and labels it reads from
 the API (`GET /v1/minerva/mail/training/...`, agents only, so the API needs
-`minerva-mail-ml:agent` in `AUTH_SERVICE_ROLES`). Nightly, Airflow runs it
+`minerva-mail-agent-ml:agent` in `AUTH_SERVICE_ROLES`). Nightly, Airflow runs it
 in this image ([minerva_mail_retrain](../../infra/airflow/dags/minerva_mail_retrain.py)).
 
 - **Targets.** A topical label is a topic; a state label counts as its

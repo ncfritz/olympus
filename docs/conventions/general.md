@@ -48,6 +48,40 @@ workflows, jobs), **Minerva** (personal productivity: notes, meetings).
 - Never log a secret or a connection string that contains one.
 - No API keys in source; read them from config.
 
+## Deployment
+
+Every service the compose stacks run, the API and each agent alike, and
+every new one ([infra/docker](../../infra/docker/README.md)):
+
+- **One name.** The compose service name is the service's hostname on
+  the stack's networks, its TLS directory's name and its certificates'
+  CN: `minerva-mail-agent`, `minerva-mail-agent-ml`. A service's code
+  can keep another name (`agents/minerva-mail-ml`); what the others dial
+  and what the API authorises is this one.
+- **TLS files** are in `${SECRETS_DIR}/tls/<service>/`, mounted at
+  `/run/secrets/tls`, under these names and no others: **[checked]**
+  - `server.crt`, `server.key`: its listener's (`TLS_CERT`, `TLS_KEY`).
+    SAN `DNS:<service>` and any other name it is reached by, CN
+    `<service>`, serverAuth.
+  - `client.crt`, `client.key`: what it presents when it calls a
+    listener (`API_CLIENT_*`, `<SERVICE>_CLIENT_*`). CN `<service>`, OU
+    the deployment (`prod`, `nas`), clientAuth.
+  - `services-ca.crt` and the three revocation lists
+    ([certificates](../guides/certificates.md)).
+- **Data** of Olympus's own services is in
+  `${DATA_DIR}/olympus/<apps|agents>/<folder>`, the repository folder of
+  the service's code (`olympus/agents/minerva-mail`,
+  `olympus/apps/api/weather/archive`); services built from one folder
+  share it. Infrastructure (Postgres, RabbitMQ, the registry, nginx,
+  backups) is at the top of `${DATA_DIR}`. **[checked]**
+- `stack.sh bootstrap` makes a new service's TLS and data directories, so
+  add them there; `stack.sh check` then reads every mounted folder and
+  certificate on the host and says which name, usage, key or issuer is
+  wrong.
+
+[checked] here is `infra/docker/test/check.test.mjs`, which reads the
+compose and env files.
+
 ## Logging and metrics
 
 - Nest apps log through Winston (`nest-winston`), created in

@@ -18,6 +18,7 @@ const source = join(here, "..");
 const fixture = () => {
   const dir = mkdtempSync(join(tmpdir(), "stack-"));
   cpSync(join(source, "stack.sh"), join(dir, "stack.sh"));
+  cpSync(join(source, "check.mjs"), join(dir, "check.mjs"));
   cpSync(join(source, "compose"), join(dir, "compose"), { recursive: true });
   cpSync(join(source, "env"), join(dir, "env"), { recursive: true });
   mkdirSync(join(dir, "env"), { recursive: true });

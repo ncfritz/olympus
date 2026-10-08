@@ -87,7 +87,7 @@ Within a minute of saving:
 2. **The archive** has today's file:
 
    ```sh
-   tail -n 1 "$DATA_DIR/weather/archive/A0-B1-C2-D3-E4-F5/$(date -u +%Y/%m/%d).jsonl"
+   tail -n 1 "$DATA_DIR/olympus/apps/api/weather/archive/A0-B1-C2-D3-E4-F5/$(date -u +%Y/%m/%d).jsonl"
    ```
 
    Its `remote` is `192.168.65.1`, Docker Desktop's gateway, rather than
@@ -145,7 +145,7 @@ should follow the console:
 
 ## The archive
 
-`${DATA_DIR}/weather/archive/<MAC>/<yyyy>/<mm>/<dd>.jsonl`, one line per push
+`${DATA_DIR}/olympus/apps/api/weather/archive/<MAC>/<yyyy>/<mm>/<dd>.jsonl`, one line per push
 by the UTC day it arrived:
 
 ```json
@@ -198,7 +198,7 @@ weather rows), on a new machine, after a parser fix, or for a gap:
 pnpm --filter @ncfritz/olympus-api build
 # dev (olympus_dev), from prod's archive on the Mac Mini or the NAS copy:
 pnpm --filter @ncfritz/olympus-api weather:replay 2026-09-01 2026-09-29 \
-  --dir /Users/ncfritz/Docker/data/weather/archive
+  --dir /Users/ncfritz/Docker/data/olympus/apps/api/weather/archive
 # after a parser fix, overwriting what is stored:
 pnpm --filter @ncfritz/olympus-api weather:replay 2026-09-29 2026-09-29 --replace
 # production, inside the container, against its own archive:
@@ -266,7 +266,7 @@ on the last two days.
 
    ```sh
    pnpm --filter @ncfritz/olympus-api weather:replay 2026-09-01 2026-09-29 \
-     --dir /Users/ncfritz/Docker/data/weather/archive
+     --dir /Users/ncfritz/Docker/data/olympus/apps/api/weather/archive
    ```
 
 2. Start the dev API with `olympus-weather-relay-agent:agent` in

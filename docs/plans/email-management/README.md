@@ -118,9 +118,10 @@ in dev; Gmail's labels carry the approvals, and the classifier relearns
 from them. Writes and filters are on from the start.
 
 1. **Secrets** (`${SECRETS_DIR}`, [infra/docker](../../../infra/docker/README.md#secrets)):
-   - `tls/minerva-mail-agent/` and `tls/minerva-mail-ml/`, from the
+   - `tls/minerva-mail-agent/` and `tls/minerva-mail-agent-ml/`, from the
      Service Issuing CA: each service's `client.crt` and `client.key`
-     (CN `minerva-mail-agent`, `minerva-mail-ml`; clientAuth) and its
+     (CN `minerva-mail-agent`, `minerva-mail-agent-ml`; OU `prod`;
+     clientAuth) and its
      listener's `server.crt` and `server.key` (SAN the same name;
      serverAuth), with `services-ca.crt` and the three revocation lists.
      One certificate with both usages, copied to both names, will do.
@@ -129,8 +130,10 @@ from them. Writes and filters are on from the start.
    - `stack.sh rabbitmq-users`, for `minerva-mail-agent`'s password and the
      definitions; RabbitMQ applies them when it restarts (step 4).
    - `stack.sh bootstrap prod` again makes the new data and TLS directories
-     (`minerva-mail/credentials`, `minerva-mail-ml`); it changes nothing
-     that is there.
+     (`olympus/agents/minerva-mail/credentials`,
+     `olympus/agents/minerva-mail-ml`); it changes nothing that is there.
+     `stack.sh check` then reads every certificate and says which name,
+     usage or issuer is wrong.
 2. **Ollama** on the Mini, outside Docker: installed, running, and
    `ollama pull nomic-embed-text`. The classifier reaches it at
    `host.docker.internal:11434`.
@@ -141,7 +144,7 @@ from them. Writes and filters are on from the start.
 4. **Back up**, then **up**: run the backup DAG once; `stack.sh check`;
    `stack.sh up` (data first: Hasura applies `1791200000000` to
    `1791390000000`, all of them `minerva.mail_*`). `stack.sh ps olympus`:
-   `minerva-mail-agent` and `minerva-mail-ml` healthy.
+   `minerva-mail-agent` and `minerva-mail-agent-ml` healthy.
 5. **Dev stops**: the dev mail agent stops (or `MAIL_GMAIL_POLL_SECONDS=0`)
    before prod links the mailbox, so one agent polls and writes.
 6. **Link**: the Inbox's Mailboxes, Link to Gmail. With writes and filters

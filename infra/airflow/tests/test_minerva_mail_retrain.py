@@ -45,9 +45,9 @@ def test_trains_suggests_scores_learns_payments_then_clusters_paused() -> None:
 def test_the_service_data_and_its_own_certificate() -> None:
     task = retrain.dag.get_task("suggest")
     targets = {m["Target"]: m for m in task.mounts}
-    assert targets["/var/lib/minerva-mail-ml"]["Source"].endswith("/minerva-mail-ml")
+    assert targets["/var/lib/minerva-mail-ml"]["Source"].endswith("/olympus/agents/minerva-mail-ml")
     tls = targets["/run/secrets/tls"]
-    assert tls["Source"].endswith("/tls/minerva-mail-ml")
+    assert tls["Source"].endswith("/tls/minerva-mail-agent-ml")
     assert tls["ReadOnly"] is True
     env = task.environment
     assert env["MODEL_DIR"] == "/var/lib/minerva-mail-ml/models"

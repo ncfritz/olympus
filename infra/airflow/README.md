@@ -32,7 +32,7 @@ Between them they need:
 | `apache-airflow-providers-docker` >= 3.0                            | `auto_remove` takes `"success"`, not `True`.                                                                                                |
 | `apache-airflow-providers-sftp`                                     | The archive's copy: `SFTPHook` on the connection named by `WEATHER_NAS_SFTP_CONNECTION`.                                                    |
 | That SFTP connection                                                | `olympus_weather_sftp`: the NAS, as the `weather` user, whose password lives in the connection.                                             |
-| The archive in the worker, read/write, at `OLYMPUS_WEATHER_ARCHIVE` | `${DATA_DIR}/weather/archive`; `prune` deletes the days it has copied.                                                                      |
+| The archive in the worker, read/write, at `OLYMPUS_WEATHER_ARCHIVE` | `${DATA_DIR}/olympus/apps/api/weather/archive`; `prune` deletes the days it has copied.                                                     |
 | The `olympus-data` network reachable                                | `postgres` is not published off `127.0.0.1`; containers reach it by name on that network.                                                   |
 | The `olympus-backend` network reachable                             | RabbitMQ's management port is published only on the host's loopback, so the same applies to it.                                             |
 | This repository readable by the DAG processor and the worker        | Both import the DAGs, which read settings from `infra/docker/env/<env>.env`; `OLYMPUS_ROOT` says where the checkout is mounted.             |
@@ -117,7 +117,7 @@ configuration, and the other DAGs stay where they are.
      OLYMPUS_ALERT_WEBHOOK_FILE: /run/secrets/olympus_alert_webhook
      # ...
      - /var/run/docker.sock:/var/run/docker.sock
-     - /Users/ncfritz/Docker/data/weather/archive:/opt/olympus-weather-archive
+     - /Users/ncfritz/Docker/data/olympus/apps/api/weather/archive:/opt/olympus-weather-archive
      - /Users/ncfritz/Docker/secrets/olympus/<webhook file>:/run/secrets/olympus_alert_webhook:ro
    ```
 
@@ -208,7 +208,7 @@ restore brings the tables back empty; `weather:replay` fills them
 ### `olympus_weather_archive` (Olympus Weather Archive)
 
 Nightly at 03:07, after the backups. The API writes every station push to
-`${DATA_DIR}/weather/archive/<MAC>/<yyyy>/<mm>/<dd>.jsonl` and seals each UTC
+`${DATA_DIR}/olympus/apps/api/weather/archive/<MAC>/<yyyy>/<mm>/<dd>.jsonl` and seals each UTC
 day as `<dd>.jsonl.zst` with a `sha256sum` file beside it
 ([ADR 0024](../../docs/decisions/0024-weather-providers.md),
 [the guide](../../docs/guides/weather-stations.md)).
@@ -238,13 +238,13 @@ Two tasks run in the classifier's image
 (`minerva-mail-ml-train suggest`, suggestions over the whole mailbox for the
 Re-classification page), each with:
 
-- `${DATA_DIR}/minerva-mail-ml` at `/var/lib/minerva-mail-ml`: the feature
+- `${DATA_DIR}/olympus/agents/minerva-mail-ml` at `/var/lib/minerva-mail-ml`: the feature
   store it reads and the model registry it writes, the same directory the
   service serves from, which picks up a new model on its next request;
-- `${SECRETS_DIR}/tls/minerva-mail-ml` read-only at `/run/secrets/tls`:
+- `${SECRETS_DIR}/tls/minerva-mail-agent-ml` read-only at `/run/secrets/tls`:
   `client.crt`, `client.key` and `services-ca.crt`, for the API's mTLS
   listener (`MAIL_ML_API_BASE_URL` overrides `https://olympus-api:3443/v1`),
-  and the API needs `minerva-mail-ml:agent` in `AUTH_SERVICE_ROLES`.
+  and the API needs `minerva-mail-agent-ml:agent` in `AUTH_SERVICE_ROLES`.
 
 An account without enough mail to split by time is logged and skipped; a run
 that fails leaves the previous model serving

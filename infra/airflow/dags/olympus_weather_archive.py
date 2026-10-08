@@ -1,6 +1,6 @@
 """The weather stations' raw archive, copied to the NAS nightly (ADR 0024).
 
-The API writes every push to `${DATA_DIR}/weather/archive` and seals each UTC
+The API writes every push to `${DATA_DIR}/olympus/apps/api/weather/archive` and seals each UTC
 day as `<dd>.jsonl.zst` beside a `sha256sum` file once the next day starts
 (apps/api/src/olympus/weather/stations/StationArchive.ts). The archive is the
 source of truth the samples and rollups can be rebuilt from, which is why the

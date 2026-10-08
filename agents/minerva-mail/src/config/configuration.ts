@@ -26,7 +26,7 @@ export { ConfigValidationError };
  * that sends text can run.
  */
 export type ClassifierConfig = {
-  /** Including the version: https://minerva-mail-ml:3107/v1 */
+  /** Including the version: https://minerva-mail-agent-ml:3107/v1 */
   baseUrl: string;
   tls?: { certificate: string; key: string; ca?: string };
   timeoutMs: number;

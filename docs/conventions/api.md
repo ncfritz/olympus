@@ -322,6 +322,10 @@ filename="…"`, the name derived from the filters.
   Winston (console, Loki, files) sits behind it (`createWinstonLogger`
   from `@ncfritz/olympus-nest`, which also provides the config readers).
   Never log secrets; `amqp.redactedUri` exists for that.
+- Deployed, the mTLS listener reads `server.crt`/`server.key` and the API
+  calls agents with `client.crt`/`client.key`, all in
+  `${SECRETS_DIR}/tls/olympus-api`; its data is under
+  `${DATA_DIR}/olympus/apps/api` ([general](general.md#deployment)).
 
 ## Messaging
 

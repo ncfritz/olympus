@@ -63,7 +63,12 @@ Signed by **Service Issuing CA 1**, template `[default] TLS_server`:
   `DNS:api.olympus.internal.ncfritz.net` (the NAS and anything off that
   network), `DNS:localhost`, `IP:127.0.0.1`.
 - Extended key usage `TLS Web Server Authentication`. Validity 1 year.
-- Export the certificate and its key as PEM: `TLS_CERT`, `TLS_KEY`.
+- Export the certificate and its key as PEM, as `server.crt` and
+  `server.key` in `${SECRETS_DIR}/tls/olympus-api` (`TLS_CERT`,
+  `TLS_KEY`). An agent's listener (the calendar agent, the mail agent, the
+  classifier) gets the same kind of certificate in its own directory: SAN
+  and CN its service name, the name the API or the mail agent dials.
+  `stack.sh check` reads each one and says what is wrong with it.
 
 **Do not lengthen that year past 825 days.** Apple refuses a TLS server
 certificate issued after 1 July 2019 whose validity is longer, and it refuses it

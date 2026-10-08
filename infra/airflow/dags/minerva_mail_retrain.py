@@ -26,8 +26,8 @@ same model registry the service serves from:
 
 The container calls the API's mTLS listener on the backend network with the
 classifier's client certificate (ADR 0018), from its TLS directory
-`${SECRETS_DIR}/tls/minerva-mail-ml`, as the agents do (compose/olympus.yml).
-The API needs `minerva-mail-ml:agent` in AUTH_SERVICE_ROLES.
+`${SECRETS_DIR}/tls/minerva-mail-agent-ml`, as the agents do (compose/olympus.yml).
+The API needs `minerva-mail-agent-ml:agent` in AUTH_SERVICE_ROLES.
 
 The DAG is created paused: the classifier is not yet part of the deployed
 stack, and its first run belongs after the archive has been featurized.
@@ -71,12 +71,12 @@ IMAGE = ENV["IMAGE_PREFIX"] + "/minerva-mail-ml:" + ENV["OLYMPUS_TAG"]
 MOUNTS = [
     # The feature store and the model registry.
     Mount(
-        source=ENV["DATA_DIR"] + "/minerva-mail-ml",
+        source=ENV["DATA_DIR"] + "/olympus/agents/minerva-mail-ml",
         target=DATA,
         type="bind",
     ),
     Mount(
-        source=ENV["SECRETS_DIR"] + "/tls/minerva-mail-ml",
+        source=ENV["SECRETS_DIR"] + "/tls/minerva-mail-agent-ml",
         target=TLS,
         type="bind",
         read_only=True,

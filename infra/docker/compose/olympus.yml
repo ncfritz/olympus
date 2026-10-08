@@ -97,10 +97,10 @@ services:
       - ambient_application_key
       - ambient_api_key
     volumes:
-      - ${DATA_DIR:?}/dionysus/uploads:/olympus/uploads
+      - ${DATA_DIR:?}/olympus/apps/api/uploads:/olympus/uploads
       # The weather stations' raw archive (WEATHER_ARCHIVE_DIR's default);
       # a nightly job copies finished days to the NAS.
-      - ${DATA_DIR:?}/weather/archive:/olympus/weather/archive
+      - ${DATA_DIR:?}/olympus/apps/api/weather/archive:/olympus/weather/archive
       # The services listener's certificate, key, CA and revocation lists.
       - ${SECRETS_DIR:?}/tls/olympus-api:/run/secrets/tls:ro
       # Every ES256 key that verifies an access token; the last by filename
@@ -160,8 +160,8 @@ services:
       - nzbgeek_api_key
       - nzbget_password
     volumes:
-      - ${DATA_DIR:?}/dionysus/asset-agents/data:/dionysus
-      - ${DATA_DIR:?}/dionysus/uploads:/dionysus/uploads
+      - ${DATA_DIR:?}/olympus/agents/dionysus-asset:/dionysus
+      - ${DATA_DIR:?}/olympus/apps/api/uploads:/dionysus/uploads
       - ${SECRETS_DIR:?}/tls/dionysus-asset-agent:/run/secrets/tls:ro
     # A transcode would otherwise take the whole machine.
     cpus: ${ASSET_AGENT_CPUS:-2}
@@ -184,7 +184,7 @@ services:
         target: amqp_password
       - tmdb_api_key
     volumes:
-      - ${DATA_DIR:?}/dionysus/metadata-agents/data:/dionysus
+      - ${DATA_DIR:?}/olympus/agents/dionysus-metadata:/dionysus
       - ${SECRETS_DIR:?}/tls/dionysus-metadata-agent:/run/secrets/tls:ro
     networks:
       - backend
@@ -203,7 +203,7 @@ services:
         target: amqp_password
       - nzbgeek_api_key
     volumes:
-      - ${DATA_DIR:?}/dionysus/search-agents/data:/dionysus
+      - ${DATA_DIR:?}/olympus/agents/dionysus-search:/dionysus
       - ${SECRETS_DIR:?}/tls/dionysus-search-agent:/run/secrets/tls:ro
     networks:
       - backend
@@ -229,14 +229,14 @@ services:
       MAIL_CREDENTIALS_DIR: /data/credentials
       # The classifier's services listener, with this agent's client
       # certificate (the API_CLIENT_* above).
-      MAIL_ML_URL: https://minerva-mail-ml:3107/v1
+      MAIL_ML_URL: https://minerva-mail-agent-ml:3107/v1
       SERVICES_LISTEN_PORT: "4435"
     secrets:
       - source: amqp_minerva_mail
         target: amqp_password
       - minerva_mail_google_oauth_client_secret
     volumes:
-      - ${DATA_DIR:?}/minerva-mail:/data
+      - ${DATA_DIR:?}/olympus/agents/minerva-mail:/data
       # Its client certificate for the API and the classifier
       # (client.crt, client.key), its services listener's (server.crt,
       # server.key), the services CA and the three revocation lists.
@@ -246,17 +246,19 @@ services:
       - backend
       - monitoring
 
-  # Minerva mail's classifier (ADR 0030), the one Python service. Text
+  # Minerva mail's classifier (ADR 0030, agents/minerva-mail-ml), the one
+  # Python service; its name on the network and in its certificates is
+  # minerva-mail-agent-ml. Text
   # arrives only on its services listener (3107, mutual TLS, the mail
   # agent alone), is featurized or embedded and dropped. The feature store
   # and the models are on the volume, which the nightly retrain
   # (infra/airflow, minerva_mail_retrain) mounts as well. Embeddings come
   # from Ollama on the host (OLLAMA_URL in its environment file).
-  minerva-mail-ml:
+  minerva-mail-agent-ml:
     <<: *service
     image: ${IMAGE_PREFIX:?}/minerva-mail-ml:${OLYMPUS_TAG:?}
     profiles: [minerva]
-    env_file: ../env/${OLYMPUS_ENV:?}/minerva-mail-ml.env
+    env_file: ../env/${OLYMPUS_ENV:?}/minerva-mail-agent-ml.env
     environment:
       LISTEN_PORT: "3106"
       SERVICES_LISTEN_PORT: "3107"
@@ -270,11 +272,11 @@ services:
       API_CA_CERT: /run/secrets/tls/services-ca.crt
       ENVIRONMENT: ${OLYMPUS_ENV:?}
     volumes:
-      - ${DATA_DIR:?}/minerva-mail-ml:/var/lib/minerva-mail-ml
+      - ${DATA_DIR:?}/olympus/agents/minerva-mail-ml:/var/lib/minerva-mail-ml
       # Its client certificate for the API (client.crt, client.key), its
       # services listener's (server.crt, server.key), the services CA and
       # the three revocation lists: the retrain mounts the same directory.
-      - ${SECRETS_DIR:?}/tls/minerva-mail-ml:/run/secrets/tls:ro
+      - ${SECRETS_DIR:?}/tls/minerva-mail-agent-ml:/run/secrets/tls:ro
     # Ollama runs on the host, outside Docker.
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -319,7 +321,7 @@ services:
     environment:
       DATABASE_URL: file:/data/minerva.db
     volumes:
-      - ${DATA_DIR:?}/minerva:/data
+      - ${DATA_DIR:?}/olympus/agents/minerva-calendar-sync:/data
     network_mode: none
     healthcheck:
       disable: true
@@ -369,7 +371,7 @@ services:
       - google_web_oauth_client_secret
       - microsoft_oauth_client_secret
     volumes:
-      - ${DATA_DIR:?}/minerva:/data
+      - ${DATA_DIR:?}/olympus/agents/minerva-calendar-sync:/data
       # The services listener's certificate, key, CA and revocation lists
       # (ADR 0028); only the API calls it, over the backend network.
       - ${SECRETS_DIR:?}/tls/minerva-calendar-agent:/run/secrets/tls:ro

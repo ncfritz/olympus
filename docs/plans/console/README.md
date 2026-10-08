@@ -255,7 +255,7 @@ through. Run a console there with `pnpm dev` instead.
    its `/config/ssl` files.
 
 Watch for: the agent runs as `node` in the image and writes to
-`${DATA_DIR}/minerva`, so the migration is the first thing that fails if
+`${DATA_DIR}/olympus/agents/minerva-calendar-sync`, so the migration is the first thing that fails if
 that directory is not writable by it.
 
 Found building it for the first time: the shared Next.js Dockerfile copied

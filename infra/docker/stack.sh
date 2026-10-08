@@ -4,7 +4,10 @@
 #   infra/docker/stack.sh bootstrap <env>     once: remember which
 #                                             environment this machine is,
 #                                             create networks and directories
-#   infra/docker/stack.sh check [stack...]    every setting and secret in place
+#   infra/docker/stack.sh check [-v] [stack...]
+#                                             every setting, secret, mounted
+#                                             folder and certificate in place
+#                                             (-v: each certificate read)
 #   infra/docker/stack.sh list [stack...]     stacks and their containers, as a tree
 #   infra/docker/stack.sh build (--push|--load) [--env <env>] [--parallel] <stack> [service...]
 #                                             build this stack's images at HEAD,
@@ -161,12 +164,18 @@ bootstrap() {
     fi
   done
 
+  # Infrastructure at the top; Olympus's own services under
+  # olympus/<apps|agents>/<folder>, the folder in this repository whose
+  # service it is (docs/conventions/general.md, Deployment).
   local dir
   for dir in postgres rabbitmq/data registry registry-ui \
-    dionysus/uploads dionysus/asset-agents/data dionysus/metadata-agents/data \
-    dionysus/search-agents/data minerva/credentials/google \
-    minerva/credentials/microsoft minerva-mail/credentials minerva-mail-ml \
-    olympus/site/olr; do
+    olympus/apps/api/uploads olympus/apps/api/weather/archive \
+    olympus/apps/site/olr \
+    olympus/agents/dionysus-asset olympus/agents/dionysus-metadata \
+    olympus/agents/dionysus-search \
+    olympus/agents/minerva-calendar-sync/credentials/google \
+    olympus/agents/minerva-calendar-sync/credentials/microsoft \
+    olympus/agents/minerva-mail/credentials olympus/agents/minerva-mail-ml; do
     mkdir -p "$DATA_DIR/$dir"
   done
   echo "data     $DATA_DIR"
@@ -177,9 +186,12 @@ bootstrap() {
 
   mkdir -p "$SECRETS_DIR/rabbitmq"
   chmod 700 "$SECRETS_DIR"
+  # One per service that holds a certificate, named for the service: the
+  # name the others call it by, and its certificates' CN (server.crt and
+  # client.crt; stack.sh check reads them).
   for dir in olympus-api olympus-notification-agent dionysus-asset-agent \
-    dionysus-metadata-agent dionysus-search-agent minerva-mail-agent \
-    minerva-mail-ml; do
+    dionysus-metadata-agent dionysus-search-agent minerva-calendar-agent \
+    minerva-mail-agent minerva-mail-agent-ml; do
     mkdir -p "$SECRETS_DIR/tls/$dir"
   done
   local name
@@ -518,7 +530,11 @@ nginx_reload() {
 }
 
 check() {
-  local list stack problems=0 name path output remote=""
+  local list stack problems=0 name path output line remote="" verbose=""
+  if [ "${1:-}" = "-v" ] || [ "${1:-}" = "--verbose" ]; then
+    verbose=yes
+    shift
+  fi
   list=$(stacks forward "$@")
   # Secret paths and bind mounts are resolved on the Docker *host*. Driving
   # another machine's Docker, this shell cannot see them, and reporting them
@@ -554,6 +570,29 @@ check() {
         fi
       fi
     done < <(secret_files "$stack")
+    # The bind mounts and the certificates (check.mjs): a problem fails the
+    # check, a warning is shown and passes, and each certificate read is
+    # listed with its subject, SAN, issuer and expiry.
+    if ! output=$(compose "$stack" config --format json 2>&1); then
+      echo "$stack: $(printf '%s' "$output" | head -1)"
+      problems=$((problems + 1))
+      continue
+    fi
+    while IFS= read -r line; do
+      case "$line" in
+        "problem: "*)
+          echo "$stack: ${line#problem: }"
+          problems=$((problems + 1))
+          ;;
+        "warning: "*) echo "$stack: warning: ${line#warning: }" ;;
+        "ok: "*) [ -z "$verbose" ] || echo "$stack: ${line#ok: }" ;;
+        # Anything else is check.mjs failing, which is not a pass.
+        *)
+          echo "$stack: $line"
+          problems=$((problems + 1))
+          ;;
+      esac
+    done < <(printf '%s' "$output" | node "$here/check.mjs" 2>&1)
     echo "$stack: checked"
   done
   [ "$problems" -eq 0 ] || die "$problems problem(s)"
