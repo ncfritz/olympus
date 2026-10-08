@@ -2,6 +2,7 @@ import type { INestApplication } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
 import * as fs from "fs";
 import * as https from "https";
+import type * as net from "net";
 import type * as tls from "tls";
 import {
   revocationCoverage,
@@ -30,6 +31,29 @@ export type ClientCertificateListenerHooks = {
   onRefused?: () => void;
   /** The variables the settings came from, for the startup warnings. */
   settings?: RevocationSettings;
+};
+
+/**
+ * Alerts a caller sends when it refuses *this listener's* certificate,
+ * rather than the other way round: the fault is in what the caller trusts
+ * or the name it dialled, and it is the caller's own log that says which.
+ */
+const CALLER_REFUSED =
+  /alert (certificate unknown|unknown ca|bad certificate|unsupported certificate|certificate expired|certificate revoked)/;
+
+/**
+ * The line a refused handshake is logged with: who, and why. The address
+ * is the TCP connection's, captured when it arrived, because by the time
+ * the handshake is reported the TLS socket is torn down and has none.
+ */
+export const refusalMessage = (
+  error: Error,
+  peer: string | undefined,
+): string => {
+  const hint = CALLER_REFUSED.test(error.message)
+    ? " -- the caller refused this listener's certificate: check the CA file it verifies it with, and that the certificate's SAN has the name it dialled"
+    : "";
+  return `Refused a connection from ${peer ?? "an unknown address"}: ${error.message}${hint}`;
 };
 
 const secureContext = (config: ClientCertificateListenerConfig) => ({
@@ -96,10 +120,22 @@ export const createClientCertificateListener = (
    * rejected for want of a revocation list looks like. The startup check
    * above is for that one.
    */
+  // Where each connection came from, kept from when it arrived (above).
+  const peers = new WeakMap<net.Socket, string>();
+  server.on("connection", (socket: net.Socket) => {
+    if (socket.remoteAddress) {
+      peers.set(socket, `${socket.remoteAddress}:${socket.remotePort}`);
+    }
+  });
   server.on("tlsClientError", (error: Error, socket: tls.TLSSocket) => {
-    logger.warn(
-      `Refused a connection from ${socket.remoteAddress ?? "an unknown address"}: ${error.message}`,
-    );
+    // Node's TLS socket wraps the TCP one as `_parent`; it is not typed.
+    const tcp = (socket as tls.TLSSocket & { _parent?: net.Socket })._parent;
+    const peer =
+      (tcp && peers.get(tcp)) ??
+      (socket.remoteAddress
+        ? `${socket.remoteAddress}:${socket.remotePort}`
+        : undefined);
+    logger.warn(refusalMessage(error, peer));
     hooks.onRefused?.();
   });
 
