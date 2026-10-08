@@ -16,6 +16,7 @@ import {
   SenderCell,
   SubjectCell,
 } from "../MailCells";
+import tableStyles from "../MailTable.module.css";
 
 const { Text } = Typography;
 
@@ -133,71 +134,76 @@ const ThreadMessages: React.FunctionComponent<{ thread: MailAuditThread }> = ({
 const MixedThreads: React.FunctionComponent<{ threads: MailAuditThread[] }> = ({
   threads,
 }) => (
-  <Flex vertical={true} gap={8}>
+  <div className={tableStyles.column}>
     <Text type={"secondary"}>The largest 50.</Text>
-    <Table<MailAuditThread>
-      size={"small"}
-      rowKey={key}
-      dataSource={threads}
-      tableLayout={"fixed"}
-      pagination={{ pageSize: 10, hideOnSinglePage: true, size: "small" }}
-      locale={{ emptyText: "Every thread's messages agree." }}
-      expandable={{
-        columnWidth: EXPAND_COLUMN,
-        expandIcon: (p) => (
-          <CaretExpandIcon {...p} label={`thread ${p.record.threadId}`} />
-        ),
-        expandedRowRender: (t) => <ThreadMessages thread={t} />,
-      }}
-      columns={[
-        {
-          title: "Thread",
-          dataIndex: "threadId",
-          width: 220,
-          sorter: (a, b) => a.threadId.localeCompare(b.threadId),
-          render: (id: string) => (
-            <a href={gmailLink(id)} target={"_blank"} rel={"noreferrer"}>
-              <Text code={true}>{id}</Text> <ExportOutlined />
-            </a>
+    <div className={tableStyles.fill}>
+      <Table<MailAuditThread>
+        size={"small"}
+        rowKey={key}
+        dataSource={threads}
+        tableLayout={"fixed"}
+        pagination={{ pageSize: 10, showSizeChanger: false }}
+        scroll={{ y: 1 }}
+        locale={{ emptyText: "Every thread's messages agree." }}
+        expandable={{
+          columnWidth: EXPAND_COLUMN,
+          expandIcon: (p) => (
+            <CaretExpandIcon {...p} label={`thread ${p.record.threadId}`} />
           ),
-        },
-        {
-          title: "Messages",
-          dataIndex: "messages",
-          align: "right",
-          width: 110,
-          sorter: (a, b) => a.messages - b.messages,
-          render: (n: number) => <Mono>{n.toLocaleString()}</Mono>,
-        },
-        {
-          title: "Label sets",
-          key: "sets",
-          render: (_, t) => (
-            <Flex vertical={true} gap={4}>
-              {t.sets.map((s) => (
-                <Flex key={s.labels.join("\u0000")} gap={8} align={"center"}>
-                  <Mono style={{ width: 40, flex: "none", textAlign: "right" }}>
-                    {s.messages.toLocaleString()}×
-                  </Mono>
-                  <LabelTags labels={s.labels} />
-                </Flex>
-              ))}
-            </Flex>
-          ),
-        },
-        {
-          title: "Last mail",
-          dataIndex: "lastReceivedTime",
-          width: 110,
-          sorter: (a, b) =>
-            String(a.lastReceivedTime).localeCompare(
-              String(b.lastReceivedTime),
+          expandedRowRender: (t) => <ThreadMessages thread={t} />,
+        }}
+        columns={[
+          {
+            title: "Thread",
+            dataIndex: "threadId",
+            width: 220,
+            sorter: (a, b) => a.threadId.localeCompare(b.threadId),
+            render: (id: string) => (
+              <a href={gmailLink(id)} target={"_blank"} rel={"noreferrer"}>
+                <Text code={true}>{id}</Text> <ExportOutlined />
+              </a>
             ),
-          render: (t: string) => <ReceivedCell time={String(t)} />,
-        },
-      ]}
-    />
-  </Flex>
+          },
+          {
+            title: "Messages",
+            dataIndex: "messages",
+            align: "right",
+            width: 110,
+            sorter: (a, b) => a.messages - b.messages,
+            render: (n: number) => <Mono>{n.toLocaleString()}</Mono>,
+          },
+          {
+            title: "Label sets",
+            key: "sets",
+            render: (_, t) => (
+              <Flex vertical={true} gap={4}>
+                {t.sets.map((s) => (
+                  <Flex key={s.labels.join("\u0000")} gap={8} align={"center"}>
+                    <Mono
+                      style={{ width: 40, flex: "none", textAlign: "right" }}
+                    >
+                      {s.messages.toLocaleString()}×
+                    </Mono>
+                    <LabelTags labels={s.labels} />
+                  </Flex>
+                ))}
+              </Flex>
+            ),
+          },
+          {
+            title: "Last mail",
+            dataIndex: "lastReceivedTime",
+            width: 110,
+            sorter: (a, b) =>
+              String(a.lastReceivedTime).localeCompare(
+                String(b.lastReceivedTime),
+              ),
+            render: (t: string) => <ReceivedCell time={String(t)} />,
+          },
+        ]}
+      />
+    </div>
+  </div>
 );
 
 export default MixedThreads;

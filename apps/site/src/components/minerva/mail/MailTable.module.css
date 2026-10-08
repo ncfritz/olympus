@@ -1,29 +1,106 @@
 /*
- * A mail table filling what is left of the page: its header and the
- * pagination stay put, the rows scroll between them. The table is given
- * scroll.y so AntD splits header and body; the body's height then comes
- * from this flex column, not from y.
+ * Mail pages that fit the window: what is above a table stays put, the
+ * table fills the rest, and only its rows scroll, between its header and
+ * its pagination, which stays at the bottom.
+ */
+
+/* The page under the breadcrumbs, the window's height. */
+.page {
+  height: calc(100vh - 92px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* A column that fills what is left: a tab's content, say. */
+.column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+/*
+ * Tabs that fill what is left, the open pane a column. AntD 6 names them
+ * body-holder > body > content-active; earlier, content-holder > content >
+ * tabpane-active.
+ */
+.tabs {
+  flex: 1;
+  min-height: 0;
+}
+
+.tabs > :global(.ant-tabs-body-holder),
+.tabs > :global(.ant-tabs-body-holder > .ant-tabs-body),
+.tabs > :global(.ant-tabs-content-holder),
+.tabs > :global(.ant-tabs-content-holder > .ant-tabs-content) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs
+  > :global(.ant-tabs-body-holder > .ant-tabs-body > .ant-tabs-content-active),
+.tabs
+  > :global(
+    .ant-tabs-content-holder > .ant-tabs-content > .ant-tabs-tabpane-active
+  ) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * A table filling its parent. The table is given scroll.y so AntD splits
+ * its header and body; the body's height then comes from this flex
+ * column, not from y. Only the table directly inside is sized, never one
+ * nested in its rows.
  */
 .fill,
-.fill :global(.ant-table-wrapper),
-.fill :global(.ant-table-wrapper > .ant-spin),
-.fill :global(.ant-spin-nested-loading),
-.fill :global(.ant-spin-container),
-.fill :global(.ant-table),
-.fill :global(.ant-table-container) {
+.fill > :global(.ant-table-wrapper),
+.fill > :global(.ant-table-wrapper > .ant-spin),
+.fill > :global(.ant-table-wrapper > .ant-spin-nested-loading),
+.fill > :global(.ant-table-wrapper > .ant-spin > .ant-spin-container),
+.fill
+  > :global(
+    .ant-table-wrapper > .ant-spin-nested-loading > .ant-spin-container
+  ),
+.fill > :global(.ant-table-wrapper > * > .ant-spin-container > .ant-table),
+.fill
+  > :global(
+    .ant-table-wrapper
+      > *
+      > .ant-spin-container
+      > .ant-table
+      > .ant-table-container
+  ) {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
 }
 
-.fill :global(.ant-table-body) {
+.fill
+  > :global(
+    .ant-table-wrapper
+      > *
+      > .ant-spin-container
+      > .ant-table
+      > .ant-table-container
+      > .ant-table-body
+  ) {
   flex: 1;
   min-height: 0;
   max-height: none !important;
 }
 
-.fill :global(.ant-table-pagination.ant-pagination) {
+.fill
+  > :global(
+    .ant-table-wrapper > * > .ant-spin-container > .ant-table-pagination
+  ) {
   flex: none;
   margin: 8px 0;
 }

@@ -24,6 +24,7 @@ import { apiProblems } from "../../../../utils/goals";
 import { gmailLink } from "../../../../utils/mailAudit";
 import { chunks } from "../../../../utils/mailClusters";
 import { fixText, starChanges, starName } from "../../../../utils/mailStars";
+import tableStyles from "../MailTable.module.css";
 
 const { Text } = Typography;
 
@@ -115,7 +116,7 @@ const StarMismatches: React.FunctionComponent = () => {
   const wanted = found?.mismatches[0]?.wanted;
 
   return (
-    <Flex vertical={true} gap={12}>
+    <div className={tableStyles.column}>
       <Flex justify={"space-between"} align={"center"} wrap={true} gap={8}>
         <Segmented<MailStarFix>
           value={fix}
@@ -176,80 +177,83 @@ const StarMismatches: React.FunctionComponent = () => {
             : `Gmail's API cannot set a star's icon. Open each in Gmail and set the ${starName(wanted)}; the next sync records it and it leaves this list.`
         }
       />
-      <Table<MailStarMismatch>
-        size={"small"}
-        rowKey={(m) => `${m.accountId}:${m.gmailId}`}
-        loading={loading}
-        dataSource={found?.mismatches ?? []}
-        rowSelection={
-          fix === "star"
-            ? {
-                selectedRowKeys: selected.map(
-                  (m) => `${m.accountId}:${m.gmailId}`,
+      <div className={tableStyles.fill}>
+        <Table<MailStarMismatch>
+          size={"small"}
+          rowKey={(m) => `${m.accountId}:${m.gmailId}`}
+          loading={loading}
+          dataSource={found?.mismatches ?? []}
+          rowSelection={
+            fix === "star"
+              ? {
+                  selectedRowKeys: selected.map(
+                    (m) => `${m.accountId}:${m.gmailId}`,
+                  ),
+                  onChange: (_, rows) => setSelected(rows),
+                }
+              : undefined
+          }
+          scroll={{ y: 1 }}
+          pagination={{
+            current: page + 1,
+            pageSize: PAGE_SIZE,
+            total: found?.count ?? 0,
+            showSizeChanger: false,
+            onChange: (p) => setPage(p - 1),
+          }}
+          locale={{ emptyText: "Every message's star matches its state." }}
+          columns={[
+            {
+              title: "From",
+              key: "from",
+              ellipsis: true,
+              render: (_, m) => m.fromAddress,
+            },
+            {
+              title: "Received",
+              key: "received",
+              width: 120,
+              render: (_, m) =>
+                DateTime.fromISO(m.receivedTime).toLocaleString(
+                  DateTime.DATE_MED,
                 ),
-                onChange: (_, rows) => setSelected(rows),
-              }
-            : undefined
-        }
-        pagination={{
-          current: page + 1,
-          pageSize: PAGE_SIZE,
-          total: found?.count ?? 0,
-          showSizeChanger: false,
-          onChange: (p) => setPage(p - 1),
-        }}
-        locale={{ emptyText: "Every message's star matches its state." }}
-        columns={[
-          {
-            title: "From",
-            key: "from",
-            ellipsis: true,
-            render: (_, m) => m.fromAddress,
-          },
-          {
-            title: "Received",
-            key: "received",
-            width: 120,
-            render: (_, m) =>
-              DateTime.fromISO(m.receivedTime).toLocaleString(
-                DateTime.DATE_MED,
+            },
+            {
+              title: "Subject",
+              key: "subject",
+              ellipsis: true,
+              render: (_, m) => (
+                <a
+                  href={gmailLink(m.gmailId)}
+                  target={"_blank"}
+                  rel={"noreferrer"}
+                >
+                  {m.subject ?? "(no subject)"}
+                </a>
               ),
-          },
-          {
-            title: "Subject",
-            key: "subject",
-            ellipsis: true,
-            render: (_, m) => (
-              <a
-                href={gmailLink(m.gmailId)}
-                target={"_blank"}
-                rel={"noreferrer"}
-              >
-                {m.subject ?? "(no subject)"}
-              </a>
-            ),
-          },
-          {
-            title: "State",
-            key: "state",
-            render: (_, m) => (
-              <Tag color={m.stateOpen ? "volcano" : "green"}>{m.label}</Tag>
-            ),
-          },
-          {
-            title: "Star now",
-            key: "star",
-            render: (_, m) =>
-              m.starred ? (
-                starName(m.starIcon)
-              ) : (
-                <Text type={"secondary"}>none</Text>
+            },
+            {
+              title: "State",
+              key: "state",
+              render: (_, m) => (
+                <Tag color={m.stateOpen ? "volcano" : "green"}>{m.label}</Tag>
               ),
-          },
-          { title: "Fix", key: "fix", render: (_, m) => fixText(m) },
-        ]}
-      />
-    </Flex>
+            },
+            {
+              title: "Star now",
+              key: "star",
+              render: (_, m) =>
+                m.starred ? (
+                  starName(m.starIcon)
+                ) : (
+                  <Text type={"secondary"}>none</Text>
+                ),
+            },
+            { title: "Fix", key: "fix", render: (_, m) => fixText(m) },
+          ]}
+        />
+      </div>
+    </div>
   );
 };
 

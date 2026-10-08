@@ -28,6 +28,7 @@ import type { LabelSplit } from "../../../../utils/mailClusters";
 import { textFilterOf } from "../../../../utils/mailInbox";
 import { hueColors } from "../../../../utils/mailPayments";
 import { Mono, TextFilterDropdown } from "../MailCells";
+import tableStyles from "../MailTable.module.css";
 
 const { Text } = Typography;
 
@@ -273,7 +274,7 @@ const LabelTreeTable: React.FunctionComponent<{
   ];
 
   return (
-    <Flex vertical={true} gap={8}>
+    <div className={tableStyles.column}>
       <Space size={8}>
         <Switch
           size={"small"}
@@ -282,25 +283,27 @@ const LabelTreeTable: React.FunctionComponent<{
         />
         <Text>Only labels with findings</Text>
       </Space>
-      <Table<LabelNode>
-        size={"small"}
-        rowKey={"key"}
-        columns={columns}
-        dataSource={shown}
-        pagination={false}
-        tableLayout={"fixed"}
-        scroll={{ x: TABLE_WIDTH, y: 560 }}
-        onChange={(_, filters) => {
-          setSearch(textFilterOf(filters.label));
-          setFlags((filters.flags ?? []) as LabelFlag[]);
-        }}
-        expandable={{
-          expandedRowKeys: expanded,
-          onExpandedRowsChange: (keys) => setExpanded(keys as string[]),
-        }}
-        locale={{ emptyText: "No labels match." }}
-      />
-    </Flex>
+      <div className={tableStyles.fill}>
+        <Table<LabelNode>
+          size={"small"}
+          rowKey={"key"}
+          columns={columns}
+          dataSource={shown}
+          pagination={false}
+          tableLayout={"fixed"}
+          scroll={{ x: TABLE_WIDTH, y: 1 }}
+          onChange={(_, filters) => {
+            setSearch(textFilterOf(filters.label));
+            setFlags((filters.flags ?? []) as LabelFlag[]);
+          }}
+          expandable={{
+            expandedRowKeys: expanded,
+            onExpandedRowsChange: (keys) => setExpanded(keys as string[]),
+          }}
+          locale={{ emptyText: "No labels match." }}
+        />
+      </div>
+    </div>
   );
 };
 

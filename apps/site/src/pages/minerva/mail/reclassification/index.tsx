@@ -28,6 +28,7 @@ import StarMismatches from "../../../../components/minerva/mail/audit/StarMismat
 import StarsPanel, {
   StarsAlike,
 } from "../../../../components/minerva/mail/audit/StarsPanel";
+import tableStyles from "../../../../components/minerva/mail/MailTable.module.css";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { splitsByLabel } from "../../../../utils/mailClusters";
@@ -128,19 +129,15 @@ const MailReclassificationPage: React.FunctionComponent = () => {
           </Space>,
         ]}
       />
-      <div
-        style={{
-          height: "calc(100vh - 92px)",
-          overflowX: "hidden",
-          overflowY: "auto",
-        }}
-      >
+      {/* The page fits the window: only a tab's table scrolls, its
+          pagination at the bottom. */}
+      <div className={tableStyles.page}>
         <Flex
           justify={"space-between"}
           align={"center"}
           wrap={true}
           gap={12}
-          style={{ padding: 16 }}
+          style={{ padding: 16, flex: "none" }}
         >
           <Space align={"baseline"} size={12}>
             <Title level={3} style={{ margin: 0 }}>
@@ -187,18 +184,24 @@ const MailReclassificationPage: React.FunctionComponent = () => {
           </Empty>
         ) : (
           <>
-            <AuditStrip
-              summary={summary}
-              highConfidence={audit.highConfidence}
-              splits={{
-                labels: splits.size,
-                groups: [...splits.values()].reduce((n, s) => n + s.groups, 0),
-              }}
-            />
+            <div style={{ flex: "none" }}>
+              <AuditStrip
+                summary={summary}
+                highConfidence={audit.highConfidence}
+                splits={{
+                  labels: splits.size,
+                  groups: [...splits.values()].reduce(
+                    (n, s) => n + s.groups,
+                    0,
+                  ),
+                }}
+              />
+            </div>
             <Tabs
               activeKey={tab}
               onChange={(k) => setTab(k as AuditTab)}
-              style={{ padding: "0 16px 16px" }}
+              className={tableStyles.tabs}
+              style={{ padding: "0 16px" }}
               items={[
                 {
                   key: "labels",
