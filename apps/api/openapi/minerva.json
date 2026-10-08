@@ -9802,6 +9802,89 @@
         ]
       }
     },
+    "/minerva/mail/account/{accountId}/thread/{threadId}/messages": {
+      "get": {
+        "description": "A page of one thread's messages, oldest first, each with its sender, subject, when it was received and its user labels: the Re-classification page's Threads tab, where a thread's messages disagree on their labels. Up to 100 a page. Metadata only, never the text.",
+        "operationId": "ListMailThreadMessages",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "description": "The mail account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadId",
+            "required": true,
+            "in": "path",
+            "description": "The thread's Gmail ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "How many a page, up to 100",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startPage",
+            "required": false,
+            "in": "query",
+            "description": "The page, from 0",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the thread's messages, and how many it has.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListMailThreadMessagesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists a thread's messages",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/account/{accountId}/payment-matches/accept": {
       "post": {
         "description": "Up to 1000 pairs, each a payment confirmation and a bill by Gmail ID (docs/plans/email-management phase 7): each bill still matched with its payment moves along its transition (`Bills/*Payable` to `Bills/*Paid`), all in one change batch written to Gmail and undone from the change log; each match is kept as an example the classifier learns payments from. A pair no longer matched is left out.",
@@ -17784,9 +17867,33 @@
           "intoMessages"
         ]
       },
+      "MailAuditThreadLabelSet": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "description": "Its user labels, by full name, A to Z; none for messages without any",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messages": {
+            "type": "number",
+            "description": "The thread's messages carrying exactly these labels"
+          }
+        },
+        "required": [
+          "labels",
+          "messages"
+        ]
+      },
       "MailAuditThread": {
         "type": "object",
         "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "The mail account it is in"
+          },
           "threadId": {
             "type": "string",
             "description": "The thread's Gmail ID, hexadecimal"
@@ -17799,15 +17906,24 @@
             "type": "number",
             "description": "Different sets of user labels among them"
           },
+          "sets": {
+            "description": "The sets, most messages first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailAuditThreadLabelSet"
+            }
+          },
           "lastReceivedTime": {
             "type": "string",
             "description": "When its latest message was received"
           }
         },
         "required": [
+          "accountId",
           "threadId",
           "messages",
           "labelSets",
+          "sets",
           "lastReceivedTime"
         ]
       },
@@ -20514,6 +20630,63 @@
           "mismatches",
           "count",
           "counts"
+        ]
+      },
+      "MailThreadMessage": {
+        "type": "object",
+        "properties": {
+          "gmailId": {
+            "type": "string",
+            "description": "The message's Gmail ID, hexadecimal"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "The sender's address"
+          },
+          "fromName": {
+            "type": "string",
+            "description": "The sender's display name"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its subject"
+          },
+          "receivedTime": {
+            "type": "string",
+            "description": "When it was received"
+          },
+          "labels": {
+            "description": "Its user labels, by full name, A to Z",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gmailId",
+          "receivedTime",
+          "labels"
+        ]
+      },
+      "ListMailThreadMessagesResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "The total number of matching items across all pages"
+          },
+          "messages": {
+            "description": "This page of them, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailThreadMessage"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "messages"
         ]
       },
       "MailPaymentPair": {

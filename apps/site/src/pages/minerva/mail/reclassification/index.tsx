@@ -4,13 +4,15 @@ import type {
   ListMailClusterSuggestionsResponse,
 } from "@ncfritz/olympus-sdk/minerva";
 import {
+  Badge,
   Button,
-  Card,
   Empty,
   Flex,
   message,
   Space,
   Spin,
+  Tabs,
+  theme,
   Typography,
 } from "antd";
 import { DateTime } from "luxon";
@@ -23,21 +25,48 @@ import LabelTreeTable from "../../../../components/minerva/mail/audit/LabelTreeT
 import MergeCandidates from "../../../../components/minerva/mail/audit/MergeCandidates";
 import MixedThreads from "../../../../components/minerva/mail/audit/MixedThreads";
 import StarMismatches from "../../../../components/minerva/mail/audit/StarMismatches";
-import StarsPanel from "../../../../components/minerva/mail/audit/StarsPanel";
+import StarsPanel, {
+  StarsAlike,
+} from "../../../../components/minerva/mail/audit/StarsPanel";
 import MailBreadcrumbs from "../../../../components/minerva/mail/MailBreadcrumbs";
 import { useFetch } from "../../../../hooks/useFetch";
 import { splitsByLabel } from "../../../../utils/mailClusters";
 
 const { Title, Text } = Typography;
 
+/** The page's tabs. */
+type AuditTab =
+  "labels" | "merges" | "threads" | "stars" | "alike" | "disagree";
+
+/** A tab's name and, when there are any, its count as a badge. */
+const TabLabel: React.FunctionComponent<{ text: string; count: number }> = ({
+  text,
+  count,
+}) => {
+  const { token } = theme.useToken();
+  return (
+    <Space size={6}>
+      <span>{text}</span>
+      <Badge
+        count={count}
+        overflowCount={9999}
+        size={"small"}
+        color={token.colorTextTertiary}
+      />
+    </Space>
+  );
+};
+
 /**
  * Re-classification (docs/plans/email-management phase 2): the audit's
- * findings over the mail, read-only. Proposed changes per label with a
- * review of each, merge candidates, threads whose messages disagree, and
- * stars. Applying changes to Gmail comes with phase 4.
+ * findings over the mail, a tab each, as the Inbox's: proposed changes per
+ * label with a review of each, merge candidates, threads whose messages
+ * disagree, stars, mail alike but starred differently, and stars that
+ * disagree with states.
  */
 const MailReclassificationPage: React.FunctionComponent = () => {
   const [running, setRunning] = useState(false);
+  const [tab, setTab] = useState<AuditTab>("labels");
   const [audit, loading, , refresh] = useFetch<
     Record<string, never>,
     GetMailAuditResponse | undefined
@@ -166,30 +195,62 @@ const MailReclassificationPage: React.FunctionComponent = () => {
                 groups: [...splits.values()].reduce((n, s) => n + s.groups, 0),
               }}
             />
-            <Flex vertical={true} gap={16} style={{ padding: 16 }}>
-              <Card size={"small"} title={"Labels"}>
-                <LabelTreeTable labels={audit.labels} splits={splits} />
-              </Card>
-              <Card size={"small"} title={"Merge candidates"}>
-                <MergeCandidates
-                  merges={audit.merges}
-                  labels={audit.labels.map((l) => l.name)}
-                />
-              </Card>
-              <Card
-                size={"small"}
-                title={"Threads with mixed labels"}
-                extra={<Text type={"secondary"}>The largest 50</Text>}
-              >
-                <MixedThreads threads={audit.threads} />
-              </Card>
-              <Card size={"small"} title={"Stars"}>
-                <StarsPanel stars={audit.stars} />
-              </Card>
-              <Card size={"small"} title={"Stars and states disagree"}>
-                <StarMismatches />
-              </Card>
-            </Flex>
+            <Tabs
+              activeKey={tab}
+              onChange={(k) => setTab(k as AuditTab)}
+              style={{ padding: "0 16px 16px" }}
+              items={[
+                {
+                  key: "labels",
+                  label: "Labels",
+                  children: (
+                    <LabelTreeTable labels={audit.labels} splits={splits} />
+                  ),
+                },
+                {
+                  key: "merges",
+                  label: (
+                    <TabLabel
+                      text={"Merge candidates"}
+                      count={audit.merges.length}
+                    />
+                  ),
+                  children: (
+                    <MergeCandidates
+                      merges={audit.merges}
+                      labels={audit.labels.map((l) => l.name)}
+                    />
+                  ),
+                },
+                {
+                  key: "threads",
+                  label: (
+                    <TabLabel text={"Threads"} count={audit.threads.length} />
+                  ),
+                  children: <MixedThreads threads={audit.threads} />,
+                },
+                {
+                  key: "stars",
+                  label: "Stars",
+                  children: <StarsPanel stars={audit.stars} />,
+                },
+                {
+                  key: "alike",
+                  label: (
+                    <TabLabel
+                      text={"Alike, starred and not"}
+                      count={audit.stars.mixed.length}
+                    />
+                  ),
+                  children: <StarsAlike stars={audit.stars} />,
+                },
+                {
+                  key: "disagree",
+                  label: "Stars and states disagree",
+                  children: <StarMismatches />,
+                },
+              ]}
+            />
           </>
         )}
       </div>

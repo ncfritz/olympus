@@ -10,6 +10,34 @@ const RUNS = "/v1/minerva/mail/audit/runs";
 const AUDIT = "/v1/minerva/mail/audit";
 const CHANGES = "/v1/minerva/mail/audit/changes";
 const EXPORT = "/v1/minerva/mail/audit/changes/export";
+const THREAD = `/v1/minerva/mail/account/7b2b0000-0000-4000-8000-000000000001/thread/1a0fab8f293aa5b5/messages`;
+
+/* The thread's sets, as mail_thread_label_sets gives them (synthetic). */
+const threadSets = {
+  minerva_mail_thread_label_sets: [
+    {
+      accountId: "7b2b0000-0000-4000-8000-000000000001",
+      threadId: "1a0fab8f293aa5b5",
+      setKey: "2,1",
+      messages: 2,
+      label: "Travel",
+    },
+    {
+      accountId: "7b2b0000-0000-4000-8000-000000000001",
+      threadId: "1a0fab8f293aa5b5",
+      setKey: "2,1",
+      messages: 2,
+      label: "Finance",
+    },
+    {
+      accountId: "7b2b0000-0000-4000-8000-000000000001",
+      threadId: "1a0fab8f293aa5b5",
+      setKey: "",
+      messages: 1,
+      label: null,
+    },
+  ],
+};
 
 const run = {
   id: "8d4d0000-0000-4000-8000-000000000001",
@@ -81,6 +109,7 @@ const audit = (overrides: Record<string, unknown> = {}) => ({
       messages: 3,
       labelSets: 2,
       lastReceivedTime: "2026-09-01T00:00:00+00:00",
+      run: { accountId: run.accountId },
     },
   ],
   minerva_mail_star_labels: [
@@ -144,6 +173,7 @@ describe("Mail audit API", () => {
     ["get", AUDIT],
     ["get", CHANGES],
     ["get", EXPORT],
+    ["get", THREAD],
   ] as const)(
     "%s %s answers 401 without an identity and asks Hasura nothing",
     async (method, path) => {
@@ -176,6 +206,7 @@ describe("Mail audit API", () => {
   describe("GET /v1/minerva/mail/audit (GetMailAudit)", () => {
     it("answers the latest run's findings and the stars", async () => {
       t().graphql.on("GetMailAudit", audit());
+      t().graphql.on("ListMailThreadLabelSets", threadSets);
 
       const res = await ctx.as(t().http().get(AUDIT));
 
@@ -212,7 +243,18 @@ describe("Mail audit API", () => {
             fromMessages: 2195,
           },
         ],
-        threads: [{ threadId: "1a0fab8f293aa5b5", messages: 3, labelSets: 2 }],
+        threads: [
+          {
+            accountId: run.accountId,
+            threadId: "1a0fab8f293aa5b5",
+            messages: 3,
+            labelSets: 2,
+            sets: [
+              { labels: ["Finance", "Travel"], messages: 2 },
+              { labels: [], messages: 1 },
+            ],
+          },
+        ],
         stars: {
           labels: [{ name: "Bills/Power", messages: 30, starred: 4 }],
           senders: [{ address: "bill@power.example", starred: 4 }],
@@ -234,6 +276,13 @@ describe("Mail audit API", () => {
         starSenders: MAIL_AUDIT_TOP.starSenders,
         starMixed: MAIL_AUDIT_TOP.starMixed,
       });
+      expect(t().graphql.calls("ListMailThreadLabelSets")[0].variables).toEqual(
+        {
+          userId: USER,
+          accountIds: [run.accountId],
+          threadIds: ["1a0fab8f293aa5b5"],
+        },
+      );
     });
 
     it("answers no summary before the first run", async () => {
@@ -251,6 +300,86 @@ describe("Mail audit API", () => {
       expect(res.status).toBe(200);
       expect(res.body).not.toHaveProperty("summary");
       expect(res.body.labels).toHaveLength(2);
+    });
+  });
+
+  describe("GET .../thread/:threadId/messages (ListMailThreadMessages)", () => {
+    it("answers a page of the thread's messages, oldest first", async () => {
+      t().graphql.on("ListMailThreadMessages", {
+        minerva_mail_messages: [
+          {
+            gmailId: "1a0fab8f293aa5b5",
+            fromAddress: "trips@air.example",
+            fromName: "Example Air",
+            subject: "Your trip",
+            receivedTime: "2026-09-01T00:00:00+00:00",
+            messageLabels: [
+              { label: { name: "Travel", type: "user" } },
+              { label: { name: "INBOX", type: "system" } },
+              { label: { name: "Finance", type: "user" } },
+            ],
+          },
+          {
+            gmailId: "1a0fab8f293aa5b6",
+            fromAddress: null,
+            fromName: null,
+            subject: null,
+            receivedTime: "2026-09-02T00:00:00+00:00",
+            messageLabels: [],
+          },
+        ],
+        minerva_mail_messages_aggregate: { aggregate: { count: 12 } },
+      });
+
+      const res = await ctx.as(
+        t().http().get(`${THREAD}?pageSize=2&startPage=1`),
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        count: 12,
+        messages: [
+          {
+            gmailId: "1a0fab8f293aa5b5",
+            fromAddress: "trips@air.example",
+            fromName: "Example Air",
+            subject: "Your trip",
+            receivedTime: "2026-09-01T00:00:00.000Z",
+            labels: ["Finance", "Travel"],
+          },
+          {
+            gmailId: "1a0fab8f293aa5b6",
+            receivedTime: "2026-09-02T00:00:00.000Z",
+            labels: [],
+          },
+        ],
+      });
+      expect(t().graphql.calls("ListMailThreadMessages")[0].variables).toEqual({
+        where: {
+          accountId: { _eq: run.accountId },
+          threadId: { _eq: "1a0fab8f293aa5b5" },
+          account: { userId: { _eq: USER } },
+        },
+        limit: 2,
+        offset: 2,
+      });
+    });
+
+    it.each([
+      [
+        "an account that is not a UUID",
+        "/v1/minerva/mail/account/7b2b/thread/1a0f/messages",
+      ],
+      [
+        "a thread that is not a Gmail ID",
+        "/v1/minerva/mail/account/7b2b0000-0000-4000-8000-000000000001/thread/zz/messages",
+      ],
+      ["a page too large", `${THREAD}?pageSize=101`],
+      ["a negative page", `${THREAD}?startPage=-1`],
+    ])("answers 400 to %s and asks Hasura nothing", async (_case, path) => {
+      const res = await ctx.as(t().http().get(path));
+      expect(res.status).toBe(400);
+      expect(t().graphql.request).not.toHaveBeenCalled();
     });
   });
 

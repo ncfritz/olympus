@@ -11,6 +11,7 @@ import {
   listMailPaymentMatches,
   type MailPaymentPair,
   listMailStarMismatches,
+  listMailThreadMessages,
   type MailStarFix,
   describeMailCluster,
   getMailClusterMap,
@@ -84,6 +85,18 @@ class MailApi {
 
   async getAudit() {
     return await getMailAudit();
+  }
+
+  /** A page of a thread's messages, oldest first: the Threads tab's rows. */
+  async listThreadMessages(
+    accountId: string,
+    threadId: string,
+    query: { pageSize: number; startPage: number },
+  ) {
+    return await listMailThreadMessages({
+      path: { accountId, threadId },
+      query,
+    });
   }
 
   async listAuditChanges(query: {

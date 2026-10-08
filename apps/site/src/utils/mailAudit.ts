@@ -115,3 +115,31 @@ export const pruneTree = (
       { ...n, ...(children.length ? { children } : { children: undefined }) },
     ];
   });
+
+/** What the Labels tab flags a label for, and filters by. */
+export type LabelFlag = "merge" | "split" | "dormant" | "empty";
+
+export const LABEL_FLAGS: { value: LabelFlag; text: string }[] = [
+  { value: "merge", text: "merge candidate" },
+  { value: "split", text: "split suggested" },
+  { value: "dormant", text: "no mail in 2 years" },
+  { value: "empty", text: "empty" },
+];
+
+/** A label's flags: a merge, a split the clustering suggests, dormant, empty. */
+export const labelFlags = (
+  n: LabelNode,
+  splits?: { has: (name: string) => boolean },
+  now: DateTime = DateTime.now(),
+): LabelFlag[] => [
+  ...(n.mergeCandidate ? (["merge"] as const) : []),
+  ...(n.isLabel && splits?.has(n.key) ? (["split"] as const) : []),
+  ...(isDormant(n, now) ? (["dormant"] as const) : []),
+  ...(n.isLabel && n.messages === 0 ? (["empty"] as const) : []),
+];
+
+/** Of a label's proposed changes, the share at high confidence; none without. */
+export const highConfidenceShare = (n: LabelNode): number | undefined => {
+  const proposed = n.proposedIn + n.proposedOut;
+  return proposed > 0 ? Math.min(1, n.highConfidence / proposed) : undefined;
+};

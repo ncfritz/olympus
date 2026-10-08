@@ -10773,6 +10773,26 @@
     ],
     "type": "object"
   },
+  "ListMailThreadMessagesResponse": {
+    "properties": {
+      "count": {
+        "description": "The total number of matching items across all pages",
+        "type": "number"
+      },
+      "messages": {
+        "description": "This page of them, oldest first",
+        "items": {
+          "$ref": "#/components/schemas/MailThreadMessage"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "count",
+      "messages"
+    ],
+    "type": "object"
+  },
   "ListMailTrainingAccountsResponse": {
     "properties": {
       "accounts": {
@@ -12235,6 +12255,10 @@
   },
   "MailAuditThread": {
     "properties": {
+      "accountId": {
+        "description": "The mail account it is in",
+        "type": "string"
+      },
       "labelSets": {
         "description": "Different sets of user labels among them",
         "type": "number"
@@ -12247,16 +12271,45 @@
         "description": "Messages in the thread",
         "type": "number"
       },
+      "sets": {
+        "description": "The sets, most messages first",
+        "items": {
+          "$ref": "#/components/schemas/MailAuditThreadLabelSet"
+        },
+        "type": "array"
+      },
       "threadId": {
         "description": "The thread's Gmail ID, hexadecimal",
         "type": "string"
       }
     },
     "required": [
+      "accountId",
       "labelSets",
       "lastReceivedTime",
       "messages",
+      "sets",
       "threadId"
+    ],
+    "type": "object"
+  },
+  "MailAuditThreadLabelSet": {
+    "properties": {
+      "labels": {
+        "description": "Its user labels, by full name, A to Z; none for messages without any",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "messages": {
+        "description": "The thread's messages carrying exactly these labels",
+        "type": "number"
+      }
+    },
+    "required": [
+      "labels",
+      "messages"
     ],
     "type": "object"
   },
@@ -14354,6 +14407,43 @@
     "required": [
       "email",
       "id"
+    ],
+    "type": "object"
+  },
+  "MailThreadMessage": {
+    "properties": {
+      "fromAddress": {
+        "description": "The sender's address",
+        "type": "string"
+      },
+      "fromName": {
+        "description": "The sender's display name",
+        "type": "string"
+      },
+      "gmailId": {
+        "description": "The message's Gmail ID, hexadecimal",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Its user labels, by full name, A to Z",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "receivedTime": {
+        "description": "When it was received",
+        "type": "string"
+      },
+      "subject": {
+        "description": "Its subject",
+        "type": "string"
+      }
+    },
+    "required": [
+      "gmailId",
+      "labels",
+      "receivedTime"
     ],
     "type": "object"
   },

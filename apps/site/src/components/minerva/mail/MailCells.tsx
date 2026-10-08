@@ -1,5 +1,5 @@
 import { CaretDownOutlined, CaretRightOutlined } from "@ant-design/icons";
-import { Badge, Button, Flex, Input, Tooltip, Typography } from "antd";
+import { Badge, Button, Flex, Input, theme, Tooltip, Typography } from "antd";
 import type { FilterDropdownProps } from "antd/lib/table/interface";
 import { DateTime } from "luxon";
 import React from "react";
@@ -135,3 +135,16 @@ export const TextFilterDropdown: React.FunctionComponent<
     />
   </div>
 );
+
+/** A count or score as the mail tables set them: the code font, 12px. */
+export const Mono: React.FunctionComponent<{
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}> = ({ children, style }) => {
+  const { token } = theme.useToken();
+  return (
+    <span style={{ fontFamily: token.fontFamilyCode, fontSize: 12, ...style }}>
+      {children}
+    </span>
+  );
+};

@@ -201,6 +201,12 @@ const StarMismatches: React.FunctionComponent = () => {
         locale={{ emptyText: "Every message's star matches its state." }}
         columns={[
           {
+            title: "From",
+            key: "from",
+            ellipsis: true,
+            render: (_, m) => m.fromAddress,
+          },
+          {
             title: "Received",
             key: "received",
             width: 120,
@@ -208,12 +214,6 @@ const StarMismatches: React.FunctionComponent = () => {
               DateTime.fromISO(m.receivedTime).toLocaleString(
                 DateTime.DATE_MED,
               ),
-          },
-          {
-            title: "From",
-            key: "from",
-            ellipsis: true,
-            render: (_, m) => m.fromAddress,
           },
           {
             title: "Subject",

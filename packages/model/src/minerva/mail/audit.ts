@@ -355,8 +355,34 @@ export class MailAuditMerge {
   intoLastReceivedTime?: Moment;
 }
 
+/** One set of user labels among a thread's messages. */
+export class MailAuditThreadLabelSet {
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "Its user labels, by full name, A to Z; none for messages without any",
+  })
+  labels: string[];
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The thread's messages carrying exactly these labels",
+  })
+  messages: number;
+}
+
 /** A thread whose messages carry different sets of user labels. */
 export class MailAuditThread {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The mail account it is in",
+  })
+  accountId: string;
+
   @ApiProperty({
     type: String,
     required: true,
@@ -377,6 +403,14 @@ export class MailAuditThread {
     description: "Different sets of user labels among them",
   })
   labelSets: number;
+
+  @ApiProperty({
+    type: () => MailAuditThreadLabelSet,
+    isArray: true,
+    required: true,
+    description: "The sets, most messages first",
+  })
+  sets: MailAuditThreadLabelSet[];
 
   @ApiTimestamp({
     required: true,
@@ -731,4 +765,60 @@ export class ListMailAuditChangesResponse extends PaginatedResults {
     description: "A page of proposed changes",
   })
   changes: MailAuditChange[];
+}
+
+/** A message of a thread, as the Threads tab lists them. Metadata only. */
+export class MailThreadMessage {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The message's Gmail ID, hexadecimal",
+  })
+  gmailId: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The sender's address",
+  })
+  fromAddress?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The sender's display name",
+  })
+  fromName?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Its subject",
+  })
+  subject?: string;
+
+  @ApiTimestamp({
+    required: true,
+    description: "When it was received",
+  })
+  receivedTime: Moment;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Its user labels, by full name, A to Z",
+  })
+  labels: string[];
+}
+
+/** A page of a thread's messages, oldest first. */
+export class ListMailThreadMessagesResponse extends PaginatedResults {
+  @ApiProperty({
+    type: () => MailThreadMessage,
+    isArray: true,
+    required: true,
+    description: "This page of them, oldest first",
+  })
+  messages: MailThreadMessage[];
 }

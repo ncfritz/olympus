@@ -2,9 +2,11 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import {
   GetMailAuditResponse,
   ListMailAuditChangesResponse,
+  ListMailThreadMessagesResponse,
   MailAuditAction,
   MailAuditChangeSort,
   MailAuditRule,
+  MailAuditThreadLabelSet,
   RunMailAuditResponse,
   SortDirection,
   MailProposalStatus,
@@ -18,6 +20,8 @@ import {
   GraphQlMailAuditRun,
   GraphQlMailAuditSummary,
   GraphQlMailAuditThread,
+  GraphQlMailThreadLabelSet,
+  GraphQlMailThreadMessage,
   GraphQlMailStarAge,
   GraphQlMailStarLabel,
   GraphQlMailStarMixed,
@@ -31,7 +35,10 @@ import {
   toStarMixed,
   toStarSender,
   toSummary,
+  threadKey,
   toThread,
+  toThreadMessage,
+  toThreadSets,
 } from "../converters/MailAuditConverter";
 
 /** The confidence at and above which a proposed change is high confidence. */
@@ -44,6 +51,12 @@ export const MAIL_AUDIT_TOP = {
   starSenders: 15,
   starMixed: 20,
 };
+
+/** The largest page of a thread's messages a caller may ask for. */
+export const MAIL_THREAD_MAX_PAGE_SIZE = 100;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const THREAD_ID = /^[0-9a-f]{1,16}$/;
 
 /** The largest page of proposed changes a caller may ask for. */
 export const MAIL_AUDIT_MAX_PAGE_SIZE = 200;
@@ -203,6 +216,9 @@ export class MailAuditService {
           messages
           labelSets
           lastReceivedTime
+          run {
+            accountId
+          }
         }
         minerva_mail_star_labels(
           args: { for_user: $userId, top: $starLabels }
@@ -250,18 +266,137 @@ export class MailAuditService {
     });
 
     const summary = response.minerva_mail_audit_summary[0];
+    const sets = await this.threadSets(
+      userId,
+      response.minerva_mail_audit_threads,
+    );
     return {
       highConfidence: MAIL_AUDIT_HIGH_CONFIDENCE,
       ...(summary ? { summary: toSummary(summary) } : {}),
       labels: response.minerva_mail_audit_labels.map(toLabel),
       merges: response.minerva_mail_audit_merges.map(toMerge),
-      threads: response.minerva_mail_audit_threads.map(toThread),
+      threads: response.minerva_mail_audit_threads.map((t) =>
+        toThread(t, sets.get(threadKey(t.run.accountId, t.threadId))),
+      ),
       stars: {
         labels: response.minerva_mail_star_labels.map(toStarLabel),
         senders: response.minerva_mail_star_senders.map(toStarSender),
         ages: response.minerva_mail_star_ages.map(toStarAge),
         mixed: response.minerva_mail_star_mixed.map(toStarMixed),
       },
+    };
+  }
+
+  /** The listed threads' label sets (mail_thread_label_sets), by threadKey. */
+  private async threadSets(
+    userId: string,
+    threads: GraphQlMailAuditThread[],
+  ): Promise<Map<string, MailAuditThreadLabelSet[]>> {
+    if (threads.length === 0) return new Map();
+    const query = gql`
+      query ListMailThreadLabelSets(
+        $userId: uuid!
+        $accountIds: [uuid!]!
+        $threadIds: [String!]!
+      ) {
+        minerva_mail_thread_label_sets(
+          where: {
+            accountId: { _in: $accountIds }
+            threadId: { _in: $threadIds }
+            account: { userId: { _eq: $userId } }
+          }
+        ) {
+          accountId
+          threadId
+          setKey
+          messages
+          label
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      minerva_mail_thread_label_sets: GraphQlMailThreadLabelSet[];
+    }>(query, {
+      userId,
+      accountIds: [...new Set(threads.map((t) => t.run.accountId))],
+      threadIds: [...new Set(threads.map((t) => t.threadId))],
+    });
+    return toThreadSets(response.minerva_mail_thread_label_sets);
+  }
+
+  /**
+   * A page of a thread's messages, oldest first, with their user labels:
+   * the Threads tab's expanded row. Metadata only.
+   */
+  async threadMessages(
+    userId: string,
+    q: {
+      accountId: string;
+      threadId: string;
+      pageSize: number;
+      startPage: number;
+    },
+  ): Promise<ListMailThreadMessagesResponse> {
+    if (!UUID.test(q.accountId)) {
+      throw new BadRequestException("accountId must be a UUID");
+    }
+    if (!THREAD_ID.test(q.threadId)) {
+      throw new BadRequestException("threadId must be a Gmail ID");
+    }
+    if (q.pageSize < 1 || q.pageSize > MAIL_THREAD_MAX_PAGE_SIZE) {
+      throw new BadRequestException(
+        `pageSize must be from 1 to ${MAIL_THREAD_MAX_PAGE_SIZE}`,
+      );
+    }
+    if (q.startPage < 0) {
+      throw new BadRequestException("startPage must not be negative");
+    }
+    const query = gql`
+      query ListMailThreadMessages(
+        $where: minerva_mail_messages_bool_exp!
+        $limit: Int!
+        $offset: Int!
+      ) {
+        minerva_mail_messages(
+          where: $where
+          order_by: [{ receivedTime: asc }, { gmailId: asc }]
+          limit: $limit
+          offset: $offset
+        ) {
+          gmailId
+          fromAddress
+          fromName
+          subject
+          receivedTime
+          messageLabels {
+            label {
+              name
+              type
+            }
+          }
+        }
+        minerva_mail_messages_aggregate(where: $where) {
+          aggregate {
+            count
+          }
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      minerva_mail_messages: GraphQlMailThreadMessage[];
+      minerva_mail_messages_aggregate: { aggregate: { count: number } };
+    }>(query, {
+      where: {
+        accountId: { _eq: q.accountId },
+        threadId: { _eq: q.threadId },
+        account: { userId: { _eq: userId } },
+      },
+      limit: q.pageSize,
+      offset: q.startPage * q.pageSize,
+    });
+    return {
+      count: response.minerva_mail_messages_aggregate.aggregate.count,
+      messages: response.minerva_mail_messages.map(toThreadMessage),
     };
   }
 

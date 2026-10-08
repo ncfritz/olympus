@@ -8,6 +8,8 @@ import {
   MailAuditRun,
   MailAuditSummary,
   MailAuditThread,
+  MailAuditThreadLabelSet,
+  MailThreadMessage,
   MailStarAge,
   MailStarAgeCount,
   MailStarLabel,
@@ -145,13 +147,87 @@ export type GraphQlMailAuditThread = {
   messages: number;
   labelSets: number;
   lastReceivedTime: string;
+  run: { accountId: string };
 };
 
-export const toThread = (input: GraphQlMailAuditThread): MailAuditThread => ({
+/** A row of mail_thread_label_sets: one label of one set, or a set of none. */
+export type GraphQlMailThreadLabelSet = {
+  accountId: string;
+  threadId: string;
+  setKey: string;
+  messages: number;
+  label: string | null;
+};
+
+/** Where a thread's sets are kept: its account and its Gmail ID. */
+export const threadKey = (accountId: string, threadId: string): string =>
+  `${accountId}/${threadId}`;
+
+/**
+ * Threads' label sets from the view's rows, by threadKey: each set's
+ * labels A to Z, the sets most messages first.
+ */
+export const toThreadSets = (
+  rows: GraphQlMailThreadLabelSet[],
+): Map<string, MailAuditThreadLabelSet[]> => {
+  const byThread = new Map<string, Map<string, MailAuditThreadLabelSet>>();
+  for (const r of rows) {
+    const key = threadKey(r.accountId, r.threadId);
+    const sets =
+      byThread.get(key) ?? new Map<string, MailAuditThreadLabelSet>();
+    byThread.set(key, sets);
+    const set = sets.get(r.setKey) ?? { labels: [], messages: r.messages };
+    sets.set(r.setKey, set);
+    if (r.label !== null) set.labels.push(r.label);
+  }
+  return new Map(
+    [...byThread].map(([key, sets]) => [
+      key,
+      [...sets.values()]
+        .map((s) => ({ ...s, labels: [...s.labels].sort() }))
+        .sort(
+          (a, b) =>
+            b.messages - a.messages ||
+            a.labels.join("\u0000").localeCompare(b.labels.join("\u0000")),
+        ),
+    ]),
+  );
+};
+
+export const toThread = (
+  input: GraphQlMailAuditThread,
+  sets: MailAuditThreadLabelSet[] = [],
+): MailAuditThread => ({
+  accountId: input.run.accountId,
   threadId: input.threadId,
   messages: input.messages,
   labelSets: input.labelSets,
+  sets,
   lastReceivedTime: moment(input.lastReceivedTime),
+});
+
+/** A message of a thread, as mail_messages gives it. */
+export type GraphQlMailThreadMessage = {
+  gmailId: string;
+  fromAddress: string | null;
+  fromName: string | null;
+  subject: string | null;
+  receivedTime: string;
+  messageLabels: { label: { name: string; type: string } }[];
+};
+
+export const toThreadMessage = (
+  input: GraphQlMailThreadMessage,
+): MailThreadMessage => ({
+  gmailId: input.gmailId,
+  ...(input.fromAddress ? { fromAddress: input.fromAddress } : {}),
+  ...(input.fromName ? { fromName: input.fromName } : {}),
+  ...(input.subject ? { subject: input.subject } : {}),
+  receivedTime: moment(input.receivedTime),
+  labels: input.messageLabels
+    .filter((l) => l.label.type === "user")
+    .map((l) => l.label.name)
+    .sort(),
 });
 
 export type GraphQlMailStarLabel = {

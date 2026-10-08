@@ -70,6 +70,7 @@ import { ListMailPaymentMatchesController } from "./controllers/ListMailPaymentM
 import { ListMailOpenBillsController } from "./controllers/ListMailOpenBillsController";
 import { DismissMailPaymentMatchesController } from "./controllers/DismissMailPaymentMatchesController";
 import { ListMailStarMismatchesController } from "./controllers/ListMailStarMismatchesController";
+import { ListMailThreadMessagesController } from "./controllers/ListMailThreadMessagesController";
 import { CreateMailClusterRunController } from "./controllers/CreateMailClusterRunController";
 import { CreateMailClustersController } from "./controllers/CreateMailClustersController";
 import { CreateMailClusterMembersController } from "./controllers/CreateMailClusterMembersController";
@@ -153,6 +154,7 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     ListMailTrainingLabelsController,
     PublishMailSuggestionRunController,
     ListMailStarMismatchesController,
+    ListMailThreadMessagesController,
     AcceptMailPaymentMatchesController,
     ListMailPaymentExamplesController,
     RecordMailPaymentScoresController,

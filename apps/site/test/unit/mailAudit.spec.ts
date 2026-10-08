@@ -2,7 +2,10 @@ import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import {
   gmailLink,
+  highConfidenceShare,
   isDormant,
+  labelFlags,
+  type LabelNode,
   labelTree,
   percent,
   pruneTree,
@@ -72,5 +75,54 @@ describe("mail audit helpers", () => {
       "https://mail.google.com/mail/u/0/#all/1a0fab8f293aa5b5",
     );
     expect(percent(0.934)).toBe("93%");
+  });
+});
+
+describe("a label's flags and high-confidence share", () => {
+  const now = DateTime.fromISO("2026-10-07T12:00:00Z");
+  const node = (overrides: Partial<LabelNode> = {}): LabelNode => ({
+    key: "Travel/Air",
+    leaf: "Air",
+    isLabel: true,
+    messages: 40,
+    proposedIn: 6,
+    proposedOut: 2,
+    highConfidence: 6,
+    processed: 0,
+    mergeCandidate: false,
+    lastReceivedTime: "2026-09-01T00:00:00Z",
+    ...overrides,
+  });
+
+  it("flags a merge, a split, a dormant label and an empty one", () => {
+    expect(labelFlags(node(), new Set(), now)).toEqual([]);
+    expect(
+      labelFlags(
+        node({
+          mergeCandidate: true,
+          lastReceivedTime: "2023-01-01T00:00:00Z",
+        }),
+        new Set(["Travel/Air"]),
+        now,
+      ),
+    ).toEqual(["merge", "split", "dormant"]);
+    expect(labelFlags(node({ messages: 0 }), undefined, now)).toEqual([
+      "empty",
+    ]);
+    // A path that is not a label is never split or empty.
+    expect(
+      labelFlags(
+        node({ isLabel: false, messages: 0 }),
+        new Set(["Travel/Air"]),
+        now,
+      ),
+    ).toEqual([]);
+  });
+
+  it("gives the share of proposals at high confidence, none without", () => {
+    expect(highConfidenceShare(node())).toBe(0.75);
+    expect(
+      highConfidenceShare(node({ proposedIn: 0, proposedOut: 0 })),
+    ).toBeUndefined();
   });
 });
