@@ -214,9 +214,14 @@ const LabelTreeTable: React.FunctionComponent<{
       sorter: (a, b) => a.highConfidence - b.highConfidence,
       onCell: (n) => {
         const share = highConfidenceShare(n);
-        return share === undefined || n.highConfidence === 0
-          ? {}
-          : { style: hueColors(120 * share) };
+        return {
+          style: {
+            verticalAlign: "middle",
+            ...(share === undefined || n.highConfidence === 0
+              ? {}
+              : hueColors(120 * share)),
+          },
+        };
       },
       render: (_, n) => {
         const share = highConfidenceShare(n);
@@ -233,6 +238,7 @@ const LabelTreeTable: React.FunctionComponent<{
       title: "Processed",
       key: "processed",
       sorter: (a, b) => a.processed - b.processed,
+      onCell: () => ({ style: { verticalAlign: "middle" } }),
       render: (_, n) => {
         const total = n.proposedIn + n.proposedOut;
         if (!n.isLabel || total === 0) return "";
