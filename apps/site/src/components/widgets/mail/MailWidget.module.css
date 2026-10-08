@@ -48,10 +48,12 @@
   border-top: 1px solid #f0f0f0;
 }
 
-/* The expand caret, its place kept on a row that does not expand. */
+/* The expand caret, its place kept on a row that does not expand; at the
+   row's top, level with the sender. */
 .caret {
   width: 24px;
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 /* An unread message's dot, its place kept when read. */
