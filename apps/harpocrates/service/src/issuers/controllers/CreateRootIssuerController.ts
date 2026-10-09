@@ -29,7 +29,7 @@ export class CreateRootIssuerController {
   @ApiOperation({
     summary: "Creates a root",
     description:
-      "Creates a root CA as a ceremony: the signer generates its key and self-signs, and the key is returned encrypted, once. Harpocrates keeps no copy.",
+      "Creates a root CA: the signer generates its key and self-signs, and the key is returned encrypted, once; Harpocrates keeps no copy. Its shape (three_tier, two_tier, direct) sets its path length and what its ceremonies sign (ADR 0032); every other setting takes its default unless given. Its first ceremony proves the key's backup and signs its first list.",
     operationId: "CreateRootIssuer",
     tags: ["Issuers"],
   })
@@ -38,7 +38,8 @@ export class CreateRootIssuerController {
   @ApiBody({
     type: CreateRootIssuerRequest,
     required: true,
-    description: "The root's number, generation and export passphrase.",
+    description:
+      "The root's shape, number, generation and export passphrase, and any settings instead of their defaults.",
   })
   @ApiCreatedResponse({
     description: "The root was created.",

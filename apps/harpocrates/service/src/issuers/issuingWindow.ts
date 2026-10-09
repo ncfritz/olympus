@@ -3,6 +3,7 @@
  * stops issuing when a certificate of the longest validity it issues, plus
  * 30 days, no longer fits in its remaining life.
  */
+import type { IssuerShapeName } from "../model/issuers";
 import type { IssuerTierName } from "./issuerNames";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -29,6 +30,42 @@ export const OFFLINE_MAX_VALIDITY_DAYS: Record<
   root: TIER_VALIDITY_DAYS.intermediate,
   intermediate: TIER_VALIDITY_DAYS.issuing,
 };
+
+/** A root's path length, from its shape (ADR 0032). */
+export const SHAPE_PATH_LENGTH: Record<IssuerShapeName, number> = {
+  three_tier: 2,
+  two_tier: 1,
+  direct: 0,
+};
+
+/** The shape a root's path length means: an imported root has none recorded. */
+export const shapeOfPathLength = (
+  pathLength: number | undefined,
+): IssuerShapeName | undefined =>
+  pathLength === 2
+    ? "three_tier"
+    : pathLength === 1
+      ? "two_tier"
+      : pathLength === 0
+        ? "direct"
+        : undefined;
+
+/**
+ * The longest certificate an offline CA signs: the tier below it, which
+ * for a two-tier root is an issuing CA, and for a root that signs directly
+ * its leaves (at most ten years).
+ */
+export const DIRECT_MAX_VALIDITY_DAYS = 3650;
+
+export const offlineMaxValidityDays = (
+  tier: "root" | "intermediate",
+  shape?: IssuerShapeName,
+): number =>
+  tier === "intermediate" || shape === undefined || shape === "three_tier"
+    ? OFFLINE_MAX_VALIDITY_DAYS[tier]
+    : shape === "two_tier"
+      ? TIER_VALIDITY_DAYS.issuing
+      : DIRECT_MAX_VALIDITY_DAYS;
 
 export const addDays = (date: Date, days: number) =>
   new Date(date.getTime() + days * DAY);

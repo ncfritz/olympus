@@ -13,13 +13,15 @@ import { constraintRows } from "../../issuers/converters/IssuerConverter";
 import type { IssuerNameParts } from "../../issuers/issuerNames";
 import { issuerSlug } from "../../issuers/issuerNames";
 import {
+  addDays,
   childNotAfter,
   isIssuingWindowOpen,
   TIER_PATH_LENGTH,
 } from "../../issuers/issuingWindow";
+import { overridesGiven, signerConstraints } from "../../issuers/overrides";
+import { CrlService } from "../../crls/services/CrlService";
 import { IssuerService, startNow } from "../../issuers/services/IssuerService";
 import type { Ceremony } from "../../model/ceremonies";
-import type { NameConstraints } from "../../model/common";
 import type {
   CreateIntermediateIssuerRequest,
   CreateIssuingIssuerRequest,
@@ -37,11 +39,28 @@ const toDomainObject = (row: CeremonyRow): Ceremony => ({
   closedAt: row.closedAt ? moment(row.closedAt) : undefined,
 });
 
-const toSignerConstraints = (constraints: NameConstraints | undefined) =>
-  constraints && {
-    permitted: constraints.permitted,
-    excluded: constraints.excluded,
-  };
+/**
+ * A child's notAfter: its tier's lifetime clamped to its parent's by
+ * default; one given outright is refused rather than clamped, so the CA
+ * is never shorter than the operator asked for without saying so.
+ */
+const notAfterFor = (
+  notBefore: Date,
+  tier: "intermediate" | "issuing",
+  parentNotAfter: Date,
+  validityDays: number | undefined,
+): Date => {
+  if (validityDays === undefined) {
+    return childNotAfter(notBefore, tier, parentNotAfter);
+  }
+  const wanted = addDays(notBefore, validityDays);
+  if (wanted > parentNotAfter) {
+    throw new UnprocessableEntityException(
+      `${validityDays} days would outlive its parent, which expires ${parentNotAfter.toISOString()}`,
+    );
+  }
+  return wanted;
+};
 
 /**
  * Ceremonies (ADR 0020): an offline CA's key in the signer for one
@@ -55,6 +74,7 @@ export class CeremonyService {
     private readonly prisma: PrismaService,
     private readonly signer: SignerService,
     private readonly issuers: IssuerService,
+    private readonly crls: CrlService,
     private readonly audit: AuditService,
   ) {}
 
@@ -69,6 +89,9 @@ export class CeremonyService {
       throw new UnprocessableEntityException(
         "Ceremonies are for offline CAs: roots and intermediates",
       );
+    }
+    if (issuer.discardedAt) {
+      throw new UnprocessableEntityException(`${issuerId} was discarded`);
     }
     const opened = await this.signer.openCeremony(
       privateKey,
@@ -89,8 +112,31 @@ export class CeremonyService {
         },
         tx,
       );
+      // The key opened and matches the certificate: the backup works
+      // (ADR 0032, a new root).
+      if (!issuer.provedAt) {
+        await tx.issuer.update({
+          where: { id: issuerId },
+          data: { provedAt: new Date() },
+        });
+        await this.audit.record(
+          {
+            kind: AuditKind.IssuerProved,
+            principal,
+            subjectType: "issuer",
+            subjectId: issuerId,
+            attributes: { ceremonyId: opened.id },
+          },
+          tx,
+        );
+      }
       return created;
     });
+    // Its first list, before anything beneath it is published: the list
+    // brings its certificate to the distribution point with it.
+    if ((await this.prisma.crl.count({ where: { issuerId } })) === 0) {
+      await this.crls.signInCeremony(principal, opened.id);
+    }
     return toDomainObject(row);
   }
 
@@ -126,35 +172,43 @@ export class CeremonyService {
     });
   }
 
-  /** An offline intermediate below the ceremony's root. */
+  /** An offline intermediate below the ceremony's root (three tiers). */
   async createIntermediate(
     principal: Principal,
     ceremonyId: string,
     request: CreateIntermediateIssuerRequest,
   ): Promise<{ issuer: FullIssuer; encryptedKey: string }> {
-    const parent = await this.openParent(ceremonyId, "root");
+    const parent = await this.openParent(ceremonyId, "intermediate");
     const parts: IssuerNameParts = {
       tier: "intermediate",
+      purpose: request.purpose,
       number: request.number,
       generation: request.generation,
     };
     const id = issuerSlug(parts);
+    if (await this.prisma.issuer.findUnique({ where: { id } })) {
+      throw new ConflictException(`Issuer ${id} already exists`);
+    }
+    const organization =
+      request.organization ?? parent.organization ?? undefined;
+    const subject = await this.issuers.newSubject(parts, request, organization);
     const notBefore = startNow();
     const created = await this.signer.createIntermediate(
       ceremonyId,
       {
-        subject: this.issuers.subjectFor(parts),
+        subject,
         serial: randomSerial(),
         notBefore: notBefore.toISOString(),
-        notAfter: childNotAfter(
+        notAfter: notAfterFor(
           notBefore,
           "intermediate",
           parent.notAfter!,
+          request.validityDays,
         ).toISOString(),
         keyUsage: ["key_cert_sign", "crl_sign"],
         ca: true,
         pathLength: TIER_PATH_LENGTH.intermediate,
-        nameConstraints: toSignerConstraints(request.nameConstraints),
+        nameConstraints: signerConstraints(request.nameConstraints),
         crlDistributionPoints: [parent.crlUrl],
         issuerUrls: [parent.caIssuersUrl],
       },
@@ -168,21 +222,24 @@ export class CeremonyService {
       parentId: parent.id,
       kind: AuditKind.IssuerCreated,
       constraints: constraintRows(request.nameConstraints),
+      organization,
+      overrides: overridesGiven(request),
     });
     return { issuer, encryptedKey: created.encryptedKey };
   }
 
   /**
-   * An online issuing CA below the ceremony's intermediate: its key is
-   * generated in the signer's store, its certificate signed in the
-   * ceremony, and it is registered with the signer.
+   * An online issuing CA below the ceremony's intermediate, or below a
+   * two-tier root: its key is generated in the signer's store, its
+   * certificate signed in the ceremony, and it is registered with the
+   * signer.
    */
   async createIssuing(
     principal: Principal,
     ceremonyId: string,
     request: CreateIssuingIssuerRequest,
   ): Promise<FullIssuer> {
-    const parent = await this.openParent(ceremonyId, "intermediate");
+    const parent = await this.openParent(ceremonyId, "issuing");
     const parts: IssuerNameParts = {
       tier: "issuing",
       purpose: request.purpose,
@@ -193,23 +250,30 @@ export class CeremonyService {
     if (await this.prisma.issuer.findUnique({ where: { id } })) {
       throw new ConflictException(`Issuer ${id} already exists`);
     }
-    const key = await this.signer.generateKey("issuer", "P-256");
+    const organization =
+      request.organization ?? parent.organization ?? undefined;
+    const subject = await this.issuers.newSubject(parts, request, organization);
+    const key = await this.signer.generateKey(
+      "issuer",
+      request.algorithm ?? "P-256",
+    );
     const notBefore = startNow();
     const certificate = await this.signer.signInCeremony(ceremonyId, {
-      subject: this.issuers.subjectFor(parts),
+      subject,
       serial: randomSerial(),
       notBefore: notBefore.toISOString(),
-      notAfter: childNotAfter(
+      notAfter: notAfterFor(
         notBefore,
         "issuing",
         parent.notAfter!,
+        request.validityDays,
       ).toISOString(),
       keyUsage: ["digital_signature", "key_cert_sign", "crl_sign"],
       extendedKeyUsages: request.extendedKeyUsages,
       keyId: key.id,
       ca: true,
       pathLength: TIER_PATH_LENGTH.issuing,
-      nameConstraints: toSignerConstraints(request.nameConstraints),
+      nameConstraints: signerConstraints(request.nameConstraints),
       crlDistributionPoints: [parent.crlUrl],
       issuerUrls: [parent.caIssuersUrl],
     });
@@ -228,8 +292,15 @@ export class CeremonyService {
       extendedKeyUsages: request.extendedKeyUsages,
       constraints: constraintRows(request.nameConstraints),
       kind: AuditKind.IssuerCreated,
+      organization,
+      overrides: overridesGiven(request),
     });
     return this.issuers.describe(id);
+  }
+
+  /** The open ceremony's CA, when it is a root that signs directly. */
+  async directRoot(ceremonyId: string) {
+    return this.openParent(ceremonyId, "leaf");
   }
 
   private async row(ceremonyId: string): Promise<CeremonyRow> {
@@ -242,16 +313,32 @@ export class CeremonyService {
     return row;
   }
 
-  /** The open ceremony's CA, which must be of `tier` and able to sign. */
-  private async openParent(ceremonyId: string, tier: "root" | "intermediate") {
+  /**
+   * The open ceremony's CA, which must be able to sign `what` (ADR 0032,
+   * shapes): an intermediate only under a three-tier root; an issuing CA
+   * under an intermediate or a two-tier root; a leaf only under a root that
+   * signs directly.
+   */
+  private async openParent(
+    ceremonyId: string,
+    what: "intermediate" | "issuing" | "leaf",
+  ) {
     const ceremony = await this.row(ceremonyId);
     if (ceremony.closedAt) {
       throw new ConflictException(`Ceremony ${ceremonyId} is closed`);
     }
     const parent = await this.issuers.row(ceremony.issuerId);
-    if (parent.tier !== tier) {
+    const signs =
+      parent.tier === "intermediate"
+        ? "issuing"
+        : parent.shape === "two_tier"
+          ? "issuing"
+          : parent.shape === "direct"
+            ? "leaf"
+            : "intermediate";
+    if (signs !== what) {
       throw new UnprocessableEntityException(
-        `This needs a ceremony for a ${tier}, not a ${parent.tier}`,
+        `${parent.id} signs ${signs === "leaf" ? "leaves" : `${signs} CAs`}, not ${what === "leaf" ? "leaves" : `${what} CAs`}`,
       );
     }
     if (
@@ -259,7 +346,7 @@ export class CeremonyService {
       !isIssuingWindowOpen(parent.notAfter, parent.maxValidityDays)
     ) {
       throw new UnprocessableEntityException(
-        `Issuer ${parent.id} no longer signs new CAs: create its successor`,
+        `Issuer ${parent.id} no longer signs: create its successor`,
       );
     }
     return parent;

@@ -92,6 +92,14 @@ export class SignerService {
     return this.call(() => signer.describeStatus({ client: this.client }));
   }
 
+  /** Sets the recovery passphrase on an empty store; the unseal key, once. */
+  async initialise(passphrase: string): Promise<string> {
+    const result = await this.call(() =>
+      signer.initialise({ client: this.client, body: { passphrase } }),
+    );
+    return result.unsealKey;
+  }
+
   unseal(passphrase: string): Promise<void> {
     return this.call(() =>
       signer.unseal({ client: this.client, body: { passphrase } }),

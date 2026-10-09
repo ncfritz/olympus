@@ -144,7 +144,9 @@ const waitForSigner = async (
  * signer: spawned from ../signer with uv on a temporary store, initialised,
  * and unsealed.
  */
-export const startHarness = async (): Promise<Harness> => {
+export const startHarness = async (
+  options: { initialise?: boolean } = {},
+): Promise<Harness> => {
   if (!E2E_DATABASE_URL)
     throw new Error("HARPOCRATES_E2E_DATABASE_URL is unset");
 
@@ -184,20 +186,28 @@ export const startHarness = async (): Promise<Harness> => {
 
   try {
     await waitForSigner(signer, socketPath, token);
-    const initialised = await signerCall(
-      socketPath,
-      token,
-      "POST",
-      "/v1/initialise",
-      {
-        passphrase: RECOVERY_PASSPHRASE,
-      },
-    );
-    if (initialised.status !== 201) {
-      throw new Error(`initialise: ${initialised.status} ${initialised.body}`);
+    if (options.initialise !== false) {
+      const initialised = await signerCall(
+        socketPath,
+        token,
+        "POST",
+        "/v1/initialise",
+        {
+          passphrase: RECOVERY_PASSPHRASE,
+        },
+      );
+      if (initialised.status !== 201) {
+        throw new Error(
+          `initialise: ${initialised.status} ${initialised.body}`,
+        );
+      }
+      const { unsealKey } = JSON.parse(initialised.body) as {
+        unsealKey: string;
+      };
+      fs.writeFileSync(path.join(dir, "unseal-key"), unsealKey, {
+        mode: 0o600,
+      });
     }
-    const { unsealKey } = JSON.parse(initialised.body) as { unsealKey: string };
-    fs.writeFileSync(path.join(dir, "unseal-key"), unsealKey, { mode: 0o600 });
 
     const schema = `e2e_${randomBytes(6).toString("hex")}`;
     const url = new URL(E2E_DATABASE_URL);

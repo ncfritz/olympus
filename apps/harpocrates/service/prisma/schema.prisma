@@ -28,6 +28,23 @@ enum IssuerStatus {
   revoked
 }
 
+/// A root's shape (ADR 0032): what its ceremonies sign.
+/// three_tier: intermediates, which sign issuing CAs (path length 2).
+/// two_tier: online issuing CAs (path length 1).
+/// direct: leaves, with keys it generates (path length 0).
+enum IssuerShape {
+  three_tier
+  two_tier
+  direct
+}
+
+/// standard: the extensions a profile's rules make. minimal: the key
+/// identifiers and nothing else (ADR 0032, a direct root's leaves).
+enum ExtensionSet {
+  standard
+  minimal
+}
+
 enum NameConstraintKind {
   permitted
   excluded
@@ -48,8 +65,18 @@ model Issuer {
   subject                String       @unique
   tier                   IssuerTier
   status                 IssuerStatus
-  /// What an issuing CA is for (`TLS`, `Service`, ...); null for a root.
+  /// What it is for (`TLS`, `Service`, ...); optional for a root (`Dev`).
   purpose                String?
+  /// O, and the start of the CN; null: the CA's configured organisation.
+  /// Children take their root's (ADR 0032, Names and settings).
+  organization           String?
+  /// A root's shape; null for the tiers below.
+  shape                  IssuerShape?
+  /// When its key was first given back from the offline media and opened
+  /// a ceremony: the backup is proved (ADR 0032, a new root).
+  provedAt               DateTime?    @map("proved_at")
+  /// Discarded before it signed anything: never published, never reused.
+  discardedAt            DateTime?    @map("discarded_at")
   number                 Int
   generation             Int
   parentId               String?      @map("parent_id")
@@ -151,6 +178,14 @@ model Profile {
   /// PKCS#12 without the chain, SHA-1 and 3DES: the printer.
   legacyExport   Boolean      @default(false) @map("legacy_export")
   requireSan     Boolean      @map("require_san")
+  /// A generated key is kept, exportable again (ADR 0032, escrow). Off, it
+  /// can be exported once, then it is destroyed.
+  escrow            Boolean      @default(true)
+  /// Whether one request may choose otherwise.
+  escrowOverridable Boolean      @default(false) @map("escrow_overridable")
+  extensions        ExtensionSet @default(standard)
+  /// Only for leaves a root signs directly, in its ceremonies.
+  directOnly        Boolean      @default(false) @map("direct_only")
 
   keyUsages         ProfileKeyUsage[]
   extendedKeyUsages ProfileExtendedKeyUsage[]
@@ -219,6 +254,8 @@ model Key {
   signerKeyId String?     @unique @map("signer_key_id")
   createdAt   DateTime    @default(now()) @map("created_at")
   destroyedAt DateTime?   @map("destroyed_at")
+  /// Not escrowed: destroyed after its first export.
+  exportOnce  Boolean     @default(false) @map("export_once")
   /// Revoked for keyCompromise: never certified again.
   blockedAt   DateTime?   @map("blocked_at")
 

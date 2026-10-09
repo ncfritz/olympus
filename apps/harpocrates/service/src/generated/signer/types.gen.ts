@@ -110,6 +110,10 @@ export type CertificateSpec = {
    * Issuerurls
    */
   issuerUrls?: Array<string>;
+  /**
+   * `minimal`: the key identifiers only, for a leaf whose consumer accepts nothing else; keyUsage and everything after it must then be empty.
+   */
+  extensions?: ExtensionSet;
 };
 
 /**
@@ -222,6 +226,11 @@ export type ExportKeyResponse = {
    */
   data: string;
 };
+
+/**
+ * ExtensionSet
+ */
+export type ExtensionSet = "standard" | "minimal";
 
 /**
  * GenerateKeyRequest

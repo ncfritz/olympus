@@ -363,6 +363,95 @@
         ]
       }
     },
+    "/v1/signer/initialise": {
+      "post": {
+        "description": "Sets the recovery passphrase on an empty signer and returns its unseal key, once (ADR 0032). The key becomes the harpocrates_signer_unseal_key secret; after a restart the signer unseals itself with it. Refused on a signer that already has a master key.",
+        "operationId": "InitialiseSigner",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The recovery passphrase to set.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitialiseSignerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The signer is initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitialiseSignerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Initialises the signer",
+        "tags": [
+          "Signer"
+        ]
+      }
+    },
     "/v1/issuers": {
       "get": {
         "description": "Every CA, roots first, with its status, validity, issuing window and rules; the tree follows parentId.",
@@ -413,12 +502,12 @@
     },
     "/v1/issuers/roots": {
       "post": {
-        "description": "Creates a root CA as a ceremony: the signer generates its key and self-signs, and the key is returned encrypted, once. Harpocrates keeps no copy.",
+        "description": "Creates a root CA: the signer generates its key and self-signs, and the key is returned encrypted, once; Harpocrates keeps no copy. Its shape (three_tier, two_tier, direct) sets its path length and what its ceremonies sign (ADR 0032); every other setting takes its default unless given. Its first ceremony proves the key's backup and signs its first list.",
         "operationId": "CreateRootIssuer",
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "The root's number, generation and export passphrase.",
+          "description": "The root's shape, number, generation and export passphrase, and any settings instead of their defaults.",
           "content": {
             "application/json": {
               "schema": {
@@ -693,6 +782,104 @@
         ]
       }
     },
+    "/v1/issuer/{issuerId}/discard": {
+      "post": {
+        "description": "Discards a root with no CA, certificate or list beneath it (ADR 0032): its backup did not prove, or it was made by mistake. It is revoked in the record, never published, and its number is not used again.",
+        "operationId": "DiscardIssuer",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The root's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The root was discarded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscardIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Discards a root that has signed nothing",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
     "/v1/ceremonies": {
       "post": {
         "description": "Puts an offline CA's key in the signer for one ceremony: an hour at most, and never across a restart or a seal. One ceremony at a time.",
@@ -949,7 +1136,7 @@
     },
     "/v1/ceremony/{ceremonyId}/intermediates": {
       "post": {
-        "description": "Creates an offline intermediate below the ceremony's root: the signer generates its key, the root signs it, and the key is returned encrypted, once.",
+        "description": "Creates an offline intermediate below the ceremony's root, when the root has three tiers: the signer generates its key, the root signs it, and the key is returned encrypted, once. Settings left out take their defaults; a validity past the root's is refused.",
         "operationId": "CreateIntermediateIssuer",
         "parameters": [
           {
@@ -1076,7 +1263,7 @@
     },
     "/v1/ceremony/{ceremonyId}/issuing": {
       "post": {
-        "description": "Creates an online issuing CA below the ceremony's intermediate: its key is generated in the signer's store, the intermediate signs it, and it is registered to sign certificates.",
+        "description": "Creates an online issuing CA below the ceremony's intermediate, or below a two-tier root (ADR 0032): its key is generated in the signer's store, the ceremony's CA signs it, and it is registered to sign certificates. Settings left out take their defaults.",
         "operationId": "CreateIssuingIssuer",
         "parameters": [
           {
@@ -1201,130 +1388,16 @@
         ]
       }
     },
-    "/v1/profiles": {
-      "get": {
-        "description": "Every profile: what its certificates may be, how they are enrolled and which issuer they come from.",
-        "operationId": "ListProfiles",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "The profiles.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListProfilesResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No valid access token was presented",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Lists the profiles",
-        "tags": [
-          "Profiles"
-        ]
-      }
-    },
-    "/v1/profile/{profileId}": {
-      "get": {
-        "description": "One profile and its rules.",
-        "operationId": "DescribeProfile",
+    "/v1/ceremony/{ceremonyId}/certificates": {
+      "post": {
+        "description": "Issues a leaf signed directly by the ceremony's root, for a root that signs directly (ADR 0032): the key is generated in the signer and escrowed unless the profile lets the request choose otherwise. Only direct-only profiles; a refusal is a 422 and is recorded in the audit log.",
+        "operationId": "CreateCeremonyCertificate",
         "parameters": [
           {
-            "name": "profileId",
+            "name": "ceremonyId",
             "required": true,
             "in": "path",
-            "description": "The profile's name",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The profile.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DescribeProfileResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No valid access token was presented",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Describes a profile",
-        "tags": [
-          "Profiles"
-        ]
-      },
-      "put": {
-        "description": "Pins a profile to an issuer, or unpins it; its other rules come from migrations.",
-        "operationId": "UpdateProfile",
-        "parameters": [
-          {
-            "name": "profileId",
-            "required": true,
-            "in": "path",
-            "description": "The profile's name",
+            "description": "The open ceremony",
             "schema": {
               "type": "string"
             }
@@ -1332,22 +1405,30 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "The issuer to pin it to.",
+          "description": "The profile, subject, validity and escrow.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProfileRequest"
+                "$ref": "#/components/schemas/CreateCeremonyCertificateRequest"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "The profile was updated.",
+          "201": {
+            "description": "The certificate was issued.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The certificate"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UpdateProfileResponse"
+                  "$ref": "#/components/schemas/CreateCeremonyCertificateResponse"
                 }
               }
             }
@@ -1391,6 +1472,36 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1398,9 +1509,298 @@
             "bearer": []
           }
         ],
-        "summary": "Updates a profile",
+        "summary": "Issues a certificate in a ceremony",
         "tags": [
-          "Profiles"
+          "Ceremonies"
+        ]
+      }
+    },
+    "/v1/issuer/{issuerId}/crls": {
+      "get": {
+        "description": "The CA's lists, newest first (the last 100): their numbers, validity, where each came from, and whether it is published or why publishing it failed.",
+        "operationId": "ListIssuerCrls",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The lists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListIssuerCrlsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists a CA's revocation lists",
+        "tags": [
+          "Revocation Lists"
+        ]
+      },
+      "post": {
+        "description": "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Certificates here that it names are revoked with its dates and reasons; serials not here are carried into the CA's later lists. An online CA signs a fresh list straight after.",
+        "operationId": "ImportIssuerCrl",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The list, PEM.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportIssuerCrlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The list was imported.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The CA's lists"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportIssuerCrlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Imports a CA's revocation list",
+        "tags": [
+          "Revocation Lists"
+        ]
+      }
+    },
+    "/v1/ceremony/{ceremonyId}/crl": {
+      "post": {
+        "description": "The ceremony's CA signs its next list, valid for 13 months (CRL_OFFLINE_VALIDITY_DAYS), which is then published with the rest. Due once a year and whenever a CA below it is revoked.",
+        "operationId": "SignCeremonyCrl",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The open ceremony",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The list was signed.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The CA's lists"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignCeremonyCrlResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Signs an offline CA's revocation list in a ceremony",
+        "tags": [
+          "Ceremonies"
         ]
       }
     },
@@ -2267,16 +2667,64 @@
         ]
       }
     },
-    "/v1/issuer/{issuerId}/crls": {
+    "/v1/profiles": {
       "get": {
-        "description": "The CA's lists, newest first (the last 100): their numbers, validity, where each came from, and whether it is published or why publishing it failed.",
-        "operationId": "ListIssuerCrls",
+        "description": "Every profile: what its certificates may be, how they are enrolled and which issuer they come from.",
+        "operationId": "ListProfiles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The profiles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListProfilesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists the profiles",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}": {
+      "get": {
+        "description": "One profile and its rules.",
+        "operationId": "DescribeProfile",
         "parameters": [
           {
-            "name": "issuerId",
+            "name": "profileId",
             "required": true,
             "in": "path",
-            "description": "The CA's slug",
+            "description": "The profile's name",
             "schema": {
               "type": "string"
             }
@@ -2284,11 +2732,11 @@
         ],
         "responses": {
           "200": {
-            "description": "The lists.",
+            "description": "The profile.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListIssuerCrlsResponse"
+                  "$ref": "#/components/schemas/DescribeProfileResponse"
                 }
               }
             }
@@ -2329,20 +2777,20 @@
             "bearer": []
           }
         ],
-        "summary": "Lists a CA's revocation lists",
+        "summary": "Describes a profile",
         "tags": [
-          "Revocation Lists"
+          "Profiles"
         ]
       },
-      "post": {
-        "description": "Offers a list signed elsewhere (XCA's last, or an offline CA's) for publication. Refused unless the CA's certificate verifies it, it has not lapsed, and its number is above every one the CA has. Certificates here that it names are revoked with its dates and reasons; serials not here are carried into the CA's later lists. An online CA signs a fresh list straight after.",
-        "operationId": "ImportIssuerCrl",
+      "put": {
+        "description": "Pins a profile to an issuer, or unpins it; its other rules come from migrations.",
+        "operationId": "UpdateProfile",
         "parameters": [
           {
-            "name": "issuerId",
+            "name": "profileId",
             "required": true,
             "in": "path",
-            "description": "The CA's slug",
+            "description": "The profile's name",
             "schema": {
               "type": "string"
             }
@@ -2350,30 +2798,22 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "The list, PEM.",
+          "description": "The issuer to pin it to.",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ImportIssuerCrlRequest"
+                "$ref": "#/components/schemas/UpdateProfileRequest"
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "The list was imported.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The CA's lists"
-              }
-            },
+          "200": {
+            "description": "The profile was updated.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportIssuerCrlResponse"
+                  "$ref": "#/components/schemas/UpdateProfileResponse"
                 }
               }
             }
@@ -2417,26 +2857,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "The request conflicts with the current state",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Refused: a profile rule or one of the signer's invariants",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -2444,115 +2864,9 @@
             "bearer": []
           }
         ],
-        "summary": "Imports a CA's revocation list",
+        "summary": "Updates a profile",
         "tags": [
-          "Revocation Lists"
-        ]
-      }
-    },
-    "/v1/ceremony/{ceremonyId}/crl": {
-      "post": {
-        "description": "The ceremony's CA signs its next list, valid for 13 months (CRL_OFFLINE_VALIDITY_DAYS), which is then published with the rest. Due once a year and whenever a CA below it is revoked.",
-        "operationId": "SignCeremonyCrl",
-        "parameters": [
-          {
-            "name": "ceremonyId",
-            "required": true,
-            "in": "path",
-            "description": "The open ceremony",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "The list was signed.",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "description": "The CA's lists"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SignCeremonyCrlResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No valid access token was presented",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The entity with the specified identifiers was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The request conflicts with the current state",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Refused: a profile rule or one of the signer's invariants",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "The signer is sealed or unreachable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Signs an offline CA's revocation list in a ceremony",
-        "tags": [
-          "Ceremonies"
+          "Profiles"
         ]
       }
     }
@@ -2810,6 +3124,30 @@
           "passphrase"
         ]
       },
+      "InitialiseSignerRequest": {
+        "type": "object",
+        "properties": {
+          "passphrase": {
+            "type": "string",
+            "description": "The recovery passphrase to set, at least 12 characters: it unseals the signer after a deliberate seal or without the unseal key"
+          }
+        },
+        "required": [
+          "passphrase"
+        ]
+      },
+      "InitialiseSignerResponse": {
+        "type": "object",
+        "properties": {
+          "unsealKey": {
+            "type": "string",
+            "description": "The unseal key, base64, shown once: it becomes the harpocrates_signer_unseal_key secret, and goes in the password manager"
+          }
+        },
+        "required": [
+          "unsealKey"
+        ]
+      },
       "IssuerTier": {
         "type": "string",
         "description": "A CA's tier: roots and intermediates are offline, issuing CAs online",
@@ -2827,6 +3165,15 @@
           "active",
           "closed",
           "revoked"
+        ]
+      },
+      "IssuerShape": {
+        "type": "string",
+        "description": "A root's shape (ADR 0032): three_tier signs intermediates, two_tier signs issuing CAs, direct signs leaves",
+        "enum": [
+          "three_tier",
+          "two_tier",
+          "direct"
         ]
       },
       "Names": {
@@ -2912,7 +3259,27 @@
           },
           "purpose": {
             "type": "string",
-            "description": "What an issuing CA is for: TLS, Service, Device, Signing"
+            "description": "What it is for: TLS, Service, Device, Signing; optional for a root (Dev)"
+          },
+          "organization": {
+            "type": "string",
+            "description": "Its organisation (O, and the start of its CN) when set for it or its root; absent, the CA's configured one"
+          },
+          "shape": {
+            "description": "A root's shape; absent below a root",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerShape"
+              }
+            ]
+          },
+          "provedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup"
+          },
+          "discardedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when a root that had signed nothing was discarded"
           },
           "number": {
             "type": "number",
@@ -3015,25 +3382,57 @@
       "CreateRootIssuerRequest": {
         "type": "object",
         "properties": {
-          "number": {
-            "type": "number",
-            "description": "The root's number, 1 for the first"
+          "organization": {
+            "type": "string",
+            "description": "Its organisation: O, and the start of the CN; by default its root's, or the CA's configured one for a root"
           },
-          "generation": {
+          "subject": {
+            "type": "string",
+            "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
+          },
+          "validityDays": {
             "type": "number",
-            "description": "Its generation, 1 unless it succeeds a root"
+            "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
           },
           "algorithm": {
-            "description": "The root's key type (P-256 by default)",
+            "description": "Its key type (P-256 by default)",
             "allOf": [
               {
                 "$ref": "#/components/schemas/KeyAlgorithm"
               }
             ]
           },
+          "nameConstraints": {
+            "description": "Its name constraints; none by default, everything beneath it is held to them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number, 1 for the first of its kind"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation, 1 unless it succeeds a CA"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What it is for, in its name (Dev Root CA, Servers Intermediate CA); none by default"
+          },
           "exportPassphrase": {
             "type": "string",
-            "description": "The passphrase the root's key is exported under, at least 12 characters"
+            "description": "The passphrase its key is exported under, at least 12 characters"
+          },
+          "shape": {
+            "description": "Its shape (three_tier by default); sets its path length",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerShape"
+              }
+            ]
           }
         },
         "required": [
@@ -3071,7 +3470,27 @@
           },
           "purpose": {
             "type": "string",
-            "description": "What an issuing CA is for: TLS, Service, Device, Signing"
+            "description": "What it is for: TLS, Service, Device, Signing; optional for a root (Dev)"
+          },
+          "organization": {
+            "type": "string",
+            "description": "Its organisation (O, and the start of its CN) when set for it or its root; absent, the CA's configured one"
+          },
+          "shape": {
+            "description": "A root's shape; absent below a root",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerShape"
+              }
+            ]
+          },
+          "provedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup"
+          },
+          "discardedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when a root that had signed nothing was discarded"
           },
           "number": {
             "type": "number",
@@ -3286,6 +3705,22 @@
           "issuer"
         ]
       },
+      "DiscardIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The discarded root, revoked in the record",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
       "OpenCeremonyRequest": {
         "type": "object",
         "properties": {
@@ -3374,33 +3809,49 @@
       "CreateIntermediateIssuerRequest": {
         "type": "object",
         "properties": {
-          "number": {
-            "type": "number",
-            "description": "The root's number, 1 for the first"
+          "organization": {
+            "type": "string",
+            "description": "Its organisation: O, and the start of the CN; by default its root's, or the CA's configured one for a root"
           },
-          "generation": {
+          "subject": {
+            "type": "string",
+            "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
+          },
+          "validityDays": {
             "type": "number",
-            "description": "Its generation, 1 unless it succeeds a root"
+            "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
           },
           "algorithm": {
-            "description": "The root's key type (P-256 by default)",
+            "description": "Its key type (P-256 by default)",
             "allOf": [
               {
                 "$ref": "#/components/schemas/KeyAlgorithm"
               }
             ]
           },
-          "exportPassphrase": {
-            "type": "string",
-            "description": "The passphrase the root's key is exported under, at least 12 characters"
-          },
           "nameConstraints": {
-            "description": "Name constraints for the intermediate",
+            "description": "Its name constraints; none by default, everything beneath it is held to them",
             "allOf": [
               {
                 "$ref": "#/components/schemas/NameConstraints"
               }
             ]
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number, 1 for the first of its kind"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation, 1 unless it succeeds a CA"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What it is for, in its name (Dev Root CA, Servers Intermediate CA); none by default"
+          },
+          "exportPassphrase": {
+            "type": "string",
+            "description": "The passphrase its key is exported under, at least 12 characters"
           }
         },
         "required": [
@@ -3433,6 +3884,34 @@
       "CreateIssuingIssuerRequest": {
         "type": "object",
         "properties": {
+          "organization": {
+            "type": "string",
+            "description": "Its organisation: O, and the start of the CN; by default its root's, or the CA's configured one for a root"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
+          },
+          "algorithm": {
+            "description": "Its key type (P-256 by default)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "nameConstraints": {
+            "description": "Its name constraints; none by default, everything beneath it is held to them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          },
           "purpose": {
             "type": "string",
             "description": "What it is for: TLS, Service, Device, Signing"
@@ -3455,14 +3934,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "nameConstraints": {
-            "description": "Its name constraints",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NameConstraints"
-              }
-            ]
           }
         },
         "required": [
@@ -3489,175 +3960,70 @@
           "issuer"
         ]
       },
-      "NameType": {
-        "type": "string",
-        "description": "The alternative name types it allows",
-        "enum": [
-          "dns",
-          "ip",
-          "email",
-          "uri"
-        ]
-      },
-      "Profile": {
+      "CertificateSubject": {
         "type": "object",
         "properties": {
-          "id": {
+          "commonName": {
             "type": "string",
-            "description": "The profile's name, e.g. internal-tls"
+            "description": "The common name: an app name, a person-device, a host"
           },
-          "description": {
+          "organizationalUnit": {
             "type": "string",
-            "description": "What it is for"
+            "description": "The organizational unit: a service's deployment, a device kind"
           },
-          "issuerId": {
+          "organization": {
             "type": "string",
-            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
-          },
-          "issuerPurpose": {
+            "description": "The organization (the configured one by default)"
+          }
+        },
+        "required": [
+          "commonName"
+        ]
+      },
+      "CreateCeremonyCertificateRequest": {
+        "type": "object",
+        "properties": {
+          "profileId": {
             "type": "string",
-            "description": "The purpose of the issuing CA it issues from"
+            "description": "A direct-only profile (direct-minimal by default)"
           },
-          "keyAlgorithm": {
-            "description": "The key type its certificates certify",
+          "subject": {
+            "description": "Its subject; O is the root's organisation by default",
             "allOf": [
               {
-                "$ref": "#/components/schemas/KeyAlgorithm"
+                "$ref": "#/components/schemas/CertificateSubject"
+              }
+            ]
+          },
+          "names": {
+            "description": "Its alternative names, if the profile carries them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
               }
             ]
           },
           "validityDays": {
             "type": "number",
-            "description": "How long its certificates are valid, in days"
+            "description": "Its validity in days; by default the profile's, never past the root's limit"
           },
-          "renewAtDays": {
-            "type": "number",
-            "description": "How many days into a certificate's life it is renewed"
-          },
-          "maxKeyAgeDays": {
-            "type": "number",
-            "description": "How old a key may be and still be renewed, in days"
-          },
-          "allowCsr": {
+          "escrow": {
             "type": "boolean",
-            "description": "Whether a subscriber may submit a CSR"
-          },
-          "allowGenerated": {
-            "type": "boolean",
-            "description": "Whether the signer may generate (and escrow) the key"
-          },
-          "legacyExport": {
-            "type": "boolean",
-            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
-          },
-          "requireSan": {
-            "type": "boolean",
-            "description": "Whether a certificate needs at least one alternative name"
-          },
-          "keyUsages": {
-            "description": "Its key usages",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "extendedKeyUsages": {
-            "description": "Its extended key usages, dotted OIDs",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "nameTypes": {
-            "type": "array",
-            "description": "The alternative name types it allows",
-            "items": {
-              "$ref": "#/components/schemas/NameType"
-            }
+            "description": "Whether its generated key stays escrowed; by default the profile's setting"
           }
         },
         "required": [
-          "id",
-          "description",
-          "issuerPurpose",
-          "keyAlgorithm",
-          "validityDays",
-          "renewAtDays",
-          "maxKeyAgeDays",
-          "allowCsr",
-          "allowGenerated",
-          "legacyExport",
-          "requireSan",
-          "keyUsages",
-          "extendedKeyUsages",
-          "nameTypes"
-        ]
-      },
-      "ListProfilesResponse": {
-        "type": "object",
-        "properties": {
-          "profiles": {
-            "description": "Every profile",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Profile"
-            }
-          }
-        },
-        "required": [
-          "profiles"
-        ]
-      },
-      "DescribeProfileResponse": {
-        "type": "object",
-        "properties": {
-          "profile": {
-            "description": "The profile",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Profile"
-              }
-            ]
-          }
-        },
-        "required": [
-          "profile"
-        ]
-      },
-      "UpdateProfileRequest": {
-        "type": "object",
-        "properties": {
-          "issuerId": {
-            "type": "string",
-            "nullable": true,
-            "description": "The issuer to pin it to; null to follow the active CA of its purpose"
-          }
-        }
-      },
-      "UpdateProfileResponse": {
-        "type": "object",
-        "properties": {
-          "profile": {
-            "description": "The profile, updated",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Profile"
-              }
-            ]
-          }
-        },
-        "required": [
-          "profile"
+          "subject"
         ]
       },
       "CertificateState": {
         "type": "string",
+        "description": "A certificate's state: valid, revoked or expired",
         "enum": [
           "valid",
           "revoked",
           "expired"
-        ],
-        "description": "A certificate's state: valid, revoked or expired"
+        ]
       },
       "RevocationReason": {
         "type": "string",
@@ -3710,6 +4076,256 @@
           "offline"
         ],
         "description": "Where its private key is: escrowed in the signer, or with the subscriber only"
+      },
+      "FullCertificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued it"
+          },
+          "profileId": {
+            "type": "string",
+            "description": "The profile it was issued under"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its serial, hex"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its subject, RFC 4514"
+          },
+          "names": {
+            "description": "Its alternative names",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Names"
+              }
+            ]
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it becomes valid"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "state": {
+            "description": "Whether it is valid, revoked or expired",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateState"
+              }
+            ]
+          },
+          "revocation": {
+            "description": "Its revocation, if it was revoked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revocation"
+              }
+            ]
+          },
+          "keyLocation": {
+            "description": "Where its private key is: escrowed in the signer, or with the subscriber only",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyLocation"
+              }
+            ]
+          },
+          "keyAlgorithm": {
+            "type": "string",
+            "description": "Its key type, e.g. P-256"
+          },
+          "keyCreatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its key was first certified; renewal rekeys past the profile's maximum key age"
+          },
+          "renewsId": {
+            "type": "string",
+            "description": "The certificate it renewed"
+          },
+          "renewedById": {
+            "type": "string",
+            "description": "The certificate that renewed it"
+          },
+          "certificate": {
+            "type": "string",
+            "description": "It, PEM"
+          },
+          "chain": {
+            "description": "The CAs above it, PEM, nearest first, up to the root",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "serial",
+          "subject",
+          "names",
+          "notBefore",
+          "notAfter",
+          "state",
+          "keyLocation",
+          "keyAlgorithm",
+          "keyCreatedAt",
+          "certificate",
+          "chain"
+        ]
+      },
+      "CreateCeremonyCertificateResponse": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "description": "The new certificate, signed by the ceremony's root",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullCertificate"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificate"
+        ]
+      },
+      "CrlSource": {
+        "type": "string",
+        "description": "Where it came from",
+        "enum": [
+          "signed",
+          "ceremony",
+          "imported"
+        ]
+      },
+      "RevocationList": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that signed it"
+          },
+          "number": {
+            "type": "number",
+            "description": "Its CRL number: each of a CA's lists has a higher one"
+          },
+          "source": {
+            "description": "Where it came from",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CrlSource"
+              }
+            ]
+          },
+          "thisUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was issued"
+          },
+          "nextUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it lapses; relying parties refuse everything below the CA after that"
+          },
+          "entries": {
+            "type": "number",
+            "description": "How many serials it lists"
+          },
+          "publishedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was published and read back from the distribution URL"
+          },
+          "publishAttempts": {
+            "type": "number",
+            "description": "How many times publishing it has been tried"
+          },
+          "lastError": {
+            "type": "string",
+            "description": "Why the last attempt to publish it failed"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where relying parties fetch the CA's current list"
+          }
+        },
+        "required": [
+          "issuerId",
+          "number",
+          "source",
+          "thisUpdate",
+          "nextUpdate",
+          "entries",
+          "publishAttempts",
+          "url"
+        ]
+      },
+      "ListIssuerCrlsResponse": {
+        "type": "object",
+        "properties": {
+          "crls": {
+            "description": "The CA's lists, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RevocationList"
+            }
+          }
+        },
+        "required": [
+          "crls"
+        ]
+      },
+      "ImportIssuerCrlRequest": {
+        "type": "object",
+        "properties": {
+          "crl": {
+            "type": "string",
+            "description": "The list, PEM: signed by the CA elsewhere (XCA, an offline ceremony), with a number above any the CA has"
+          }
+        },
+        "required": [
+          "crl"
+        ]
+      },
+      "ImportIssuerCrlResponse": {
+        "type": "object",
+        "properties": {
+          "crl": {
+            "description": "The imported list, published with the next run",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationList"
+              }
+            ]
+          }
+        },
+        "required": [
+          "crl"
+        ]
+      },
+      "SignCeremonyCrlResponse": {
+        "type": "object",
+        "properties": {
+          "crl": {
+            "description": "The offline CA's new list, published with the next run",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationList"
+              }
+            ]
+          }
+        },
+        "required": [
+          "crl"
+        ]
       },
       "Certificate": {
         "type": "object",
@@ -3825,26 +4441,6 @@
           "certificates"
         ]
       },
-      "CertificateSubject": {
-        "type": "object",
-        "properties": {
-          "commonName": {
-            "type": "string",
-            "description": "The common name: an app name, a person-device, a host"
-          },
-          "organizationalUnit": {
-            "type": "string",
-            "description": "The organizational unit: a service's deployment, a device kind"
-          },
-          "organization": {
-            "type": "string",
-            "description": "The organization (the configured one by default)"
-          }
-        },
-        "required": [
-          "commonName"
-        ]
-      },
       "CreateCertificateRequest": {
         "type": "object",
         "properties": {
@@ -3874,119 +4470,16 @@
           },
           "csr": {
             "type": "string",
-            "description": "The subscriber's CSR, PEM; without one the signer generates (and escrows) the key, if the profile allows"
+            "description": "The subscriber's CSR, PEM; without one the signer generates the key, if the profile allows"
+          },
+          "escrow": {
+            "type": "boolean",
+            "description": "For a generated key: whether it stays escrowed, exportable again; off, it is exported once and destroyed. By default the profile's setting; another only where the profile allows"
           }
         },
         "required": [
           "profileId",
           "subject"
-        ]
-      },
-      "FullCertificate": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Its ID"
-          },
-          "issuerId": {
-            "type": "string",
-            "description": "The CA that issued it"
-          },
-          "profileId": {
-            "type": "string",
-            "description": "The profile it was issued under"
-          },
-          "serial": {
-            "type": "string",
-            "description": "Its serial, hex"
-          },
-          "subject": {
-            "type": "string",
-            "description": "Its subject, RFC 4514"
-          },
-          "names": {
-            "description": "Its alternative names",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Names"
-              }
-            ]
-          },
-          "notBefore": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string: when it becomes valid"
-          },
-          "notAfter": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string: when it expires"
-          },
-          "state": {
-            "description": "Whether it is valid, revoked or expired",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CertificateState"
-              }
-            ]
-          },
-          "revocation": {
-            "description": "Its revocation, if it was revoked",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Revocation"
-              }
-            ]
-          },
-          "keyLocation": {
-            "description": "Where its private key is: escrowed in the signer, or with the subscriber only",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/KeyLocation"
-              }
-            ]
-          },
-          "keyAlgorithm": {
-            "type": "string",
-            "description": "Its key type, e.g. P-256"
-          },
-          "keyCreatedAt": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string: when its key was first certified; renewal rekeys past the profile's maximum key age"
-          },
-          "renewsId": {
-            "type": "string",
-            "description": "The certificate it renewed"
-          },
-          "renewedById": {
-            "type": "string",
-            "description": "The certificate that renewed it"
-          },
-          "certificate": {
-            "type": "string",
-            "description": "It, PEM"
-          },
-          "chain": {
-            "description": "The CAs above it, PEM, nearest first, up to the root",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "issuerId",
-          "serial",
-          "subject",
-          "names",
-          "notBefore",
-          "notAfter",
-          "state",
-          "keyLocation",
-          "keyAlgorithm",
-          "keyCreatedAt",
-          "certificate",
-          "chain"
         ]
       },
       "CreateCertificateResponse": {
@@ -4213,131 +4706,189 @@
           "skipped"
         ]
       },
-      "CrlSource": {
+      "NameType": {
         "type": "string",
-        "description": "Where it came from",
+        "description": "The alternative name types it allows",
         "enum": [
-          "signed",
-          "ceremony",
-          "imported"
+          "dns",
+          "ip",
+          "email",
+          "uri"
         ]
       },
-      "RevocationList": {
+      "Profile": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "The profile's name, e.g. internal-tls"
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for"
+          },
           "issuerId": {
             "type": "string",
-            "description": "The CA that signed it"
+            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
           },
-          "number": {
-            "type": "number",
-            "description": "Its CRL number: each of a CA's lists has a higher one"
+          "issuerPurpose": {
+            "type": "string",
+            "description": "The purpose of the issuing CA it issues from"
           },
-          "source": {
-            "description": "Where it came from",
+          "keyAlgorithm": {
+            "description": "The key type its certificates certify",
             "allOf": [
               {
-                "$ref": "#/components/schemas/CrlSource"
+                "$ref": "#/components/schemas/KeyAlgorithm"
               }
             ]
           },
-          "thisUpdate": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string: when it was issued"
-          },
-          "nextUpdate": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string: when it lapses; relying parties refuse everything below the CA after that"
-          },
-          "entries": {
+          "validityDays": {
             "type": "number",
-            "description": "How many serials it lists"
+            "description": "How long its certificates are valid, in days"
           },
-          "publishedAt": {
-            "type": "string",
-            "description": "An ISO-8601 formatted string: when it was published and read back from the distribution URL"
-          },
-          "publishAttempts": {
+          "renewAtDays": {
             "type": "number",
-            "description": "How many times publishing it has been tried"
+            "description": "How many days into a certificate's life it is renewed"
           },
-          "lastError": {
-            "type": "string",
-            "description": "Why the last attempt to publish it failed"
+          "maxKeyAgeDays": {
+            "type": "number",
+            "description": "How old a key may be and still be renewed, in days"
           },
-          "url": {
+          "allowCsr": {
+            "type": "boolean",
+            "description": "Whether a subscriber may submit a CSR"
+          },
+          "allowGenerated": {
+            "type": "boolean",
+            "description": "Whether the signer may generate (and escrow) the key"
+          },
+          "legacyExport": {
+            "type": "boolean",
+            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
+          },
+          "requireSan": {
+            "type": "boolean",
+            "description": "Whether a certificate needs at least one alternative name"
+          },
+          "escrow": {
+            "type": "boolean",
+            "description": "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed"
+          },
+          "escrowOverridable": {
+            "type": "boolean",
+            "description": "Whether one request may choose escrow otherwise"
+          },
+          "extensions": {
             "type": "string",
-            "description": "Where relying parties fetch the CA's current list"
-          }
-        },
-        "required": [
-          "issuerId",
-          "number",
-          "source",
-          "thisUpdate",
-          "nextUpdate",
-          "entries",
-          "publishAttempts",
-          "url"
-        ]
-      },
-      "ListIssuerCrlsResponse": {
-        "type": "object",
-        "properties": {
-          "crls": {
-            "description": "The CA's lists, newest first",
+            "enum": [
+              "standard",
+              "minimal"
+            ],
+            "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
+          },
+          "directOnly": {
+            "type": "boolean",
+            "description": "Whether it is issued only in a ceremony with a root that signs directly"
+          },
+          "keyUsages": {
+            "description": "Its key usages",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/RevocationList"
+              "type": "string"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "Its extended key usages, dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameTypes": {
+            "type": "array",
+            "description": "The alternative name types it allows",
+            "items": {
+              "$ref": "#/components/schemas/NameType"
             }
           }
         },
         "required": [
-          "crls"
+          "id",
+          "description",
+          "issuerPurpose",
+          "keyAlgorithm",
+          "validityDays",
+          "renewAtDays",
+          "maxKeyAgeDays",
+          "allowCsr",
+          "allowGenerated",
+          "legacyExport",
+          "requireSan",
+          "escrow",
+          "escrowOverridable",
+          "extensions",
+          "directOnly",
+          "keyUsages",
+          "extendedKeyUsages",
+          "nameTypes"
         ]
       },
-      "ImportIssuerCrlRequest": {
+      "ListProfilesResponse": {
         "type": "object",
         "properties": {
-          "crl": {
+          "profiles": {
+            "description": "Every profile",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Profile"
+            }
+          }
+        },
+        "required": [
+          "profiles"
+        ]
+      },
+      "DescribeProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
             "type": "string",
-            "description": "The list, PEM: signed by the CA elsewhere (XCA, an offline ceremony), with a number above any the CA has"
+            "nullable": true,
+            "description": "The issuer to pin it to; null to follow the active CA of its purpose"
           }
-        },
-        "required": [
-          "crl"
-        ]
+        }
       },
-      "ImportIssuerCrlResponse": {
+      "UpdateProfileResponse": {
         "type": "object",
         "properties": {
-          "crl": {
-            "description": "The imported list, published with the next run",
+          "profile": {
+            "description": "The profile, updated",
             "allOf": [
               {
-                "$ref": "#/components/schemas/RevocationList"
+                "$ref": "#/components/schemas/Profile"
               }
             ]
           }
         },
         "required": [
-          "crl"
-        ]
-      },
-      "SignCeremonyCrlResponse": {
-        "type": "object",
-        "properties": {
-          "crl": {
-            "description": "The offline CA's new list, published with the next run",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RevocationList"
-              }
-            ]
-          }
-        },
-        "required": [
-          "crl"
+          "profile"
         ]
       }
     }

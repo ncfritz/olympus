@@ -186,7 +186,11 @@ describe.skipIf(!E2E_DATABASE_URL)("revocation lists", () => {
     it("is signed and published on the first run, valid for 7 days", async () => {
       const run = await scheduler.run();
       expect(run.signed).toEqual([{ issuerId: "tls-issuing-1-g1", number: 1 }]);
+      // The offline CAs' first lists were signed when their first
+      // ceremonies opened (ADR 0032); the run publishes them too.
       expect(run.published).toEqual([
+        { issuerId: "intermediate-1-g1", number: 1n },
+        { issuerId: "root-1-g1", number: 1n },
         { issuerId: "tls-issuing-1-g1", number: 1n },
       ]);
       const [list] = await lists("tls-issuing-1-g1");
@@ -389,9 +393,10 @@ describe.skipIf(!E2E_DATABASE_URL)("revocation lists", () => {
         .expect(204);
       const list = (signed.body as { crl: List }).crl;
       expect(signed.headers.location).toMatch(/\/issuer\/root-1-g1\/crls$/);
+      // Number 1 was its first ceremony's (ADR 0032): this is the next.
       expect(list).toMatchObject({
         issuerId: "root-1-g1",
-        number: 1,
+        number: 2,
         source: "ceremony",
       });
       expect(Date.parse(list.nextUpdate) - Date.parse(list.thisUpdate)).toBe(
@@ -399,7 +404,7 @@ describe.skipIf(!E2E_DATABASE_URL)("revocation lists", () => {
       );
 
       const run = await scheduler.run();
-      expect(run.published).toEqual([{ issuerId: "root-1-g1", number: 1n }]);
+      expect(run.published).toEqual([{ issuerId: "root-1-g1", number: 2n }]);
       expect(
         opensslCrl(published("root-1-g1"), hierarchy.root.certificate),
       ).toContain("CN = ncfritz.net Test Root CA 1 - G1");

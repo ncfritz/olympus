@@ -24,6 +24,7 @@ import {
 } from "../../metrics/pkiMetrics";
 import type {
   Certificate,
+  CreateCeremonyCertificateRequest,
   CreateCertificateRequest,
   DownloadFormatName,
   ExportCertificateKeyRequest,
@@ -228,6 +229,12 @@ export class CertificateService {
   ): Promise<FullCertificate> {
     return this.audited(principal, "create", request.profileId, async () => {
       const profile = await this.profiles.row(request.profileId);
+      if (profile.directOnly) {
+        throw new UnprocessableEntityException(
+          `The ${profile.id} profile is issued only in a ceremony with a root that signs directly`,
+        );
+      }
+      const escrow = this.escrowFor(profile, request);
       const names = nameRows(request.names);
       this.checkNames(profile, names);
       const subject = subjectName({
@@ -255,6 +262,7 @@ export class CertificateService {
           names,
           subjectKey,
           lineage,
+          escrow,
           kind: AuditKind.CertificateIssued,
         });
       } catch (error: unknown) {
@@ -265,6 +273,92 @@ export class CertificateService {
         throw error;
       }
     });
+  }
+
+  /**
+   * A leaf signed directly by a root, in its ceremony (ADR 0032): the key
+   * is generated in the signer, the certificate built from a direct-only
+   * profile (the key identifiers alone, for `direct-minimal`).
+   */
+  async createInCeremony(
+    principal: Principal,
+    ceremonyId: string,
+    request: CreateCeremonyCertificateRequest,
+  ): Promise<FullCertificate> {
+    const profileId = request.profileId ?? "direct-minimal";
+    return this.audited(
+      principal,
+      "create-in-ceremony",
+      profileId,
+      async () => {
+        const ceremony = await this.prisma.ceremony.findUnique({
+          where: { id: ceremonyId },
+        });
+        if (!ceremony) {
+          throw new NotFoundException(
+            `Ceremony with id ${ceremonyId} not found`,
+          );
+        }
+        if (ceremony.closedAt) {
+          throw new ConflictException(`Ceremony ${ceremonyId} is closed`);
+        }
+        const issuer = await this.issuers.row(ceremony.issuerId);
+        if (issuer.tier !== "root" || issuer.shape !== "direct") {
+          throw new UnprocessableEntityException(
+            `${issuer.id} does not sign leaves: only a root that signs directly does`,
+          );
+        }
+        const profile = await this.profiles.row(profileId);
+        if (!profile.directOnly) {
+          throw new UnprocessableEntityException(
+            `The ${profile.id} profile is issued by an issuing CA, not in a ceremony`,
+          );
+        }
+        const validityDays = request.validityDays ?? profile.validityDays;
+        if (validityDays > issuer.maxValidityDays) {
+          throw new UnprocessableEntityException(
+            `Issuer ${issuer.id} signs at most ${issuer.maxValidityDays} days`,
+          );
+        }
+        const escrow = this.escrowFor(profile, request);
+        const names = nameRows(request.names);
+        this.checkNames(profile, names);
+        const subject = subjectName({
+          commonName: request.subject.commonName,
+          organizationalUnit: request.subject.organizationalUnit,
+          organization:
+            request.subject.organization ??
+            issuer.organization ??
+            this.pki.organization,
+        });
+        const subjectKey = await this.generatedKey(profile);
+        try {
+          const lineage = await this.lineageFor(
+            profile,
+            subject,
+            names,
+            subjectKey,
+          );
+          return await this.issue(principal, {
+            profile,
+            issuer,
+            subject,
+            names,
+            subjectKey,
+            lineage,
+            escrow,
+            validityDays,
+            sign: (spec) => this.signer.signInCeremony(ceremonyId, spec),
+            kind: AuditKind.CertificateIssued,
+          });
+        } catch (error: unknown) {
+          if (subjectKey.kind === "signer") {
+            await this.discardGenerated(subjectKey);
+          }
+          throw error;
+        }
+      },
+    );
   }
 
   async renew(
@@ -511,6 +605,10 @@ export class CertificateService {
         tx,
       );
     });
+    // Not escrowed: this was its one export.
+    if (key.exportOnce) {
+      await this.destroyEscrowed(principal, key);
+    }
     const base = (row.subject.match(/CN=([^,]+)/)?.[1] ?? row.id).replace(
       /[^A-Za-z0-9._-]+/g,
       "_",
@@ -570,6 +668,29 @@ export class CertificateService {
         `Issuer ${issuer.id} signs at most ${issuer.maxValidityDays} days; the ${profile.id} profile asks ${profile.validityDays}`,
       );
     }
+  }
+
+  /**
+   * Whether a generated key stays escrowed (ADR 0032): the profile's
+   * setting, or the request's where the profile lets it choose. Off, the
+   * key is exported once and then destroyed.
+   */
+  private escrowFor(
+    profile: ProfileWithRules,
+    request: { escrow?: boolean; csr?: string },
+  ): boolean {
+    if (request.escrow === undefined) return profile.escrow;
+    if (request.csr) {
+      throw new BadRequestException(
+        "Escrow is for generated keys: a CSR's key is the subscriber's",
+      );
+    }
+    if (request.escrow !== profile.escrow && !profile.escrowOverridable) {
+      throw new UnprocessableEntityException(
+        `The ${profile.id} profile ${profile.escrow ? "escrows" : "does not escrow"} its keys, and a request may not choose otherwise`,
+      );
+    }
+    return request.escrow;
   }
 
   private checkKeyAge(young: boolean, profile: ProfileWithRules): void {
@@ -714,6 +835,12 @@ export class CertificateService {
       subjectKey: SubjectKey;
       lineage: Lineage;
       renews?: string;
+      /** Whether a generated key stays escrowed; off, it is exported once. */
+      escrow?: boolean;
+      /** Instead of the profile's (a ceremony's leaf may be shorter). */
+      validityDays?: number;
+      /** How it is signed: by the issuing CA, unless a ceremony signs it. */
+      sign?: (spec: CertificateSpec) => Promise<string>;
       kind:
         | typeof AuditKind.CertificateIssued
         | typeof AuditKind.CertificateRenewed;
@@ -721,18 +848,26 @@ export class CertificateService {
   ): Promise<FullCertificate> {
     const { profile, issuer, subjectKey } = issuance;
     const notBefore = startNow();
+    const minimal = profile.extensions === "minimal";
     const spec: CertificateSpec = {
       subject: issuance.subject,
       serial: randomSerial(),
       notBefore: notBefore.toISOString(),
-      notAfter: addDays(notBefore, profile.validityDays).toISOString(),
-      keyUsage: profile.keyUsages.map(
-        (u) => u.usage,
-      ) as CertificateSpec["keyUsage"],
-      extendedKeyUsages: profile.extendedKeyUsages.map((u) => u.oid),
-      sans: toSans(issuance.names),
-      crlDistributionPoints: [issuer.crlUrl],
-      issuerUrls: [issuer.caIssuersUrl],
+      notAfter: addDays(
+        notBefore,
+        issuance.validityDays ?? profile.validityDays,
+      ).toISOString(),
+      ...(minimal
+        ? { keyUsage: [], extensions: "minimal" }
+        : {
+            keyUsage: profile.keyUsages.map(
+              (u) => u.usage,
+            ) as CertificateSpec["keyUsage"],
+            extendedKeyUsages: profile.extendedKeyUsages.map((u) => u.oid),
+            sans: toSans(issuance.names),
+            crlDistributionPoints: [issuer.crlUrl],
+            issuerUrls: [issuer.caIssuersUrl],
+          }),
       ...(subjectKey.kind === "csr" ? { csr: subjectKey.csr } : {}),
       ...(subjectKey.kind === "publicKey"
         ? { publicKey: spkiPem(subjectKey.spki) }
@@ -741,9 +876,21 @@ export class CertificateService {
         ? { keyId: subjectKey.signerKeyId }
         : {}),
     };
-    const pem = await this.signer.signCertificate(issuer.id, spec);
+    const pem = issuance.sign
+      ? await issuance.sign(spec)
+      : await this.signer.signCertificate(issuer.id, spec);
     const parsed = parseCertificate(pem);
     const id = await this.prisma.$transaction(async (tx) => {
+      if (
+        subjectKey.kind === "signer" &&
+        issuance.escrow === false &&
+        issuance.lineage.created
+      ) {
+        await tx.key.update({
+          where: { id: issuance.lineage.key.id },
+          data: { exportOnce: true },
+        });
+      }
       const created = await tx.certificate.create({
         data: {
           issuerId: issuer.id,

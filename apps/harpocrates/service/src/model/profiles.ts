@@ -100,6 +100,39 @@ export class Profile {
   requireSan: boolean;
 
   @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed",
+  })
+  escrow: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether one request may choose escrow otherwise",
+  })
+  escrowOverridable: boolean;
+
+  @ApiProperty({
+    type: String,
+    enum: ["standard", "minimal"],
+    enumName: "ExtensionSet",
+    required: true,
+    description:
+      "standard: the extensions its rules make; minimal: the key identifiers and nothing else",
+  })
+  extensions: "standard" | "minimal";
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether it is issued only in a ceremony with a root that signs directly",
+  })
+  directOnly: boolean;
+
+  @ApiProperty({
     type: String,
     isArray: true,
     required: true,

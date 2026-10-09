@@ -88,6 +88,7 @@ export type {
   ExportFormatName,
   ExportKeyRequest,
   ExportKeyResponse,
+  ExtensionSet,
   GenerateKeyData,
   GenerateKeyError,
   GenerateKeyErrors,

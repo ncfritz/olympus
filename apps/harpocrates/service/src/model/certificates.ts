@@ -4,6 +4,7 @@ import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -287,11 +288,75 @@ export class CreateCertificateRequest {
     type: String,
     required: false,
     description:
-      "The subscriber's CSR, PEM; without one the signer generates (and escrows) the key, if the profile allows",
+      "The subscriber's CSR, PEM; without one the signer generates the key, if the profile allows",
   })
   @IsOptional()
   @IsString()
   csr?: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "For a generated key: whether it stays escrowed, exportable again; off, it is exported once and destroyed. By default the profile's setting; another only where the profile allows",
+  })
+  @IsOptional()
+  @IsBoolean()
+  escrow?: boolean;
+}
+
+/** A leaf a root signs directly, in its ceremony (ADR 0032). */
+export class CreateCeremonyCertificateRequest {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "A direct-only profile (direct-minimal by default)",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  profileId?: string;
+
+  @ApiProperty({
+    type: () => CertificateSubject,
+    required: true,
+    description: "Its subject; O is the root's organisation by default",
+  })
+  @ValidateNested()
+  @Type(() => CertificateSubject)
+  subject: CertificateSubject;
+
+  @ApiProperty({
+    type: () => Names,
+    required: false,
+    description: "Its alternative names, if the profile carries them",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => Names)
+  names?: Names;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "Its validity in days; by default the profile's, never past the root's limit",
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  validityDays?: number;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Whether its generated key stays escrowed; by default the profile's setting",
+  })
+  @IsOptional()
+  @IsBoolean()
+  escrow?: boolean;
 }
 
 export class ImportCertificatesRequest {
@@ -472,6 +537,15 @@ export class CreateCertificateResponse {
     type: () => FullCertificate,
     required: true,
     description: "The new certificate",
+  })
+  certificate: FullCertificate;
+}
+
+export class CreateCeremonyCertificateResponse {
+  @ApiProperty({
+    type: () => FullCertificate,
+    required: true,
+    description: "The new certificate, signed by the ceremony's root",
   })
   certificate: FullCertificate;
 }

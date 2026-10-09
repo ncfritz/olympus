@@ -49,6 +49,18 @@ export class SignerStatus {
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
+export class InitialiseSignerRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The recovery passphrase to set, at least 12 characters: it unseals the signer after a deliberate seal or without the unseal key",
+  })
+  @IsString()
+  @MinLength(12)
+  passphrase: string;
+}
+
 export class UnsealSignerRequest {
   @ApiProperty({
     type: String,
@@ -63,6 +75,16 @@ export class UnsealSignerRequest {
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
+
+export class InitialiseSignerResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The unseal key, base64, shown once: it becomes the harpocrates_signer_unseal_key secret, and goes in the password manager",
+  })
+  unsealKey: string;
+}
 
 export class DescribeSignerStatusResponse {
   @ApiProperty({

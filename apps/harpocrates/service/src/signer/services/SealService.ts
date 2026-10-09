@@ -23,6 +23,17 @@ export class SealService {
     };
   }
 
+  /**
+   * Initialises an empty signer (ADR 0032, bootstrap): the recovery
+   * passphrase is set and the unseal key returned, once. It is never
+   * logged or recorded; the audit log says only that it happened.
+   */
+  async initialise(principal: Principal, passphrase: string): Promise<string> {
+    const unsealKey = await this.signer.initialise(passphrase);
+    await this.audit.record({ kind: AuditKind.SignerInitialised, principal });
+    return unsealKey;
+  }
+
   async seal(principal: Principal): Promise<void> {
     await this.signer.seal();
     await this.audit.record({ kind: AuditKind.SignerSealed, principal });

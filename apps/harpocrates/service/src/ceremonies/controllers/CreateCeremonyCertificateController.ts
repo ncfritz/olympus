@@ -20,24 +20,26 @@ import type { Request, Response } from "express";
 import { CurrentPrincipal } from "../../auth/currentPrincipal";
 import type { Principal } from "../../auth/principal";
 import { AdminOnly, RecentSignIn } from "../../auth/roles";
-import { DescribeIssuerController } from "../../issuers/controllers/DescribeIssuerController";
-import { CreateIssuingIssuerResponse } from "../../model/ceremonies";
-import { CreateIssuingIssuerRequest } from "../../model/issuers";
+import { DescribeCertificateController } from "../../certificates/controllers/DescribeCertificateController";
+import { CertificateService } from "../../certificates/services/CertificateService";
+import {
+  CreateCeremonyCertificateRequest,
+  CreateCeremonyCertificateResponse,
+} from "../../model/certificates";
 import { ApiStandardErrorResponses } from "../../openapi/controllerDecorators";
 import { setLocation } from "../../utils/location";
-import { CeremonyService } from "../services/CeremonyService";
 
 @ApiBearerAuth()
 @Controller({ version: "1" })
-export class CreateIssuingIssuerController {
-  constructor(private readonly ceremonies: CeremonyService) {}
+export class CreateCeremonyCertificateController {
+  constructor(private readonly certificates: CertificateService) {}
 
-  @Post("/ceremony/:ceremonyId/issuing")
+  @Post("/ceremony/:ceremonyId/certificates")
   @ApiOperation({
-    summary: "Creates an issuing CA in a ceremony",
+    summary: "Issues a certificate in a ceremony",
     description:
-      "Creates an online issuing CA below the ceremony's intermediate, or below a two-tier root (ADR 0032): its key is generated in the signer's store, the ceremony's CA signs it, and it is registered to sign certificates. Settings left out take their defaults.",
-    operationId: "CreateIssuingIssuer",
+      "Issues a leaf signed directly by the ceremony's root, for a root that signs directly (ADR 0032): the key is generated in the signer and escrowed unless the profile lets the request choose otherwise. Only direct-only profiles; a refusal is a 422 and is recorded in the audit log.",
+    operationId: "CreateCeremonyCertificate",
     tags: ["Ceremonies"],
   })
   @ApiConsumes("application/json")
@@ -48,16 +50,15 @@ export class CreateIssuingIssuerController {
     type: String,
   })
   @ApiBody({
-    type: CreateIssuingIssuerRequest,
+    type: CreateCeremonyCertificateRequest,
     required: true,
-    description:
-      "The issuing CA's purpose, number, generation, usages, constraints and maximum validity.",
+    description: "The profile, subject, validity and escrow.",
   })
   @ApiCreatedResponse({
-    description: "The issuing CA was created.",
-    type: CreateIssuingIssuerResponse,
+    description: "The certificate was issued.",
+    type: CreateCeremonyCertificateResponse,
     headers: {
-      Location: { schema: { type: "string" }, description: "The new CA" },
+      Location: { schema: { type: "string" }, description: "The certificate" },
     },
   })
   @ApiStandardErrorResponses({
@@ -72,20 +73,20 @@ export class CreateIssuingIssuerController {
   @RecentSignIn()
   async handle(
     @Param("ceremonyId") ceremonyId: string,
-    @Body() request: CreateIssuingIssuerRequest,
+    @Body() request: CreateCeremonyCertificateRequest,
     @CurrentPrincipal() principal: Principal,
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const responseBody: CreateIssuingIssuerResponse = {
-      issuer: await this.ceremonies.createIssuing(
+    const responseBody: CreateCeremonyCertificateResponse = {
+      certificate: await this.certificates.createInCeremony(
         principal,
         ceremonyId,
         request,
       ),
     };
-    setLocation(response, httpRequest, DescribeIssuerController, {
-      issuerId: responseBody.issuer.id,
+    setLocation(response, httpRequest, DescribeCertificateController, {
+      certificateId: responseBody.certificate.id,
     });
     response.status(HttpStatus.CREATED).send(responseBody);
   }

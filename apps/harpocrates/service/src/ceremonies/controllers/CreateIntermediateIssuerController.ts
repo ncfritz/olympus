@@ -36,7 +36,7 @@ export class CreateIntermediateIssuerController {
   @ApiOperation({
     summary: "Creates an intermediate in a ceremony",
     description:
-      "Creates an offline intermediate below the ceremony's root: the signer generates its key, the root signs it, and the key is returned encrypted, once.",
+      "Creates an offline intermediate below the ceremony's root, when the root has three tiers: the signer generates its key, the root signs it, and the key is returned encrypted, once. Settings left out take their defaults; a validity past the root's is refused.",
     operationId: "CreateIntermediateIssuer",
     tags: ["Ceremonies"],
   })

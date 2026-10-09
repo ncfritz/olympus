@@ -461,9 +461,9 @@ export const closeCeremony = <ThrowOnError extends boolean = true>(
   >({ url: "/v1/ceremonies/{ceremony_id}", ...options });
 
 /**
- * Signs a CA certificate in a ceremony
+ * Signs a certificate in a ceremony
  *
- * A CA below the ceremony's (a path length below its own): an issuing CA whose key is in the store, or a cross-signed successor.
+ * A CA below the ceremony's (a path length below its own): an intermediate, an issuing CA whose key is in the store, or a cross-signed successor. A root that signs directly (path length 0) signs leaves instead, never a CA.
  */
 export const signCeremonyCertificate = <ThrowOnError extends boolean = true>(
   options: Options<SignCeremonyCertificateData, ThrowOnError>,

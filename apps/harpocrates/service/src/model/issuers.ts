@@ -52,6 +52,22 @@ export const ISSUER_STATUS_ENUM = {
   },
 };
 
+export const ISSUER_SHAPE_VALUES = [
+  "three_tier",
+  "two_tier",
+  "direct",
+] as const;
+export type IssuerShapeName = (typeof ISSUER_SHAPE_VALUES)[number];
+
+export const ISSUER_SHAPE_ENUM = {
+  enum: [...ISSUER_SHAPE_VALUES],
+  enumName: "IssuerShape",
+  enumSchema: {
+    description:
+      "A root's shape (ADR 0032): three_tier signs intermediates, two_tier signs issuing CAs, direct signs leaves",
+  },
+};
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -89,9 +105,39 @@ export class Issuer {
   @ApiProperty({
     type: String,
     required: false,
-    description: "What an issuing CA is for: TLS, Service, Device, Signing",
+    description:
+      "What it is for: TLS, Service, Device, Signing; optional for a root (Dev)",
   })
   purpose?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Its organisation (O, and the start of its CN) when set for it or its root; absent, the CA's configured one",
+  })
+  organization?: string;
+
+  @ApiProperty({
+    ...ISSUER_SHAPE_ENUM,
+    required: false,
+    description: "A root's shape; absent below a root",
+  })
+  shape?: IssuerShapeName;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup",
+  })
+  provedAt?: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when a root that had signed nothing was discarded",
+  })
+  discardedAt?: Moment;
 
   @ApiProperty({
     type: Number,
@@ -226,11 +272,72 @@ export class CreatedOfflineIssuer {
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
-export class CreateRootIssuerRequest {
+/**
+ * What may be set on any new CA instead of its default (ADR 0032, Names
+ * and settings). Every one is optional: left out, the recommended default
+ * applies, and the audit log records which were given.
+ */
+export class CaOverrides {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Its organisation: O, and the start of the CN; by default its root's, or the CA's configured one for a root",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[^,=+<>#;"\\]{1,64}$/)
+  organization?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/(^|,)CN=/)
+  subject?: string;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry",
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(36500)
+  validityDays?: number;
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    required: false,
+    description: "Its key type (P-256 by default)",
+  })
+  @IsOptional()
+  @IsIn([...KEY_ALGORITHM_VALUES])
+  algorithm?: KeyAlgorithmName;
+
+  @ApiProperty({
+    type: () => NameConstraints,
+    required: false,
+    description:
+      "Its name constraints; none by default, everything beneath it is held to them",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NameConstraints)
+  nameConstraints?: NameConstraints;
+}
+
+export class CreateOfflineIssuerRequest extends CaOverrides {
   @ApiProperty({
     type: Number,
     required: true,
-    description: "The root's number, 1 for the first",
+    description: "Its number, 1 for the first of its kind",
   })
   @IsInt()
   @Min(1)
@@ -239,45 +346,48 @@ export class CreateRootIssuerRequest {
   @ApiProperty({
     type: Number,
     required: true,
-    description: "Its generation, 1 unless it succeeds a root",
+    description: "Its generation, 1 unless it succeeds a CA",
   })
   @IsInt()
   @Min(1)
   generation: number;
 
   @ApiProperty({
-    ...KEY_ALGORITHM_ENUM,
+    type: String,
     required: false,
-    description: "The root's key type (P-256 by default)",
+    description:
+      "What it is for, in its name (Dev Root CA, Servers Intermediate CA); none by default",
   })
   @IsOptional()
-  @IsIn([...KEY_ALGORITHM_VALUES])
-  algorithm?: KeyAlgorithmName;
+  @IsString()
+  @Matches(/^[A-Z][A-Za-z]*( [A-Z][A-Za-z]*)*$/)
+  purpose?: string;
 
   @ApiProperty({
     type: String,
     required: true,
     description:
-      "The passphrase the root's key is exported under, at least 12 characters",
+      "The passphrase its key is exported under, at least 12 characters",
   })
   @IsString()
   @MinLength(12)
   exportPassphrase: string;
 }
 
-export class CreateIntermediateIssuerRequest extends CreateRootIssuerRequest {
+export class CreateRootIssuerRequest extends CreateOfflineIssuerRequest {
   @ApiProperty({
-    type: () => NameConstraints,
+    ...ISSUER_SHAPE_ENUM,
     required: false,
-    description: "Name constraints for the intermediate",
+    description: "Its shape (three_tier by default); sets its path length",
   })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => NameConstraints)
-  nameConstraints?: NameConstraints;
+  @IsIn([...ISSUER_SHAPE_VALUES])
+  shape?: IssuerShapeName;
 }
 
-export class CreateIssuingIssuerRequest {
+export class CreateIntermediateIssuerRequest extends CreateOfflineIssuerRequest {}
+
+export class CreateIssuingIssuerRequest extends CaOverrides {
   @ApiProperty({
     type: String,
     required: true,
@@ -325,16 +435,6 @@ export class CreateIssuingIssuerRequest {
   @IsArray()
   @IsString({ each: true })
   extendedKeyUsages: string[];
-
-  @ApiProperty({
-    type: () => NameConstraints,
-    required: false,
-    description: "Its name constraints",
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => NameConstraints)
-  nameConstraints?: NameConstraints;
 }
 
 export class ImportIssuerRequest {
@@ -463,6 +563,15 @@ export class ListIssuersResponse {
     description: "Every CA, parents before children",
   })
   issuers: Issuer[];
+}
+
+export class DiscardIssuerResponse {
+  @ApiProperty({
+    type: () => FullIssuer,
+    required: true,
+    description: "The discarded root, revoked in the record",
+  })
+  issuer: FullIssuer;
 }
 
 export class DescribeIssuerResponse {

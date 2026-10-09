@@ -13,10 +13,12 @@ import type { Principal } from "../../auth/principal";
 import { pkiConfig, type PkiConfigType } from "../../config/configuration";
 import { KeyService } from "../../keys/services/KeyService";
 import type {
+  CaOverrides,
   CreateRootIssuerRequest,
   FullIssuer,
   ImportIssuerRequest,
   Issuer,
+  IssuerShapeName,
 } from "../../model/issuers";
 import {
   certificatePem,
@@ -31,6 +33,7 @@ import { PrismaService } from "../../store/PrismaService";
 import {
   ISSUER_RULES,
   type IssuerWithRules,
+  constraintRows,
   toDomainObject,
   toFullIssuer,
 } from "../converters/IssuerConverter";
@@ -43,10 +46,12 @@ import {
 import {
   addDays,
   isIssuingWindowOpen,
-  OFFLINE_MAX_VALIDITY_DAYS,
-  TIER_PATH_LENGTH,
+  offlineMaxValidityDays,
+  SHAPE_PATH_LENGTH,
+  shapeOfPathLength,
   TIER_VALIDITY_DAYS,
 } from "../issuingWindow";
+import { overridesGiven, signerConstraints } from "../overrides";
 
 const TIER_ORDER = { root: 0, intermediate: 1, issuing: 2 } as const;
 
@@ -120,39 +125,74 @@ export class IssuerService {
     };
   }
 
-  subjectFor(parts: IssuerNameParts): string {
+  /**
+   * A CA's subject from its parts: `organization` (its root's, or set for
+   * it) begins the CN and is the O; without one, the configured realm and
+   * organisation (ADR 0032, Names and settings).
+   */
+  subjectFor(parts: IssuerNameParts, organization?: string): string {
     return subjectName({
-      commonName: issuerCommonName(this.pki.realm, parts),
-      organization: this.pki.organization,
+      commonName: issuerCommonName(organization ?? this.pki.realm, parts),
+      organization: organization ?? this.pki.organization,
     });
+  }
+
+  /**
+   * The subject a new CA gets: the one given outright, or the one built
+   * from its parts. Either way it is new: a subject is never reused.
+   */
+  async newSubject(
+    parts: IssuerNameParts,
+    overrides: CaOverrides,
+    organization?: string,
+  ): Promise<string> {
+    const subject = overrides.subject ?? this.subjectFor(parts, organization);
+    if (await this.prisma.issuer.findUnique({ where: { subject } })) {
+      throw new ConflictException(
+        `A CA with the subject ${subject} exists: a subject is never reused`,
+      );
+    }
+    return subject;
   }
 
   urlsFor(slug: string) {
     return distributionUrls(this.pki.distributionUrl, slug);
   }
 
-  /** A new root, created as a ceremony: its key leaves encrypted, once. */
+  /**
+   * A new root (ADR 0032): its shape sets its path length and what its
+   * ceremonies sign; every setting starts at its default and may be
+   * overridden. The signer generates its key, self-signs, and hands the key
+   * back encrypted, once: the root is offline from its first moment.
+   */
   async createRoot(
     principal: Principal,
     request: CreateRootIssuerRequest,
   ): Promise<{ issuer: FullIssuer; encryptedKey: string }> {
+    const shape = request.shape ?? "three_tier";
     const parts: IssuerNameParts = {
       tier: "root",
+      purpose: request.purpose,
       number: request.number,
       generation: request.generation,
     };
     const id = issuerSlug(parts);
     await this.assertNew(id);
+    const subject = await this.newSubject(parts, request, request.organization);
     const notBefore = startNow();
     const created = await this.signer.createRoot(
       {
-        subject: this.subjectFor(parts),
+        subject,
         serial: randomSerial(),
         notBefore: notBefore.toISOString(),
-        notAfter: addDays(notBefore, TIER_VALIDITY_DAYS.root).toISOString(),
+        notAfter: addDays(
+          notBefore,
+          request.validityDays ?? TIER_VALIDITY_DAYS.root,
+        ).toISOString(),
         keyUsage: ["key_cert_sign", "crl_sign"],
         ca: true,
-        pathLength: TIER_PATH_LENGTH.root,
+        pathLength: SHAPE_PATH_LENGTH[shape],
+        nameConstraints: signerConstraints(request.nameConstraints),
       },
       request.algorithm ?? "P-256",
       request.exportPassphrase,
@@ -163,8 +203,52 @@ export class IssuerService {
       certificatePem: created.certificate,
       parentId: null,
       kind: AuditKind.IssuerCreated,
+      organization: request.organization,
+      shape,
+      constraints: constraintRows(request.nameConstraints),
+      overrides: overridesGiven(request),
     });
     return { issuer, encryptedKey: created.encryptedKey };
+  }
+
+  /**
+   * Discards a root that has signed nothing (ADR 0032): no CA beneath it,
+   * no certificate, no list. It is never published, and its number is not
+   * used again: the record stays, revoked.
+   */
+  async discard(principal: Principal, issuerId: string): Promise<FullIssuer> {
+    const row = await this.row(issuerId);
+    if (row.tier !== "root") {
+      throw new UnprocessableEntityException("Only a root is discarded");
+    }
+    if (row.discardedAt) return this.describe(issuerId);
+    const [children, certificates, crls] = await Promise.all([
+      this.prisma.issuer.count({ where: { parentId: issuerId } }),
+      this.prisma.certificate.count({ where: { issuerId } }),
+      this.prisma.crl.count({ where: { issuerId } }),
+    ]);
+    if (children + certificates + crls > 0) {
+      throw new ConflictException(
+        `${issuerId} has signed ${children} CAs, ${certificates} certificates and ${crls} lists: only a root that has signed nothing is discarded`,
+      );
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.issuer.update({
+        where: { id: issuerId },
+        data: { status: "revoked", discardedAt: new Date() },
+      });
+      await this.audit.record(
+        {
+          kind: AuditKind.IssuerDiscarded,
+          principal,
+          subjectType: "issuer",
+          subjectId: issuerId,
+          attributes: { subject: row.subject },
+        },
+        tx,
+      );
+    });
+    return this.describe(issuerId);
   }
 
   /**
@@ -184,10 +268,19 @@ export class IssuerService {
         type: "dns" | "ip" | "email" | "uri";
         value: string;
       }[];
+      organization?: string;
+      /** A root's; an imported root takes it from its path length. */
+      shape?: IssuerShapeName;
+      /** The settings given instead of their defaults, for the audit log. */
+      overrides?: string[];
     },
   ): Promise<FullIssuer> {
     const certificate = parseCertificate(offline.certificatePem);
     const tier = offline.parts.tier as "root" | "intermediate";
+    const shape =
+      tier === "root"
+        ? (offline.shape ?? shapeOfPathLength(certificate.pathLength))
+        : undefined;
     await this.prisma.$transaction(async (tx) => {
       const key = await this.keys.record(tx, {
         spki: certificate.spki,
@@ -210,7 +303,9 @@ export class IssuerService {
           notBefore: certificate.notBefore,
           notAfter: certificate.notAfter,
           pathLength: certificate.pathLength,
-          maxValidityDays: OFFLINE_MAX_VALIDITY_DAYS[tier],
+          maxValidityDays: offlineMaxValidityDays(tier, shape),
+          organization: offline.organization,
+          shape,
           ...this.urlsFor(offline.id),
           nameConstraints: { create: offline.constraints ?? [] },
         },
@@ -227,6 +322,8 @@ export class IssuerService {
             serial: certificate.serial,
             notAfter: certificate.notAfter.toISOString(),
             keyLocation: "offline",
+            shape,
+            overrides: offline.overrides?.join(",") || undefined,
           },
         },
         tx,
@@ -325,6 +422,9 @@ export class IssuerService {
       kind: typeof AuditKind.IssuerCreated | typeof AuditKind.IssuerImported;
       /** Signs its lists and nothing new (an XCA CA kept to its end). */
       closed?: boolean;
+      organization?: string;
+      /** The settings given instead of their defaults, for the audit log. */
+      overrides?: string[];
     },
   ): Promise<void> {
     const certificate = parseCertificate(issuing.certificatePem);
@@ -360,6 +460,7 @@ export class IssuerService {
           notAfter: certificate.notAfter,
           pathLength: 0,
           maxValidityDays: issuing.maxValidityDays,
+          organization: issuing.organization,
           ...this.urlsFor(issuing.id),
           extendedKeyUsages: {
             create: issuing.extendedKeyUsages.map((oid) => ({ oid })),
@@ -381,6 +482,7 @@ export class IssuerService {
             keyLocation: "signer",
             maxValidityDays: issuing.maxValidityDays,
             status: issuing.closed ? "closed" : "active",
+            overrides: issuing.overrides?.join(",") || undefined,
           },
         },
         tx,

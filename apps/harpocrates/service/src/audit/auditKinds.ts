@@ -3,6 +3,8 @@ export const AuditKind = {
   IssuerCreated: "issuer.created",
   IssuerImported: "issuer.imported",
   IssuerCompleted: "issuer.completed",
+  IssuerDiscarded: "issuer.discarded",
+  IssuerProved: "issuer.proved",
   CeremonyOpened: "ceremony.opened",
   CeremonyClosed: "ceremony.closed",
   KeyGenerated: "key.generated",
@@ -22,6 +24,7 @@ export const AuditKind = {
   CrlPublicationFailed: "crl.publication-failed",
   SignerSealed: "signer.sealed",
   SignerUnsealed: "signer.unsealed",
+  SignerInitialised: "signer.initialised",
 } as const;
 
 export type AuditKindName = (typeof AuditKind)[keyof typeof AuditKind];
