@@ -1,29 +1,50 @@
 "use client";
 
-import { GoogleOutlined, SettingOutlined } from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  GoogleOutlined,
+  HistoryOutlined,
+  ScheduleOutlined,
+  SendOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import {
   ControlShell,
   useConsoleAuth,
   type Registry,
+  type ShellPage,
 } from "@ncfritz/olympus-console";
 import { Button, Drawer, Flex, Select, Space, Switch, Typography } from "antd";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { API_URL, CONSOLE_KEY } from "@/lib/api/client";
+import { API_URL, BASE_PATH, CONSOLE_KEY } from "@/lib/api/client";
 import {
   TimelineSettingsProvider,
   useTimelineSettings,
 } from "@/lib/TimelineSettingsContext";
 import { defaultTimelineSettings } from "@/lib/settings";
 
-/** This console's own pages, in the shell's header strip. */
-const TABS = [
-  { key: "/", label: <Link href="/">Events</Link> },
-  { key: "/calendars", label: <Link href="/calendars">Calendars</Link> },
-  { key: "/sync", label: <Link href="/sync">Sync</Link> },
-  { key: "/publish", label: <Link href="/publish">Publish</Link> },
-];
+/**
+ * This console's own pages, in the sider beside the rail. The key is the
+ * route, matched against the path; the href is the address, with the
+ * base path the console is published under.
+ */
+const PAGES: ShellPage[] = [
+  { key: "/", label: "Events", icon: <CalendarOutlined />, href: "/" },
+  {
+    key: "/calendars",
+    label: "Calendars",
+    icon: <ScheduleOutlined />,
+    href: "/calendars",
+  },
+  { key: "/sync", label: "Sync", icon: <HistoryOutlined />, href: "/sync" },
+  {
+    key: "/publish",
+    label: "Publish",
+    icon: <SendOutlined />,
+    href: "/publish",
+  },
+].map((page) => ({ ...page, href: `${BASE_PATH}${page.href}` }));
 
 /** Falls back to just the browser's own zone if the (widely, but not universally, supported) enumeration API isn't available. */
 const TIMEZONE_OPTIONS: { value: string; label: string }[] = (() => {
@@ -58,6 +79,7 @@ export interface AppLayoutProps {
 export function AppLayout({ nav, origin, children }: AppLayoutProps) {
   const auth = useConsoleAuth({ apiUrl: API_URL });
   const pathname = usePathname();
+  const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -67,12 +89,15 @@ export function AppLayout({ nav, origin, children }: AppLayoutProps) {
         current={CONSOLE_KEY}
         origin={origin}
         auth={auth}
-        tabs={TABS}
-        activeTab={
+        pages={PAGES}
+        activePage={
           ["/calendars", "/sync", "/publish"].includes(pathname)
             ? pathname
             : "/"
         }
+        // The router takes the route, without the base path the anchor
+        // carries for a new tab.
+        onNavigate={(href) => router.push(href.slice(BASE_PATH.length) || "/")}
         actions={
           <Button
             type="text"
