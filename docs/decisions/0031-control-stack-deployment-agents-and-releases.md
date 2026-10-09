@@ -125,6 +125,7 @@ and paths.
 | --------------- | -------------- | ----------------------- | -------------------------------------------------------------------------------------------- |
 | Primary, `prod` | the Mac Mini   | In the `control` stack  | Deploy, the registry, prune, checks, prod's Docker; holds releases and the audit log         |
 | `local`         | the dev laptop | Natively, not in Docker | Git in the dev checkout (branches, merge), builds, local dev processes, local Docker, checks |
+| (none)          | the NAS        | Driven by the primary   | The asset agent's container, through the NAS's Docker over SSH                               |
 
 - **The console talks only to the primary**, as ADR 0016 has a console
   talk only to its own agent. The primary relays to the others.
@@ -138,6 +139,14 @@ and paths.
   checkout and declares no git operations.
 - The local agent runs outside Docker because it supervises processes
   in the dev checkout and works with the laptop's git and credentials.
+- **The NAS runs no agent** (Neil, 2026-10-08). The primary drives its
+  Docker the way `stack.sh` does with `DOCKER_CONTEXT`: the Docker API
+  over SSH, with a key of its own in the `control` stack's secrets and
+  `compose/nas.yml` from the release. What `stack.sh check` cannot see
+  from another machine (secret files, bind-mount sources), the primary
+  checks with a short-lived container on the NAS that mounts the paths
+  read-only and reports what it finds, then exits. Nothing stays
+  running there but the asset agent.
 - Agents are named by environment ([ADR 0022](0022-environments-not-machines.md)),
   not by machine.
 
@@ -148,7 +157,12 @@ and paths.
   uses `docker buildx bake` and `docker-bake.hcl`, as `stack.sh build
 --push --env prod` does now. This keeps `stack.sh`'s rule that a tag
   means a clean commit, without asking the developer to commit first.
-- Builds queue while the laptop is offline.
+- **The Mac Mini is the fallback builder** (Neil, 2026-10-08). The
+  primary declares the same build capability, used when the laptop is
+  offline or when chosen. It builds natively, competing with prod for CPU,
+  and loads straight into the local image store as `stack.sh build
+--load` does there. The NAS's amd64 image is the exception, since it
+  must be pushed.
 - **This amends ADR 0011.** Builds run on the laptop, not the Mac Mini.
   The rest of ADR 0011 still applies: bake, native `$BUILDPLATFORM`
   stages, the amd64 runtime stage for the NAS, and the registry. The
@@ -168,10 +182,22 @@ A **release** is:
   files, env files, `stack.sh`, `check.mjs`, the RabbitMQ definitions
   script and the nginx server blocks.
 
-The builder pushes the bundle to the registry beside the images, as an
-artifact tagged with the commit. The primary unpacks each release it
-deploys into `${DATA_DIR}/olympus/agents/olympus-deployment/releases/<commit>`
-and points `current` at the one running. It keeps the last few releases.
+The builder pushes the bundle to the registry beside the images as a
+small image of its own, `olympus/release:<commit>` (`FROM scratch`, the
+files and nothing else; Neil, 2026-10-08). Nothing new is needed to fetch
+it: `docker pull`, `docker create` and `docker cp`, which the agent,
+`stack.sh` and an operator by hand can all do. The registry lists it and
+prunes it like any other tag. The primary unpacks each release it deploys
+into `${DATA_DIR}/olympus/agents/olympus-deployment/releases/<commit>` and
+points `current` at the one running.
+
+**A release is kept only while it is in use** (Neil, 2026-10-08): while it
+runs in some environment, or while a deploy that replaces it has not yet
+passed its health gates. After that its directory is removed and its tags
+become prunable. The **deployment log** keeps what was deployed where and
+when, which is enough to go back to. Rolling back to a release that is
+gone means pulling it again if its images are still in the registry, and
+rebuilding it from its commit if they are not.
 
 - **`stack.sh` runs from `current`.** The release's `env/prod.env` holds
   the tags that are actually running, written by the agent at deploy
@@ -187,7 +213,8 @@ nginx-reload`, which validates before it reloads.
   deploying a single container is one variable. Hasura and RabbitMQ
   already have their own tags.
 - **The prod checkout goes away.** For an emergency, `stack.sh` runs from
-  `current`, or from any earlier release directory to go back.
+  `current`. Going back by hand is `docker cp` of an older release image
+  into a directory of its own, and `stack.sh up` from there.
 - **Schema changes are already in an image.** Hasura's image applies its
   migrations on start (ADR 0019), so prod never needs source. A release
   that changes `HASURA_TAG` takes a Postgres dump first and is flagged in
@@ -225,17 +252,20 @@ nginx-reload`, which validates before it reloads.
 
 - The console lists repositories and tags with size, age, source commit,
   and where each tag is running.
-- **A tag is protected** if any environment is running it, if one of the
-  last few releases per environment references it, or if it is pinned.
+- **A tag is protected** if any environment is running it, if a deploy
+  in progress needs it, or if it is pinned. Everything else is prunable;
+  the deployment log, not the registry, is the history.
 - Pruning shows the list first, then deletes. Garbage collection, which
   needs the registry read-only for a while, is a separate step.
 
 ### Local development
 
-- **Processes are defined in the repository**, not typed into the
-  console. A checked-in file lists each one: package, script, env file,
-  port, readiness check and dependencies (the API before the site). The
-  agent runs only what is listed, so the console is never a remote shell.
+- **Processes are defined in a file on the laptop**, not typed into the
+  console: `olympus-processes.json` in the Docker data folder (Neil,
+  2026-10-08). It lists each one: package, script, env file, port,
+  readiness check and dependencies (the API before the site). The agent
+  runs only what is listed, so the console is never a remote shell, and
+  the file is edited on the laptop, never through the console.
 - Long-running processes (`pnpm dev`) can be started, stopped and
   restarted, singly or as a group. One-shot tasks (build, typecheck,
   lint, test) are run with exit status, duration and history.
@@ -289,8 +319,12 @@ control` from a release directory recovers.
   record of what is deployed all move to the release directory.
 - Deploys stop being commits. `env/prod.env` in the repository describes
   the environment; the image tags running in it are Control's record.
-- Builds need the laptop. With it away, nothing new can be built, though
-  anything already built can still be deployed or rolled back.
+- Builds prefer the laptop. With it away the Mac Mini builds, more
+  slowly and at prod's expense.
+- Rolling back further than the release being replaced can mean a
+  rebuild, since only releases in use are kept.
+- The NAS's checks are a one-shot container rather than a shell, so
+  anything they need is in that image.
 - `olympus-control` moves from `olympus.yml` to `control.yml`, and the
   consoles' registry stops being guaranteed to match.
 - `olympus.yml` gains a tag variable per service.
@@ -303,14 +337,7 @@ control` from a release directory recovers.
 
 ## Open
 
-- Whether the Mac Mini keeps a fallback builder (native arm64,
-  competing with prod for CPU), for when the laptop is away.
-- The NAS's asset agent: whether it gets an agent of its own or keeps
-  being deployed with `DOCKER_CONTEXT` from the primary.
-- The break-glass credential's form: a password file, a passkey, or a
-  client certificate.
-- The process definition file's name and place, and whether it also
-  replaces `pnpm dev`'s own scripts.
-- How many releases to keep, and the prune rule's N.
-- Whether the bundle is an OCI artifact (`oras`) or a small image of its
-  own, which any `docker pull` can fetch.
+- The break-glass credential's form. Suggested: a passkey, enrolled from
+  a session signed in through Olympus and kept in the agent's store, with
+  a one-time recovery code (only its hash in the `control` secrets) as
+  the last resort; break-glass accepted from the LAN only.
