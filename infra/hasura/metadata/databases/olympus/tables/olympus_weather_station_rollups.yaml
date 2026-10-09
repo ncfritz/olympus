@@ -1,0 +1,26 @@
+table:
+  name: weather_station_rollups
+  schema: olympus
+configuration:
+  column_config:
+    bucket_start:
+      custom_name: bucketStart
+    metric_id:
+      custom_name: metricId
+    sample_count:
+      custom_name: sampleCount
+    station_id:
+      custom_name: stationId
+  custom_column_names:
+    bucket_start: bucketStart
+    metric_id: metricId
+    sample_count: sampleCount
+    station_id: stationId
+  custom_root_fields: {}
+object_relationships:
+  - name: metric
+    using:
+      foreign_key_constraint_on: metric_id
+  - name: station
+    using:
+      foreign_key_constraint_on: station_id

@@ -2,26 +2,29 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                                                                                   |
-| --- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                                                    |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                                                 |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK and all four agents **done**                                                         |
-| 3   | Import site and desktop shell (the site first changes only for authentication, phase 9)              |                                                                                          |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         | baseline and workflow **done** (2026-09-20); cli-migrations image in the deployment work |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                                                          |
-| 6   | Central Docker builds and compose stacks (ADR 0011, 0019, [plan](plans/docker/README.md))            | planned; before authentication phase 3                                                   |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                                                          |
-| 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                    |
-| 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                          |
-| 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                 |
-| 10  | Internal CA: Harpocrates (ADR 0020, [plan](plans/internal-ca/README.md))                             | phases 0 to 3 done; phase 4 built, cutover to run; next: phase 5                         |
-| 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                           |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                  |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                 |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                 |
-| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                                                 |
-| —   | Shared API client and request metrics (ADR 0017)                                                     | **done** (2026-09-20)                                                                    |
+| #   | Phase                                                                                                | Status                                                                                       |
+| --- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                                                        |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                                                     |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK and all four agents **done**                                                             |
+| 3   | Import site and desktop shell (the site first changes only for authentication, phase 9)              |                                                                                              |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         | baseline and workflow **done** (2026-09-20); cli-migrations image in the deployment work     |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                                                              |
+| 6   | Central Docker builds and compose stacks (ADR 0011, 0019, [plan](plans/docker/README.md))            | planned; before authentication phase 3                                                       |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                                                              |
+| 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                        |
+| 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                              |
+| 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                     |
+| 10  | Internal CA: Harpocrates (ADR 0020, [plan](plans/internal-ca/README.md))                             | phases 0 to 3 done; phase 4 built, cutover to run; next: phase 5                             |
+| 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                               |
+| 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                     |
+| 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | phases 0–4 **done** (2026-10-01); phase 5 built, not signed off; phases 6–9 planned          |
+| 14  | Email management: label audit and suggestions (ADR 0030, [plan](plans/email-management/README.md))   | phases 0, 1a and 3 **done** (M0, M5 signed off); 2 built, M3 and M4 next; 4.1 built, 1b next |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                      |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                     |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                     |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                                                     |
+| —   | Shared API client and request metrics (ADR 0017)                                                     | **done** (2026-09-20)                                                                        |
 
 ## Open decisions
 
@@ -49,6 +52,14 @@ Planned work outside the phases, in no particular order.
 4. **Feature (notification agent): interactive message tester,
    web-based.**
 5. **Feature (notification agent): delivery audit trail and metrics.**
+6. **Feature (site): Google Maps map ID, for light and dark themes.** The
+   weather map is styled in code (`STYLE_SHIFT_WORKER`, greyscale) and
+   marks the location with a deck.gl dot, because Google's classic
+   `Marker` is deprecated and its replacement, `AdvancedMarker`, only works
+   on a map with a map ID, which in turn replaces code styling with styles
+   kept in the Google Cloud console. Moving to map IDs (one per theme) goes
+   with the site's light and dark themes (ADR 0012); at that point the dot
+   becomes an `AdvancedMarker`.
 
 ## Model backlog
 
@@ -299,11 +310,160 @@ check the consumers when the metadata and asset agents are imported.
 - Non-TypeScript publishers (the NZBGet scripts) are checked against
   generated JSON Schemas; add a schema to `pnpm schemas` for any other.
 
+### API
+
+- **`GetContentAssetAggregateStatistics` is declared with the wrong response
+  type.** The controller's `@ApiOkResponse` says `ContentStatisticsResponse` --
+  the categories-and-series shape the four distribution endpoints return -- while
+  the service returns `ContentAssetAggregateStatistics`, nine numbers (count, and
+  min/max/avg/total for size and duration). So the OpenAPI document is wrong, the
+  generated SDK inherited it, and `apps/site`'s statistics panel has to cast
+  across the gap (`ContentAssetStatistics.tsx`, with the reason at the cast).
+
+  Found by typing that panel, 2026-09-29: the `any` on its state had been hiding
+  the disagreement. The fix is the decorator, a regenerated SDK, and removing
+  that cast and its local type.
+
+- **Does `GetMediaAssetSearchExecutionStatistics` return a `failed` series?** The
+  declared response has `new`, `duplicate`, `skipped` and `timing`, and
+  `SearchExecutionsStatusChart` plots a fifth series from `stats.failed` -- so
+  either the chart has been drawing an empty series for some time, or this is a
+  second endpoint whose declaration is incomplete. The chart casts across it for
+  now, with the reason at the cast. Answering it means looking at what the
+  endpoint actually returns; the aggregate-statistics entry above is why that is
+  worth doing rather than assuming the spec is right.
+
+- **`SendAmqpTestMessage` declares a `{ payload }` envelope that nothing
+  unwraps.** The controller takes a `TestRequest` body and publishes it to the
+  exchange as-is, so a consumer receives `{ payload: ... }` rather than the
+  message inside it -- while `apps/site` sends the message flat, which is what
+  the media trigger consumer expects and why the workflow button works.
+  Whichever side is right, the declaration and the publisher disagree: either
+  the controller should publish `request.payload`, or the body should be the
+  message. The site casts across it for now, with the reason at the cast
+  (`apps/site/src/api/adminApi.ts`). Found by typing that method, 2026-09-29.
+
 ### Site
 
-- A Google Maps API key is hard-coded in `src/pages/_app.tsx`. Move it to
-  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, and restrict the key by referrer in
-  the Google console.
+- **Notifications are broadcast to every connected socket.** The gateway's
+  `send` is `server.emit`, so every client receives every `notification.push` and
+  `notification.refresh` regardless of who it is for -- the REST endpoints are
+  per-user, the socket is not. Authenticating the handshake (2026-09-28) stopped
+  strangers listening; it did not make the stream per-user. The fix is a room per
+  user and emitting to it, which needs the publisher to know the recipient.
+
+- **`public/assets/libs/tinymce` is build output under version control.**
+  `next.config.mjs` copies `node_modules/tinymce` into it with
+  `copy-webpack-plugin`, so every build rewrites 239 tracked files and `git
+status` is only clean while the installed version matches the committed one --
+  which is why `tinymce` is pinned to an exact 8.8.2 rather than a caret. The
+  directory also holds a `tinymce-premium` overlay that nothing copies: those
+  plugin directories are there because somebody put them there, they carry no
+  version, and a `tinymce` upgrade leaves them behind. Untracking the directory
+  needs the build to reproduce all of it, premium included, which is the site's
+  conventions work rather than this phase's.
+
+- **8 `@typescript-eslint/no-explicit-any`**, and nothing else: down from the
+  442 warnings across seven rules the site arrived with (2026-09-29).
+  `no-unused-vars` went from 277 to zero, and the other five rules are empty.
+
+  All eight are in the OnAir components and their client, and they stay: those
+  endpoints are being replaced by the Minerva calendar sync, so typing
+  `onairApi` from what the components read would be work thrown away -- the new
+  APIs bring their own types. `next.config.mjs` still hides warnings from the
+  build with `eslint: { ignoreDuringBuilds: true }`, and they are warnings
+  rather than errors in `apps/site/eslint.config.mjs`; both of those change when
+  the OnAir move lands and the count reaches zero.
+
+  What the typing turned out to be, for the record, was three kinds of work. A
+  generated SDK type existed and had never been reached for -- the meetings
+  views, the workflow charts, the notes, the content asset page. Or the data has
+  no spec because it does not come from our API: the ffprobe and HandBrake
+  metadata and the NZB summary the media pipeline publishes to the CDN
+  (`src/utils/ffprobe.ts`, `handbrake.ts`, `nzb.ts`), the notifications socket's
+  own envelope (`src/auth/notifications.ts`), the transcription service's
+  websocket. Or the `any` was standing in for a library's type that was there
+  all along -- antd's `TabsProps["items"]`, react-hook-form's render props,
+  React's `DependencyList`, deck.gl's `GoogleMapsOverlayProps`.
+
+  Six bugs came out of it, each one a place where `any` had been hiding that a
+  value could be absent: `ContentAssetDetailsPanel` and the asset page both
+  rendered before their fetch resolved and read fields off `undefined`;
+  `EventChip` and `meetingsApi.toEvent` formatted `Meeting.endTime`, which is
+  optional, so an open-ended meeting rendered an invalid date; and
+  `DayStatisticsPanel` keyed its attendee tally on the optional `alias`, so
+  every attendee without one collapsed into a single unnamed bucket. The
+  statistics panel that would crash on a failed fetch and the fourteen demoted
+  `"use client"` directives came out of the earlier passes.
+
+  Three things the pass found and did not fix, because they are decisions about
+  features rather than about warnings: `OnAirEvent` ignores an `updateFunction`
+  prop that `CalendarPanel` still computes and passes, `MovieVideoList` computed
+  a per-site video icon that was never rendered (removed), and
+  `MediaAssetFFMpegDetails` collects a `chapters` list it never populates, so
+  the chapters section can never draw.
+
+  Two more that want a decision rather than a type: `useFetch` declares its data
+  as `T` while holding it as `T | undefined`, so every caller is told the value
+  is there before the first fetch resolves and after a failure -- which is what
+  three of the bugs above actually were, and fixing the signature touches every
+  caller. And `src/components/notes/NoteMarkdownEditor.tsx` has no callers and
+  never wired its props into `React.FunctionComponent`; it is typed now, but it
+  probably wants deleting.
+
+  Turning them into errors, and adopting `@ncfritz/olympus-config/eslint/react`
+  in place of the site's own config, wait on the catalog upgrade -- that config
+  needs ESLint 9 or later and brings the inline-style ratchet of
+  `docs/conventions/ux.md` with it.
+
+- **The site's dependency versions.** Its tooling is behind the workspace
+  catalog -- ESLint 8 against 10, TypeScript 5.4 against 6.0, prettier 3.2
+  against 3.8, `globals`, `typescript-eslint`, `@types/node` -- and adopting
+  `catalog:` for those means two major upgrades whose first effect is new errors
+  in code that already has 433 warnings, so it wants doing deliberately rather
+  than as part of a tidy-up. Separately and larger: React 18 against the
+  catalog's 19, Next 15 against 16, antd 6.4 against 6.6, which the import
+  deliberately deferred (`docs/plans/authentication/README.md`, phase 5). Until
+  both are done the site is the one workspace package that cannot say
+  `catalog:` for anything.
+
+- **Rotate credentials**: `NEXTAUTH_SECRET` and the GitHub OAuth app's
+  `GITHUB_CLIENT_SECRET`. Both were committed to `olympus-site` in a
+  `.env.local` and lived in its history until the import (2026-09-28), which
+  dropped the file from every commit and redacted the values. That does nothing
+  about the copies on GitHub and on any machine that has ever cloned the repo,
+  so both must be rotated at the source: a new secret for the GitHub OAuth app,
+  and `NEXTAUTH_SECRET` retired outright once phase 5 removes NextAuth.
+
+- **Rotate credentials**: the Google Maps API key that was hard-coded in the
+  site's `src/pages/_app.tsx`. It stayed in that repository's history through the
+  import and was in every bundle the site has ever served, so the value itself
+  has to be replaced in the Google console.
+
+  What replaces it does not come back here. The key is read from
+  `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (2026-09-28) and lives in the host's
+  `SECRETS_DIR`, reaching `next build` as a buildx secret (2026-09-29) --
+  `MAPS_KEY_SECRET` names the file per environment. Compiled into the bundle it
+  is public either way, which is what the referrer restriction to `*.ncfritz.net`
+  is for and why that restriction is the standing control; keeping the value out
+  of this repository is what makes rotating it worth doing at all.
+
+- **Revoke credentials**: the Tomorrow.io API key that was hard-coded in the
+  site's weather widget until 2026-09-29. The weather work (ADR 0024, plan
+  phase 4) removed Tomorrow.io altogether: the widget, its constant, the
+  `tomorrow_key` build secret and `TOMORROW_KEY_SECRET`. The key was in the
+  repository and in every bundle served, so it is revoked at Tomorrow.io,
+  and `SECRETS_DIR/tomorrow_io_api_key` deleted, once phase 4 is deployed.
+
+- **Rotate credentials**: `src/pages/content.tsx` is a scratch page on the
+  public `/content` route whose only content is a `QRCode` for an
+  `otpauth://totp/...` URI with a live TOTP seed in it. Whatever account that
+  seed belongs to should have its authenticator re-enrolled, and the page
+  itself deleted rather than parameterised -- it looks like something used once
+  to test the QR component. Both the seed and the Maps key predate this
+  repository, so redacting them from history is the same `git filter-repo
+--replace-text` pass, if it is worth one.
+
 - `eslint.ignoreDuringBuilds: true` and `reactStrictMode: false` in
   `next.config.mjs`.
 - About 1,700 inline style objects in about 225 files.

@@ -220,6 +220,140 @@
         ]
       }
     },
+    "/auth/me": {
+      "get": {
+        "description": "The user the access token belongs to, with the roles they hold now rather than the ones their token was issued with. Answers 401 if the user has since been disabled or removed, which is sooner than their token expires.",
+        "operationId": "DescribeCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The signed-in user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCurrentUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, one that does not verify, or a user who has since been disabled or removed."
+          }
+        },
+        "summary": "Describes the signed-in user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/sessions": {
+      "get": {
+        "description": "Every session of the caller's that has not been revoked or expired, newest first, with the one the request was made from marked `current`. Nothing here identifies a refresh token.",
+        "operationId": "ListSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's live sessions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSessionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          }
+        },
+        "summary": "Lists the signed-in user's sessions",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/sessions/{sessionId}": {
+      "delete": {
+        "description": "Ends a session of the caller's, so its refresh token stops working. An access token already issued from it stays valid until it expires, within ten minutes. A session that is not the caller's answers 404, exactly as a session that does not exist.",
+        "operationId": "RevokeSession",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "description": "The id of the session to revoke, from ListSessions",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The session has been revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Revokes one of the signed-in user's sessions",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "Revokes the session the access token was issued from and clears the site's refresh cookie. The access token itself stays valid for its remaining minutes, because authenticating a request does not read the database. Signing out twice is not an error.",
+        "operationId": "SignOut",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The session has been ended and the refresh cookie cleared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignOutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          }
+        },
+        "summary": "Signs the caller out of its current session",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/olympus/ping": {
       "get": {
         "description": "Checks that the API is running and returns the hosts it is configured to use.",
@@ -971,6 +1105,1287 @@
           "Notifications"
         ]
       }
+    },
+    "/olympus/weather/locations": {
+      "get": {
+        "description": "Every place the caller keeps a forecast for, in the order they arranged them.",
+        "operationId": "ListWeatherLocations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's locations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWeatherLocationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "post": {
+        "description": "Adds a place to the end of the caller's list, usually one chosen in a Google place search. The first location a user adds becomes their default.",
+        "operationId": "CreateWeatherLocation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateWeatherLocation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeatherLocationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The location was added.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the created weather location"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWeatherLocationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Adds a weather location for the signed-in user",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/locations/order": {
+      "put": {
+        "description": "Puts the caller's locations in the order given. The list must name each of the caller's locations exactly once.",
+        "operationId": "ReorderWeatherLocations",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReorderWeatherLocations operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderWeatherLocationsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The locations were put in the new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderWeatherLocationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reorders the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/location/{locationId}": {
+      "get": {
+        "description": "Returns a single location of the caller's. Another user's location is not found.",
+        "operationId": "DescribeWeatherLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The location was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeWeatherLocationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes one of the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "put": {
+        "description": "Relabels a location, or makes it the default, which clears the previous default. The place itself cannot change: a different place is a new location.",
+        "operationId": "UpdateWeatherLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateWeatherLocation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWeatherLocationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The location with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateWeatherLocationResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Changes one of the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "delete": {
+        "description": "Removes a location from the caller's list. Removing the default leaves none; the widget then opens on the first location.",
+        "operationId": "DeleteWeatherLocation",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location to remove",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The location was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes one of the signed-in user's weather locations",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/location/{locationId}/forecast": {
+      "get": {
+        "description": "The conditions now, the next 24 hours in 3-hour steps and five local days, from OpenWeather. Forecasts are cached; while the provider is failing the last one fetched is returned marked stale, for a while.",
+        "operationId": "DescribeWeatherForecast",
+        "parameters": [
+          {
+            "name": "locationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the location",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The location's forecast, fresh or stale.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeWeatherForecastResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Forecasts are not configured, or the provider is failing and the last forecast is too old to show."
+          }
+        },
+        "summary": "Describes the forecast for one of the signed-in user's locations",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/radar/frames": {
+      "get": {
+        "description": "The last two hours of radar, ten minutes apart, oldest first. The list changes every ten minutes; a frame's ID is how its tiles are asked for.",
+        "operationId": "ListRadarFrames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The radar frames available now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListRadarFramesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider is not answering, is rate limiting this server, or is not configured."
+          }
+        },
+        "summary": "Lists the past radar frames",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/radar/{frameId}/{z}/{x}/{y}": {
+      "get": {
+        "description": "One tile of a past radar frame from RainViewer. Zoom 7 is the finest there is; a map at a closer zoom scales these tiles up.",
+        "operationId": "GetRadarTile",
+        "parameters": [
+          {
+            "name": "frameId",
+            "required": true,
+            "in": "path",
+            "description": "A frame ID from ListRadarFrames",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "z",
+            "required": true,
+            "in": "path",
+            "description": "The zoom level",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x",
+            "required": true,
+            "in": "path",
+            "description": "The tile column at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "y",
+            "required": true,
+            "in": "path",
+            "description": "The tile row at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tile, a 256-pixel PNG.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "How long the browser may keep the tile"
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider is not answering, is rate limiting this server, or is not configured."
+          }
+        },
+        "summary": "Gets a radar tile",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/map/{layer}/{z}/{x}/{y}": {
+      "get": {
+        "description": "One tile of a forecast layer from OpenWeather, cached by the API and marked for the browser to cache for as long as the API will.",
+        "operationId": "GetWeatherMapTile",
+        "parameters": [
+          {
+            "name": "layer",
+            "required": true,
+            "in": "path",
+            "description": "The layer to draw",
+            "schema": {
+              "$ref": "#/components/schemas/WeatherMapLayer"
+            }
+          },
+          {
+            "name": "z",
+            "required": true,
+            "in": "path",
+            "description": "The zoom level",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x",
+            "required": true,
+            "in": "path",
+            "description": "The tile column at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "y",
+            "required": true,
+            "in": "path",
+            "description": "The tile row at that zoom",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tile, a 256-pixel PNG.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "How long the browser may keep the tile"
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The provider is not answering, is rate limiting this server, or is not configured."
+          }
+        },
+        "summary": "Gets a forecast map layer tile",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/station/report": {
+      "get": {
+        "description": "The Ambient Weather Customized upload: a GET with every reading as a query parameter and the console's MAC address as PASSKEY. Accepted only from WEATHER_STATION_ALLOWED_CIDRS and only for a registered station; archived as received, then stored. A repeated reading is stored once.",
+        "operationId": "ReportWeatherStationReading",
+        "parameters": [
+          {
+            "name": "dateutc",
+            "required": true,
+            "in": "query",
+            "description": "When the reading was taken, YYYY-MM-DD HH:mm:ss in UTC, or now",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PASSKEY",
+            "required": true,
+            "in": "query",
+            "description": "The console's MAC address",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The reading was stored, or was a repeat of one already stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not from an allowed address, or not a registered station."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Receives a weather station's reading",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/stations": {
+      "get": {
+        "description": "Every registered weather station, by name.",
+        "operationId": "ListWeatherStations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The registered stations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWeatherStationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists the weather stations",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "post": {
+        "description": "Registers a console by its MAC address, which it sends as PASSKEY. Until it is registered, its pushes are refused.",
+        "operationId": "CreateWeatherStation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the CreateWeatherStation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWeatherStationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The station was registered.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The location of the registered station"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWeatherStationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Registers a weather station",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/station/{stationId}": {
+      "get": {
+        "description": "Returns a single registered weather station.",
+        "operationId": "DescribeWeatherStation",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The station was found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeWeatherStationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Describes a weather station",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "put": {
+        "description": "Changes a station's name. A different console is a different station: register it instead.",
+        "operationId": "UpdateWeatherStation",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station to change",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the UpdateWeatherStation operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWeatherStationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The station with the changes applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateWeatherStationResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The request named nothing to change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Renames a weather station",
+        "tags": [
+          "Weather"
+        ]
+      },
+      "delete": {
+        "description": "Unregisters a station and removes its samples. Its raw archive on disk is kept; registering the console again and replaying restores them.",
+        "operationId": "DeleteWeatherStation",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station to remove",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The station was removed."
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Removes a weather station",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/station/{stationId}/series": {
+      "get": {
+        "description": "For each metric asked for, the buckets of one tier across a range: count, average, minimum, maximum, sum, first and last. wind_direction is the direction of each bucket's average wind. With resolution auto (the default) the tier is the finest that still holds the range's start and fits it in 2,000 points; 1d (whole UTC days, combined from the hourly tier) is the coarsest.",
+        "operationId": "ListWeatherStationSeries",
+        "parameters": [
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "description": "The ID of the station",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metrics",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated metric names, e.g. outdoor_temperature,rain,wind_direction",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The range's start, an ISO-8601 time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The range's end (exclusive), an ISO-8601 time",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": false,
+            "in": "query",
+            "description": "auto (the default), a tier (1m, 5m, 15m, 30m, 1h), or 1d: whole UTC days",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The series, one per metric, in the order asked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWeatherStationSeriesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lists a weather station's history as series",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/archive/replay": {
+      "post": {
+        "description": "Loads a range of UTC days from this API's station archive again: each line parsed and stored, then every tier rebuilt for the day and retention applied. Runs in the background; its summary is logged. One replay at a time. For another archive (the NAS copy, prod's from dev) use weather:replay.",
+        "operationId": "ReplayWeatherArchive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ReplayWeatherArchive operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayWeatherArchiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The replay has started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A replay is already running."
+          }
+        },
+        "summary": "Replays the raw station archive",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/stations/backfill": {
+      "post": {
+        "description": "Fetches a range of UTC days of the stations' history (5-minute steps) from ambientweather.net, archives each response and stores its records, never replacing a pushed sample; then rebuilds the tiers for those days. Runs in the background; its summary is logged. Gaps within the samples' retention are filled hourly without asking; this is for older history. Only where WEATHER_BACKFILL_ENABLED and the Ambient keys are set.",
+        "operationId": "BackfillWeatherStations",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the BackfillWeatherStations operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackfillWeatherStationsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The backfill has started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No access token, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an admin."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Backfill is off here, or one is already running."
+          }
+        },
+        "summary": "Backfills weather stations from ambientweather.net",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/olympus/weather/station/readings": {
+      "post": {
+        "description": "Stores raw archive lines another environment received: each parsed with this API's parser and stored unless this environment already has the reading. For the dev relay agent (ADR 0025). No address check and no archive write: the lines were checked and archived where they arrived. Lines from a station this environment has not registered are counted and skipped.",
+        "operationId": "ImportWeatherStationReadings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Input for the ImportWeatherStationReadings operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportWeatherStationReadingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What became of the lines.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportWeatherStationReadingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No client certificate, or one that does not verify."
+          },
+          "403": {
+            "description": "The caller is not an agent."
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Imports archived weather station lines",
+        "tags": [
+          "Weather"
+        ]
+      }
     }
   },
   "info": {
@@ -996,6 +2411,9 @@
     },
     {
       "name": "Notifications"
+    },
+    {
+      "name": "Weather"
     }
   ],
   "servers": [],
@@ -1103,6 +2521,136 @@
         "required": [
           "message",
           "statusCode"
+        ]
+      },
+      "CurrentUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The user's id"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The name to show for them"
+          },
+          "email": {
+            "type": "string",
+            "description": "Their email address, in the casing they were created with. Addresses are matched case-insensitively, so this is for display and not a key"
+          },
+          "roles": {
+            "description": "The roles they hold now. May differ from the `roles` claim in a token issued before they last changed",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "email",
+          "roles"
+        ]
+      },
+      "DescribeCurrentUserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "description": "The signed-in user",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentUser"
+              }
+            ]
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "UserSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The session's id, which is what RevokeSession takes"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "The client this session was created for, e.g. `olympus-site`"
+          },
+          "deviceName": {
+            "type": "string",
+            "description": "What the client called the device when it signed in. Absent where it did not say"
+          },
+          "current": {
+            "type": "boolean",
+            "description": "Whether this is the session the request was made from — the `sid` in the caller's own access token. Revoking it signs this device out"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the sign-in completed. Unchanged when the refresh token rotates"
+          },
+          "lastUsedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the session last refreshed. Absent until it has"
+          },
+          "expiresTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the session expires and signing in again is needed"
+          }
+        },
+        "required": [
+          "id",
+          "clientId",
+          "current",
+          "createdTime",
+          "expiresTime"
+        ]
+      },
+      "ListSessionsResponse": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "description": "Every session of the signed-in user that has not been revoked or expired, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserSession"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ]
+      },
+      "RevokeSessionResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "description": "The session that was revoked"
+          },
+          "signedOutThisDevice": {
+            "type": "boolean",
+            "description": "Whether the caller revoked the session it was calling from. When true the client's own tokens are now dead and it should discard them and sign in again"
+          }
+        },
+        "required": [
+          "sessionId",
+          "signedOutThisDevice"
+        ]
+      },
+      "SignOutResponse": {
+        "type": "object",
+        "properties": {
+          "signedOut": {
+            "type": "boolean",
+            "description": "Whether a live session was ended. False where it had already expired or been revoked — signing out twice is not an error"
+          }
+        },
+        "required": [
+          "signedOut"
         ]
       },
       "SystemConfiguration": {
@@ -2082,6 +3630,1129 @@
         },
         "required": [
           "notificationSetting"
+        ]
+      },
+      "WeatherLocation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the location"
+          },
+          "label": {
+            "type": "string",
+            "description": "The name the user gave the location, shown in the widget"
+          },
+          "placeId": {
+            "type": "string",
+            "description": "The Google place ID the location was chosen from, if any"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "Google's formatted name for the place, shown under the label when managing locations"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "The latitude of the location in degrees, -90 to 90"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "The longitude of the location in degrees, -180 to 180"
+          },
+          "position": {
+            "type": "number",
+            "description": "Where the location sits in the user's list; lower comes first"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether the widget opens on this location. At most one of a user's locations is the default"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the location was added"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the location was last changed"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "latitude",
+          "longitude",
+          "position",
+          "isDefault",
+          "createdTime"
+        ]
+      },
+      "ListWeatherLocationsResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocations": {
+            "description": "The caller's locations, in their order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherLocation"
+            }
+          }
+        },
+        "required": [
+          "weatherLocations"
+        ]
+      },
+      "ReorderWeatherLocationsRequest": {
+        "type": "object",
+        "properties": {
+          "locationIds": {
+            "description": "Every one of the caller's location IDs, in the order they should appear.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "locationIds"
+        ]
+      },
+      "ReorderWeatherLocationsResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocations": {
+            "description": "The caller's locations in their new order.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherLocation"
+            }
+          }
+        },
+        "required": [
+          "weatherLocations"
+        ]
+      },
+      "BaseWeatherLocation": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The name the user gave the location, shown in the widget"
+          },
+          "placeId": {
+            "type": "string",
+            "description": "The Google place ID the location was chosen from, if any"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "Google's formatted name for the place, shown under the label when managing locations"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "The latitude of the location in degrees, -90 to 90"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "The longitude of the location in degrees, -180 to 180"
+          }
+        },
+        "required": [
+          "label",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "CreateWeatherLocationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location to add at the end of the caller's list.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseWeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "CreateWeatherLocationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location as added.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "DescribeWeatherLocationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "WeatherConditionKind": {
+        "type": "string",
+        "description": "The kind of weather, for choosing an icon",
+        "enum": [
+          "thunderstorm",
+          "snow",
+          "rain",
+          "drizzle",
+          "fog",
+          "cloudy",
+          "partly_cloudy",
+          "clear"
+        ]
+      },
+      "CurrentWeather": {
+        "type": "object",
+        "properties": {
+          "observedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the conditions were observed"
+          },
+          "conditionKind": {
+            "description": "The kind of weather now",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherConditionKind"
+              }
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "description": "The provider's description of the weather now, e.g. light rain"
+          },
+          "isDaytime": {
+            "type": "boolean",
+            "description": "Whether it is daytime at the location"
+          },
+          "temperatureF": {
+            "type": "number",
+            "description": "The temperature in degrees Fahrenheit"
+          },
+          "feelsLikeF": {
+            "type": "number",
+            "description": "What the temperature feels like, in degrees Fahrenheit"
+          },
+          "highF": {
+            "type": "number",
+            "description": "Today's expected high in degrees Fahrenheit, from now and the rest of today's forecast"
+          },
+          "lowF": {
+            "type": "number",
+            "description": "Today's expected low in degrees Fahrenheit, from now and the rest of today's forecast"
+          },
+          "humidityPct": {
+            "type": "number",
+            "description": "Relative humidity as a percentage"
+          },
+          "dewPointF": {
+            "type": "number",
+            "description": "The dew point in degrees Fahrenheit, calculated from temperature and humidity"
+          },
+          "pressureHpa": {
+            "type": "number",
+            "description": "Sea-level pressure in hectopascals"
+          },
+          "pressureInHg": {
+            "type": "number",
+            "description": "Sea-level pressure in inches of mercury"
+          },
+          "windSpeedMph": {
+            "type": "number",
+            "description": "The wind speed in miles per hour"
+          },
+          "windGustMph": {
+            "type": "number",
+            "description": "The wind gust speed in miles per hour, when reported"
+          },
+          "windDirectionDeg": {
+            "type": "number",
+            "description": "The direction the wind blows from, in degrees clockwise from north"
+          },
+          "visibilityMi": {
+            "type": "number",
+            "description": "The visibility in miles, when reported; the provider reports at most about 6.2"
+          },
+          "cloudCoverPct": {
+            "type": "number",
+            "description": "Cloud cover as a percentage"
+          },
+          "sunriseTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating today's sunrise"
+          },
+          "sunsetTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating today's sunset"
+          }
+        },
+        "required": [
+          "observedTime",
+          "conditionKind",
+          "condition",
+          "isDaytime",
+          "temperatureF",
+          "feelsLikeF",
+          "highF",
+          "lowF",
+          "humidityPct",
+          "dewPointF",
+          "pressureHpa",
+          "pressureInHg",
+          "windSpeedMph",
+          "windDirectionDeg",
+          "cloudCoverPct",
+          "sunriseTime",
+          "sunsetTime"
+        ]
+      },
+      "ForecastStep": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the step starts"
+          },
+          "conditionKind": {
+            "description": "The kind of weather expected in the step",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherConditionKind"
+              }
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "description": "The provider's description of the weather expected in the step"
+          },
+          "isDaytime": {
+            "type": "boolean",
+            "description": "Whether the step is in daytime at the location"
+          },
+          "temperatureF": {
+            "type": "number",
+            "description": "The expected temperature in degrees Fahrenheit"
+          },
+          "feelsLikeF": {
+            "type": "number",
+            "description": "What the expected temperature feels like, in degrees Fahrenheit, accounting for humidity and wind"
+          },
+          "humidityPct": {
+            "type": "number",
+            "description": "The expected relative humidity as a percentage"
+          },
+          "pressureHpa": {
+            "type": "number",
+            "description": "The expected sea-level pressure in hectopascals"
+          },
+          "pressureInHg": {
+            "type": "number",
+            "description": "The expected sea-level pressure in inches of mercury"
+          },
+          "precipitationChancePct": {
+            "type": "number",
+            "description": "The chance of precipitation in the step, as a percentage"
+          },
+          "precipitationIn": {
+            "type": "number",
+            "description": "The expected rain and snow (as water) in the step, in inches"
+          },
+          "windSpeedMph": {
+            "type": "number",
+            "description": "The expected wind speed in miles per hour"
+          }
+        },
+        "required": [
+          "time",
+          "conditionKind",
+          "condition",
+          "isDaytime",
+          "temperatureF",
+          "feelsLikeF",
+          "humidityPct",
+          "pressureHpa",
+          "pressureInHg",
+          "precipitationChancePct",
+          "precipitationIn",
+          "windSpeedMph"
+        ]
+      },
+      "ForecastDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The local date, YYYY-MM-DD"
+          },
+          "conditionKind": {
+            "description": "The most significant kind of weather expected that day",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherConditionKind"
+              }
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "description": "The provider's description of the day's most significant weather"
+          },
+          "highF": {
+            "type": "number",
+            "description": "The day's expected high in degrees Fahrenheit"
+          },
+          "lowF": {
+            "type": "number",
+            "description": "The day's expected low in degrees Fahrenheit"
+          },
+          "precipitationChancePct": {
+            "type": "number",
+            "description": "The highest chance of precipitation in any of the day's steps, as a percentage"
+          },
+          "precipitationIn": {
+            "type": "number",
+            "description": "The expected rain and snow (as water) over the day's steps, in inches"
+          }
+        },
+        "required": [
+          "date",
+          "conditionKind",
+          "condition",
+          "highF",
+          "lowF",
+          "precipitationChancePct",
+          "precipitationIn"
+        ]
+      },
+      "WeatherForecast": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "description": "The ID of the location the forecast is for"
+          },
+          "utcOffsetSeconds": {
+            "type": "number",
+            "description": "The location's offset from UTC in seconds, which decides where its days begin"
+          },
+          "current": {
+            "description": "The conditions now",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentWeather"
+              }
+            ]
+          },
+          "next": {
+            "description": "The next eight 3-hour steps",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastStep"
+            }
+          },
+          "days": {
+            "description": "Today and the four days after it, in local days",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastDay"
+            }
+          },
+          "fetchedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the forecast was fetched from the provider"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "Whether the provider is failing and this is the last forecast fetched while it worked"
+          }
+        },
+        "required": [
+          "locationId",
+          "utcOffsetSeconds",
+          "current",
+          "next",
+          "days",
+          "fetchedTime",
+          "stale"
+        ]
+      },
+      "DescribeWeatherForecastResponse": {
+        "type": "object",
+        "properties": {
+          "weatherForecast": {
+            "description": "The location's forecast.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherForecast"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherForecast"
+        ]
+      },
+      "RadarFrame": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The frame's ID, used to ask for its tiles"
+          },
+          "time": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the radar was captured"
+          }
+        },
+        "required": [
+          "id",
+          "time"
+        ]
+      },
+      "ListRadarFramesResponse": {
+        "type": "object",
+        "properties": {
+          "radarFrames": {
+            "description": "The past radar frames available, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RadarFrame"
+            }
+          }
+        },
+        "required": [
+          "radarFrames"
+        ]
+      },
+      "WeatherMapLayer": {
+        "type": "string",
+        "enum": [
+          "temperature",
+          "precipitation",
+          "clouds",
+          "wind",
+          "pressure"
+        ]
+      },
+      "WeatherArchiveRecordSource": {
+        "type": "string",
+        "description": "Where an archive line came from: a console's push, or a backfill response",
+        "enum": [
+          "push",
+          "backfill"
+        ]
+      },
+      "WeatherStationReading": {
+        "type": "object",
+        "properties": {
+          "observedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the console took the reading"
+          },
+          "source": {
+            "description": "Whether the reading was pushed or backfilled",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveRecordSource"
+              }
+            ]
+          },
+          "outdoorTemperatureF": {
+            "type": "number",
+            "description": "Outdoor temperature, °F"
+          },
+          "outdoorHumidityPct": {
+            "type": "number",
+            "description": "Outdoor relative humidity, %"
+          },
+          "indoorTemperatureF": {
+            "type": "number",
+            "description": "Indoor temperature, °F"
+          },
+          "indoorHumidityPct": {
+            "type": "number",
+            "description": "Indoor relative humidity, %"
+          },
+          "dewPointF": {
+            "type": "number",
+            "description": "Dew point, °F"
+          },
+          "feelsLikeF": {
+            "type": "number",
+            "description": "Feels-like temperature, °F"
+          },
+          "windSpeedMph": {
+            "type": "number",
+            "description": "Wind speed, mph"
+          },
+          "windSpeedAvg10mMph": {
+            "type": "number",
+            "description": "Wind speed averaged over 10 minutes, mph"
+          },
+          "windGustMph": {
+            "type": "number",
+            "description": "Wind gust, mph"
+          },
+          "maxDailyGustMph": {
+            "type": "number",
+            "description": "The day's highest gust so far, mph"
+          },
+          "windDirectionDeg": {
+            "type": "number",
+            "description": "Wind direction, degrees from north"
+          },
+          "windDirectionAvg10mDeg": {
+            "type": "number",
+            "description": "Wind direction averaged over 10 minutes, degrees from north"
+          },
+          "rainRateInHr": {
+            "type": "number",
+            "description": "Rain rate, inches an hour"
+          },
+          "rainEventIn": {
+            "type": "number",
+            "description": "Rain in the current event, inches"
+          },
+          "rainDailyIn": {
+            "type": "number",
+            "description": "Rain since the console's midnight, inches"
+          },
+          "rainWeeklyIn": {
+            "type": "number",
+            "description": "Rain this week, inches"
+          },
+          "rainMonthlyIn": {
+            "type": "number",
+            "description": "Rain this month, inches"
+          },
+          "rainYearlyIn": {
+            "type": "number",
+            "description": "Rain this year, inches"
+          },
+          "pressureRelativeInhg": {
+            "type": "number",
+            "description": "Barometric pressure adjusted to sea level, inHg"
+          },
+          "pressureAbsoluteInhg": {
+            "type": "number",
+            "description": "Barometric pressure at the station, inHg"
+          },
+          "uvIndex": {
+            "type": "number",
+            "description": "UV index"
+          },
+          "solarRadiationWm2": {
+            "type": "number",
+            "description": "Solar radiation, W/m²"
+          },
+          "batteryOutdoorOk": {
+            "type": "boolean",
+            "description": "Whether the outdoor sensor's battery is OK"
+          },
+          "batteryIndoorOk": {
+            "type": "boolean",
+            "description": "Whether the console's battery is OK"
+          }
+        },
+        "required": [
+          "observedTime",
+          "source"
+        ]
+      },
+      "WeatherStation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique ID of the station"
+          },
+          "name": {
+            "type": "string",
+            "description": "The station's name, as the widget shows it"
+          },
+          "macAddress": {
+            "type": "string",
+            "description": "The console's MAC address, which it sends as its PASSKEY, e.g. A0:B1:C2:D3:E4:F5"
+          },
+          "createdTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the station was registered"
+          },
+          "lastUpdatedTime": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the station was last changed"
+          },
+          "latestReading": {
+            "description": "The station's newest reading, when there is one within the samples' retention",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStationReading"
+              }
+            ]
+          },
+          "reporting": {
+            "type": "boolean",
+            "description": "Whether the newest reading is recent (WEATHER_STATION_STALE_SECONDS)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "macAddress",
+          "createdTime"
+        ]
+      },
+      "ListWeatherStationsResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStations": {
+            "description": "The registered stations, by name.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherStation"
+            }
+          }
+        },
+        "required": [
+          "weatherStations"
+        ]
+      },
+      "BaseWeatherStation": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The station's name, as the widget shows it"
+          },
+          "macAddress": {
+            "type": "string",
+            "description": "The console's MAC address, which it sends as its PASSKEY, e.g. A0:B1:C2:D3:E4:F5"
+          }
+        },
+        "required": [
+          "name",
+          "macAddress"
+        ]
+      },
+      "CreateWeatherStationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station to register.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseWeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "CreateWeatherStationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station as registered.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "DescribeWeatherStationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "WeatherSeriesPoint": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the bucket starts"
+          },
+          "count": {
+            "type": "number",
+            "description": "The number of samples in the bucket"
+          },
+          "mean": {
+            "type": "number",
+            "description": "The average over the bucket; for wind direction, the direction of the average wind"
+          },
+          "min": {
+            "type": "number",
+            "description": "The lowest sample in the bucket"
+          },
+          "max": {
+            "type": "number",
+            "description": "The highest sample in the bucket"
+          },
+          "sum": {
+            "type": "number",
+            "description": "The samples added up: the total, for rain"
+          },
+          "first": {
+            "type": "number",
+            "description": "The bucket's first sample"
+          },
+          "last": {
+            "type": "number",
+            "description": "The bucket's last sample"
+          }
+        },
+        "required": [
+          "time",
+          "count",
+          "mean"
+        ]
+      },
+      "WeatherStationSeries": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string",
+            "description": "The metric, e.g. outdoor_temperature, or wind_direction"
+          },
+          "unit": {
+            "type": "string",
+            "description": "The metric's unit, e.g. F, mph, in, deg"
+          },
+          "rollup": {
+            "type": "string",
+            "description": "How the metric is read: mean, sum, max, or vector for wind direction"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "The tier the points come from: 1m, 5m, 15m, 30m or 1h"
+          },
+          "points": {
+            "description": "The buckets that have samples, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherSeriesPoint"
+            }
+          }
+        },
+        "required": [
+          "metric",
+          "unit",
+          "rollup",
+          "resolution",
+          "points"
+        ]
+      },
+      "ListWeatherStationSeriesResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStationSeries": {
+            "description": "One series per metric asked for, in the order asked",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherStationSeries"
+            }
+          }
+        },
+        "required": [
+          "weatherStationSeries"
+        ]
+      },
+      "PartialWeatherStation": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The station's name, as the widget shows it"
+          }
+        }
+      },
+      "UpdateWeatherStationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The changes to make to the station.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialWeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "UpdateWeatherStationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherStation": {
+            "description": "The station with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherStation"
+        ]
+      },
+      "WeatherArchiveReplayMode": {
+        "type": "string",
+        "description": "ignore (the default) keeps stored readings; replace overwrites them",
+        "enum": [
+          "ignore",
+          "replace"
+        ]
+      },
+      "WeatherArchiveReplay": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The first UTC day to replay, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "description": "The last UTC day to replay, YYYY-MM-DD, inclusive"
+          },
+          "macAddress": {
+            "type": "string",
+            "description": "Only this station's archive, by its console's MAC address; every station when absent"
+          },
+          "mode": {
+            "description": "ignore (the default) keeps stored readings; replace overwrites them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveReplayMode"
+              }
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "ReplayWeatherArchiveRequest": {
+        "type": "object",
+        "properties": {
+          "replay": {
+            "description": "The days to replay, and how.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveReplay"
+              }
+            ]
+          }
+        },
+        "required": [
+          "replay"
+        ]
+      },
+      "WeatherStationBackfill": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "The first UTC day to fetch, YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "description": "The last UTC day to fetch, YYYY-MM-DD, inclusive"
+          },
+          "stationId": {
+            "type": "string",
+            "description": "Only this station, by its ID; every station when absent"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "BackfillWeatherStationsRequest": {
+        "type": "object",
+        "properties": {
+          "backfill": {
+            "description": "The days to fetch, and for which station.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherStationBackfill"
+              }
+            ]
+          }
+        },
+        "required": [
+          "backfill"
+        ]
+      },
+      "WeatherArchiveRecord": {
+        "type": "object",
+        "properties": {
+          "macAddress": {
+            "type": "string",
+            "description": "The console's MAC address, e.g. A0:B1:C2:D3:E4:F5"
+          },
+          "receivedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string indicating when the archiving API received the line"
+          },
+          "source": {
+            "description": "Where the line came from",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherArchiveRecordSource"
+              }
+            ]
+          },
+          "remote": {
+            "type": "string",
+            "description": "The address a push came from, as the archiving API saw it"
+          },
+          "query": {
+            "type": "string",
+            "description": "A push's query string, exactly as received"
+          },
+          "responseJson": {
+            "type": "string",
+            "description": "A backfill line's ambientweather.net response, as the JSON text it was received as"
+          }
+        },
+        "required": [
+          "macAddress",
+          "receivedAt",
+          "source"
+        ]
+      },
+      "ImportWeatherStationReadingsRequest": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "description": "Up to 500 archive lines, stored with this API's parser.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeatherArchiveRecord"
+            }
+          }
+        },
+        "required": [
+          "records"
+        ]
+      },
+      "ImportWeatherStationReadingsResponse": {
+        "type": "object",
+        "properties": {
+          "stored": {
+            "type": "number",
+            "description": "Readings stored"
+          },
+          "duplicate": {
+            "type": "number",
+            "description": "Readings this environment already had"
+          },
+          "unknownStation": {
+            "type": "number",
+            "description": "Lines from a station this environment has not registered"
+          },
+          "invalid": {
+            "type": "number",
+            "description": "Lines this environment's parser could not read"
+          },
+          "skipped": {
+            "type": "number",
+            "description": "Lines kept for later, such as backfill responses"
+          }
+        },
+        "required": [
+          "stored",
+          "duplicate",
+          "unknownStation",
+          "invalid",
+          "skipped"
+        ]
+      },
+      "PartialWeatherLocation": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The name the user gave the location, shown in the widget"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether the widget opens on this location. At most one of a user's locations is the default"
+          }
+        }
+      },
+      "UpdateWeatherLocationRequest": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The changes to make to the location.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialWeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
+        ]
+      },
+      "UpdateWeatherLocationResponse": {
+        "type": "object",
+        "properties": {
+          "weatherLocation": {
+            "description": "The location with the changes applied.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeatherLocation"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weatherLocation"
         ]
       }
     }

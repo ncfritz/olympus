@@ -105,4 +105,31 @@ describe("UserIdentityService", () => {
       service(keys).identify(request("Bearer not.a.token")),
     ).resolves.toEqual({ reason: "invalid token: malformed token" });
   });
+
+  /**
+   * The notifications gateway's way in: the token arrives in the Socket.IO
+   * handshake, so there is no header to parse. Same verification, so a socket
+   * and a request cannot come to different conclusions about one token.
+   */
+  describe("identifyToken", () => {
+    it("reaches the same principal as a header would", async () => {
+      const token = await issueAccessToken(keys, CLAIMS);
+      await expect(service(keys).identifyToken(token)).resolves.toEqual(
+        await service(keys).identify(request(`Bearer ${token}`)),
+      );
+    });
+
+    it("reports an empty token as no credentials", async () => {
+      await expect(service(keys).identifyToken("")).resolves.toEqual({
+        reason: "no credentials",
+      });
+    });
+
+    it("refuses a token signed by a key it does not have", async () => {
+      const token = await issueAccessToken(other, CLAIMS);
+      await expect(service(keys).identifyToken(token)).resolves.toMatchObject({
+        reason: expect.stringContaining("invalid token"),
+      });
+    });
+  });
 });

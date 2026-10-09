@@ -39,12 +39,26 @@ describe("readRuntimeConfig", () => {
       nodeEnv: "development",
       isProduction: false,
       appName: "agent-development",
+      serviceName: "agent",
       port: 3100,
     });
     expect(
       readRuntimeConfig(new EnvReader({ NODE_ENV: "production" }), "agent", 1)
         .appName,
     ).toBe("agent");
+  });
+
+  it("keeps the service name as given, whatever the app name", () => {
+    // The certificate's name: the API refuses a client header that differs.
+    for (const env of [
+      {},
+      { NODE_ENV: "production" },
+      { APP_NAME: "something-else" },
+    ]) {
+      expect(
+        readRuntimeConfig(new EnvReader(env), "agent", 1).serviceName,
+      ).toBe("agent");
+    }
   });
 });
 

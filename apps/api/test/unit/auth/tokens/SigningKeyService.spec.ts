@@ -16,8 +16,14 @@ const pem = async () => {
 const config = (signingKeys?: string) =>
   ({
     modes: { users: "report", services: "report" },
+    rateLimits: "on",
     serviceRoles: {},
-    users: { signingKeys, clientOrigins: [], providers: [] },
+    users: {
+      signingKeys,
+      clientOrigins: [],
+      consoleBaseUrls: [],
+      providers: [],
+    },
     services: {
       enabled: false,
       port: 3443,
@@ -58,6 +64,23 @@ describe("SigningKeyService", () => {
     await service.onModuleInit();
     expect(service.available()).toBeUndefined();
     expect(() => service.require()).toThrow(/not configured/);
+  });
+
+  it("is inert for a directory that exists and holds no keys", async () => {
+    // What a host looks like before anyone has generated a key. The API has
+    // to come up: refusing to start would take every endpoint down because
+    // one feature is unconfigured.
+    const empty = mkdtempSync(join(tmpdir(), "keys-empty-"));
+    const service = new SigningKeyService(config(empty));
+    const warned: string[] = [];
+    vi.spyOn(service["logger"], "warn").mockImplementation(
+      (message: unknown) => {
+        warned.push(String(message));
+      },
+    );
+    await service.onModuleInit();
+    expect(service.available()).toBeUndefined();
+    expect(warned.join("\n")).toContain("no .pem");
   });
 
   it("fails at start rather than at the first sign-in", async () => {

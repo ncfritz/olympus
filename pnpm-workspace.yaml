@@ -7,6 +7,8 @@ packages:
   # Harpocrates, the certificate authority (ADR 0020): a service and its signer.
   - "apps/harpocrates/*"
   - "packages/*"
+  # Developer tools: not deployed, not depended on by anything that is.
+  - "tools/*"
 
 # Shared dependency versions. Workspace packages reference these with "catalog:"
 # so a version bump happens in exactly one place. See docs/decisions/0002.
@@ -20,6 +22,7 @@ catalog:
   typescript-eslint: ^8.59.4
   eslint-config-prettier: ^10.1.8
   eslint-plugin-prettier: ^5.5.5
+  eslint-plugin-react-hooks: ^7.1.1
   globals: ^17.6.0
   vitest: ^4.1.11
   "@vitest/coverage-v8": ^4.1.11
@@ -41,10 +44,11 @@ catalog:
   reflect-metadata: ^0.2.2
   rxjs: ^7.8.2
   moment: ^2.30.1
-  jose: ^6.2.3
-  axios: ^1.13.2
   nest-winston: ^1.10.2
+  openid-client: ^6.8.8
+  jose: ^6.2.3
   prom-client: ^15.1.3
+  axios: ^1.16.1
   winston: ^3.19.0
   winston-daily-rotate-file: ^5.0.0
   winston-loki: ^6.1.4
@@ -67,7 +71,6 @@ catalog:
 # npm "overrides" carried over from olympus-api.
 overrides:
   "@apollo/server": ^5.5.1
-  "openid-client": ^6.8.8
 
 # pnpm 10 blocks dependency install scripts unless listed here.
 onlyBuiltDependencies:

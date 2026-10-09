@@ -1,0 +1,38 @@
+table:
+  name: mail_audit_changes
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    label_id:
+      custom_name: labelId
+    message_id:
+      custom_name: messageId
+    run_id:
+      custom_name: runId
+    sender_label_messages:
+      custom_name: senderLabelMessages
+    sender_messages:
+      custom_name: senderMessages
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    label_id: labelId
+    message_id: messageId
+    run_id: runId
+    sender_label_messages: senderLabelMessages
+    sender_messages: senderMessages
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: label
+    using:
+      foreign_key_constraint_on: label_id
+  - name: message
+    using:
+      foreign_key_constraint_on: message_id
+  - name: run
+    using:
+      foreign_key_constraint_on: run_id

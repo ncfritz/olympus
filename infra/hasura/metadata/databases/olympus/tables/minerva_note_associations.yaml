@@ -11,11 +11,17 @@ configuration:
       custom_name: itemType
     note_id:
       custom_name: noteId
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
   custom_column_names:
     created_at: createdTime
     item_id: itemId
     item_type: itemType
     note_id: noteId
+    updated_at: lastUpdatedTime
+    user_id: userId
   custom_root_fields: {}
 object_relationships:
 - name: note

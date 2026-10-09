@@ -1,0 +1,10 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
+  "compilerOptions": {
+    // A CLI: Node only, and CommonJS because there is no "type": "module"
+    // here -- `node dist/main.js` with no loader and no build step beyond tsc.
+    "types": ["node"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  }
+}

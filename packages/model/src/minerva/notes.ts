@@ -48,14 +48,6 @@ export class PartialNoteAssociation extends PartialType(
 
 export class BaseNote {
   @ApiProperty({
-    type: String,
-    required: true,
-    description:
-      "The author of the note.  This should be a user ID that can be traced back to a registered user",
-  })
-  author: string;
-
-  @ApiProperty({
     enum: () => NoteType,
     enumName: "NoteType",
     required: true,
@@ -105,9 +97,7 @@ export class BaseNoteWithAssociations extends BaseNote {
   associations: PartialNoteAssociation[];
 }
 
-export class PartialNote extends PartialType(
-  OmitType(BaseNoteWithAssociations, ["author"]),
-) {}
+export class PartialNote extends PartialType(BaseNoteWithAssociations) {}
 
 export class Note extends BaseNote {
   @ApiProperty({

@@ -1,0 +1,50 @@
+table:
+  name: mail_proposals
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    label_id:
+      custom_name: labelId
+    message_id:
+      custom_name: messageId
+    sender_label_messages:
+      custom_name: senderLabelMessages
+    sender_messages:
+      custom_name: senderMessages
+  custom_column_names:
+    account_id: accountId
+    label_id: labelId
+    message_id: messageId
+    sender_label_messages: senderLabelMessages
+    sender_messages: senderMessages
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva
+  - name: label
+    using:
+      manual_configuration:
+        column_mapping:
+          label_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_labels
+          schema: minerva
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          message_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_messages
+          schema: minerva

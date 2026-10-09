@@ -3,15 +3,43 @@
 The Olympus APIs for services and the site, over `@ncfritz/olympus-sdk`
 (ADR 0017):
 
-- `createOlympusClients({ baseUrl, clientName, metrics? })` creates one SDK
-  client per API document (`olympus`, `dionysus`, `minerva`). Every
-  request sends `X-Olympus-Client: <clientName>`, so the API can break its
-  metrics down by caller; with `metrics`, every call is recorded as
-  `http_client_request_duration_seconds` labelled with the API, tag and
-  operation called.
-- Wrappers, one per API area, constructed with those clients:
+- `createOlympusClients({ baseUrl, clientName, metrics?, auth?, tls? })`
+  creates one SDK client per API document (`olympus`, `dionysus`,
+  `minerva`). Every request sends `X-Olympus-Client: <clientName>`, so the
+  API can break its metrics down by caller; with `metrics`, every call is
+  recorded as `http_client_request_duration_seconds` labelled with the API,
+  tag and operation called.
+
+## Signing in
+
+`auth` sends an access token as `Authorization: Bearer <token>` (ADR 0018):
+
+```ts
+createOlympusClients({
+  baseUrl,
+  clientName: "olympus-auth-tester",
+  auth: () => tokens.accessToken(), // may be async
+});
+```
+
+A function, called per request, rather than a token. An access token lives
+ten minutes and a client here is built once and held for the life of the
+process — given a string it would go on sending the token it was built with
+long after that token expired. Refreshing belongs in the provider, which is
+the caller's business; returning `undefined` sends no header, so being signed
+out is the same code path rather than a special case.
+
+The token is fetched before the call is timed, so a provider that refreshes
+does not charge the call it interrupted for its own round trip.
+
+`AuthApi` is the caller's own account and sessions:
+`describeCurrentUser`, `listSessions`, `revokeSession` and `signOut`. None of
+them takes a user, because the endpoints read it from the token.
+
+- Wrappers, one per API area, constructed with those clients: `AuthApi` and
   `NotificationApi` (Olympus), `ContentApi`, `MediaApi`, `MediaSearchApi`,
-  `MetadataApi`, `JobApi` and `MetadataWorkflowApi` (Dionysus). A method is
+  `MetadataApi`, `JobApi` and `MetadataWorkflowApi` (Dionysus), `MailApi`
+  (Minerva). A method is
   named after the SDK function it calls, takes plain arguments and returns
   the unwrapped model. A `404` throws, unless the method returns
   `T | undefined` (see "Not-found handling" in `docs/roadmap.md`).
@@ -30,7 +58,7 @@ OlympusClientModule.forRootAsync({
   inject: [olympusConfig.KEY, runtimeConfig.KEY],
   useFactory: (olympus: OlympusConfigType, runtime: RuntimeConfigType) => ({
     baseUrl: olympus.apiBaseUrl, // API_BASE_URL, with /v1
-    clientName: runtime.appName,
+    clientName: runtime.serviceName, // the certificate's name
     tls: olympus.tls, // API_CLIENT_CERT, API_CLIENT_KEY, API_CA_CERT
   }),
 }),

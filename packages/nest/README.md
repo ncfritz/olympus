@@ -7,7 +7,8 @@ NestJS infrastructure shared by the API (`apps/api`) and the agents
   environment, collecting every problem so a service reports all of them
   at boot. Any variable can come from a file instead: `NAME_FILE` names
   it, which is how Compose secrets arrive (ADR 0019).
-- `readRuntimeConfig` (NODE_ENV, APP_NAME, LISTEN_PORT),
+- `readRuntimeConfig` (NODE_ENV, APP_NAME, LISTEN_PORT; `serviceName`, the
+  unsuffixed name a client certificate carries),
   `readAmqpConfig` (AMQP\_\*, with a password-free `redactedUri` for logs),
   `readLoggingConfig` (console, Loki and file logging),
   `readApiClientConfig` (API_BASE_URL and the client certificate a service

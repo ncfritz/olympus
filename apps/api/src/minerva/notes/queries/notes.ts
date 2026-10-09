@@ -16,7 +16,6 @@ export const NOTE_ASSOCIATED_ITEMS_WITH_NOTE_ID = `associatedItems {
 
 export const BASE_NOTE = `id
   parent_id
-  author
   createdTime
   lastUpdatedTime
   deletedTime

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ConfigValidationError,
+  isCidr,
   readConfig,
 } from "../../../src/config/configuration";
 
@@ -16,6 +17,7 @@ describe("readConfig", () => {
       nodeEnv: "development",
       isProduction: false,
       appName: "olympus-api-development",
+      serviceName: "olympus-api",
       port: 3100,
       apiExplorer: true,
       corsOrigins: ["http://localhost:3000"],
@@ -77,6 +79,87 @@ describe("readConfig", () => {
     expect(amqp.redactedUri).toBe(
       "amqp://admin:***@localhost:5672/%2Fdionysus",
     );
+  });
+
+  describe("the calendar sync agent (ADR 0028)", () => {
+    it("is unset by default", () => {
+      expect(readConfig(REQUIRED).minerva).toEqual({});
+    });
+
+    it("reads the From of the claim email", () => {
+      expect(
+        readConfig({
+          ...REQUIRED,
+          MINERVA_CLAIM_MAIL_FROM: "Olympus <olympus@example.com>",
+        }).minerva,
+      ).toEqual({ claimMailFrom: "Olympus <olympus@example.com>" });
+    });
+
+    it("writes to Gmail only when MINERVA_MAIL_WRITES_ENABLED says so", () => {
+      expect(
+        readConfig({ ...REQUIRED, MINERVA_MAIL_WRITES_ENABLED: "true" }).minerva
+          .mailWritesEnabled,
+      ).toBe(true);
+      expect(readConfig(REQUIRED).minerva.mailWritesEnabled).toBeUndefined();
+    });
+
+    it("reads the URL and the API's client certificate", () => {
+      expect(
+        readConfig({
+          ...REQUIRED,
+          MINERVA_CALENDAR_AGENT_URL: "https://minerva-calendar-agent:4433/v1",
+          MINERVA_CALENDAR_AGENT_CLIENT_CERT: "/run/secrets/tls/client.crt",
+          MINERVA_CALENDAR_AGENT_CLIENT_KEY: "/run/secrets/tls/client.key",
+          MINERVA_CALENDAR_AGENT_CA_CERT: "/run/secrets/tls/services-ca.crt",
+        }).minerva,
+      ).toEqual({
+        calendarAgent: {
+          baseUrl: "https://minerva-calendar-agent:4433/v1",
+          tls: {
+            certificate: "/run/secrets/tls/client.crt",
+            key: "/run/secrets/tls/client.key",
+            ca: "/run/secrets/tls/services-ca.crt",
+          },
+          timeoutMs: 10000,
+        },
+      });
+    });
+
+    it("reads the mail agent's the same way", () => {
+      expect(
+        readConfig({
+          ...REQUIRED,
+          MINERVA_MAIL_AGENT_URL: "https://minerva-mail-agent:4435/v1",
+          MINERVA_MAIL_AGENT_CLIENT_CERT: "/run/secrets/tls/client.crt",
+          MINERVA_MAIL_AGENT_CLIENT_KEY: "/run/secrets/tls/client.key",
+        }).minerva,
+      ).toEqual({
+        mailAgent: {
+          baseUrl: "https://minerva-mail-agent:4435/v1",
+          tls: {
+            certificate: "/run/secrets/tls/client.crt",
+            key: "/run/secrets/tls/client.key",
+            ca: undefined,
+          },
+          timeoutMs: 10000,
+        },
+      });
+      expect(() =>
+        readConfig({
+          ...REQUIRED,
+          MINERVA_MAIL_AGENT_URL: "https://minerva-mail-agent:4435/v1",
+        }),
+      ).toThrow(/MINERVA_MAIL_AGENT_CLIENT_CERT/);
+    });
+
+    it("refuses an https URL without a client certificate", () => {
+      expect(() =>
+        readConfig({
+          ...REQUIRED,
+          MINERVA_CALENDAR_AGENT_URL: "https://minerva-calendar-agent:4433/v1",
+        }),
+      ).toThrow(/required for an https MINERVA_CALENDAR_AGENT_URL/);
+    });
   });
 
   it("reports every problem at once", () => {
@@ -163,4 +246,86 @@ describe("readConfig: authentication", () => {
       'AUTH_SERVICE_ROLES entries are "<service>:<role>|<role>", got "dionysus-asset-agent"',
     ]);
   });
+
+  it("defaults the weather settings to a safe, unconfigured state", () => {
+    const { weather } = readConfig(REQUIRED);
+    expect(weather).toEqual({
+      openWeatherApiKey: undefined,
+      ambient: undefined,
+      providerTimeoutMs: 5000,
+      forecast: { ttlSeconds: 900, maxStaleSeconds: 21600 },
+      tiles: { cacheMb: 128, ttlSeconds: 1800 },
+      stations: {
+        sampleRetentionHours: 48,
+        staleSeconds: 600,
+        // Nothing is accepted from anywhere until a deployment says where.
+        allowedCidrs: [],
+        archiveDir: "/olympus/weather/archive",
+        rollupsEnabled: true,
+        // Only prod feeds the dev relay.
+        relayPublish: false,
+        // Only prod fills gaps from ambientweather.net.
+        backfillEnabled: false,
+      },
+    });
+  });
+
+  it("reads the weather settings", () => {
+    const { weather } = readConfig({
+      ...REQUIRED,
+      OPENWEATHER_API_KEY: "ow-key",
+      AMBIENT_APPLICATION_KEY: "app-key",
+      AMBIENT_API_KEY: "api-key",
+      WEATHER_FORECAST_TTL_SECONDS: "600",
+      WEATHER_TILE_CACHE_MB: "64",
+      WEATHER_STATION_ALLOWED_CIDRS: "192.168.1.0/24, 10.0.0.5, fd00::/8",
+      WEATHER_ARCHIVE_DIR: "/archive",
+    });
+    expect(weather.openWeatherApiKey).toBe("ow-key");
+    expect(weather.ambient).toEqual({
+      applicationKey: "app-key",
+      apiKey: "api-key",
+    });
+    expect(weather.forecast.ttlSeconds).toBe(600);
+    expect(weather.tiles.cacheMb).toBe(64);
+    expect(weather.stations.allowedCidrs).toEqual([
+      "192.168.1.0/24",
+      "10.0.0.5",
+      "fd00::/8",
+    ]);
+    expect(weather.stations.archiveDir).toBe("/archive");
+  });
+
+  it("refuses half the Ambient keys, bad numbers and bad ranges", () => {
+    let error: unknown;
+    try {
+      readConfig({
+        ...REQUIRED,
+        AMBIENT_API_KEY: "api-key",
+        WEATHER_TILE_CACHE_MB: "lots",
+        WEATHER_FORECAST_TTL_SECONDS: "0",
+        WEATHER_STATION_ALLOWED_CIDRS: "192.168.1.0/33,lan",
+      });
+    } catch (e) {
+      error = e;
+    }
+    expect((error as ConfigValidationError).problems).toEqual([
+      "AMBIENT_APPLICATION_KEY and AMBIENT_API_KEY are set together or not at all",
+      'WEATHER_STATION_ALLOWED_CIDRS entries are addresses or CIDR ranges, got "192.168.1.0/33"',
+      'WEATHER_STATION_ALLOWED_CIDRS entries are addresses or CIDR ranges, got "lan"',
+      "WEATHER_FORECAST_TTL_SECONDS must be a whole number of at least 1",
+      "WEATHER_TILE_CACHE_MB must be a whole number of at least 1",
+    ]);
+  });
+});
+
+describe("isCidr", () => {
+  it.each(["10.0.0.0/8", "192.168.1.7", "::1", "fd00::/8", "0.0.0.0/0"])(
+    "accepts %s",
+    (value) => expect(isCidr(value)).toBe(true),
+  );
+  it.each(["10.0.0.0/33", "10.0.0/8", "fd00::/129", "lan", "10.0.0.0/8/1", ""])(
+    "refuses %s",
+    (value) => expect(isCidr(value)).toBe(false),
+  );
 });

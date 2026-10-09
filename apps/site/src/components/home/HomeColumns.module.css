@@ -1,0 +1,17 @@
+/* The home page's columns fill the window below the header and its margin. */
+.splitter {
+  height: calc(100vh - 64px - 32px);
+}
+
+.column {
+  padding: 0 8px;
+}
+
+/*
+ * Each column scrolls on its own, without a scrollbar. AntD gives its
+ * panels a thin one (`.ant-splitter .ant-splitter-panel`), so this has to
+ * be the more specific rule.
+ */
+.splitter:global(.ant-splitter) > :global(.ant-splitter-panel) {
+  scrollbar-width: none;
+}

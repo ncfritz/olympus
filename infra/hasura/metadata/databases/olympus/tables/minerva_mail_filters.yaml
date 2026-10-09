@@ -1,0 +1,38 @@
+table:
+  name: mail_filters
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    created_at:
+      custom_name: createdTime
+    from_address:
+      custom_name: fromAddress
+    gmail_filter_id:
+      custom_name: gmailFilterId
+    label_id:
+      custom_name: labelId
+    skip_inbox:
+      custom_name: skipInbox
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    account_id: accountId
+    created_at: createdTime
+    from_address: fromAddress
+    gmail_filter_id: gmailFilterId
+    label_id: labelId
+    skip_inbox: skipInbox
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+  - name: label
+    using:
+      foreign_key_constraint_on: label_id

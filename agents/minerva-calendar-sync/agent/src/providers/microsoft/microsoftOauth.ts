@@ -7,8 +7,14 @@ import {
 import type { MicrosoftConfigType } from "../../config/configuration";
 import type { MicrosoftCredentialStore } from "./MicrosoftCredentialStore";
 
-/** The app registration the flows run against: MICROSOFT_OAUTH_CLIENT_ID and _TENANT_ID. */
-export type MicrosoftApp = Pick<MicrosoftConfigType, "clientId" | "tenantId">;
+/** The app registration the flows run against: MICROSOFT_OAUTH_CLIENT_ID, _TENANT_ID and, for its web platform, _CLIENT_SECRET. */
+export type MicrosoftApp = Pick<
+  MicrosoftConfigType,
+  "clientId" | "tenantId" | "clientSecret"
+>;
+
+/** The registration's platform a token belongs to (see StoredMicrosoftCredential.client). */
+export type MicrosoftClientKind = "public" | "web";
 
 /** Scopes requested when obtaining (or renewing) a Microsoft credential for calendar sync. */
 export const MICROSOFT_CALENDAR_SCOPES = [
@@ -17,16 +23,17 @@ export const MICROSOFT_CALENDAR_SCOPES = [
 ];
 
 /**
- * Scopes for authorizing a brand-new account, where — unlike a reauth for an
- * already-known account — we don't have an accountLabel yet: the extra
- * openid/email scopes let us derive one from the signed-in address (see
- * MicrosoftAuthStrategy.completeNewAccountAuth), mirroring
- * GOOGLE_NEW_ACCOUNT_SCOPES.
+ * Scopes for every sign-in from the agent, new account or re-authorization:
+ * calendar access plus the identity of who signed in (`profile` carries the
+ * object ID), mirroring GOOGLE_NEW_ACCOUNT_SCOPES. A new account takes its
+ * label from the email; a re-authorization is refused unless the same
+ * account signed in (see confirmSameAccount).
  */
 export const MICROSOFT_NEW_ACCOUNT_SCOPES = [
   ...MICROSOFT_CALENDAR_SCOPES,
   "openid",
   "email",
+  "profile",
 ];
 
 const discoveries = new Map<string, Promise<OpenIdClient.Configuration>>();
@@ -48,18 +55,26 @@ const discoveries = new Map<string, Promise<OpenIdClient.Configuration>>();
 function getOidcConfig(
   client: typeof OpenIdClient,
   app: MicrosoftApp,
+  kind: MicrosoftClientKind = "public",
 ): Promise<OpenIdClient.Configuration> {
   if (!app.clientId) {
     throw new Error("Missing required env var MICROSOFT_OAUTH_CLIENT_ID");
   }
-  const key = `${app.tenantId}\0${app.clientId}`;
+  if (kind === "web" && !app.clientSecret) {
+    throw new Error("Missing required env var MICROSOFT_OAUTH_CLIENT_SECRET");
+  }
+  const key = `${app.tenantId}\0${app.clientId}\0${kind}`;
   let discovery = discoveries.get(key);
   if (!discovery) {
     discovery = client.discovery(
       new URL(`https://login.microsoftonline.com/${app.tenantId}/v2.0`),
       app.clientId,
       undefined,
-      client.None(),
+      // The web platform is a confidential client: the secret redeems its
+      // codes and refresh tokens. The public one must send none.
+      kind === "web"
+        ? client.ClientSecretPost(app.clientSecret!)
+        : client.None(),
     );
     discoveries.set(key, discovery);
   }
@@ -69,8 +84,10 @@ function getOidcConfig(
 export interface MicrosoftTokenResult {
   refreshToken: string;
   scope: string;
-  /** Only present when `openid`/`email` were requested (new-account authorization). */
+  /** Only present when `openid`/`email` were requested. */
   email?: string;
+  /** `<tid>:<oid>` from the ID token, when `openid`/`profile` were requested. */
+  subject?: string;
 }
 
 export interface MicrosoftLoopbackFlow {
@@ -171,9 +188,25 @@ export async function startMicrosoftLoopbackFlow(
         refreshToken: tokenResponse.refresh_token,
         scope: tokenResponse.scope ?? scopes.join(" "),
         email: typeof claims?.email === "string" ? claims.email : undefined,
+        subject: microsoftSubject(claims),
       };
     },
   };
+}
+
+/**
+ * An account's subject for ADR 0028: `<tid>:<oid>`, the tenant and the
+ * object ID within it. Microsoft's `sub` differs per application, so it
+ * would not match the same account seen through another app.
+ */
+export function microsoftSubject(
+  claims: Record<string, unknown> | undefined,
+): string | undefined {
+  const tid = claims?.["tid"];
+  const oid = claims?.["oid"];
+  return typeof tid === "string" && typeof oid === "string"
+    ? `${tid}:${oid}`
+    : undefined;
 }
 
 /** Extracts the OAuth error code/description oauth4webapi's ResponseBodyError carries, falling back to the plain message. */
@@ -195,9 +228,10 @@ function describeTokenError(error: unknown): string {
 export async function refreshMicrosoftAccessToken(
   app: MicrosoftApp,
   refreshToken: string,
-): Promise<{ accessToken: string; expiresAt?: string }> {
+  kind: MicrosoftClientKind = "public",
+): Promise<{ accessToken: string; expiresAt?: string; subject?: string }> {
   const client = await loadOpenIdClient();
-  const oidcConfig = await getOidcConfig(client, app);
+  const oidcConfig = await getOidcConfig(client, app, kind);
   const tokenResponse = await client.refreshTokenGrant(
     oidcConfig,
     refreshToken,
@@ -205,6 +239,8 @@ export async function refreshMicrosoftAccessToken(
 
   return {
     accessToken: tokenResponse.access_token,
+    // An ID token comes back when the grant included `openid`.
+    subject: microsoftSubject(tokenResponse.claims()),
     expiresAt: tokenResponse.expiresIn()
       ? new Date(Date.now() + tokenResponse.expiresIn()! * 1000).toISOString()
       : undefined,
@@ -239,6 +275,7 @@ export function createAuthorizedMicrosoftClient(
       const { accessToken, expiresAt } = await refreshMicrosoftAccessToken(
         app,
         credential.refreshToken,
+        credential.client ?? "public",
       );
       cached = {
         accessToken,
@@ -248,5 +285,67 @@ export function createAuthorizedMicrosoftClient(
       };
       return accessToken;
     },
+  };
+}
+
+/**
+ * The provider's sign-in URL for a sign-in the Olympus API started
+ * (ADR 0028): the API's own redirect URI, its state and PKCE challenge,
+ * through the registration's web platform.
+ */
+export async function buildMicrosoftWebAuthUrl(
+  app: MicrosoftApp,
+  scopes: string[],
+  params: {
+    redirectUri: string;
+    state: string;
+    codeChallenge: string;
+    loginHint?: string;
+  },
+): Promise<string> {
+  const client = await loadOpenIdClient();
+  const oidcConfig = await getOidcConfig(client, app, "web");
+  return client.buildAuthorizationUrl(oidcConfig, {
+    redirect_uri: params.redirectUri,
+    response_type: "code",
+    scope: scopes.join(" "),
+    code_challenge: params.codeChallenge,
+    code_challenge_method: "S256",
+    state: params.state,
+    prompt: "consent",
+    ...(params.loginHint ? { login_hint: params.loginHint } : {}),
+  }).href;
+}
+
+/** Redeems a web sign-in's callback: the code, checked against its state and PKCE verifier. */
+export async function completeMicrosoftWebSignIn(
+  app: MicrosoftApp,
+  scopes: string[],
+  params: { callbackUrl: string; state: string; codeVerifier: string },
+): Promise<MicrosoftTokenResult> {
+  const client = await loadOpenIdClient();
+  const oidcConfig = await getOidcConfig(client, app, "web");
+  let tokenResponse: Awaited<ReturnType<typeof client.authorizationCodeGrant>>;
+  try {
+    tokenResponse = await client.authorizationCodeGrant(
+      oidcConfig,
+      new URL(params.callbackUrl),
+      { pkceCodeVerifier: params.codeVerifier, expectedState: params.state },
+    );
+  } catch (error) {
+    throw new Error(
+      `Microsoft token exchange failed: ${describeTokenError(error)}`,
+      { cause: error },
+    );
+  }
+  if (!tokenResponse.refresh_token) {
+    throw new Error("Microsoft did not return a refresh token");
+  }
+  const claims = tokenResponse.claims();
+  return {
+    refreshToken: tokenResponse.refresh_token,
+    scope: tokenResponse.scope ?? scopes.join(" "),
+    email: typeof claims?.email === "string" ? claims.email : undefined,
+    subject: microsoftSubject(claims),
   };
 }

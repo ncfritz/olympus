@@ -1,0 +1,22 @@
+table:
+  name: mail_audit_label_type
+  schema: minerva
+configuration:
+  column_config:
+    high_confidence:
+      custom_name: highConfidence
+    last_received_at:
+      custom_name: lastReceivedTime
+    merge_candidate:
+      custom_name: mergeCandidate
+    proposed_in:
+      custom_name: proposedIn
+    proposed_out:
+      custom_name: proposedOut
+  custom_column_names:
+    high_confidence: highConfidence
+    last_received_at: lastReceivedTime
+    merge_candidate: mergeCandidate
+    proposed_in: proposedIn
+    proposed_out: proposedOut
+  custom_root_fields: {}

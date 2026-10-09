@@ -19,8 +19,14 @@ export type RefreshDelivery =
 export type ClientDefinition = {
   id: string;
   refreshToken: RefreshDelivery;
-  /** Paths joined to each configured origin, e.g. `/auth/callback`. */
+  /** Paths joined to each origin the site is served on, e.g. `/auth/callback`. */
   originPaths?: string[];
+  /**
+   * Paths joined to each URL the Minerva calendar console's agent is
+   * published at (ADR 0029): the agent, not the browser, completes that
+   * console's sign-in, under its own published path.
+   */
+  consolePaths?: string[];
   /** Whole URIs that do not depend on an origin: a custom scheme. */
   uris?: string[];
   /**
@@ -42,6 +48,14 @@ export const CLIENTS: ClientDefinition[] = [
     id: "olympus-ios",
     refreshToken: "body",
     uris: ["olympus://auth"],
+  },
+  {
+    // The Minerva calendar console (ADR 0029). Its agent is the client: it
+    // keeps the refresh token in an httpOnly cookie of its own, on the
+    // console's origin, which is why the API hands it over in the body.
+    id: "minerva-calendar-console",
+    refreshToken: "body",
+    consolePaths: ["/auth/callback"],
   },
   {
     id: "olympus-auth-tester",
@@ -69,21 +83,42 @@ const isLoopback = (url: URL, path: string): boolean =>
   url.search === "" &&
   url.hash === "";
 
+/** Where this environment publishes the clients that have a URL. */
+export type ClientOrigins = {
+  /**
+   * Where the site is served: `https://olympus.internal.ncfritz.net` and
+   * `https://olympus.ncfritz.net` in production (AUTH_CLIENT_ORIGINS).
+   */
+  site: string[];
+  /**
+   * Where the Minerva calendar console's agent is published, path and all:
+   * `https://control.olympus.ncfritz.net/minerva/calendar/api` in
+   * production (AUTH_CONSOLE_BASE_URLS).
+   */
+  console: string[];
+};
+
 /**
- * The clients, with the origins this environment serves the site on —
- * `https://olympus.internal.ncfritz.net` and `https://olympus.ncfritz.net`
- * in production. The origins are configuration because they differ per
- * environment; which paths under them are allowed is not.
+ * The clients, with where this environment publishes them. Those are
+ * configuration because they differ per environment; which paths under
+ * them are allowed is not.
  */
 export const resolveClients = (
-  origins: string[],
+  origins: ClientOrigins,
   definitions: ClientDefinition[] = CLIENTS,
 ): Map<string, Client> => {
+  const join = (base: string, path: string): string =>
+    `${base.replace(/\/+$/, "")}${path}`;
   const clients = definitions.map((definition) => {
     const exact = new Set<string>(definition.uris ?? []);
-    for (const origin of origins) {
+    for (const origin of origins.site) {
       for (const path of definition.originPaths ?? []) {
-        exact.add(`${origin.replace(/\/+$/, "")}${path}`);
+        exact.add(join(origin, path));
+      }
+    }
+    for (const base of origins.console) {
+      for (const path of definition.consolePaths ?? []) {
+        exact.add(join(base, path));
       }
     }
     return [

@@ -43,6 +43,10 @@ export const recordAuthDecision = (
 // (which service, which header) goes to the log, not the metric.
 const KNOWN = [
   "no credentials",
+  // Refused during the TLS handshake, so the request never reached the guard:
+  // an unknown CA, a revoked or expired certificate, or none presented.
+  // One label for all of them -- OpenSSL's own wording is in the log.
+  "handshake",
   "no client certificate",
   "not a TLS connection",
   "unknown service",

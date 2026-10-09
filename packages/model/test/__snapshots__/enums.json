@@ -1,4 +1,28 @@
 {
+  "AvailabilityLevel": {
+    "Busy": "busy",
+    "Free": "free",
+    "Interruptable": "interruptable",
+    "None": "none"
+  },
+  "CalendarAccountStatus": {
+    "Error": "error",
+    "Expired": "expired",
+    "NotConnected": "not_connected",
+    "Ok": "ok",
+    "ReauthPending": "reauth_pending",
+    "Unknown": "unknown"
+  },
+  "CalendarAccountVerification": {
+    "ClaimConsent": "claim_consent",
+    "ClaimEmail": "claim_email",
+    "Consent": "consent",
+    "SignIn": "sign_in"
+  },
+  "CalendarProvider": {
+    "Google": "google",
+    "Microsoft": "microsoft"
+  },
   "CertificationType": {
     "MOVIE": "Movie",
     "TV": "TV"
@@ -99,6 +123,98 @@
     "MOVIE": "Movie",
     "TV": "TV"
   },
+  "GoalCategoryIcon": {
+    "Aim": "aim",
+    "Bank": "bank",
+    "Book": "book",
+    "Build": "build",
+    "Bulb": "bulb",
+    "Camera": "camera",
+    "Car": "car",
+    "Cloud": "cloud",
+    "Code": "code",
+    "Coffee": "coffee",
+    "Compass": "compass",
+    "Crown": "crown",
+    "CustomerService": "customer-service",
+    "Dollar": "dollar",
+    "Environment": "environment",
+    "Experiment": "experiment",
+    "Fire": "fire",
+    "Flag": "flag",
+    "Gift": "gift",
+    "Global": "global",
+    "Heart": "heart",
+    "Home": "home",
+    "Laptop": "laptop",
+    "MedicineBox": "medicine-box",
+    "Moon": "moon",
+    "Read": "read",
+    "Rocket": "rocket",
+    "Safety": "safety",
+    "Schedule": "schedule",
+    "Shopping": "shopping",
+    "Smile": "smile",
+    "Star": "star",
+    "Sun": "sun",
+    "Team": "team",
+    "Thunderbolt": "thunderbolt",
+    "Tool": "tool",
+    "Trophy": "trophy",
+    "User": "user",
+    "VideoCamera": "video-camera",
+    "Wallet": "wallet"
+  },
+  "GoalCheckinSource": {
+    "DailyReview": "daily_review",
+    "Goal": "goal",
+    "WeeklyReview": "weekly_review"
+  },
+  "GoalCycleStatus": {
+    "Buffer": "buffer",
+    "Current": "current",
+    "Past": "past",
+    "Upcoming": "upcoming"
+  },
+  "GoalHealth": {
+    "AtRisk": "at_risk",
+    "OffTrack": "off_track",
+    "OnTrack": "on_track"
+  },
+  "GoalHorizon": {
+    "Custom": "custom",
+    "Cycle": "cycle",
+    "Ongoing": "ongoing",
+    "Quarter": "quarter",
+    "Year": "year"
+  },
+  "GoalProgressMode": {
+    "Checkins": "checkins",
+    "Habit": "habit",
+    "Manual": "manual",
+    "Milestones": "milestones",
+    "Status": "status",
+    "Subgoals": "subgoals"
+  },
+  "GoalRollup": {
+    "Average": "average",
+    "Sum": "sum",
+    "Weighted": "weighted"
+  },
+  "GoalStatus": {
+    "Achieved": "achieved",
+    "Active": "active",
+    "Draft": "draft",
+    "Dropped": "dropped",
+    "Missed": "missed",
+    "Paused": "paused"
+  },
+  "GoalType": {
+    "Achievement": "achievement",
+    "Habit": "habit",
+    "Milestone": "milestone",
+    "Outcome": "outcome"
+  },
   "GroupType": {
     "FOUNDATION_STOCK_SERVICE": "FS",
     "HERDING": "HD",
@@ -109,6 +225,12 @@
     "TERRIER": "TR",
     "TOY": "TY",
     "WORKING": "WK"
+  },
+  "HabitFrequency": {
+    "Daily": "daily",
+    "Monthly": "monthly",
+    "Weekdays": "weekdays",
+    "Weekly": "weekly"
   },
   "JobStatus": {
     "CANCELLED": "cancelled",
@@ -132,6 +254,149 @@
     "TV_NETWORKS": "tv_networks",
     "TV_SEASONS": "tv_seasons",
     "TV_SERIES": "tv_series"
+  },
+  "MailAccountVerification": {
+    "Consent": "consent",
+    "Import": "import"
+  },
+  "MailAuditAction": {
+    "Add": "add",
+    "Remove": "remove"
+  },
+  "MailAuditChangeSort": {
+    "Confidence": "confidence",
+    "ReceivedTime": "receivedTime"
+  },
+  "MailAuditMergeReason": {
+    "SameLeaf": "same_leaf",
+    "SenderOverlap": "sender_overlap"
+  },
+  "MailAuditRule": {
+    "Classifier": "classifier",
+    "Sender": "sender"
+  },
+  "MailChangeBatchKind": {
+    "Apply": "apply",
+    "Merge": "merge",
+    "Undo": "undo"
+  },
+  "MailChangeBatchReport": {
+    "Done": "done",
+    "Failed": "failed",
+    "Running": "running"
+  },
+  "MailChangeBatchStatus": {
+    "Done": "done",
+    "Failed": "failed",
+    "Pending": "pending",
+    "Running": "running"
+  },
+  "MailChangeStatus": {
+    "Changed": "changed",
+    "Failed": "failed",
+    "Gone": "gone",
+    "Pending": "pending",
+    "Unchanged": "unchanged",
+    "Written": "written"
+  },
+  "MailClusterRunStatus": {
+    "Building": "building",
+    "Ready": "ready"
+  },
+  "MailClusterScope": {
+    "Label": "label",
+    "Unlabelled": "unlabelled"
+  },
+  "MailClusterSuggestion": {
+    "NewLabel": "new-label",
+    "Split": "split"
+  },
+  "MailDecision": {
+    "Applied": "applied",
+    "Dismissed": "dismissed"
+  },
+  "MailInboxDecision": {
+    "Approved": "approved",
+    "Skipped": "skipped"
+  },
+  "MailInboxSort": {
+    "Confidence": "confidence",
+    "From": "from",
+    "ReceivedTime": "receivedTime",
+    "Subject": "subject"
+  },
+  "MailInboxStatus": {
+    "All": "all",
+    "Approved": "approved",
+    "Review": "review",
+    "Unread": "unread"
+  },
+  "MailLabelKind": {
+    "Retired": "retired",
+    "State": "state",
+    "System": "system",
+    "Topical": "topical"
+  },
+  "MailLabelOpKind": {
+    "Create": "create",
+    "Delete": "delete",
+    "Rename": "rename"
+  },
+  "MailLabelOpStatus": {
+    "Done": "done",
+    "Failed": "failed",
+    "Pending": "pending",
+    "Skipped": "skipped"
+  },
+  "MailPaymentMatchedBy": {
+    "Learned": "learned",
+    "Wording": "wording"
+  },
+  "MailProposalStatus": {
+    "Open": "open",
+    "Processed": "processed"
+  },
+  "MailStarAge": {
+    "Month": "month",
+    "Older": "older",
+    "Year": "year"
+  },
+  "MailStarFix": {
+    "AttentionIcon": "attention-icon",
+    "DoneIcon": "done-icon",
+    "Star": "star"
+  },
+  "MailStarIcon": {
+    "BlueInfo": "blue-info",
+    "BlueStar": "blue-star",
+    "GreenCheck": "green-check",
+    "GreenStar": "green-star",
+    "OrangeGuillemet": "orange-guillemet",
+    "OrangeStar": "orange-star",
+    "PurpleQuestion": "purple-question",
+    "PurpleStar": "purple-star",
+    "RedBang": "red-bang",
+    "RedStar": "red-star",
+    "YellowBang": "yellow-bang",
+    "YellowStar": "yellow-star"
+  },
+  "MailStatisticsRange": {
+    "AllTime": "all",
+    "ThreeYears": "3y",
+    "TwelveMonths": "12m"
+  },
+  "MailStatisticsScope": {
+    "All": "all",
+    "Received": "received",
+    "Sent": "sent"
+  },
+  "MailSuggestionRunStatus": {
+    "Building": "building",
+    "Ready": "ready"
+  },
+  "MailTrainingDecisionKind": {
+    "Amended": "amended",
+    "Approved": "approved"
   },
   "MediaAssetSearchConfigurationStatus": {
     "ERROR": "error",
@@ -263,6 +528,40 @@
     "NONE": 0,
     "RAR_PASS": 1
   },
+  "ReviewItemKind": {
+    "Priority": "priority",
+    "Todo": "todo"
+  },
+  "ReviewItemScope": {
+    "Day": "day",
+    "Week": "week"
+  },
+  "ReviewItemStatus": {
+    "Carried": "carried",
+    "Done": "done",
+    "Dropped": "dropped",
+    "Open": "open",
+    "Someday": "someday"
+  },
+  "ReviewKind": {
+    "Daily": "daily",
+    "Weekly": "weekly"
+  },
+  "ReviewPeriodStatus": {
+    "Complete": "complete",
+    "Draft": "draft",
+    "Missed": "missed",
+    "Open": "open",
+    "Upcoming": "upcoming"
+  },
+  "ReviewPromptSection": {
+    "Plan": "plan",
+    "Reflect": "reflect"
+  },
+  "ReviewPromptStyle": {
+    "List": "list",
+    "Text": "text"
+  },
   "SMTPPriority": {
     "High": "2",
     "Highest": "1",
@@ -307,6 +606,31 @@
   "SynoChatDestinationType": {
     "BOT": "bot",
     "CHANNEL": "channel"
+  },
+  "WeatherArchiveRecordSource": {
+    "Backfill": "backfill",
+    "Push": "push"
+  },
+  "WeatherArchiveReplayMode": {
+    "Ignore": "ignore",
+    "Replace": "replace"
+  },
+  "WeatherConditionKind": {
+    "Clear": "clear",
+    "Cloudy": "cloudy",
+    "Drizzle": "drizzle",
+    "Fog": "fog",
+    "PartlyCloudy": "partly_cloudy",
+    "Rain": "rain",
+    "Snow": "snow",
+    "Thunderstorm": "thunderstorm"
+  },
+  "WeatherMapLayer": {
+    "Clouds": "clouds",
+    "Precipitation": "precipitation",
+    "Pressure": "pressure",
+    "Temperature": "temperature",
+    "Wind": "wind"
   },
   "WebSocketNotificationLevel": {
     "ERROR": "error",

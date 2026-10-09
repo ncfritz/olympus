@@ -1,0 +1,23 @@
+table:
+  name: goal_habit_logs
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    goal_id:
+      custom_name: goalId
+    log_date:
+      custom_name: logDate
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    goal_id: goalId
+    log_date: logDate
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: goal
+    using:
+      foreign_key_constraint_on: goal_id

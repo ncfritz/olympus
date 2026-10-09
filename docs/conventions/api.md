@@ -250,6 +250,22 @@ response.status(HttpStatus.CREATED).send(responseBody);
   JSON `FilterDefinition`. Build the Hasura `where` with
   `buildFilterExpression()` from `utils/filterUtil.ts`.
 
+### Files
+
+An operation that answers a file rather than JSON (the first:
+`ExportMailAuditChanges`) is named `Export…`, lives at `…/export` beside
+the collection it exports, and takes that collection's filters.
+
+- `@ApiProduces("<type>")` and `@ApiOkResponse({ description, schema: {
+type: "string" } })`, so the SDK reads the body as text.
+- The handler sets the type and `Content-Disposition: attachment;
+filename="…"`, the name derived from the filters.
+- CSV is written with `utils/csv.ts`: RFC 4180 quoting, CRLF, and a
+  leading apostrophe on a field a spreadsheet would read as a formula.
+- The site fetches it through the SDK, so the request carries the access
+  token, and saves it with `utils/download.ts`; a plain link would not be
+  signed in.
+
 ## Hasura access
 
 - Use the injected `GraphQLClient`. Do not create other clients.
@@ -306,6 +322,10 @@ response.status(HttpStatus.CREATED).send(responseBody);
   Winston (console, Loki, files) sits behind it (`createWinstonLogger`
   from `@ncfritz/olympus-nest`, which also provides the config readers).
   Never log secrets; `amqp.redactedUri` exists for that.
+- Deployed, the mTLS listener reads `server.crt`/`server.key` and the API
+  calls agents with `client.crt`/`client.key`, all in
+  `${SECRETS_DIR}/tls/olympus-api`; its data is under
+  `${DATA_DIR}/olympus/apps/api` ([general](general.md#deployment)).
 
 ## Messaging
 

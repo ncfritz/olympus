@@ -61,8 +61,6 @@ the optional ones, and these are the ones to write by hand:
 
 - `postgres_password`
 - `hasura_admin_secret`, `hasura_database_url`
-- `minerva_auth_jwt_secret`, `minerva_oidc_providers` (with the `minerva`
-  profile)
 - `hasura_dev_admin_secret`, `hasura_dev_database_url` (only where
   `hasura-dev` runs)
 
@@ -187,6 +185,19 @@ docker compose exec olympus-api node dist/authUser.js add you@example.com "Your 
 
 See [the user directory](users.md) for the rest of the commands, and for
 what to look at when a first sign-in links the wrong account.
+
+## 10. The schedule
+
+A host built to here runs the platform and backs nothing up. The nightly
+backups are an Airflow DAG ([infra/airflow](../../infra/airflow/README.md)),
+and Airflow is not part of this repository — it is a stack of its own, so a new
+host needs one before anything is being kept. Until then `${BACKUP_DIR}`
+stays empty, and nothing says so.
+
+What that Airflow needs is in
+[infra/airflow/README.md](../../infra/airflow/README.md): the Docker socket, the
+`olympus-data` network, this repository readable, and somewhere to report a
+failure to.
 
 ## What tends to go wrong
 

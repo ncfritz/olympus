@@ -7,8 +7,14 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { NoteService } from "../services/NoteService";
 
@@ -17,6 +23,7 @@ export class DeleteNoteController {
   constructor(private readonly notes: NoteService) {}
 
   @Delete("/note/:noteId")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Deletes an existing note",
     description:
@@ -41,12 +48,18 @@ export class DeleteNoteController {
   @ApiNoContentResponse({
     description: "The note has been successfully hard deleted.",
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
-    const { note, hardDeleted } = await this.notes.delete(noteId);
+    const user = requireUser(principal);
+    const { note, hardDeleted } = await this.notes.delete(user.userId, noteId);
     const responseBody: SingleNoteResponse = { note };
     response
       .status(hardDeleted ? HttpStatus.NO_CONTENT : HttpStatus.OK)

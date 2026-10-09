@@ -9,7 +9,9 @@ For development, `scripts/dev-ca.sh` writes a throwaway copy of the whole
 hierarchy into `infra/dev-ca/certs`, in the same shape with `Dev` in every
 name, and the tests use it. `scripts/dev-ca-import.sh` adopts it into the
 development Harpocrates, so development issues and revokes the way
-production does.
+production does. Its `certs/README.txt` says what each file is for,
+including which revocation lists a relying party needs: one from every
+authority in the chain, which at this depth is three.
 
 ## Where to do it
 
@@ -94,17 +96,45 @@ Docker host and on the NAS, and each has its own.
   restart. Add the service to the API's `AUTH_SERVICE_ROLES` before it
   calls, or every request is counted as an unknown service.
 
-## The API's server certificate
+## Server certificates: the API's, and the agents' listeners
 
-The `api-server` profile, from the Service CA, with every name a client
-dials: `olympus-api` (the Docker network),
-`api.olympus.internal.ncfritz.net` (the NAS and anything off that
-network), `localhost` and `127.0.0.1`:
+`server.crt` and `server.key` in a service's `${SECRETS_DIR}/tls/<service>`
+(`TLS_CERT`, `TLS_KEY`): the `api-server` profile, from the Service CA,
+with every name a client dials. For the API: `olympus-api` (the Docker
+network), `api.olympus.internal.ncfritz.net` (the NAS and anything off
+that network), `localhost` and `127.0.0.1`:
 
 ```sh
-hcli issue --profile api-server --cn olympus-api --csr /tmp/api.csr \
+hcli issue --profile api-server --cn olympus-api --csr /tmp/server.csr \
   --dns olympus-api --dns api.olympus.internal.ncfritz.net --dns localhost --ip 127.0.0.1
 ```
+
+An agent's listener (the calendar agent, the mail agent, the classifier)
+gets the same kind of certificate: SAN and CN its service name, the name
+the API or the mail agent dials. `stack.sh check` reads each one and says
+what is wrong with it, and checks each call both ways round.
+
+XCA issued these from **Issuing CA 2**, under Intermediate CA 1, so until
+they are reissued a caller verifies a listener with a CA file holding Root
+CA 1, Intermediate CA 1 and Issuing CA 2 (`API_CA_CERT`,
+`<SERVICE>_CA_CERT`), and `TLS_SERVER_ISSUER` in `env/prod.env` names
+Issuing CA 2. Issuing CA 2 is closed at the cutover: a server certificate
+reissued from Harpocrates comes from the Service CA, so the caller's CA
+file becomes `services-ca.crt`, and `TLS_SERVER_ISSUER` the Service CA's
+name, once every listener has moved.
+
+**Never longer than 825 days.** Apple refuses a TLS server certificate
+issued after 1 July 2019 whose validity is longer, and it refuses it
+whatever anchor the certificate chains to -- a private CA the device has
+been given is not an exemption. What a caller sees is the trust
+evaluation failing, which `URLSession` reports as the _client_
+cancelling: nothing at either end says the certificate was too
+long-lived. The same page requires the name in a subject alternative name
+rather than the common name, `id-kp-serverAuth` in an extended key usage,
+SHA-2 throughout the chain, and RSA of at least 2048 bits or an elliptic
+curve of at least 256 (<https://support.apple.com/en-us/103769>). The
+profiles keep to it (`api-server` and `internal-tls` are a year or less),
+and so does the dev CA.
 
 ## A device certificate
 

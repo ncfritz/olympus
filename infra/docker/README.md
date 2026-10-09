@@ -26,11 +26,22 @@ paths) is in the compose files.
 ```sh
 infra/docker/stack.sh bootstrap prod       # once: networks, data and secrets dirs
 infra/docker/stack.sh rabbitmq-users       # RabbitMQ's users, into the secrets dir
-infra/docker/stack.sh check                # every setting and secret in place
+infra/docker/stack.sh check                # every setting, secret, folder and certificate
+infra/docker/stack.sh list                 # every stack and container, as a tree
 infra/docker/stack.sh up                   # this environment's STACKS, in order
 infra/docker/stack.sh up olympus           # or one stack
+infra/docker/stack.sh up --tag 1a2b3c4d olympus   # another image tag, this once
 infra/docker/stack.sh logs olympus -f dionysus-asset-agent
 ```
+
+`OLYMPUS_TAG` in `env/<env>.env` is the tag every stack runs, and what a
+deploy or a rollback commits. `--tag` on `up` (and `pull`) runs another
+for that command only, without editing the file: for trying a fix built
+with `stack.sh build --push --env prod`, say. It applies to the images this
+repository builds (`OLYMPUS_TAG`; Hasura and RabbitMQ keep their own
+tags), and the next `up` without it goes back to the file's, so once the
+fix is right, set it in the env file and commit it. With `DOCKER_CONTEXT=nas`
+it does the same for the NAS's asset agent.
 
 | Stack         | Services                                                                               | Runs on     |
 | ------------- | -------------------------------------------------------------------------------------- | ----------- |
@@ -50,16 +61,17 @@ API), `olympus-backend` (RabbitMQ, the API, the agents), `olympus-edge`
 stack's network. A service that starts before RabbitMQ or Hasura is
 ready exits and its restart policy tries again. The `harpocrates` stack
 adds its own `harpocrates` network, internal, for its Postgres and the
-service only; its signer has no network at all.
+service only (on `10.210.5.0/24`, named in its compose file); its signer
+has no network at all.
 
 ### Harpocrates
 
 The CA's stack (`compose/harpocrates.yml`) holds what the other stacks
 trust, so it comes up before `olympus` and `nginx`, which read the lists
-it publishes to `${DATA_DIR}/harpocrates/published`: nginx serves them as
-`http://pki.internal.ncfritz.net` (`nginx/pki.conf`, plain HTTP on
-purpose), and the API mounts them read-only for its services listener.
-The management API is published at
+it publishes to `${DATA_DIR}/olympus/apps/harpocrates/published`: nginx
+serves them as `http://pki.internal.ncfritz.net` (`nginx/pki.conf`, plain
+HTTP on purpose), and the API mounts them read-only for its services
+listener. The management API is published at
 `https://${CONTROL_HOST}/harpocrates/ca/api` (`nginx/control.conf`).
 
 `bootstrap` makes its directories and three of its four secrets (random:
@@ -69,9 +81,9 @@ signer starts sealed until it is initialised: the steps, and the XCA
 cutover that follows, are [the cutover guide](../../docs/guides/harpocrates-cutover.md).
 
 The signer runs as uid 10001 and keeps its store in
-`${DATA_DIR}/harpocrates/signer`; on a Linux host that directory must be
-that uid's (`chown 10001:10001`). The store and the unseal key are never
-in the same backup.
+`${DATA_DIR}/olympus/apps/harpocrates/signer`; on a Linux host that
+directory must be that uid's (`chown 10001:10001`). The store and the
+unseal key are never in the same backup.
 
 ### The NAS
 
@@ -173,7 +185,109 @@ docker run --rm alpine cat /etc/resolv.conf
 docker run --rm alpine nslookup accounts.google.com
 ```
 
+### Network subnets, and the LAN disappearing from every container
+
+`stack.sh bootstrap` creates Olympus's networks with explicit subnets out of
+`10.210.0.0/16` (`NETWORK_SUBNETS` in the script). That is not tidiness. A
+network created without one takes whatever Docker's allocator offers, and
+Docker allocates from `172.17.0.0/12` in /16s and then, once that pool is
+gone, from **`192.168.0.0/16` in /20s**. The first allocation out of that
+second pool is `192.168.0.0/20` -- `192.168.0.0` through `192.168.15.255`,
+which on a home LAN in `192.168.x` is the LAN.
+
+The Mac Mini hit this: fifteen networks across the other stacks had consumed
+`172.16/12` down to its last slot, so the monorepo migration's new networks
+fell through into `192.168`, and `olympus-data` landed on the range holding
+both the development laptop and the router.
+
+What it looks like is worth knowing, because nothing points at Docker:
+
+- Containers reach the internet perfectly. Only the LAN is gone.
+- **Every** container on the host is affected, not only the ones attached to
+  the offending network -- the route lives in Docker's VM, so a bare
+  `docker run --rm alpine` fails the same way. That is what rules out any one
+  stack's configuration.
+- A connect timeout, never a refusal, and `tcpdump` on the destination sees
+  no SYN at all: the packets are delivered into a bridge inside the VM.
+- `host.docker.internal` keeps working, since the host gateway is on a
+  different subnet.
+
+It presents as an nginx problem, because nginx is what proxies to a machine
+on the LAN. Two days of the dev server block were spent on resolvers, ports,
+IPv6, timeouts and macOS's Local Network privacy grant before the subnet was
+the thing that was wrong.
+
+Check it directly rather than inferring it:
+
+```sh
+docker network ls -q | xargs -n1 \
+  docker network inspect -f '{{.Name}}: {{range .IPAM.Config}}{{.Subnet}} {{end}}'
+```
+
+Anything on `192.168.x` deserves suspicion on a LAN that is also `192.168.x`.
+`stack.sh bootstrap` reports a network whose subnet is not the one this
+repository names, and says how to move it -- it will not recreate it, because
+that means disconnecting whatever is running on it:
+
+```sh
+./stack.sh down all
+docker network rm olympus-data olympus-graphql olympus-backend
+./stack.sh bootstrap prod     # recreates them on 10.210.x
+./stack.sh up all
+```
+
+Networks Compose creates for itself (`<project>_default`, `nginx_net`) are
+still allocated by Docker, and so is any other stack's, so the host's
+`default-address-pools` is worth setting too -- a base of `10.211.0.0/16` in
+/24s keeps every future implicit network away from both `192.168/16` and the
+`172.16/12` the other stacks are using. Docker Desktop: Settings, Docker
+Engine.
+
 ## Building images
+
+Day to day, `stack.sh build` — it works out which images a stack's services
+need from the services themselves, and tags them with the commit:
+
+```sh
+infra/docker/stack.sh build --load olympus                # every image the stack runs
+infra/docker/stack.sh build --load olympus olympus-api    # one service's
+infra/docker/stack.sh build --push --env prod olympus     # production's, from the laptop
+infra/docker/stack.sh build --load olympus -- --set asset-agent.platform=linux/arm64
+infra/docker/stack.sh build --push --env prod --parallel olympus   # all at once
+```
+
+Images are built one at a time: a bake of several targets builds them side
+by side, and a few Node builds at once exhaust Docker Desktop's memory
+(`cannot allocate memory`). Layers are shared through the builder's cache,
+so one at a time costs little more than the slowest image. A failure stops
+the build and names the image; the ones before it are already built (or
+pushed). `--parallel` is the single bake of them all, for a machine with
+the memory to spare.
+
+`--env` is which environment's images to build, not which machine you are on.
+They are usually the same and it can be left out; they differ for the case
+that matters most here — the laptop runs `local`, whose images are
+`olympus/<name>` with no registry, and pushing production's images from the
+laptop is the _preferred_ way to fill the registry, because a push from the
+Mac Mini goes out and back in through nginx (ADR 0022: environments are
+named, not machines).
+
+There is no default output, on purpose. `--load` puts the image in the local
+image store, which is what this machine's Compose services pull from and the
+right answer on the host that also hosts the registry — a push from there
+goes out and back in through nginx. `--push` is the only one that reaches
+another machine, which the NAS's asset agent needs. Either default would be
+silently wrong half the time.
+
+It refuses to build from a dirty tree, because the tag is the commit and
+`OLYMPUS_TAG` is what a rollback sets back: an image tagged with a commit it
+was not built from is a problem that surfaces months later. `--dirty` says
+you know.
+
+Services whose image this repository does not build — Postgres, the registry
+— are skipped.
+
+### Underneath
 
 `/docker-bake.hcl` lists every image, its platforms and tags. It sits at
 the repository root because `docker buildx bake` looks for it in the
@@ -237,6 +351,91 @@ infra/docker/compose/registry.yml up -d`.
 5. The internal DNS record: `registry.internal.ncfritz.net` → the Mac
    Mini.
 
+### The web UI
+
+`registry-ui` in the same compose file — [eznix86/docker-registry-ui][ui] —
+serves the same name at `/`, with `/v2/` still the registry's API.
+
+It is a **server-side** app: it talks to the registry itself and scrapes tags
+into SQLite, rather than the browser calling `/v2/`. So it holds a registry
+login of its own, and a full-access one, because htpasswd auth has no scopes.
+That single fact decides the rest of this section. A UI holding a registry
+password with no front door of its own undoes the only thing that stops
+anything on the LAN replacing an Olympus image — so it signs people in with
+Google first.
+
+Set up, on the Mac Mini:
+
+1. `REGISTRY_UI_VERSION` and `REGISTRY_UI_ALLOWED_EMAILS` in
+   `env/prod.env`. The allowlist is **not optional**: with none, the UI
+   admits any account Google authenticates, which is everyone alive.
+   Authentication is not authorization.
+2. A Google OAuth client — the API's can be reused — with
+   `https://registry.internal.ncfritz.net/oauth/callback` among its
+   authorized redirect URIs. Google never resolves that name; only the
+   browser does, and the browser is on the LAN.
+3. `$SECRETS_DIR/registry-ui.env`, mode 600. This app reads credentials from
+   the environment rather than from files, so they cannot be Docker secrets;
+   `SECRETS_DIR` is git-ignored and `env/prod/` is not. The file is literal —
+   nothing expands in it:
+
+   ```
+   REGISTRY_AUTH=b2x5bXB1czpub3QtdGhlLXJlYWwtb25l
+   OIDC_ISSUER_URL=https://accounts.google.com
+   OIDC_CLIENT_ID=….apps.googleusercontent.com
+   OIDC_CLIENT_SECRET=…
+   OIDC_REDIRECT_URI=https://registry.internal.ncfritz.net/oauth/callback
+   SESSION_SECRET=…
+   ```
+
+   `REGISTRY_AUTH` is base64 of `username:password`, and **`echo` will get it
+   wrong**: `echo "olympus:$password" | base64` encodes a trailing newline, so
+   the registry decodes the right username and a password with an extra byte
+   on the end and answers `authentication failure` for a password that is
+   otherwise correct. The two differ in a way that looks like the shorter one
+   is truncated — `echo` produces `==` padding where `printf` produces none —
+   which is exactly the wrong conclusion to draw.
+
+   Write both generated values straight into the file, so neither the password
+   nor the result goes through shell history:
+
+   ```sh
+   read -rsp 'registry password: ' p; echo
+   {
+     printf 'REGISTRY_AUTH=%s\n' "$(printf 'olympus:%s' "$p" | base64 | tr -d '\n')"
+     printf 'SESSION_SECRET=%s\n' "$(openssl rand -hex 32)"
+   } >> "$SECRETS_DIR/registry-ui.env"
+   unset p
+   ```
+
+   To check an existing one without printing it, ask only whether it ends in a
+   newline:
+
+   ```sh
+   sed -n 's/^REGISTRY_AUTH=//p' "$SECRETS_DIR/registry-ui.env" | tr -d '\n' |
+     base64 -d | od -An -tx1 | tr -d ' \n' | grep -q '0a$' &&
+     echo "trailing newline: this is the bug" || echo "no trailing newline"
+   ```
+
+4. `stack.sh check registry`, then `stack.sh up registry`. A missing
+   `registry-ui.env` fails `check`, because Compose will not resolve the file.
+
+Deleting a tag is what makes a UI worth having — a tag per commit adds up —
+with two things it does not do:
+
+- **It frees no disk.** A deleted manifest leaves its blobs until
+  `docker compose -f infra/docker/compose/registry.yml exec registry \
+registry garbage-collect /etc/distribution/config.yml` runs. Do that with
+  the registry stopped or read-only: a collection racing a push can collect a
+  blob the push has uploaded and not yet referenced.
+- **It removes a rollback target.** `OLYMPUS_TAG` is a commit and setting it
+  back is the rollback, so a deleted tag is a rollback that no longer works.
+  `stack.sh list` shows which tags are actually running, which is what to
+  check first. `DISABLE_TAG_DELETION=true` turns deletion off if the trade
+  stops being worth it.
+
+[ui]: https://github.com/eznix86/docker-registry-ui
+
 On every machine that pulls or pushes: trust the internal root (in the
 system keychain, or `~/.docker/certs.d/registry.internal.ncfritz.net/ca.crt`
 for Docker Desktop and `/etc/docker/certs.d/...` on the NAS), then
@@ -294,37 +493,111 @@ the service at `/run/secrets/<name>` (ADR 0019). Services built on
 `NAME_FILE`; setting both is refused at boot. A variable that is already
 a path (a key file) points at the secret directly.
 
-| File in `${SECRETS_DIR}`                                                             | Stack       | Service                 | As                                                                                                                        |
-| ------------------------------------------------------------------------------------ | ----------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `postgres_password`                                                                  | data        | Postgres                | `POSTGRES_PASSWORD_FILE`                                                                                                  |
-| `hasura_admin_secret`                                                                | data        | Hasura                  | `HASURA_GRAPHQL_ADMIN_SECRET_FILE` (the image's entrypoint)                                                               |
-|                                                                                      | olympus     | API                     | `HASURA_PASSWORD_FILE`                                                                                                    |
-| `hasura_database_url`                                                                | data        | Hasura                  | `HASURA_GRAPHQL_DATABASE_URL_FILE`, `HASURA_GRAPHQL_METADATA_DATABASE_URL_FILE`                                           |
-| `hasura_dev_admin_secret`, `hasura_dev_database_url`                                 | hasura-dev  | `hasura-dev`            | the same, for `olympus_dev` (Mac Mini only)                                                                               |
-| `rabbitmq_definitions`                                                               | rabbitmq    | RabbitMQ                | loaded at boot; written by `rabbitmq/definitions.mjs`                                                                     |
-| `rabbitmq/<user>.password`                                                           | olympus     | each service            | `AMQP_PASSWORD_FILE` (secrets `amqp_<service>`), as its own RabbitMQ user; the same file feeds the definitions            |
-| `tls/<service>/` (a directory)                                                       | olympus     | the API, each agent     | mounted at `/run/secrets/tls`: the API's `TLS_*` and an agent's `API_CLIENT_*` point into it once certificates are issued |
-| `harpocrates_postgres_password`, `harpocrates_database_url`                          | harpocrates | Postgres, the service   | `POSTGRES_PASSWORD_FILE`; `DATABASE_URL_FILE` (and the migrations). Made by `bootstrap`                                   |
-| `harpocrates_signer_token`                                                           | harpocrates | the signer, the service | `SIGNER_TOKEN_FILE`: the service's bearer token on the signer's socket. Made by `bootstrap`                               |
-| `harpocrates_signer_unseal_key`                                                      | harpocrates | the signer              | `SIGNER_UNSEAL_KEY_FILE`: written once from `initialise`; empty, the signer starts sealed                                 |
-| `tmdb_api_key`                                                                       | olympus     | metadata agent          | `TMDB_API_KEY_FILE`                                                                                                       |
-| `nzbgeek_api_key`                                                                    | olympus     | asset and search agent  | `NZBGEEK_API_KEY_FILE`                                                                                                    |
-| `nzbget_password`, `socks_proxy_username`, `socks_proxy_password`                    | olympus     | asset agent             | `NZBGET_PASSWORD_FILE`, `SOCKS_PROXY_USERNAME_FILE`, `SOCKS_PROXY_PASSWORD_FILE`                                          |
-| `content_ssh_password`, `dionysus_cdn_ssh_password`, `dionysus_library_ssh_password` | olympus     | asset agent             | `CONTENT_SSH_PASSWORD_FILE`, `DIONYSUS_CDN_SSH_PASSWORD_FILE`, `..._LIBRARY_..._FILE`                                     |
-| `syno_smtp_password`                                                                 | olympus     | notification agent      | `SYNO_SMTP_PASSWORD_FILE`                                                                                                 |
-| `minerva_auth_jwt_secret`, `google_oauth_client_secret`                              | olympus     | Minerva agent           | `AUTH_JWT_SECRET_FILE`, `GOOGLE_OAUTH_CLIENT_SECRET_FILE`                                                                 |
-| `minerva_oidc_providers`                                                             | olympus     | Minerva agent           | `AUTH_OIDC_PROVIDERS_FILE`: the JSON list of providers the console signs in with, client secrets and all                  |
+`SECRETS_DIR` is `~/Docker/secrets/<property>` on every machine,
+`/Users/ncfritz/Docker/secrets/olympus` for this repository in every
+environment, so each stack on a Docker host has its own namespace and a
+path means the same thing wherever the command runs. That matters because
+a command reads it in two places: a build reads the Maps key on the
+machine running `stack.sh` (the laptop, building production's images),
+while `up` mounts secrets from the Docker host's disk. On the laptop,
+`local` and `prod` share the folder, so a production build takes the Maps
+key found there; it must be a key production's site may use.
+
+| File in `${SECRETS_DIR}`                                                             | Stack       | Service                 | As                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------ | ----------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `postgres_password`                                                                  | data        | Postgres                | `POSTGRES_PASSWORD_FILE`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `hasura_admin_secret`                                                                | data        | Hasura                  | `HASURA_GRAPHQL_ADMIN_SECRET_FILE` (the image's entrypoint)                                                                                                                                                                                                                                                                                                                                                                         |
+|                                                                                      | olympus     | API                     | `HASURA_PASSWORD_FILE`                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `hasura_database_url`                                                                | data        | Hasura                  | `HASURA_GRAPHQL_DATABASE_URL_FILE`, `HASURA_GRAPHQL_METADATA_DATABASE_URL_FILE`                                                                                                                                                                                                                                                                                                                                                     |
+| `hasura_dev_admin_secret`, `hasura_dev_database_url`                                 | hasura-dev  | `hasura-dev`            | the same, for `olympus_dev` (Mac Mini only)                                                                                                                                                                                                                                                                                                                                                                                         |
+| `rabbitmq_definitions`                                                               | rabbitmq    | RabbitMQ                | loaded at boot; written by `rabbitmq/definitions.mjs`                                                                                                                                                                                                                                                                                                                                                                               |
+| `rabbitmq/<user>.password`                                                           | olympus     | each service            | `AMQP_PASSWORD_FILE` (secrets `amqp_<service>`), as its own RabbitMQ user; the same file feeds the definitions                                                                                                                                                                                                                                                                                                                      |
+| `tls/<service>/` (a directory)                                                       | olympus     | the API, each agent     | mounted at `/run/secrets/tls`; named for the compose service. `server.crt` and `server.key` for its listener (`TLS_CERT`, `TLS_KEY`; SAN and CN the service's name), `client.crt` and `client.key` for the listeners it calls (`API_CLIENT_*`, `<SERVICE>_CLIENT_*`; CN the service's name, OU the deployment), `services-ca.crt` and the three revocation lists. The retrain DAG mounts the classifier's (`minerva-mail-agent-ml`) |
+| `harpocrates_postgres_password`, `harpocrates_database_url`                          | harpocrates | Postgres, the service   | `POSTGRES_PASSWORD_FILE`; `DATABASE_URL_FILE` (and the migrations). Made by `bootstrap`                                                                                                                                                                                                                                                                                                                                             |
+| `harpocrates_signer_token`                                                           | harpocrates | the signer, the service | `SIGNER_TOKEN_FILE`: the service's bearer token on the signer's socket. Made by `bootstrap`                                                                                                                                                                                                                                                                                                                                         |
+| `harpocrates_signer_unseal_key`                                                      | harpocrates | the signer              | `SIGNER_UNSEAL_KEY_FILE`: written once from `initialise`; empty, the signer starts sealed                                                                                                                                                                                                                                                                                                                                           |
+| `tmdb_api_key`                                                                       | olympus     | metadata agent          | `TMDB_API_KEY_FILE`                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `openweather_api_key`                                                                | olympus     | API                     | `OPENWEATHER_API_KEY_FILE`: forecasts and map layers (ADR 0024)                                                                                                                                                                                                                                                                                                                                                                     |
+| `ambient_application_key`, `ambient_api_key`                                         | olympus     | API                     | `AMBIENT_APPLICATION_KEY_FILE`, `AMBIENT_API_KEY_FILE`: backfill from ambientweather.net; never logged or archived                                                                                                                                                                                                                                                                                                                  |
+| `nzbgeek_api_key`                                                                    | olympus     | asset and search agent  | `NZBGEEK_API_KEY_FILE`                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `nzbget_password`, `socks_proxy_username`, `socks_proxy_password`                    | olympus     | asset agent             | `NZBGET_PASSWORD_FILE`, `SOCKS_PROXY_USERNAME_FILE`, `SOCKS_PROXY_PASSWORD_FILE`                                                                                                                                                                                                                                                                                                                                                    |
+| `content_ssh_password`, `dionysus_cdn_ssh_password`, `dionysus_library_ssh_password` | olympus     | asset agent             | `CONTENT_SSH_PASSWORD_FILE`, `DIONYSUS_CDN_SSH_PASSWORD_FILE`, `..._LIBRARY_..._FILE`                                                                                                                                                                                                                                                                                                                                               |
+| `syno_smtp_password`                                                                 | olympus     | notification agent      | `SYNO_SMTP_PASSWORD_FILE`                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `google_oauth_client_secret`                                                         | olympus     | Minerva agent           | `GOOGLE_OAUTH_CLIENT_SECRET_FILE`                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `google_web_oauth_client_secret`                                                     | olympus     | Minerva agent           | `GOOGLE_WEB_OAUTH_CLIENT_SECRET_FILE`: the Google "Web application" client, for accounts connected from the site                                                                                                                                                                                                                                                                                                                    |
+| `microsoft_oauth_client_secret`                                                      | olympus     | Minerva agent           | `MICROSOFT_OAUTH_CLIENT_SECRET_FILE`: the Microsoft app's web platform, for the same                                                                                                                                                                                                                                                                                                                                                |
+| `minerva_mail_google_oauth_client_secret`                                            | olympus     | Minerva mail agent      | `MAIL_GOOGLE_OAUTH_CLIENT_SECRET_FILE`: mail's own Google client (ADR 0030); required once the `minerva` profile is on                                                                                                                                                                                                                                                                                                              |
 
 `stack.sh bootstrap` creates the optional ones empty (the SSH, NZBGet,
-NZBGeek, TMDB, SMTP, proxy and Google client secrets, and the signer's
-unseal key): an empty file is
-"not configured", and `check` says which. The rest are required.
+NZBGeek, TMDB, SMTP, proxy, and Google and Microsoft client secrets, and
+the signer's unseal key): an empty file is "not configured", and `check` says which. The rest are
+required.
 
 The SOCKS proxy's username is here too: it is half of a NordVPN service
 credential. Certificates and CA chains are not secret but are mounted
 beside their keys. The NAS's asset agent reads the asset agent's rows
 from its own secrets directory, with its own RabbitMQ user
 (`dionysus-asset-agent-nas`) and certificate.
+
+### Data directories
+
+Infrastructure keeps its data at the top of `${DATA_DIR}`; Olympus's own
+services keep theirs under `olympus/<apps|agents>/<folder>`, the folder in
+this repository their code is in
+([conventions](../../docs/conventions/general.md#deployment)).
+`stack.sh bootstrap` makes them all.
+
+| In `${DATA_DIR}`                                        | Service                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------ |
+| `postgres`, `rabbitmq/data`, `registry`, `registry-ui`  | the infrastructure                                           |
+| `harpocrates-postgres`                                  | Harpocrates's own Postgres                                   |
+| `olympus/apps/api/uploads`                              | the API and the asset agent: uploads                         |
+| `olympus/apps/api/weather/archive`                      | the API: the stations' archive (and Airflow)                 |
+| `olympus/apps/site/olr`                                 | the site                                                     |
+| `olympus/apps/harpocrates/signer`                       | the signer's sealed key store (uid 10001's)                  |
+| `olympus/apps/harpocrates/published`                    | the CA's lists and certificates; nginx and the API read them |
+| `olympus/agents/dionysus-asset`, `-metadata`, `-search` | the Dionysus agents                                          |
+| `olympus/agents/minerva-calendar-sync`                  | the calendar agent and its migration                         |
+| `olympus/agents/minerva-mail`                           | the mail agent: mailbox credentials                          |
+| `olympus/agents/minerva-mail-ml`                        | the classifier, and the nightly retrain                      |
+
+### What `check` reads
+
+`stack.sh check [-v] [stack...]` validates each stack's compose file and
+settings, then, on this host, every secret file it mounts, every folder
+it bind-mounts and every certificate a service is pointed at
+(`check.mjs`):
+
+- each `server.crt`: its key, serverAuth, SAN `DNS:<service>`, CN the same
+  and issuer `TLS_SERVER_ISSUER` (warnings if not);
+- each `client.crt`: its key, clientAuth, CN `<service>`, OU
+  `TLS_CLIENT_OU` and issuer `TLS_SERVICES_ISSUER` (warnings if not);
+- both in date (a warning inside 30 days), under the convention's names;
+- each call between two services in the stack, from both ends, as Node
+  checks it: the listener's `server.crt` (with any chain after it in the
+  file) chains to a root in the CA file the caller verifies it with
+  (`<PREFIX>_CA_CERT` for `<PREFIX>_URL`, else `API_CA_CERT`); the
+  caller's `client.crt` chains to a root in the listener's
+  `TLS_CA_SERVICES` and comes from the listener's `AUTH_SERVICES_ISSUER`
+  (or `SERVICES_ISSUER`); and the listener lists the caller (a warning).
+- each server chain against OpenSSL's X.509 strict mode (RFC 5280), a
+  warning: every certificate but the root has an Authority Key
+  Identifier, and every CA critical Basic Constraints, a Key Usage and a
+  Subject Key Identifier. Node does not enforce it; Python 3.13's
+  `ssl.create_default_context()` does, so the classifier refuses a chain
+  the agents accept, and the listener logs only `alert certificate
+unknown`.
+
+Server certificates come from `Issuing CA 2`, service certificates from
+`Service Issuing CA 1`, so a server certificate is never checked against
+its own directory's `services-ca.crt` — that file is what the listener
+checks its callers with. A CA file has to hold the root: Node does not
+accept a chain that ends at an intermediate.
+
+A problem fails the check (and so `up`); a warning is shown and passes.
+`-v` lists every certificate it read, with its subject, SAN, issuer and
+expiry. Driving another machine's Docker (`DOCKER_CONTEXT`), the files are
+not on this one and are not read.
 
 ### Tests
 
@@ -338,7 +611,8 @@ node --test infra/docker/rabbitmq/test/*.test.mjs
 
 `stack.sh`'s cover the failures that do not need Docker — an unknown stack,
 an unknown command, no environment chosen — because those are the ones a
-silent exit hides.
+silent exit hides. `check.mjs`'s make certificates with
+`openssl` and hold the compose and env files to the deployment convention.
 
 The shell scripts are shellcheck-clean, which nothing enforces, so it is
 worth running when one changes:
@@ -354,7 +628,13 @@ that from the shebang.
 
 `rabbitmq/users.json` lists the vhosts and one user per service, each
 allowed only its own vhosts; `olympus-dev` is the one user dev services
-share, on `/dionysus-dev`. To write the definitions for an environment:
+share, on `/dionysus-dev`. It also lists what crosses vhosts, which only
+the broker can set up: the `weather.station.reports` exchanges on both
+vhosts and the `weather-relay` shovel between them, as `weather-shovel`, a
+user with only the permissions that takes
+([ADR 0025](../../docs/decisions/0025-weather-data-in-dev.md)). The
+shovel's URIs carry that user's password. To write the definitions for an
+environment:
 
 ```sh
 node infra/docker/rabbitmq/definitions.mjs "$SECRETS_DIR" --generate-missing

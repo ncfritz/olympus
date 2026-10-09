@@ -22,6 +22,8 @@
     "@fullcalendar/react": "6.1.21",
     "@fullcalendar/timegrid": "6.1.21",
     "@ncfritz/olympus-console": "workspace:*",
+    "@ncfritz/olympus-metrics": "workspace:*",
+    "@ncfritz/olympus-sdk": "workspace:*",
     "antd": "catalog:",
     "highcharts": "^13.0.2",
     "highcharts-react-official": "^3.2.3",

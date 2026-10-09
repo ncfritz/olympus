@@ -41,6 +41,23 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // a window sized in weeks/months is negligible.
 const WINDOW_REFRESH_INTERVAL_MS = DAY_MS;
 
+/**
+ * Where a full sync "from the beginning" starts: before any calendar's
+ * first event. A date rather than no bound at all, since Microsoft's
+ * calendarView requires one.
+ */
+export const HISTORY_START = "1970-01-01T00:00:00.000Z";
+
+/** How a sync runs, beyond what its calendar's state decides. */
+export interface SyncOptions {
+  /**
+   * A full sync of the calendar's whole history, from HISTORY_START, not
+   * the window's past days; the window's future end stays. Later syncs go
+   * back to the window, and leave what is older than it alone.
+   */
+  fullHistory?: boolean;
+}
+
 /** Running counters + the individual event changes for one in-progress sync, built up as it goes and persisted at the end. */
 interface SyncTally {
   total: number;
@@ -96,6 +113,7 @@ export class SyncEngine implements BeforeApplicationShutdown {
   async syncOne(
     config: SyncedCalendarConfig,
     trigger: SyncRunTrigger,
+    options: SyncOptions = {},
   ): Promise<void> {
     // The has-check and add below must stay adjacent with no `await` between
     // them — that's what makes two near-simultaneous calls mutually
@@ -115,7 +133,7 @@ export class SyncEngine implements BeforeApplicationShutdown {
     }
 
     this.inFlight.add(config.calendarId);
-    const sync = this.syncIfEnabled(config, trigger).finally(() => {
+    const sync = this.syncIfEnabled(config, trigger, options).finally(() => {
       this.inFlight.delete(config.calendarId);
       this.running.delete(sync);
     });
@@ -136,13 +154,14 @@ export class SyncEngine implements BeforeApplicationShutdown {
   private async syncIfEnabled(
     config: SyncedCalendarConfig,
     trigger: SyncRunTrigger,
+    options: SyncOptions,
   ): Promise<void> {
     const overrides = await this.enablement.listOverrides();
     if (overrides[config.calendarId] === false) {
       this.logger.debug(`Skipping sync for "${config.calendarId}" — disabled`);
       return;
     }
-    await this.runSyncAndRecord(config, trigger);
+    await this.runSyncAndRecord(config, trigger, options);
   }
 
   /** Whether `calendarId` has a sync in progress right now, from any trigger source — drives the frontend's "syncing" indicator. */
@@ -153,13 +172,14 @@ export class SyncEngine implements BeforeApplicationShutdown {
   private async runSyncAndRecord(
     config: SyncedCalendarConfig,
     trigger: SyncRunTrigger,
+    options: SyncOptions,
   ): Promise<void> {
     const startedAt = new Date();
     const tally = newTally();
     let type: SyncRunType = "incremental";
 
     try {
-      type = await this.runSync(config, tally);
+      type = await this.runSync(config, tally, options);
       await this.persistRun(
         config,
         trigger,
@@ -229,9 +249,21 @@ export class SyncEngine implements BeforeApplicationShutdown {
   private async runSync(
     config: SyncedCalendarConfig,
     tally: SyncTally,
+    options: SyncOptions,
   ): Promise<SyncRunType> {
     const provider = this.providers.resolve(config);
     const state = await this.store.getSyncState(config.calendarId);
+
+    if (options.fullHistory) {
+      await this.runFullSync(
+        provider,
+        config,
+        state,
+        tally,
+        this.computeSyncWindow(HISTORY_START),
+      );
+      return "full";
+    }
 
     if (!state?.syncToken || this.isWindowStale(state)) {
       await this.runFullSync(provider, config, state, tally);
@@ -266,10 +298,10 @@ export class SyncEngine implements BeforeApplicationShutdown {
     );
   }
 
-  private computeSyncWindow(): SyncWindow {
+  private computeSyncWindow(start?: string): SyncWindow {
     const now = Date.now();
     return {
-      start: new Date(now - this.windowPastMs).toISOString(),
+      start: start ?? new Date(now - this.windowPastMs).toISOString(),
       end: new Date(now + this.windowFutureMs).toISOString(),
     };
   }
@@ -279,8 +311,8 @@ export class SyncEngine implements BeforeApplicationShutdown {
     config: SyncedCalendarConfig,
     existingState: SyncState | null,
     tally: SyncTally,
+    window: SyncWindow = this.computeSyncWindow(),
   ): Promise<void> {
-    const window = this.computeSyncWindow();
     const seenUids = new Set<string>();
     let nextSyncToken: string | undefined;
 

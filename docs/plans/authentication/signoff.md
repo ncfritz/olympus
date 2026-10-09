@@ -17,7 +17,7 @@ pieces: browsers, devices, certificates, nginx, providers.
 
 | Fixture                      | What                                                        |
 | ---------------------------- | ----------------------------------------------------------- |
-| `user-admin`                 | a user with the `admin` role, linked to a GitHub identity   |
+| `user-admin`                 | a user with the `admin` role, linked to a Google identity   |
 | `user-reader`                | a user with the `reader` role, linked to a Google identity  |
 | `user-disabled`              | a disabled user with a linked identity                      |
 | `stranger`                   | a provider account linked to no user                        |
@@ -46,7 +46,7 @@ The site signs a user in through a provider and holds a session.
 
 | Id    | Env | Steps                                                            | Expected                                                                                                  | Evidence                               |
 | ----- | --- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| F1.1  | INT | As `user-admin`, open `olympus.internal…`, sign in with GitHub   | back on the site, signed in; header shows the user                                                        | screenshot; API log `sign-in … github` |
+| F1.1  | INT | As `user-admin`, open `olympus.internal…`, sign in with Google   | back on the site, signed in; header shows the user                                                        | screenshot; API log `sign-in … google` |
 | F1.2  | INT | Same with Google (`user-reader`) and with Synology SSO           | signed in each time                                                                                       | API log per provider                   |
 | F1.3  | INT | Inspect cookies after F1.1                                       | `refresh` cookie: httpOnly, Secure, SameSite=Strict, Path=/api/v1/auth; no token in local/session storage | dev tools                              |
 | F1.4  | INT | Sign in as `stranger`                                            | "not allowed" page; no session created                                                                    | API log; `ListSessions` for none       |
@@ -108,7 +108,7 @@ external).
 
 | Id    | Env | Steps                                                                                               | Expected                                                                                              | Evidence            |
 | ----- | --- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------- |
-| F5.1  | INT | Install the tester; sign in with GitHub                                                             | `ASWebAuthenticationSession` opens; returns via `olympus-auth-tester://auth`; claims shown            | screen recording    |
+| F5.1  | INT | Install the tester; sign in with Google                                                             | `ASWebAuthenticationSession` opens; returns via `olympus-auth-tester://auth`; claims shown            | screen recording    |
 | F5.2  | INT | "Call API"                                                                                          | `DescribeCurrentUser` returns the user; log shows `Bearer`                                            | tester log          |
 | F5.3  | INT | Kill and relaunch the app                                                                           | still signed in (refresh token from the Keychain)                                                     | recording           |
 | F5.4  | INT | Background the app 11+ minutes, return, "Call API"                                                  | one refresh, then success                                                                             | tester log          |

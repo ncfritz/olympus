@@ -24,6 +24,10 @@ import {
 
 AmqpConnection.prototype.init = async () => {};
 AmqpConnection.prototype.close = async () => {};
+// Nor consume: with no connection there is no channel to consume on.
+AmqpConnection.prototype.createSubscriber = async () => ({
+  consumerTag: "openapi",
+});
 
 const DOCUMENTS = [
   { file: "olympus.json", config: OlympusApiConfig },

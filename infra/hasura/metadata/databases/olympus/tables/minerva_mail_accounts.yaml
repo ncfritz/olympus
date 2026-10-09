@@ -1,0 +1,72 @@
+table:
+  name: mail_accounts
+  schema: minerva
+configuration:
+  column_config:
+    attention_star:
+      custom_name: attentionStar
+    created_at:
+      custom_name: createdTime
+    done_star:
+      custom_name: doneStar
+    gmail_messages_total:
+      custom_name: gmailMessagesTotal
+    gmail_threads_total:
+      custom_name: gmailThreadsTotal
+    history_id:
+      custom_name: historyId
+    link_scope:
+      custom_name: linkScope
+    linked_at:
+      custom_name: linkedTime
+    synced_at:
+      custom_name: syncedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+    verification_method:
+      custom_name: verificationMethod
+    verified_at:
+      custom_name: verifiedTime
+  custom_column_names:
+    attention_star: attentionStar
+    created_at: createdTime
+    done_star: doneStar
+    gmail_messages_total: gmailMessagesTotal
+    gmail_threads_total: gmailThreadsTotal
+    history_id: historyId
+    link_scope: linkScope
+    linked_at: linkedTime
+    synced_at: syncedTime
+    updated_at: lastUpdatedTime
+    user_id: userId
+    verification_method: verificationMethod
+    verified_at: verifiedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+array_relationships:
+  - name: connections
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: mail_account_connections
+          schema: minerva
+  - name: labels
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: mail_labels
+          schema: minerva
+  - name: messages
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: mail_messages
+          schema: minerva

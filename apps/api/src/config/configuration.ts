@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { ConfigType, registerAs } from "@nestjs/config";
 import {
   AmqpConfig,
@@ -48,6 +49,15 @@ export type AuthMode = "report" | "enforce";
 export type AuthConfig = {
   /** Per listener: `report` logs and counts what it would reject. */
   modes: { users: AuthMode; services: AuthMode };
+  /**
+   * Whether the auth endpoints' rate limits apply.
+   *
+   * On by default, and there is an off switch because this is a mechanism
+   * whose own failure mode is refusing legitimate people: a limit that turns
+   * out to be too low, or a per-caller key that stops telling callers apart,
+   * locks users out, and the fix should not have to be a deploy.
+   */
+  rateLimits: "on" | "off";
   /** Certificate common name -> the roles that service has. */
   serviceRoles: Record<string, string[]>;
   /**
@@ -62,6 +72,11 @@ export type AuthConfig = {
     signingKeys?: string;
     /** Where the site is served, for exact redirect-URI matching. */
     clientOrigins: string[];
+    /**
+     * Where the Minerva calendar console's agent is published, for the same
+     * (ADR 0029). e.g. https://control.olympus.ncfritz.net/minerva/calendar/api
+     */
+    consoleBaseUrls: string[];
     /**
      * Where a browser reaches the API, for the redirect URI the providers
      * are registered with — one canonical origin, not whichever the person
@@ -83,6 +98,90 @@ export type AuthConfig = {
   };
 };
 
+/** Weather: forecasts, map tiles and the house's stations (ADR 0024). */
+export type WeatherConfig = {
+  /** Unset: forecasts and map layers answer 503 (the boot log says so). */
+  openWeatherApiKey?: string;
+  /** Backfill from ambientweather.net; off unless both are set. */
+  ambient?: { applicationKey: string; apiKey: string };
+  /** Per provider call. */
+  providerTimeoutMs: number;
+  forecast: {
+    /** How long a fetched forecast is served before it is refetched. */
+    ttlSeconds: number;
+    /** How long the last good one is served, marked stale, on failure. */
+    maxStaleSeconds: number;
+  };
+  tiles: {
+    /** The tile cache's bound; least recently used tiles go first. */
+    cacheMb: number;
+    /** OpenWeather layer tiles; radar tiles live as long as their frame. */
+    ttlSeconds: number;
+  };
+  stations: {
+    /** Parsed pushes are deleted after this; the tiers keep their own. */
+    sampleRetentionHours: number;
+    /** A station with no sample for this long is not reporting. */
+    staleSeconds: number;
+    /**
+     * Where a push may come from (by the forwarded address). Empty: the
+     * push route accepts nothing, which is the safe way to be unconfigured.
+     */
+    allowedCidrs: string[];
+    /** Where the raw archive is written: one JSONL file per station-day. */
+    archiveDir: string;
+    /**
+     * Whether this instance builds the tiers and prunes on a schedule
+     * (plan phase 6). One instance per database should; off for the tests
+     * and for a second instance against the same database.
+     */
+    rollupsEnabled: boolean;
+    /**
+     * Whether every archived line is also published for the dev relay
+     * (ADR 0025). Prod only: a dev API publishing would feed its own relay.
+     */
+    relayPublish: boolean;
+    /**
+     * Whether gaps are filled from ambientweather.net (plan phase 7). Prod
+     * only: dev receives prod's backfill through the relay and replay.
+     * Needs the Ambient keys too.
+     */
+    backfillEnabled: boolean;
+  };
+};
+
+/**
+ * How the API reaches the calendar sync agent's management API, on the
+ * agent's services listener with the API's own client certificate
+ * (ADR 0028). Unset, the calendar account operations answer 503.
+ */
+export type AgentEndpoint = {
+  /** Including the version: https://minerva-calendar-agent:4433/v1 */
+  baseUrl: string;
+  tls?: { certificate: string; key: string; ca?: string };
+  timeoutMs: number;
+};
+
+export type MinervaConfig = {
+  calendarAgent?: AgentEndpoint;
+  /**
+   * The mail agent's services listener, for linking mailboxes to Gmail
+   * (ADR 0030, by ADR 0028's flow). Unset, linking answers 503.
+   */
+  mailAgent?: AgentEndpoint;
+  /**
+   * Whether label changes may be written to Gmail (docs/plans/
+   * email-management phase 4). Off, applying and undoing answer 503 and
+   * linking asks for read access only.
+   */
+  mailWritesEnabled?: boolean;
+  /**
+   * The From of a calendar account claim's email (ADR 0028), e.g.
+   * `Olympus <olympus@ncfritz.net>`. Unset, claims answer 503.
+   */
+  claimMailFrom?: string;
+};
+
 export type AppConfig = {
   server: ServerConfig;
   auth: AuthConfig;
@@ -90,6 +189,8 @@ export type AppConfig = {
   amqp: AmqpConfig;
   logging: LoggingConfig;
   dionysus: DionysusConfig;
+  weather: WeatherConfig;
+  minerva: MinervaConfig;
 };
 
 /**
@@ -133,8 +234,11 @@ export const readConfig = (
     publishPath: read.string("DIONYSUS_PUBLISH_PATH"),
   };
 
+  const weather = readWeatherConfig(read);
+  const minerva = readMinervaConfig(read);
+
   if (read.problems.length) throw new ConfigValidationError(read.problems);
-  return { server, auth, hasura, amqp, logging, dionysus };
+  return { server, auth, hasura, amqp, logging, dionysus, weather, minerva };
 };
 
 /**
@@ -185,11 +289,17 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
   const providersRaw = read.optional("AUTH_OIDC_PROVIDERS");
   return {
     modes,
+    rateLimits: read.oneOf<"on" | "off">(
+      "AUTH_RATE_LIMITS",
+      ["on", "off"],
+      "on",
+    ),
     serviceRoles: readServiceRoles(read),
     servicesIssuer: read.optional("AUTH_SERVICES_ISSUER"),
     users: {
       signingKeys: read.optional("AUTH_SIGNING_KEYS"),
       clientOrigins: read.list("AUTH_CLIENT_ORIGINS", []),
+      consoleBaseUrls: read.list("AUTH_CONSOLE_BASE_URLS", []),
       publicBaseUrl: read.optional("AUTH_PUBLIC_BASE_URL"),
       providers:
         providersRaw === undefined
@@ -203,6 +313,131 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
       key: key ?? "",
       ca: ca ?? "",
       revocationLists,
+    },
+  };
+};
+
+/** A whole number of at least `min`, or the fallback when unset. */
+const readInteger = (
+  read: EnvReader,
+  name: string,
+  fallback: number,
+  min = 1,
+): number => {
+  const raw = read.optional(name);
+  if (raw === undefined) return fallback;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < min) {
+    read.problems.push(`${name} must be a whole number of at least ${min}`);
+    return fallback;
+  }
+  return value;
+};
+
+/** `192.168.1.0/24`, `fd00::/8`, or a bare address (one host). */
+export const isCidr = (value: string): boolean => {
+  const [address, prefix, ...rest] = value.split("/");
+  const family = isIP(address ?? "");
+  if (family === 0 || rest.length > 0) return false;
+  if (prefix === undefined) return true;
+  const bits = Number(prefix);
+  return /^\d+$/.test(prefix) && bits >= 0 && bits <= (family === 4 ? 32 : 128);
+};
+
+/**
+ * MINERVA_CALENDAR_AGENT_URL and MINERVA_MAIL_AGENT_URL, each with its
+ * _CLIENT_CERT and _CLIENT_KEY (and the optional _CA_CERT), which an https
+ * URL requires; MINERVA_CLAIM_MAIL_FROM; and MINERVA_MAIL_WRITES_ENABLED,
+ * false unless set.
+ */
+const readMinervaConfig = (read: EnvReader): MinervaConfig => {
+  const claimMailFrom = read.optional("MINERVA_CLAIM_MAIL_FROM");
+  const calendarAgent = readAgentEndpoint(read, "MINERVA_CALENDAR_AGENT");
+  const mailAgent = readAgentEndpoint(read, "MINERVA_MAIL_AGENT");
+  return {
+    ...(calendarAgent ? { calendarAgent } : {}),
+    ...(mailAgent ? { mailAgent } : {}),
+    ...(read.boolean("MINERVA_MAIL_WRITES_ENABLED", false)
+      ? { mailWritesEnabled: true }
+      : {}),
+    ...(claimMailFrom ? { claimMailFrom } : {}),
+  };
+};
+
+const readAgentEndpoint = (
+  read: EnvReader,
+  prefix: string,
+): AgentEndpoint | undefined => {
+  const baseUrl = read.optional(`${prefix}_URL`);
+  const certificate = read.optional(`${prefix}_CLIENT_CERT`);
+  const key = read.optional(`${prefix}_CLIENT_KEY`);
+  const ca = read.optional(`${prefix}_CA_CERT`);
+  const timeoutMs = readInteger(read, `${prefix}_TIMEOUT_MS`, 10000);
+  if (Boolean(certificate) !== Boolean(key)) {
+    read.problems.push(
+      `${prefix}_CLIENT_CERT and ${prefix}_CLIENT_KEY are set together`,
+    );
+  }
+  if (!baseUrl) return undefined;
+  if (baseUrl.startsWith("https:") && !(certificate && key)) {
+    read.problems.push(
+      `${prefix}_CLIENT_CERT and ${prefix}_CLIENT_KEY are required for an https ${prefix}_URL`,
+    );
+  }
+  return {
+    baseUrl,
+    tls: certificate && key ? { certificate, key, ca } : undefined,
+    timeoutMs,
+  };
+};
+
+const readWeatherConfig = (read: EnvReader): WeatherConfig => {
+  const applicationKey = read.optional("AMBIENT_APPLICATION_KEY");
+  const apiKey = read.optional("AMBIENT_API_KEY");
+  if (Boolean(applicationKey) !== Boolean(apiKey)) {
+    read.problems.push(
+      "AMBIENT_APPLICATION_KEY and AMBIENT_API_KEY are set together or not at all",
+    );
+  }
+  const allowedCidrs = read.list("WEATHER_STATION_ALLOWED_CIDRS", []);
+  for (const cidr of allowedCidrs) {
+    if (!isCidr(cidr)) {
+      read.problems.push(
+        `WEATHER_STATION_ALLOWED_CIDRS entries are addresses or CIDR ranges, got "${cidr}"`,
+      );
+    }
+  }
+  return {
+    openWeatherApiKey: read.optional("OPENWEATHER_API_KEY"),
+    ambient: applicationKey && apiKey ? { applicationKey, apiKey } : undefined,
+    providerTimeoutMs: readInteger(read, "WEATHER_PROVIDER_TIMEOUT_MS", 5000),
+    forecast: {
+      ttlSeconds: readInteger(read, "WEATHER_FORECAST_TTL_SECONDS", 900),
+      maxStaleSeconds: readInteger(
+        read,
+        "WEATHER_FORECAST_MAX_STALE_SECONDS",
+        21600,
+      ),
+    },
+    tiles: {
+      cacheMb: readInteger(read, "WEATHER_TILE_CACHE_MB", 128),
+      ttlSeconds: readInteger(read, "WEATHER_TILE_TTL_SECONDS", 1800),
+    },
+    stations: {
+      sampleRetentionHours: readInteger(
+        read,
+        "WEATHER_SAMPLE_RETENTION_HOURS",
+        48,
+      ),
+      staleSeconds: readInteger(read, "WEATHER_STATION_STALE_SECONDS", 600),
+      allowedCidrs,
+      archiveDir: read.string(
+        "WEATHER_ARCHIVE_DIR",
+        "/olympus/weather/archive",
+      ),
+      rollupsEnabled: read.boolean("WEATHER_ROLLUPS_ENABLED", true),
+      relayPublish: read.boolean("WEATHER_RELAY_PUBLISH", false),
+      backfillEnabled: read.boolean("WEATHER_BACKFILL_ENABLED", false),
     },
   };
 };
@@ -237,11 +472,23 @@ export const dionysusConfig = registerAs(
   () => readConfig(process.env).dionysus,
 );
 
+export const weatherConfig = registerAs(
+  "weather",
+  () => readConfig(process.env).weather,
+);
+
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type AuthConfigType = ConfigType<typeof authConfig>;
 export type HasuraConfigType = ConfigType<typeof hasuraConfig>;
 export type AmqpConfigType = ConfigType<typeof amqpConfig>;
 export type DionysusConfigType = ConfigType<typeof dionysusConfig>;
+export type WeatherConfigType = ConfigType<typeof weatherConfig>;
+
+export const minervaConfig = registerAs(
+  "minerva",
+  () => readConfig(process.env).minerva,
+);
+export type MinervaConfigType = ConfigType<typeof minervaConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
@@ -250,4 +497,6 @@ export const ALL_CONFIG = [
   amqpConfig,
   loggingConfig,
   dionysusConfig,
+  weatherConfig,
+  minervaConfig,
 ];

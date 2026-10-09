@@ -8,6 +8,8 @@ describe("readConfig", () => {
   it("applies the defaults", () => {
     const config = readConfig({});
     expect(config.runtime.appName).toBe("dionysus-metadata-agent-development");
+    // The certificate's name, in every environment.
+    expect(config.runtime.serviceName).toBe("dionysus-metadata-agent");
     expect(config.runtime.port).toBe(3100);
     expect(config.amqp.redactedUri).toBe(
       "amqp://admin:***@localhost:5672/%2Fdionysus-dev",

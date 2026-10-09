@@ -1,0 +1,13 @@
+table:
+  name: mail_star_mixed_type
+  schema: minerva
+configuration:
+  column_config:
+    last_received_at:
+      custom_name: lastReceivedTime
+    subject_pattern:
+      custom_name: subjectPattern
+  custom_column_names:
+    last_received_at: lastReceivedTime
+    subject_pattern: subjectPattern
+  custom_root_fields: {}

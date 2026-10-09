@@ -15,6 +15,20 @@ apps/harpocrates/*/openapi
 **/__snapshots__
 turbo/generators/templates
 
+# Generated native projects (Continuous Native Generation): everything under
+# these is written by `expo prebuild` and CocoaPods, and formatting it is both
+# pointless and destructive -- it rewrites Pods metadata and xcframework
+# manifests that the build reads.
+tools/*/ios
+tools/*/android
+
+# The site's public directory: 47MB and 1,625 JavaScript files of vendored
+# TinyMCE and friends. Formatting somebody else's minified bundle is slow,
+# pointless and makes every diff in it unreadable.
+apps/site/public
+# A third-party syntax theme, kept byte-identical to upstream.
+apps/site/src/styles/prism-local.css
+
 # Email templates: Prettier cannot parse Handlebars partials, and
 # whitespace in them reaches the rendered mail.
 *.handlebars

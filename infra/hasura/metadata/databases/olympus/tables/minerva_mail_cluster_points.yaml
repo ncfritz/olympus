@@ -1,0 +1,32 @@
+table:
+  name: mail_cluster_points
+  schema: minerva
+configuration:
+  column_config:
+    cluster_id:
+      custom_name: clusterId
+    created_at:
+      custom_name: createdTime
+    message_id:
+      custom_name: messageId
+    run_id:
+      custom_name: runId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    cluster_id: clusterId
+    created_at: createdTime
+    message_id: messageId
+    run_id: runId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: cluster
+    using:
+      foreign_key_constraint_on: cluster_id
+  - name: message
+    using:
+      foreign_key_constraint_on: message_id
+  - name: run
+    using:
+      foreign_key_constraint_on: run_id

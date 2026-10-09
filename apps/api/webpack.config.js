@@ -17,11 +17,14 @@ module.exports = {
   // authUser: the user directory CLI (pnpm auth:user). It ships in the image
   // on purpose — in production the Hasura admin secret is a file inside the
   // container, so `docker compose exec olympus-api node dist/authUser.js` is
-  // how users are administered there.
+  // how users are administered there. weatherReplay: loads the raw station
+  // archive into an environment (pnpm weather:replay), shipped for the same
+  // reason.
   entry: {
     main: "./src/main.ts",
     openapi: "./src/openapi.ts",
     authUser: "./src/authUser.ts",
+    weatherReplay: "./src/weatherReplay.ts",
   },
   mode: mode,
   target: "node",

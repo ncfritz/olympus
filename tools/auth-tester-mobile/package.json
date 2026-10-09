@@ -1,0 +1,40 @@
+{
+  "name": "@ncfritz/olympus-auth-tester-mobile",
+  "description": "Olympus auth tester for iOS: the sign-in flows the way an app has to do them (ADR 0018, authentication plan phase 4)",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "main": "index.ts",
+  "scripts": {
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "lint": "eslint .",
+    "lintfix": "eslint . --fix",
+    "start": "expo start",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ncfritz/olympus-auth-flow": "workspace:*",
+    "@ncfritz/olympus-client": "workspace:*",
+    "expo": "~57.0.25",
+    "expo-crypto": "~57.0.3",
+    "expo-document-picker": "~57.0.2",
+    "expo-file-system": "~57.0.7",
+    "expo-secure-store": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
+    "expo-web-browser": "~57.0.3",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "~19.2.2",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

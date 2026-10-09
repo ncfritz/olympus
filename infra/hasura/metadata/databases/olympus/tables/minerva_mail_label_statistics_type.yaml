@@ -1,0 +1,10 @@
+table:
+  name: mail_label_statistics_type
+  schema: minerva
+configuration:
+  column_config:
+    last_received_at:
+      custom_name: lastReceivedTime
+  custom_column_names:
+    last_received_at: lastReceivedTime
+  custom_root_fields: {}

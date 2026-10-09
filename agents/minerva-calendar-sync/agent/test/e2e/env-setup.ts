@@ -2,6 +2,8 @@ import { execSync } from "child_process";
 import { mkdtempSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { beforeAll } from "vitest";
+import { olympus } from "./olympus-fake";
 
 // e2e tests must never touch the developer's real .env — DATABASE_URL
 // points at a disposable temp SQLite file rather than the dev database (so
@@ -15,9 +17,12 @@ const dir = mkdtempSync(join(tmpdir(), "minerva-e2e-"));
 process.env.DATABASE_URL = `file:${join(dir, "e2e.db")}`;
 process.env.GOOGLE_CREDENTIALS_DIR = join(dir, "credentials");
 process.env.MICROSOFT_CREDENTIALS_DIR = join(dir, "credentials-microsoft");
-process.env.AUTH_JWT_SECRET = "e2e-test-secret-do-not-use-in-prod";
-process.env.AUTH_OIDC_PROVIDERS = "[]";
-process.env.AUTH_ALLOWED_EMAILS = "e2e@example.com";
+// The Olympus API the agent checks tokens with and signs in through
+// (ADR 0029): a fake on a loopback port, one per test file, started before
+// any of the file's own hooks.
+beforeAll(async () => {
+  process.env.OLYMPUS_API_URL = await olympus.start();
+});
 
 execSync("npx prisma db push --skip-generate", {
   cwd: join(__dirname, "..", ".."),

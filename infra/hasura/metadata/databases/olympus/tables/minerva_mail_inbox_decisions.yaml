@@ -1,0 +1,41 @@
+table:
+  name: mail_inbox_decisions
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    batch_id:
+      custom_name: batchId
+    created_at:
+      custom_name: createdTime
+    decided_at:
+      custom_name: decidedTime
+    message_id:
+      custom_name: messageId
+    model_run:
+      custom_name: modelRun
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    account_id: accountId
+    batch_id: batchId
+    created_at: createdTime
+    decided_at: decidedTime
+    message_id: messageId
+    model_run: modelRun
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+  - name: batch
+    using:
+      foreign_key_constraint_on: batch_id
+  - name: message
+    using:
+      foreign_key_constraint_on: message_id

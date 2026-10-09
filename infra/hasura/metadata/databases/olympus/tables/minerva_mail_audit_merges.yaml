@@ -1,0 +1,53 @@
+table:
+  name: mail_audit_merges
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    from_label_id:
+      custom_name: fromLabelId
+    from_last_received_at:
+      custom_name: fromLastReceivedTime
+    from_messages:
+      custom_name: fromMessages
+    from_senders:
+      custom_name: fromSenders
+    into_label_id:
+      custom_name: intoLabelId
+    into_last_received_at:
+      custom_name: intoLastReceivedTime
+    into_messages:
+      custom_name: intoMessages
+    run_id:
+      custom_name: runId
+    sender_overlap:
+      custom_name: senderOverlap
+    shared_senders:
+      custom_name: sharedSenders
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    from_label_id: fromLabelId
+    from_last_received_at: fromLastReceivedTime
+    from_messages: fromMessages
+    from_senders: fromSenders
+    into_label_id: intoLabelId
+    into_last_received_at: intoLastReceivedTime
+    into_messages: intoMessages
+    run_id: runId
+    sender_overlap: senderOverlap
+    shared_senders: sharedSenders
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: fromLabel
+    using:
+      foreign_key_constraint_on: from_label_id
+  - name: intoLabel
+    using:
+      foreign_key_constraint_on: into_label_id
+  - name: run
+    using:
+      foreign_key_constraint_on: run_id

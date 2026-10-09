@@ -1,0 +1,3 @@
+function:
+  name: mail_top_senders
+  schema: minerva

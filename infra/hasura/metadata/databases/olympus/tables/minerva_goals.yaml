@@ -1,0 +1,111 @@
+table:
+  name: goals
+  schema: minerva
+configuration:
+  column_config:
+    category_id:
+      custom_name: categoryId
+    close_note:
+      custom_name: closeNote
+    closed_on:
+      custom_name: closedOn
+    created_at:
+      custom_name: createdTime
+    cycle_id:
+      custom_name: cycleId
+    deleted_at:
+      custom_name: deletedTime
+    due_date:
+      custom_name: dueDate
+    manual_progress:
+      custom_name: manualProgress
+    parent_id:
+      custom_name: parentId
+    progress_mode:
+      custom_name: progressMode
+    start_date:
+      custom_name: startDate
+    start_value:
+      custom_name: startValue
+    target_value:
+      custom_name: targetValue
+    tolerance_pct:
+      custom_name: tolerancePct
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    category_id: categoryId
+    close_note: closeNote
+    closed_on: closedOn
+    created_at: createdTime
+    cycle_id: cycleId
+    deleted_at: deletedTime
+    due_date: dueDate
+    manual_progress: manualProgress
+    parent_id: parentId
+    progress_mode: progressMode
+    start_date: startDate
+    start_value: startValue
+    target_value: targetValue
+    tolerance_pct: tolerancePct
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: category
+    using:
+      foreign_key_constraint_on: category_id
+  - name: cycle
+    using:
+      foreign_key_constraint_on: cycle_id
+  - name: habitRule
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_habit_rules
+          schema: minerva
+  - name: parent
+    using:
+      foreign_key_constraint_on: parent_id
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id
+array_relationships:
+  - name: checkins
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_checkins
+          schema: minerva
+  - name: goalTags
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_tags
+          schema: minerva
+  - name: habitLogs
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_habit_logs
+          schema: minerva
+  - name: milestones
+    using:
+      foreign_key_constraint_on:
+        column: goal_id
+        table:
+          name: goal_milestones
+          schema: minerva
+  - name: subGoals
+    using:
+      foreign_key_constraint_on:
+        column: parent_id
+        table:
+          name: goals
+          schema: minerva

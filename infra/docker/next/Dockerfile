@@ -35,10 +35,22 @@ ARG PNPM_VERSION
 # unset when they are empty.
 ARG NEXT_PUBLIC_API_URL=""
 ARG NEXT_PUBLIC_BASE_PATH=""
+# The site's, which names where it sends people and where its media comes from
+# (apps/site/src/utils/constants.ts). Empty here on purpose: the app requires
+# the ones it cannot be wrong about, so a build that forgets an argument fails
+# rather than compiling in a development host.
+ARG NEXT_PUBLIC_ENVIRONMENT=""
+ARG NEXT_PUBLIC_OLYMPUS_HOST=""
+ARG NEXT_PUBLIC_CONTENT_CDN_HOST=""
+ARG NEXT_PUBLIC_DIONYSUS_CDN_HOST=""
 ENV TURBO_TELEMETRY_DISABLED=1 \
     NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH} \
+    NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT} \
+    NEXT_PUBLIC_OLYMPUS_HOST=${NEXT_PUBLIC_OLYMPUS_HOST} \
+    NEXT_PUBLIC_CONTENT_CDN_HOST=${NEXT_PUBLIC_CONTENT_CDN_HOST} \
+    NEXT_PUBLIC_DIONYSUS_CDN_HOST=${NEXT_PUBLIC_DIONYSUS_CDN_HOST} \
     npm_config_store_dir=/pnpm/store
 RUN npm install --global --no-fund --no-audit pnpm@${PNPM_VERSION}
 WORKDIR /repo
@@ -52,7 +64,14 @@ COPY --from=prune /pruned/full/ .
 # The traced output carries workspace packages out of the build context
 # with their modes, and the runtime drops to `node`: a file left at 0600
 # by a developer's umask would be unreadable there.
-RUN pnpm turbo run build --filter="${APP}..." \
+# The Maps key arrives as a secret rather than an argument: a browser key is
+# public by design -- it ends up in the bundle either way -- but an argument is
+# also in `docker history`, which is a worse place for it than it needs to be.
+# Absent, the app compiles without a key and draws no map, which is deliberate:
+# only the hosts it could be silently wrong about are required.
+RUN --mount=type=secret,id=maps_key \
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="$(cat /run/secrets/maps_key 2>/dev/null || true)" \
+    pnpm turbo run build --filter="${APP}..." \
     && mkdir -p "${APP_DIR}/public" \
     && chmod -R a+rX "${APP_DIR}/.next/standalone" "${APP_DIR}/.next/static" \
        "${APP_DIR}/public"

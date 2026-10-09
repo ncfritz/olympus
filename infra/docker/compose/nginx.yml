@@ -28,7 +28,7 @@ services:
       - ../nginx:/etc/nginx/olympus:ro
       # What pki.internal.ncfritz.net serves (nginx/pki.conf): the lists
       # and CA certificates Harpocrates publishes.
-      - ${DATA_DIR:?}/harpocrates/published:/srv/harpocrates/published:ro
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published:ro
     networks:
       - edge
       # The host's other sites, as before.

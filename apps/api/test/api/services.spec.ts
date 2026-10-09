@@ -58,9 +58,12 @@ describe("the services listener", () => {
     (await t.http().get("/metrics").expect(200)).text;
 
   beforeAll(async () => {
-    process.env.AUTH_SERVICE_ROLES =
-      "dionysus-search-agent:agent,dionysus-asset-agent:agent|content";
-    t = await createTestApp();
+    t = await createTestApp({
+      env: {
+        AUTH_SERVICE_ROLES:
+          "dionysus-search-agent:agent,dionysus-asset-agent:agent|content",
+      },
+    });
     server = createServicesListener(t.app, servicesConfig());
     await new Promise((resolve) => server.once("listening", resolve));
     port = (server.address() as { port: number }).port;
@@ -68,8 +71,7 @@ describe("the services listener", () => {
 
   afterAll(async () => {
     server.close();
-    await t.app.close();
-    delete process.env.AUTH_SERVICE_ROLES;
+    await t.close();
   });
 
   it("serves a request with a valid service certificate", async () => {
@@ -239,13 +241,16 @@ describe("the services listener's revocation lists", () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "api-crl-"));
     const config = servicesConfig();
     servicesList = path.join(dir, "services.crl");
-    fs.copyFileSync(config.revocationLists[0], servicesList);
+    const others = config.revocationLists.filter(
+      (list) => path.basename(list) !== "services.crl",
+    );
+    fs.copyFileSync(path.join(devCa(), "services.crl"), servicesList);
     t = await createTestApp();
     server = createServicesListener(
       t.app,
       {
         ...config,
-        revocationLists: [servicesList, ...config.revocationLists.slice(1)],
+        revocationLists: [servicesList, ...others],
       },
       50,
     );

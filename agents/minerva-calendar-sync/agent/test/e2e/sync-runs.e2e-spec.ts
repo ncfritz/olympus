@@ -46,7 +46,7 @@ describe("Sync runs (e2e)", () => {
     configureApp(app);
     await app.init();
 
-    authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    authHeader = `Bearer ${issueE2eAccessToken()}`;
     // The database is shared by the tests in this file.
     calendarId = `calendar-${++calendarCount}`;
   });

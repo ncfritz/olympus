@@ -10,6 +10,11 @@ import { fakeApi } from "../support/fakeApi";
  * as. Arguments are placeholders; the SDK's types check the rest.
  */
 const ARGS: Record<string, unknown[]> = {
+  // AuthApi
+  describeCurrentUser: [],
+  listSessions: [],
+  revokeSession: ["session-1"],
+  signOut: [],
   // ContentApi
   createContentAsset: [{}],
   addContentAssetTagToAsset: ["asset-1", { name: "hls", type: "system" }],
@@ -77,6 +82,23 @@ const ARGS: Record<string, unknown[]> = {
   // NotificationApi
   sendNotification: [{}],
   createNotification: [{}],
+  // MailApi
+  importMailAccount: ["owner@example.test", "neil@example.test"],
+  listMailTrainingAccounts: [],
+  listMailMessageStates: ["account-1", "a"],
+  listMailSyncAccounts: [],
+  updateMailChangeBatch: ["batch-1", { status: "running" }],
+  syncMailLabels: ["account-1", []],
+  recordMailMessageSuggestions: [
+    "account-1",
+    { modelRun: "r", featureVersion: "v1", messages: [] },
+  ],
+  updateMailAccountSync: [
+    "account-1",
+    { historyId: "1", messagesTotal: 0, threadsTotal: 0 },
+  ],
+  // WeatherApi
+  importWeatherStationReadings: [[]],
 };
 
 const methods = OLYMPUS_APIS.flatMap((api) =>

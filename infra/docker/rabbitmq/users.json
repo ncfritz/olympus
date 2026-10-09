@@ -6,13 +6,83 @@
       "tags": ["administrator"],
       "vhosts": ["/dionysus", "/dionysus-dev"]
     },
-    { "name": "olympus-api", "vhosts": ["/dionysus"] },
-    { "name": "olympus-notification-agent", "vhosts": ["/dionysus"] },
-    { "name": "dionysus-asset-agent", "vhosts": ["/dionysus"] },
-    { "name": "dionysus-asset-agent-nas", "vhosts": ["/dionysus"] },
-    { "name": "dionysus-metadata-agent", "vhosts": ["/dionysus"] },
-    { "name": "dionysus-search-agent", "vhosts": ["/dionysus"] },
-    { "name": "minerva-calendar-sync-agent", "vhosts": ["/dionysus"] },
-    { "name": "olympus-dev", "vhosts": ["/dionysus-dev"] }
+    {
+      "name": "olympus-api",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "olympus-notification-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "dionysus-asset-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "dionysus-asset-agent-nas",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "dionysus-metadata-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "dionysus-search-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "minerva-calendar-sync-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "minerva-mail-agent",
+      "vhosts": ["/dionysus"]
+    },
+    {
+      "name": "olympus-dev",
+      "vhosts": ["/dionysus-dev"]
+    },
+    {
+      "name": "weather-shovel",
+      "vhosts": ["/dionysus", "/dionysus-dev"],
+      "permissions": {
+        "/dionysus": {
+          "configure": "^amq\\.gen-.*",
+          "write": "^amq\\.gen-.*",
+          "read": "^(weather\\.station\\.reports|amq\\.gen-.*)$"
+        },
+        "/dionysus-dev": {
+          "configure": "^$",
+          "write": "^weather\\.station\\.reports$",
+          "read": "^$"
+        }
+      }
+    }
+  ],
+  "exchanges": [
+    {
+      "vhost": "/dionysus",
+      "name": "weather.station.reports",
+      "type": "fanout"
+    },
+    {
+      "vhost": "/dionysus-dev",
+      "name": "weather.station.reports",
+      "type": "fanout"
+    }
+  ],
+  "shovels": [
+    {
+      "name": "weather-relay",
+      "user": "weather-shovel",
+      "source": {
+        "vhost": "/dionysus",
+        "exchange": "weather.station.reports"
+      },
+      "destination": {
+        "vhost": "/dionysus-dev",
+        "exchange": "weather.station.reports"
+      }
+    }
   ]
 }

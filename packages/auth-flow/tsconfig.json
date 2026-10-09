@@ -1,0 +1,11 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
+  "compilerOptions": {
+    // Node, React Native and browsers all run this, so it reaches for
+    // nothing any of them lacks: no `crypto`, no `Buffer`, no `fetch`. What
+    // it needs is injected.
+    "types": [],
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  }
+}

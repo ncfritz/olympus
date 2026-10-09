@@ -1,0 +1,49 @@
+table:
+  name: mail_labels
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    created_at:
+      custom_name: createdTime
+    family_id:
+      custom_name: familyId
+    gmail_label_id:
+      custom_name: gmailLabelId
+    merge_target_id:
+      custom_name: mergeTargetId
+    parent_name:
+      custom_name: parentName
+    state_open:
+      custom_name: stateOpen
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    account_id: accountId
+    created_at: createdTime
+    family_id: familyId
+    gmail_label_id: gmailLabelId
+    merge_target_id: mergeTargetId
+    parent_name: parentName
+    state_open: stateOpen
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+  - name: family
+    using:
+      foreign_key_constraint_on: family_id
+  - name: mergeTarget
+    using:
+      foreign_key_constraint_on: merge_target_id
+array_relationships:
+  - name: messageLabels
+    using:
+      foreign_key_constraint_on:
+        column: label_id
+        table:
+          name: mail_message_labels
+          schema: minerva

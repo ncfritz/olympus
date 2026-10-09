@@ -2,6 +2,7 @@
 
 import {
   CheckOutlined,
+  HistoryOutlined,
   PlusOutlined,
   ReloadOutlined,
   StopOutlined,
@@ -39,6 +40,7 @@ import {
   startCalendarAccountReauth,
   startNewAccountAuth,
   triggerCalendarSync,
+  triggerFullCalendarSync,
   type CalendarAccountStatus,
   type CalendarStatus,
 } from "@/lib/api/queries";
@@ -99,13 +101,18 @@ const INFO_COLUMN_WIDTH = 170;
 /** A fixed width for the Source column, so it doesn't compete with Calendar ID for leftover table width. */
 const SOURCE_COLUMN_WIDTH = 240;
 
-/** Fixed so every row's Remove/Sync now/Enable buttons sit at the same horizontal position, whether or not a given row shows all three. */
+/** Fixed so every row's Remove/Sync now/Full sync/Enable buttons sit at the same horizontal position, whether or not a given row shows all four. */
 const REMOVE_BUTTON_WIDTH = 92;
 const SYNC_BUTTON_WIDTH = 112;
+const FULL_SYNC_BUTTON_WIDTH = 104;
 
-/** Remove + Sync now + Enable/Disable, each fixed-width, plus two 8px gaps. */
+/** Remove + Sync now + Full sync + Enable/Disable, each fixed-width, plus three 8px gaps. */
 const ACTIONS_COLUMN_WIDTH =
-  REMOVE_BUTTON_WIDTH + SYNC_BUTTON_WIDTH + ENABLE_TOGGLE_BUTTON_WIDTH + 16;
+  REMOVE_BUTTON_WIDTH +
+  SYNC_BUTTON_WIDTH +
+  FULL_SYNC_BUTTON_WIDTH +
+  ENABLE_TOGGLE_BUTTON_WIDTH +
+  24;
 
 /** Fixed width for the "Included in busy" switch column — fits its header text plus the switch. */
 const BUSY_INCLUSION_COLUMN_WIDTH = 140;
@@ -263,6 +270,24 @@ export function CalendarAccountsPanel() {
     }
   }
 
+  async function handleFullSync(calendarId: string) {
+    const result = await triggerFullCalendarSync(calendarId);
+
+    if (result.ok) {
+      // As handleSync: shown as syncing until the poll sees it finish.
+      mutateCalendars(
+        (current) =>
+          current?.map((c) =>
+            c.calendarId === calendarId ? { ...c, syncing: true } : c,
+          ),
+        { revalidate: false },
+      );
+      message.success(`Full sync of "${calendarId}" started`);
+    } else {
+      message.error(result.message);
+    }
+  }
+
   async function handleRemove(calendarId: string) {
     try {
       await removeCalendar(calendarId);
@@ -324,6 +349,7 @@ export function CalendarAccountsPanel() {
               colorForSource={colorForSource}
               onSetSourceColor={setSourceColor}
               onSync={handleSync}
+              onFullSync={handleFullSync}
               onToggleEnabled={handleToggleEnabled}
               onToggleIncludedInBusy={handleToggleIncludedInBusy}
               onRemove={handleRemove}
@@ -570,6 +596,7 @@ function AccountCalendarsTable({
   colorForSource,
   onSetSourceColor,
   onSync,
+  onFullSync,
   onToggleEnabled,
   onToggleIncludedInBusy,
   onRemove,
@@ -580,6 +607,7 @@ function AccountCalendarsTable({
   colorForSource: (source: string) => string;
   onSetSourceColor: (source: string, color: string) => void;
   onSync: (calendarId: string) => void;
+  onFullSync: (calendarId: string) => void;
   onToggleEnabled: (calendarId: string, enabled: boolean) => void;
   onToggleIncludedInBusy: (calendarId: string, includedInBusy: boolean) => void;
   onRemove: (calendarId: string) => void;
@@ -799,6 +827,27 @@ function AccountCalendarsTable({
                   </Button>
                 ) : (
                   <div style={{ width: SYNC_BUTTON_WIDTH, flexShrink: 0 }} />
+                )}
+                {row.tracked ? (
+                  <Popconfirm
+                    title="Sync this calendar's whole history?"
+                    description="Reads every event from the calendar's first, not just the sync window's. It can take a few minutes."
+                    okText="Full sync"
+                    onConfirm={() => onFullSync(row.calendarId)}
+                  >
+                    <Button
+                      size="small"
+                      icon={<HistoryOutlined />}
+                      disabled={syncing}
+                      style={{ width: FULL_SYNC_BUTTON_WIDTH }}
+                    >
+                      Full sync
+                    </Button>
+                  </Popconfirm>
+                ) : (
+                  <div
+                    style={{ width: FULL_SYNC_BUTTON_WIDTH, flexShrink: 0 }}
+                  />
                 )}
                 <Button
                   size="small"

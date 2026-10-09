@@ -1,0 +1,413 @@
+/*
+ * The weather widget (docs/plans/weather/design.md). A CSS module rather
+ * than inline style objects (docs/conventions/ux.md, Styling); colours are
+ * the site's existing ones until packages/theme exists.
+ */
+
+.card {
+  background: #ffffff;
+}
+
+.title {
+  margin: 0;
+  padding: 8px 8px 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/*
+ * AntD's tabs, with their bar on the blue rule in place of AntD's grey
+ * line. The rule is as thick as the ink bar and drawn inside the bar's
+ * bottom edge, behind its contents, so the chosen tab's ink bar lies
+ * exactly over it; the location menu, centred in the bar, stays level
+ * with the tabs.
+ */
+.tabs > :global(.ant-tabs-nav) {
+  margin: 0;
+  padding: 0 8px;
+  box-shadow: inset 0 -2px 0 #004673;
+}
+
+.tabs > :global(.ant-tabs-nav)::before {
+  display: none;
+}
+
+/* Room between the tab bar and the Stations tab's empty state. */
+.stationsEmpty {
+  padding-top: 24px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.section:first-of-type {
+  border-top: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #595959;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.muted {
+  font-size: 12px;
+  color: #595959;
+}
+
+/* Now */
+
+.nowRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nowTemperature {
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.nowCondition {
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Next 24 hours */
+
+.hours {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+/*
+ * The curve's band: the first column's holds the SVG for all eight (eight
+ * times its width), every column's holds its own value over its point.
+ */
+.hourPlot {
+  position: relative;
+  align-self: stretch;
+}
+
+.hourCurve {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.hourValue {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Pressure's values are five characters: smaller, so a narrow column fits. */
+.hourValueLong {
+  font-size: 12px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.chance {
+  min-height: 16px;
+  font-size: 12px;
+  color: #0958d9;
+}
+
+/* 5 days */
+
+.day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+}
+
+.dayName {
+  width: 48px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dayChance {
+  width: 36px;
+  text-align: right;
+  font-size: 12px;
+  color: #0958d9;
+}
+
+.dayLow {
+  width: 32px;
+  text-align: right;
+  color: #595959;
+}
+
+.dayHigh {
+  width: 32px;
+  font-weight: 500;
+}
+
+.track {
+  position: relative;
+  flex-grow: 1;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+/* Its background is the day's temperature gradient, set from data. */
+.bar {
+  position: absolute;
+  top: 0;
+  height: 6px;
+  border-radius: 3px;
+}
+
+/* Map */
+
+.map {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mapNote {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #595959;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #595959;
+}
+
+.swatch {
+  width: 18px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.attribution {
+  padding: 8px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 11px;
+  color: #595959;
+}
+
+/* Managing locations */
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+}
+
+.poweredBy {
+  padding: 4px 12px;
+  text-align: right;
+  font-size: 11px;
+  color: #595959;
+}
+
+.locationList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menuLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.menuLabel :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+/*
+ * A grid, so the handle, the label and both buttons share one row and one
+ * centre line, and the Google place name sits under the label only.
+ */
+.locationRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
+}
+
+.placeName {
+  grid-column: 2;
+  padding-left: 12px;
+}
+
+.locationRowDragging {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.dragHandle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+ol.hours,
+.section ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Stations (Stations.dc.html) */
+
+.station {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stationName {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.reporting,
+.notReporting {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.reporting {
+  background: #389e0d;
+}
+
+.notReporting {
+  background: #8c8c8c;
+}
+
+.stationNow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.stationTemperature {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spark {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sparkAxis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #595959;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}

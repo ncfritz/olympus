@@ -2,6 +2,7 @@
 
 import {
   consoleHref,
+  consoleIcon,
   consoleKey,
   type Registry,
 } from "@ncfritz/olympus-console";
@@ -41,6 +42,7 @@ export function ConsoleIndex({ nav, origin }: ConsoleIndexProps) {
               return (
                 <List.Item>
                   <List.Item.Meta
+                    avatar={consoleIcon(entry.icon)}
                     title={
                       /* A document load: each console is its own app. */
                       <a href={consoleHref(key, origin)}>{entry.label}</a>

@@ -1,0 +1,53 @@
+table:
+  name: mail_open_states
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    family_id:
+      custom_name: familyId
+    gmail_id:
+      custom_name: gmailId
+    label_id:
+      custom_name: labelId
+    message_id:
+      custom_name: messageId
+    received_at:
+      custom_name: receivedTime
+    star_icon:
+      custom_name: starIcon
+    to_label:
+      custom_name: toLabel
+    to_label_id:
+      custom_name: toLabelId
+  custom_column_names:
+    account_id: accountId
+    family_id: familyId
+    gmail_id: gmailId
+    label_id: labelId
+    message_id: messageId
+    received_at: receivedTime
+    star_icon: starIcon
+    to_label: toLabel
+    to_label_id: toLabelId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          message_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_messages
+          schema: minerva

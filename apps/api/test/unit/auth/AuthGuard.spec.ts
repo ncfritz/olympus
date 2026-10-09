@@ -37,8 +37,9 @@ const reflector = (metadata: Record<string, unknown>) =>
     getAllAndOverride: (key: string) => metadata[key],
   }) as unknown as Reflector;
 
-const context = (request: Partial<RequestWithPrincipal>) =>
+const context = (request: Partial<RequestWithPrincipal>, type = "http") =>
   ({
+    getType: () => type,
     switchToHttp: () => ({ getRequest: () => request }),
     getHandler: () => undefined,
     getClass: () => undefined,
@@ -47,8 +48,9 @@ const context = (request: Partial<RequestWithPrincipal>) =>
 const config = (modes: Partial<Record<"users" | "services", AuthMode>> = {}) =>
   ({
     modes: { users: "report", services: "report", ...modes },
+    rateLimits: "on",
     serviceRoles: {},
-    users: { clientOrigins: [], providers: [] },
+    users: { clientOrigins: [], consoleBaseUrls: [], providers: [] },
     services: {
       enabled: false,
       port: 3443,
@@ -103,6 +105,24 @@ describe("AuthGuard", () => {
       ).canActivate(context(req)),
     ).toBe(true);
     expect(req.principal).toBeUndefined();
+  });
+
+  it("lets a RabbitMQ message through without reading it as a request", async () => {
+    // What @golevelup/nestjs-rabbitmq hands the guard: the message, which
+    // has no headers. Read as a request it threw, and the message was
+    // requeued for ever.
+    const message = { id: "work:abc" } as unknown as RequestWithPrincipal;
+    expect(
+      await guard(
+        { reason: "no certificate" },
+        {},
+        {
+          users: "enforce",
+          services: "enforce",
+        },
+      ).canActivate(context(message, "rmq")),
+    ).toBe(true);
+    expect(await counted()).toEqual([]);
   });
 
   it("makes the verified service the request's principal", async () => {

@@ -7,6 +7,7 @@ object_relationships:
     manual_configuration:
       column_mapping:
         meeting_id: id
+        user_id: user_id
       insertion_order: null
       remote_table:
         name: meetings
@@ -16,6 +17,7 @@ object_relationships:
     manual_configuration:
       column_mapping:
         note_id: id
+        user_id: user_id
       insertion_order: null
       remote_table:
         name: notes

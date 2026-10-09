@@ -91,13 +91,19 @@ export class PrismaOutboxStore implements OutboxStore {
   ): Promise<number> {
     if (events.length === 0) return 0;
 
+    // One time for the whole backfill: the snapshots are all taken now.
+    const snapshotTime = new Date().toISOString();
     const result = await this.prisma.outboxEvent.createMany({
       data: events.map((event) => ({
         eventId: event.id,
         source,
         action: "backfill",
-        // The message contract (@ncfritz/olympus-messages) is the event itself.
-        payload: JSON.stringify(event satisfies CalendarEventMessage),
+        // The message contract (@ncfritz/olympus-messages) is the event
+        // itself, stamped with when this snapshot of it was taken.
+        payload: JSON.stringify({
+          ...event,
+          snapshotTime,
+        } satisfies CalendarEventMessage),
       })),
     });
     return result.count;

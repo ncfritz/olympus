@@ -9,6 +9,15 @@
 # reaches the registry over olympus-edge; no port is published. The
 # registry does the login: without one, anything on the LAN could replace
 # an Olympus image. See infra/docker/README.md (Registry).
+#
+# registry-ui (eznix86/docker-registry-ui) is the human face of the same
+# thing, served at / on the same name. It is a server-side app: it talks to
+# the registry itself over olympus-edge, which means it holds a registry
+# login of its own -- a full-access one, since htpasswd auth has no scopes.
+# That credential is the reason it signs people in with Google before it will
+# show anything: without a front door, a UI holding a registry password
+# undoes the only thing stopping anything on the LAN replacing an Olympus
+# image.
 
 name: registry
 
@@ -25,6 +34,11 @@ services:
       REGISTRY_AUTH_HTPASSWD_PATH: /run/secrets/registry_htpasswd
       # So `garbage-collect` can reclaim the space of deleted tags.
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      # Registry 3 ships OpenTelemetry on, pointed at a collector on
+      # localhost that is not there, and logs a failed export every few
+      # seconds. Nothing here collects traces (ADR 0017 is metrics), so the
+      # export is noise that buries the lines worth reading.
+      OTEL_SDK_DISABLED: "true"
     secrets:
       - registry_htpasswd
     volumes:
@@ -44,6 +58,79 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  registry-ui:
+    image: ghcr.io/eznix86/docker-registry-ui:${REGISTRY_UI_VERSION:?}
+    restart: unless-stopped
+    environment:
+      # 0.0.0.0, not the image's default of localhost: bound to localhost
+      # inside the container, nothing outside it -- nginx included -- can
+      # reach it, and the symptom is a 502 with a healthy container.
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: "3000"
+      # Over olympus-edge, so the registry's own TLS is not involved. It
+      # scrapes tags into SQLite rather than asking on every page load.
+      REGISTRY_URL: http://registry:3478
+      # What the UI shows people to pull with, which is not how it reaches it.
+      REGISTRY_SETTINGS_PUBLIC_HOST: ${REGISTRY_HOST:-registry.internal.ncfritz.net}
+      # Absolute, because the default is relative to a working directory this
+      # file should not have to know.
+      DATABASE_CONNECTION: sqlite
+      DATABASE_URL: /data/ui.db
+      # It serves pages from that database, not from the registry, and syncs
+      # on start and then on this interval. Set explicitly because the
+      # consequence is not obvious: anything pushed since the last sync is
+      # invisible until the next one, and a sync that failed -- a wrong
+      # credential, say -- leaves an empty UI rather than an error. Fifteen
+      # minutes rather than the default hour, since a deploy pushes a tag and
+      # then someone goes looking for it.
+      SCRAPER_SYNC_INTERVAL: 15m
+      # Who may sign in. Required, and required for a reason: with no
+      # allowlist this app lets in *any* account the provider authenticates,
+      # which for Google is everyone alive. Authentication is not
+      # authorization, and this is the line between them.
+      OIDC_ALLOWED_EMAILS: ${REGISTRY_UI_ALLOWED_EMAILS:?}
+      # Deleting a tag is what a management UI is for. Two things it does not
+      # do, both in infra/docker/README.md: it frees no disk until
+      # `registry garbage-collect` runs, and a tag that is gone is a tag
+      # OLYMPUS_TAG can no longer be rolled back to. DISABLE_TAG_DELETION
+      # turns it off if that trade stops being worth it.
+      DISABLE_TAG_DELETION: "false"
+      SHOW_USAGE_BAR: "true"
+    # The rest is credentials -- REGISTRY_AUTH, OIDC_CLIENT_ID,
+    # OIDC_CLIENT_SECRET, OIDC_ISSUER_URL, OIDC_REDIRECT_URI, SESSION_SECRET
+    # -- and this app reads them from the environment rather than from files,
+    # so they cannot be Docker secrets. They live in a file in SECRETS_DIR
+    # instead, which is git-ignored, rather than in env/prod/, which is not.
+    env_file: ${SECRETS_DIR:?}/registry-ui.env
+    volumes:
+      - ${DATA_DIR:?}/registry-ui:/data
+    # Docker's DNS only knows a name while that container exists, so starting
+    # first means `registry` does not resolve -- and this app spends its retry
+    # budget in under a second (three attempts, 200ms apart) before giving up
+    # until its next sync. Waiting for healthy rather than merely started,
+    # because "the container exists" and "the registry answers" are not the
+    # same moment.
+    #
+    # This orders a `compose up`. It does not order a Docker daemon restart,
+    # where both are started by the daemon and `restart: unless-stopped`
+    # decides: after a host reboot the UI may come up first and need its next
+    # sync, or a restart, to find the registry.
+    depends_on:
+      registry:
+        condition: service_healthy
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+    # No healthcheck: the image is a Go binary and may carry no shell or
+    # wget, and a healthcheck that cannot run reports unhealthy forever,
+    # which is worse than none.
 
 networks:
   edge:

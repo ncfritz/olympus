@@ -24,7 +24,11 @@ ADD --checksum=sha256:567f876378e70af9d949de4066bbb2fc30162b46bcbc9efe2430076b17
 # Users, vhosts and permissions from the definitions secret (ADR 0019).
 COPY 20-definitions.conf /etc/rabbitmq/conf.d/20-definitions.conf
 
+# The shovel carries prod's weather lines to /dionysus-dev (ADR 0025); its
+# management plugin shows the shovel's state on the management page.
 RUN rabbitmq-plugins enable --offline \
       rabbitmq_delayed_message_exchange \
       rabbitmq_consistent_hash_exchange \
-      rabbitmq_prometheus
+      rabbitmq_prometheus \
+      rabbitmq_shovel \
+      rabbitmq_shovel_management

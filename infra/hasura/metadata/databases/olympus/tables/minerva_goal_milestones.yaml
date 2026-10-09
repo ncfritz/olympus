@@ -1,0 +1,26 @@
+table:
+  name: goal_milestones
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    done_at:
+      custom_name: doneTime
+    due_date:
+      custom_name: dueDate
+    goal_id:
+      custom_name: goalId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    done_at: doneTime
+    due_date: dueDate
+    goal_id: goalId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: goal
+    using:
+      foreign_key_constraint_on: goal_id

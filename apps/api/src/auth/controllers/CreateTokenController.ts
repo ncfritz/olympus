@@ -149,7 +149,10 @@ export class CreateTokenController {
       return;
     }
 
-    const client = resolveClients(this.auth.users.clientOrigins).get(clientId);
+    const client = resolveClients({
+      site: this.auth.users.clientOrigins,
+      console: this.auth.users.consoleBaseUrls,
+    }).get(clientId);
     if (client === undefined) {
       fail("invalid_client", "unknown client", `unknown client ${clientId}`);
       return;
@@ -268,7 +271,10 @@ export class CreateTokenController {
     const client =
       clientId === undefined
         ? undefined
-        : resolveClients(this.auth.users.clientOrigins).get(clientId);
+        : resolveClients({
+            site: this.auth.users.clientOrigins,
+            console: this.auth.users.consoleBaseUrls,
+          }).get(clientId);
     if (client === undefined || clientId === undefined) {
       fail("invalid_client", "unknown client", `unknown client ${clientId}`);
       return;

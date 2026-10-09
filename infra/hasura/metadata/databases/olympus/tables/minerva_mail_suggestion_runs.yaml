@@ -1,0 +1,43 @@
+table:
+  name: mail_suggestion_runs
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    created_at:
+      custom_name: createdTime
+    feature_version:
+      custom_name: featureVersion
+    finished_at:
+      custom_name: finishedTime
+    messages_scored:
+      custom_name: messagesScored
+    model_run:
+      custom_name: modelRun
+    started_at:
+      custom_name: startedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    account_id: accountId
+    created_at: createdTime
+    feature_version: featureVersion
+    finished_at: finishedTime
+    messages_scored: messagesScored
+    model_run: modelRun
+    started_at: startedTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+array_relationships:
+  - name: suggestions
+    using:
+      foreign_key_constraint_on:
+        column: run_id
+        table:
+          name: mail_suggestions
+          schema: minerva

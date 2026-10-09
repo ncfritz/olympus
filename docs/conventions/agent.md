@@ -96,10 +96,13 @@ export class GmailHandler extends SmtpHandler {
 ## Calling the API
 
 - Only through `@ncfritz/olympus-client` (ADR 0017): SDK imports are
-  type-only and no code builds `/v1/` URLs. **[checked]**
+  type-only and no code builds `/v1/` URLs (a third party's own API, such
+  as Gmail's at `gmail.googleapis.com`, is not Olympus's). **[checked]**
 - `AppModule` imports `OlympusClientModule.forRootAsync(...)` with
   `baseUrl` from `API_BASE_URL` (including `/v1`) and `clientName` from
-  the app name; inject the wrappers by class (`MetadataApi`,
+  `runtime.serviceName`, the name on the agent's certificate. Not
+  `runtime.appName`: outside production that gains `-<NODE_ENV>`, and the
+  API refuses a client header that differs from the certificate. Inject the wrappers by class (`MetadataApi`,
   `NotificationApi`, ...).
 - A call the wrappers don't cover is added to the package (named after
   the SDK function, with its placeholder in the package's `apis.spec.ts`),
@@ -118,6 +121,10 @@ export class GmailHandler extends SmtpHandler {
 - Credentials come from the environment, never source. Every variable is
   in `dev.env.example` and the README table.
 - Log the AMQP URI only as `amqp.redactedUri`.
+- Deployed, its TLS files are `server.crt`/`server.key` and
+  `client.crt`/`client.key`, and its data is under
+  `${DATA_DIR}/olympus/agents/<folder>`
+  ([general](general.md#deployment)).
 
 ## Errors and observability
 
@@ -168,6 +175,10 @@ to `agent/`, plus:
   `@Public()` (provider callbacks, sign-in, `/metrics`). Operations
   behind it carry `@ApiBearerAuth()` and document `401`.
   **[checked]**
+- An agent with a services listener (the calendar sync agent, ADR 0028)
+  takes the caller from the client certificate there. Operations only a
+  service may call are marked `@ServicesOnly()`: no `@ApiBearerAuth()`,
+  and `401` documented for a refused certificate. **[checked]**
 - `Location` headers come from `setLocation()` (`src/utils/location.ts`),
   built from the Describe controller's route. **[checked]**
 - The management API's requests are recorded as

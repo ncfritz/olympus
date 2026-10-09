@@ -23,7 +23,7 @@ export const buildOpenApiDocument = (
   const config = new DocumentBuilder()
     .setTitle("Minerva Calendar Sync API")
     .setDescription(
-      "Management API of the Minerva calendar sync agent: connected calendar accounts, synced calendars and events, availability and its overrides, sync history and event publishing.",
+      "Management API of the Minerva calendar sync agent: connected calendar accounts, synced calendars and events, sync history and event publishing.",
     )
     .setVersion(process.env.npm_package_version || "Unknown")
     .setOpenAPIVersion("3.1.1")

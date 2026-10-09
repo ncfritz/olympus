@@ -57,7 +57,7 @@ once. Then:
 
 1. The unseal key into `${SECRETS_DIR}/harpocrates_signer_unseal_key`
    (`chmod 600`), and into the password manager beside the recovery
-   passphrase. Never in the same backup as `${DATA_DIR}/harpocrates/signer`.
+   passphrase. Never in the same backup as `${DATA_DIR}/olympus/apps/harpocrates/signer`.
 2. `infra/docker/stack.sh restart harpocrates`, then `hcli status`:
    unsealed, with nobody typing anything. That is C1.2's point; reboot
    the Mac Mini later to prove it.
@@ -235,6 +235,12 @@ infra/docker/stack.sh compose harpocrates exec -T harpocrates node dist/cli.js \
 - **The NAS**: install the pull ([infra/nas](../../infra/nas/README.md))
   with the Device CA's chain pinned, and point nginx's `ssl_crl` at its
   output (C6.2, C6.3).
+- **The listeners' server certificates** stay XCA's (Issuing CA 2, now
+  closed) until they are due. Each one reissued comes from the Service CA
+  (`api-server`, [certificates](certificates.md)); once every listener has
+  moved, its callers' CA files become `services-ca.crt` and
+  `TLS_SERVER_ISSUER` in `infra/docker/env/prod.env` the Service CA's
+  name, or `stack.sh check` warns.
 - **Monitoring**: load `apps/harpocrates/service/monitoring/harpocrates.rules.yml`
   and scrape `harpocrates:3200` as job `harpocrates`.
 

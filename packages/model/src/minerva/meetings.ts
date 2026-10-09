@@ -189,10 +189,18 @@ export class Meeting {
 
   @ApiProperty({
     type: () => MeetingUser,
-    required: true,
-    description: "Indicates who organized the meeting",
+    required: false,
+    description:
+      "Who organized the meeting, when Minerva knows them; a synced calendar's meeting often names only an address (organizerEmail)",
   })
-  organizer: MeetingUser;
+  organizer?: MeetingUser;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The organizer's email address, when the calendar gave one",
+  })
+  organizerEmail?: string;
 
   @ApiProperty({
     type: () => MeetingAttendee,

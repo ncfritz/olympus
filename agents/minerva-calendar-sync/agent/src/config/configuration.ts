@@ -10,10 +10,6 @@ import {
 } from "@ncfritz/olympus-nest";
 import { registerAs, type ConfigType } from "@nestjs/config";
 import { join } from "path";
-import {
-  parseOidcProviders,
-  type OidcProviderConfig,
-} from "../auth/oidcProviderConfig";
 
 export { ConfigValidationError };
 
@@ -26,6 +22,14 @@ export type GoogleConfig = {
   /** From a Google Cloud "Desktop app" OAuth client; needed to connect or sync a Google account. */
   clientId?: string;
   clientSecret?: string;
+  /**
+   * From a Google Cloud "Web application" OAuth client, with the Olympus
+   * API's callback registered as a redirect URI: for accounts connected
+   * from the Olympus site (ADR 0028). An account syncs with the client it
+   * was connected through.
+   */
+  webClientId?: string;
+  webClientSecret?: string;
   /** Where the connected accounts' refresh tokens are stored (one JSON file each). */
   credentialsDir: string;
 };
@@ -33,6 +37,13 @@ export type GoogleConfig = {
 export type MicrosoftConfig = {
   /** From an Entra ID "Mobile and desktop applications" registration (a public client: no secret). */
   clientId?: string;
+  /**
+   * A secret of the same registration, which also has a "Web" platform
+   * with the Olympus API's callback as a redirect URI: for accounts
+   * connected from the Olympus site (ADR 0028). The web platform is a
+   * confidential client, so its tokens are redeemed with the secret.
+   */
+  clientSecret?: string;
   tenantId: string;
   credentialsDir: string;
 };
@@ -55,14 +66,50 @@ export type OutboxConfig = {
   maxAttempts: number;
 };
 
+/**
+ * The services listener (ADR 0028): the management API over HTTPS for the
+ * Olympus API, which identifies itself with a client certificate from the
+ * Olympus Services chain, as it would on the API's own listener (ADR 0018).
+ */
+export type ServicesListenerConfig = {
+  port: number;
+  certificate: string;
+  key: string;
+  /** The authorities a client certificate may chain to. */
+  ca: string;
+  /** One file per authority in the chain (Node reads one list per file). */
+  revocationLists: string[];
+  /** The issuer's common name a client certificate must have (ADR 0023). */
+  issuer?: string;
+  /** The common names allowed to call: the Olympus API. */
+  clients: string[];
+};
+
+/** The Olympus API, whose sign-in the console uses (ADR 0029). */
+export type OlympusConfig = {
+  /**
+   * Where this agent reaches the API, server to server: its keys, its
+   * token endpoint and the console's availability (OLYMPUS_API_URL).
+   */
+  apiUrl: string;
+  /**
+   * Where a browser reaches it to sign in (OLYMPUS_SIGN_IN_URL); the same
+   * as apiUrl unless the agent reaches the API on a private name.
+   */
+  signInUrl: string;
+};
+
 export type AuthConfig = {
-  jwtSecret: string;
-  /** Where the agent is reachable; the OIDC redirect URIs are built from it. */
+  /**
+   * Where the agent is reachable (AUTH_BASE_URL); the sign-in's redirect
+   * URI, `<baseUrl>/auth/callback`, is built from it.
+   */
   baseUrl: string;
-  oidcProviders: OidcProviderConfig[];
-  allowedEmails: string[];
   /** The console's origin: CORS and the only allowed login returnTo. */
   webAppUrl?: string;
+  olympus: OlympusConfig;
+  /** Unset until TLS_CERT, TLS_KEY and TLS_CA_SERVICES are: no listener. */
+  services?: ServicesListenerConfig;
 };
 
 export type AgentConfig = {
@@ -89,15 +136,56 @@ const positiveInt = (read: EnvReader, name: string, fallback: number) => {
   return value;
 };
 
-const oidcProviders = (read: EnvReader): OidcProviderConfig[] => {
-  const raw = read.optional("AUTH_OIDC_PROVIDERS");
-  if (!raw) return [];
-  try {
-    return parseOidcProviders(raw);
-  } catch (e) {
-    read.problems.push(e instanceof Error ? e.message : String(e));
-    return [];
+/**
+ * The same variables as the API's services listener: SERVICES_LISTEN_PORT,
+ * TLS_CERT, TLS_KEY, TLS_CA_SERVICES, TLS_CRL_SERVICES and
+ * AUTH_SERVICES_ISSUER; and AUTH_SERVICE_CLIENTS, the callers allowed.
+ */
+const servicesListener = (
+  read: EnvReader,
+): ServicesListenerConfig | undefined => {
+  const certificate = read.optional("TLS_CERT");
+  const key = read.optional("TLS_KEY");
+  const ca = read.optional("TLS_CA_SERVICES");
+  const port = read.port("SERVICES_LISTEN_PORT", 4433);
+  const revocationLists = read.list("TLS_CRL_SERVICES", []);
+  const issuer = read.optional("AUTH_SERVICES_ISSUER");
+  const clients = read.list("AUTH_SERVICE_CLIENTS", ["olympus-api"]);
+  if (!certificate && !key && !ca) return undefined;
+  if (!certificate || !key || !ca) {
+    read.problems.push(
+      "TLS_CERT, TLS_KEY and TLS_CA_SERVICES are set together or not at all",
+    );
+    return undefined;
   }
+  return { port, certificate, key, ca, revocationLists, issuer, clients };
+};
+
+/** A base URL without its trailing slash; a problem if it is not http(s). */
+const baseUrl = (read: EnvReader, name: string, value: string): string => {
+  let url: URL | undefined;
+  try {
+    url = new URL(value);
+  } catch {
+    url = undefined;
+  }
+  if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) {
+    read.problems.push(`${name} must be an http(s) URL, got "${value}"`);
+  }
+  return value.replace(/\/+$/, "");
+};
+
+const olympus = (read: EnvReader): OlympusConfig => {
+  const raw = read.string("OLYMPUS_API_URL");
+  const apiUrl = raw === "" ? "" : baseUrl(read, "OLYMPUS_API_URL", raw);
+  const signIn = read.optional("OLYMPUS_SIGN_IN_URL");
+  return {
+    apiUrl,
+    signInUrl:
+      signIn === undefined
+        ? apiUrl
+        : baseUrl(read, "OLYMPUS_SIGN_IN_URL", signIn),
+  };
 };
 
 /**
@@ -121,6 +209,8 @@ export const readConfig = (
     google: {
       clientId: read.optional("GOOGLE_OAUTH_CLIENT_ID"),
       clientSecret: read.optional("GOOGLE_OAUTH_CLIENT_SECRET"),
+      webClientId: read.optional("GOOGLE_WEB_OAUTH_CLIENT_ID"),
+      webClientSecret: read.optional("GOOGLE_WEB_OAUTH_CLIENT_SECRET"),
       credentialsDir: read.string(
         "GOOGLE_CREDENTIALS_DIR",
         join(AGENT_ROOT, ".credentials"),
@@ -128,6 +218,7 @@ export const readConfig = (
     },
     microsoft: {
       clientId: read.optional("MICROSOFT_OAUTH_CLIENT_ID"),
+      clientSecret: read.optional("MICROSOFT_OAUTH_CLIENT_SECRET"),
       tenantId: read.string("MICROSOFT_OAUTH_TENANT_ID", "common"),
       credentialsDir: read.string(
         "MICROSOFT_CREDENTIALS_DIR",
@@ -153,13 +244,10 @@ export const readConfig = (
       maxAttempts: positiveInt(read, "OUTBOX_MAX_ATTEMPTS", 10),
     },
     auth: {
-      jwtSecret: read.string("AUTH_JWT_SECRET"),
       baseUrl: read.string("AUTH_BASE_URL", `http://localhost:${server.port}`),
-      oidcProviders: oidcProviders(read),
-      allowedEmails: read
-        .list("AUTH_ALLOWED_EMAILS", [])
-        .map((email) => email.toLowerCase()),
       webAppUrl: read.optional("WEB_APP_URL"),
+      olympus: olympus(read),
+      services: servicesListener(read),
     },
   };
   if (read.problems.length) throw new ConfigValidationError(read.problems);

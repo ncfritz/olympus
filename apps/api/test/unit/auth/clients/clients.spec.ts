@@ -6,24 +6,35 @@ const ORIGINS = [
   "https://olympus.ncfritz.net",
 ];
 
-const clients = resolveClients(ORIGINS);
+const CONSOLE_BASE_URLS = [
+  "https://control.olympus.ncfritz.net/minerva/calendar/api",
+  "http://localhost:4432",
+];
+
+const clients = resolveClients({ site: ORIGINS, console: CONSOLE_BASE_URLS });
 const site = clients.get("olympus-site")!;
 const ios = clients.get("olympus-ios")!;
 const tester = clients.get("olympus-auth-tester")!;
+const minervaConsole = clients.get("minerva-calendar-console")!;
 
 describe("resolveClients", () => {
-  it("has the three clients, with their refresh delivery", () => {
+  it("has the four clients, with their refresh delivery", () => {
     expect([...clients.keys()].sort()).toEqual([
+      "minerva-calendar-console",
       "olympus-auth-tester",
       "olympus-ios",
       "olympus-site",
     ]);
     expect(site.refreshToken).toBe("cookie");
     expect(ios.refreshToken).toBe("body");
+    expect(minervaConsole.refreshToken).toBe("body");
   });
 
   it("tolerates a trailing slash on a configured origin", () => {
-    const withSlash = resolveClients(["https://olympus.ncfritz.net/"]);
+    const withSlash = resolveClients({
+      site: ["https://olympus.ncfritz.net/"],
+      console: [],
+    });
     expect(
       withSlash
         .get("olympus-site")!
@@ -58,6 +69,40 @@ describe("the site's redirect URIs", () => {
 
   it("has no loopback redirect", () => {
     expect(site.accepts("http://127.0.0.1:1234/callback")).toBe(false);
+  });
+});
+
+describe("the Minerva calendar console's redirect URIs", () => {
+  it("accepts the agent's callback wherever the agent is published", () => {
+    for (const base of CONSOLE_BASE_URLS) {
+      expect(minervaConsole.accepts(`${base}/auth/callback`)).toBe(true);
+    }
+  });
+
+  it.each([
+    ["the site's callback", "https://olympus.ncfritz.net/auth/callback"],
+    [
+      "the control host's root",
+      "https://control.olympus.ncfritz.net/auth/callback",
+    ],
+    [
+      "another console's agent",
+      "https://control.olympus.ncfritz.net/dionysus/asset/api/auth/callback",
+    ],
+    [
+      "an added query",
+      "https://control.olympus.ncfritz.net/minerva/calendar/api/auth/callback?x=1",
+    ],
+  ])("refuses %s", (_what, uri) => {
+    expect(minervaConsole.accepts(uri)).toBe(false);
+  });
+
+  it("is not accepted by the site", () => {
+    expect(
+      site.accepts(
+        "https://control.olympus.ncfritz.net/minerva/calendar/api/auth/callback",
+      ),
+    ).toBe(false);
   });
 });
 
@@ -111,6 +156,7 @@ describe("CLIENTS", () => {
     expect(CLIENTS.map((client) => client.id)).toEqual([
       "olympus-site",
       "olympus-ios",
+      "minerva-calendar-console",
       "olympus-auth-tester",
     ]);
   });

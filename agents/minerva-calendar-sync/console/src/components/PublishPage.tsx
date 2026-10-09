@@ -19,9 +19,12 @@ import useSWR from "swr";
 import {
   backfillCalendar,
   fetchCalendars,
+  fetchDeadLetters,
   fetchFailedOutboxRecords,
   fetchOutboxSummary,
+  redriveDeadLetters,
   requeueOutboxRecord,
+  type DeadLetter,
   type OutboxRecord,
   type OutboxSourceStats,
 } from "@/lib/api/queries";
@@ -70,6 +73,33 @@ export function PublishPage() {
   } = useSWR(summary?.enabled ? ["/outbox/failed", FAILED_LIMIT] : null, () =>
     fetchFailedOutboxRecords(FAILED_LIMIT),
   );
+
+  // What reached Olympus but could not be written to Minerva: the API's
+  // dead-letter queue (ADR 0028, amended).
+  const {
+    data: deadLetters,
+    error: deadLettersError,
+    isLoading: deadLettersLoading,
+    mutate: mutateDeadLetters,
+  } = useSWR(
+    summary?.enabled ? "/olympus/dead-letters" : null,
+    fetchDeadLetters,
+  );
+
+  const handleRedrive = async () => {
+    try {
+      const { redriven, remaining } = await redriveDeadLetters();
+      message.success(
+        remaining > 0
+          ? `Sent ${redriven} event(s) back to Olympus; ${remaining} still waiting`
+          : `Sent ${redriven} event(s) back to Olympus`,
+      );
+    } catch {
+      message.error("Failed to redrive the dead letters");
+    } finally {
+      mutateDeadLetters();
+    }
+  };
 
   const handleBackfill = async (calendarId: string, source: string) => {
     try {
@@ -135,6 +165,7 @@ export function PublishPage() {
             onClick={() => {
               mutateSummary();
               mutateFailed();
+              mutateDeadLetters();
             }}
             loading={summaryLoading}
             aria-label="Refresh"
@@ -233,6 +264,110 @@ export function PublishPage() {
           ]}
         />
       </Card>
+
+      {summary?.enabled && (
+        <Card
+          title={
+            <Space>
+              <span>Not written to Minerva</span>
+              {deadLetters && deadLetters.count > 0 && (
+                <Tag color="red">{renderMonoNumber(deadLetters.count)}</Tag>
+              )}
+            </Space>
+          }
+          style={{ borderRadius: 0, borderTop: "none" }}
+          extra={
+            <Popconfirm
+              title="Redrive the dead letters?"
+              description="Sends every event waiting here back to Olympus to be written again, attempts counted from nought. One that fails again comes back here."
+              onConfirm={handleRedrive}
+              disabled={!deadLetters || deadLetters.count === 0}
+            >
+              <Button
+                size="small"
+                type="primary"
+                disabled={!deadLetters || deadLetters.count === 0}
+              >
+                Redrive
+              </Button>
+            </Popconfirm>
+          }
+        >
+          {deadLettersError ? (
+            <Alert
+              type="warning"
+              showIcon
+              message="Olympus could not say what waits"
+              description="The API answered with an error, or could not be reached. Its dead letters are for admins."
+            />
+          ) : (
+            <Table<DeadLetter>
+              rowKey={(row, i) => `${row.eventId ?? "?"}-${i}`}
+              loading={deadLettersLoading}
+              dataSource={deadLetters?.sample ?? []}
+              pagination={false}
+              size="small"
+              locale={{ emptyText: "Every published event reached Minerva" }}
+              footer={
+                deadLetters && deadLetters.count > deadLetters.sample.length
+                  ? () =>
+                      `The first ${deadLetters.sample.length} of ${deadLetters.count}`
+                  : undefined
+              }
+              columns={[
+                {
+                  title: "Calendar",
+                  key: "source",
+                  width: CALENDAR_COLUMN_WIDTH,
+                  render: (_, row) =>
+                    row.eventId
+                      ? renderCalendar(row.eventId.split(":")[0]!)
+                      : "—",
+                },
+                {
+                  title: "Action",
+                  dataIndex: "action",
+                  width: PROVIDER_COLUMN_WIDTH,
+                  render: (value?: string) => value ?? "—",
+                },
+                {
+                  title: "Why",
+                  dataIndex: "reason",
+                  render: (value?: string) => (
+                    <Typography.Text
+                      type="danger"
+                      ellipsis={{ tooltip: value }}
+                      style={{ maxWidth: 400 }}
+                    >
+                      {value ?? "Rejected without a reason"}
+                    </Typography.Text>
+                  ),
+                },
+                {
+                  title: "Attempts",
+                  dataIndex: "attempts",
+                  width: ATTEMPTS_COLUMN_WIDTH,
+                  align: "right",
+                  render: renderMonoNumber,
+                },
+                {
+                  title: "When",
+                  dataIndex: "deadTime",
+                  width: COUNT_COLUMN_WIDTH,
+                  render: (value?: string) =>
+                    value ? (
+                      <Tooltip title={new Date(value).toLocaleString()}>
+                        {formatAge(value)}
+                      </Tooltip>
+                    ) : (
+                      "—"
+                    ),
+                },
+              ]}
+            />
+          )}
+        </Card>
+      )}
 
       {summary?.enabled && (
         <Card title="Failed" style={{ borderRadius: 0, borderTop: "none" }}>

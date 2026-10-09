@@ -1,0 +1,10 @@
+/*!
+ * Tiny Link Checker plugin
+ *
+ * Copyright (c) 2023 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ *
+ * Version: 8.8.0-218
+ */
+
+tinymce.Resource.add('linkchecker/content.css', `a[data-mce-linkchecker-status="invalid"]{outline-color:rgba(231,76,60,0.25);background-color:rgba(231,76,60,0.25)}a[data-mce-linkchecker-focus="true"]{outline:1px solid rgba(231,76,60,0.75)}`)

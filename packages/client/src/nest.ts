@@ -39,7 +39,7 @@ export type OlympusClientModuleOptions = Omit<
  *     inject: [olympusConfig.KEY, runtimeConfig.KEY],
  *     useFactory: (olympus, runtime) => ({
  *       baseUrl: olympus.apiBaseUrl,
- *       clientName: runtime.appName,
+ *       clientName: runtime.serviceName, // the certificate's name
  *       tls: olympus.tls,
  *     }),
  *   })

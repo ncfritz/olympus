@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+import * as fs from "fs";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
 import { loadSigningKeys, type SigningKeys } from "./signingKeys";
 
@@ -25,6 +26,20 @@ export class SigningKeyService implements OnModuleInit {
     const directory = this.auth.users.signingKeys;
     if (directory === undefined) {
       this.logger.log("AUTH_SIGNING_KEYS is unset: no tokens will be issued");
+      return;
+    }
+    // An empty directory is the same situation as an unset one — signing in
+    // is not configured — and it is what a host has before anyone has run
+    // scripts/signing-keys.sh. Treating it as a failure would take the whole
+    // API down over one feature, which is the wrong blast radius: every
+    // endpoint would stop because nobody can sign in.
+    //
+    // A directory that does not exist still throws, from readdirSync: that
+    // is a wrong path rather than an unconfigured one, and it should be loud.
+    if (!fs.readdirSync(directory).some((name) => name.endsWith(".pem"))) {
+      this.logger.warn(
+        `${directory} holds no .pem: no tokens will be issued (scripts/signing-keys.sh)`,
+      );
       return;
     }
     this.keys = await loadSigningKeys(directory);

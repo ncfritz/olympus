@@ -9,6 +9,7 @@ import { GetOutboxSummaryController } from "./controllers/GetOutboxSummaryContro
 import { ListFailedOutboxEventsController } from "./controllers/ListFailedOutboxEventsController";
 import { RequeueOutboxEventController } from "./controllers/RequeueOutboxEventController";
 import { OutboxService } from "./services/OutboxService";
+import { EventAccountResolver } from "./services/EventAccountResolver";
 import { OutboxDispatcherService } from "./services/OutboxDispatcherService";
 
 /**
@@ -61,7 +62,10 @@ export class OutboxModule {
         RequeueOutboxEventController,
         GetEventPublishStatusController,
       ],
-      providers: [OutboxService, ...(enabled ? [OutboxDispatcherService] : [])],
+      providers: [
+        OutboxService,
+        ...(enabled ? [EventAccountResolver, OutboxDispatcherService] : []),
+      ],
     };
   }
 }

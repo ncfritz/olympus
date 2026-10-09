@@ -1,0 +1,90 @@
+/* The status dot on a meeting or block, and its picker. The dot's colors
+   are the OnAir drawer's (.oa-light-status-* in styles/onair.css). */
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+/* An override is ringed, so it isn't told apart by color alone. */
+.dot.overridden {
+  box-shadow:
+    0 0 0 1.5px #ffffff,
+    0 0 0 3px #1f1f1f;
+}
+.dot:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+}
+
+.picker {
+  width: 200px;
+}
+.pickerSwatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+/* An event's lines, after the OnAir drawer's (components/onair/OnAirEvent):
+   the dot 4px in, the time at 10px, the title at 12px and bold, set 18px in
+   so it starts under the time. */
+.event {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 4px;
+}
+.stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  /* No taller than the event, so a title that wraps is cut at its edge. */
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.stacked > * {
+  flex: none;
+}
+.centered {
+  height: 100%;
+}
+.eventTime {
+  flex: none;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.eventTitle {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eventTitleBelow {
+  padding-left: 18px;
+}
+.eventTitleInline {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.filters {
+  width: 100%;
+  /* Clear of the panel's collapse button, which sits over the top. */
+  padding: 24px 16px 16px 16px;
+  border-bottom: 1px solid #f6f6f6;
+}
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}

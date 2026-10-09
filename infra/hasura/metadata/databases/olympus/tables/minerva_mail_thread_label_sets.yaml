@@ -1,0 +1,26 @@
+table:
+  name: mail_thread_label_sets
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    set_key:
+      custom_name: setKey
+    thread_id:
+      custom_name: threadId
+  custom_column_names:
+    account_id: accountId
+    set_key: setKey
+    thread_id: threadId
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva

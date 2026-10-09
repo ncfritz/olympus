@@ -5,14 +5,15 @@ derived from the existing code (September 2026). Where the code is
 inconsistent, the document names the preferred form for **new** code and
 lists the existing deviations in [`../roadmap.md`](../roadmap.md).
 
-| Area    | Document                 | Applies to                                   |
-| ------- | ------------------------ | -------------------------------------------- |
-| General | [general.md](general.md) | Everything                                   |
-| Model   | [model.md](model.md)     | `packages/model`                             |
-| API     | [api.md](api.md)         | `apps/api`                                   |
-| Agent   | [agent.md](agent.md)     | `agents/*`                                   |
-| UX      | [ux.md](ux.md)           | `apps/site`, `packages/ui`, `packages/theme` |
-| Python  | [python.md](python.md)   | `apps/harpocrates/signer`                    |
+| Area    | Document                 | Applies to                                          |
+| ------- | ------------------------ | --------------------------------------------------- |
+| General | [general.md](general.md) | Everything                                          |
+| Model   | [model.md](model.md)     | `packages/model`                                    |
+| API     | [api.md](api.md)         | `apps/api`                                          |
+| Agent   | [agent.md](agent.md)     | `agents/*`                                          |
+| UX      | [ux.md](ux.md)           | `apps/site`, `packages/ui`, `packages/theme`        |
+| Mobile  | [mobile.md](mobile.md)   | `tools/auth-tester-mobile` (Expo/React Native)      |
+| Python  | [python.md](python.md)   | `apps/harpocrates/signer`, `agents/minerva-mail-ml` |
 
 ## How the conventions are enforced
 

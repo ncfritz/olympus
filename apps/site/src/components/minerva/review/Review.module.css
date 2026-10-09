@@ -1,0 +1,963 @@
+/*
+ * The guided reviews (ADR 0027), drawn as option B on the design canvas:
+ * a stepper over one step at a time, Back and Next at the foot.
+ */
+
+.page {
+  padding: 16px 24px 32px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.body {
+  max-width: 1040px;
+  margin: 16px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.intro {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Two columns that stack on a narrow window. */
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+/* The main column and a reference rail beside it. */
+.withRail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Tomorrow's calendar beside the plan. */
+.withCalendar {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .columns,
+  .withRail,
+  .withCalendar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.railTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* The day bar: the hours as a strip, each meeting a block on it. */
+.dayBar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bar {
+  position: relative;
+  height: 28px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #4096ff;
+  border-radius: 3px;
+}
+
+/* A priority planned into open time: dashed, so it reads as a plan. */
+.planned {
+  background: #f6ffed;
+  border: 1px dashed #52c41a;
+  box-sizing: border-box;
+}
+
+.ticks {
+  position: relative;
+  height: 14px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+/* The labels at the bar's ends sit inside it, not half past its edges. */
+.tick:first-child {
+  transform: none;
+}
+
+.tick:last-child {
+  transform: translateX(-100%);
+}
+
+/* A row in a list: something on the left, its details, actions at right. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.meta {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.time {
+  width: 44px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.handle {
+  cursor: grab;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: #e6f4ff;
+  color: #0958d9;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ratingLabel {
+  width: 96px;
+}
+
+.ratingEnds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.answer {
+  white-space: pre-line;
+}
+
+/* The weekly review ------------------------------------------------------ */
+
+/* The week's seven days, a card each, as many to a row as fit, widening
+ * to fill each row, a short last row included. */
+.dayCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dayCards > .dayCard {
+  flex: 1 1 168px;
+}
+
+/* A day: its status across the top edge to edge, its button across the
+ * foot, what is between padded in from the edges. */
+.dayCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.dayStatus.dayStatus {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+.dayCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px 10px;
+}
+
+.dayCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+/* The day's review, at the foot whatever the card holds above. */
+.dayAction {
+  display: block;
+  margin-top: auto;
+}
+
+.dayAction :global(.ant-btn) {
+  border-radius: 0;
+  border-top: 1px solid #f0f0f0;
+  justify-content: center;
+}
+
+/* A rating in small circles: its name, the circles, its value. */
+.miniRating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.miniLabel {
+  width: 44px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.miniRate.miniRate {
+  font-size: 9px;
+  line-height: 1;
+}
+
+.miniRate.miniRate :global(.ant-rate-star:not(:last-child)) {
+  margin-inline-end: 3px;
+}
+
+.miniDot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.miniValue {
+  margin-left: auto;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.score {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Three columns, then two, then one. */
+.threeColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .threeColumns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .threeColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.changes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.up {
+  color: #389e0d;
+}
+
+.down {
+  color: #cf1322;
+}
+
+.noteTypes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.noteType {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A list prompt's items as they read later. */
+.answerList {
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* The review as a screen: the header and steps stay at the top, and what
+ * is below them scrolls under them. Sized to the window by the page. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.top {
+  flex: none;
+  padding: 0 24px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.top .header {
+  padding: 12px 0;
+}
+
+/* Fills what is left of the screen. */
+.fill {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+/* A step that scrolls as a whole, its footer kept at the bottom. */
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroller .body {
+  width: 100%;
+  padding: 0 24px 16px;
+  box-sizing: border-box;
+}
+
+.stickyFooter {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Back on the left; Save and exit and Next on the right. */
+.footerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A column of a split step: its content scrolls over a footer that stays. */
+.column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.columnScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.columnFooter {
+  flex: none;
+  padding: 12px 16px 12px 24px;
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* The right of Look back: notes, then the calendar at a fixed width. */
+.sidePanes {
+  display: flex;
+  height: 100%;
+}
+
+.notesPane {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* A pane's heading, which what is below it scrolls under. */
+.paneHeader {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.paneScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 16px;
+}
+
+.calendarPane {
+  flex: none;
+  width: 500px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #f0f0f0;
+}
+
+.calendarFill {
+  flex: 1;
+  min-height: 0;
+}
+
+/* A card without its frame: no border, no shadow, its heading kept.
+ * Scoped by the column, so it outweighs AntD's own card styles. */
+.columnScroll .flat.flat,
+.columnParts .flat.flat {
+  box-shadow: none;
+}
+
+.columnScroll .flat .flatPart,
+.columnParts .flat .flatPart {
+  padding-inline: 0;
+}
+
+/* A triage decision's icon, in its colour until it is the one chosen. */
+.tintDone {
+  color: #003f5c;
+}
+
+.tintNext {
+  color: #7a4f99;
+}
+
+.tintLater {
+  color: #ef527a;
+}
+
+.tintDrop {
+  color: #ffa600;
+}
+
+/* A rating as circles, halves filling half a circle. */
+.rate:global(.ant-rate) {
+  color: #1677ff;
+}
+
+.rateBox {
+  display: flex;
+  flex-direction: column;
+}
+
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rateDot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.rateValue {
+  width: 28px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* A hovered value, not yet chosen. */
+.ratePreview {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* The add box above a list: its input and button joined, as AntD's
+ * compact space draws them, so no row gap between. */
+.addRow {
+  margin-bottom: 4px;
+}
+
+/* A step with its calendar on the left and its work beside it. */
+.calendarStep {
+  display: flex;
+}
+
+.calendarStep .column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The calendar pane on the left: the border on its right instead. */
+.calendarLeft {
+  border-left: 0;
+  border-right: 1px solid #f0f0f0;
+}
+
+/* The work's width, which the footer shares so their right edges meet. */
+.limited {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* A line under a pane's heading. */
+.paneNote {
+  flex: none;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* A plan item's kind, as an icon in its list. */
+.tintPriority {
+  color: #d9a400;
+}
+
+.tintTodo {
+  color: #389e0d;
+}
+
+/* A plan item's title, which can be dragged onto the calendar. */
+.blockSource {
+  cursor: grab;
+}
+
+/* A planned block of time on the calendar: drawn behind the meetings,
+ * which keep their place and width over it. Scoped by the calendar so it
+ * outweighs FullCalendar's own background-event style, wherever the
+ * calendar sits. */
+.calendarRoot .block.block {
+  opacity: 1;
+  border-left: 3px solid;
+}
+
+.calendarEditable .block.block {
+  cursor: grab;
+}
+
+.calendarRoot .blockPriority.blockPriority {
+  background: #fff5d6;
+  border-left-color: #ffcc33;
+  color: #614700;
+}
+
+.calendarRoot .blockTodo.blockTodo {
+  background: #f6ffed;
+  border-left-color: #52c41a;
+  color: #135200;
+}
+
+.blockContent {
+  position: absolute;
+  inset: 0;
+  padding: 2px 28px 2px 6px;
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.blockTitle {
+  padding-top: 4px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-weight: 500;
+}
+
+/* The block's foot: drag it to change how long the block is. */
+.blockHandle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.calendarRoot {
+  height: 100%;
+}
+
+/* The time an item has blocked, beside it in its list. */
+.blockTime {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
+/* A block's close button, at its top right. */
+.blockClose {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  z-index: 1;
+}
+
+/* A block dragged off the calendar, about to be removed. */
+.calendarRoot .blockLeaving.blockLeaving {
+  opacity: 0.35;
+}
+
+/* A calendar whose blocks can be changed keeps a strip clear of meetings
+ * down its right side, so each block's close button, and a place to grab
+ * it, is never covered by a meeting over it. */
+.calendarEditable :global(.fc-timegrid-col-events) {
+  margin-right: 30px;
+}
+
+/* A block's close icon: 16px, in the colour of the block's left border.
+ * Doubled to outweigh the size AntD gives a small button's icon. */
+.blockClose.blockClose .closePriority,
+.blockClose.blockClose .closeTodo {
+  font-size: 16px;
+}
+
+.blockClose.blockClose .closePriority {
+  color: #ffcc33;
+}
+
+.blockClose.blockClose .closeTodo {
+  color: #52c41a;
+}
+
+/* The work at the full width beside the calendar, the footer with it. */
+.unlimited {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Wrap up: today and tomorrow side by side, beside tomorrow's calendar,
+ * filling the height left under the notice; each scrolls on its own. */
+.wrapColumns {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.wrapColumn {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A column's content, under its heading: scrolls, no scroll bar showing. */
+.wrapScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 0 16px;
+  scrollbar-width: none;
+}
+
+.wrapScroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Today and tomorrow, a divider between them. */
+.wrapToday {
+  padding-right: 16px;
+}
+
+.wrapTomorrow {
+  border-left: 1px solid #f0f0f0;
+  padding-left: 16px;
+}
+
+/* Too narrow for two: one column, scrolling as a whole. */
+@media (max-width: 1200px) {
+  .wrapColumns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .wrapScroll {
+    overflow-y: visible;
+  }
+
+  .wrapToday {
+    padding-right: 0;
+  }
+
+  .wrapTomorrow {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+.wrapHeading {
+  margin: 0;
+  padding-bottom: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* A decision shown, not chosen: its tag's width steady down the list. */
+.decisionTag {
+  margin-inline-end: 0;
+}
+
+/* A rating shown, not chosen: no pointer over its circles. */
+.rateReadOnly :global(.ant-rate-star) {
+  cursor: default;
+}
+
+/* A step whose work scrolls in parts: no scrolling of its own. */
+.columnParts {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 0 24px;
+}
+
+/* The work filling the height it is given. */
+.fillDown {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Scrolls with no scroll bar showing; scrollbar-width covers current
+ * browsers, the WebKit rule older Safari. */
+.noScrollbar {
+  scrollbar-width: none;
+}
+
+.noScrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* The weekly Look back's right panel: scrolls as a whole. */
+.asideScroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px 24px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.asideScroll .flat.flat {
+  box-shadow: none;
+}
+
+.asideScroll .flat .flatPart {
+  padding-inline: 0;
+}
+
+/* A list by day: each day's heading with its count, caret to the left. */
+.daySections.daySections
+  :global(.ant-collapse-item)
+  > :global(.ant-collapse-header) {
+  padding-inline: 0;
+}
+
+.daySections.daySections
+  :global(.ant-collapse-item)
+  :global(.ant-collapse-content-box) {
+  padding: 0 0 4px 22px;
+}
+
+.daySectionLabel {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  font-weight: 600;
+}
+
+/* Habit execution: the score beside its bar against the target. */
+.executionRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.executionBar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The notes timeline: a day's heading over its notes. */
+.timelineDay {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* A flagged note's flag, beside its type, in the notes timeline's red. */
+.flagged {
+  color: #ee0000;
+}
+
+/* A time with its AM or PM, on one line. */
+.clockTime {
+  width: 60px;
+  white-space: nowrap;
+}
+
+/* A calendar pane taking the width it is given, as in a splitter. */
+.calendarPane.calendarPaneFill {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Across several days the columns are narrow: a slimmer strip kept clear
+ * of meetings, still wide enough for a block's close button. */
+.calendarEditable.calendarDays :global(.fc-timegrid-col-events) {
+  margin-right: 20px;
+}
+
+.calendarDays .blockContent {
+  padding-right: 20px;
+}
+
+/* Wrap up's daily answers: a day as a small, light heading over its
+ * items, which line up with every other day's. */
+.dayLabel {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.dayLabel:first-child {
+  margin-top: 0;
+}
+
+.dayLabel + .row {
+  border-top: 0;
+}
+
+/* A compact list's rows, closer together. */
+.row.rowTight {
+  padding: 4px 0;
+}

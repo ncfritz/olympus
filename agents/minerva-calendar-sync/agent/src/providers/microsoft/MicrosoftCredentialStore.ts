@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "fs";
 import { join } from "path";
@@ -17,6 +18,18 @@ export interface StoredMicrosoftCredential {
   refreshToken: string;
   scope: string;
   obtainedAt: string;
+  /**
+   * The account's `<tid>:<oid>` (ADR 0028), recorded at sign-in; read once
+   * from a refreshed ID token for a credential stored before it was kept.
+   */
+  subject?: string;
+  /**
+   * Which platform of the app registration issued the refresh token: the
+   * public "Mobile and desktop" one (the default, for credentials stored
+   * before) or the confidential "Web" one (connected from the Olympus site),
+   * whose tokens are redeemed with the client secret.
+   */
+  client?: "public" | "web";
 }
 
 /**
@@ -44,6 +57,11 @@ export class MicrosoftCredentialStore {
     const path = this.credentialPath(accountLabel);
     if (!existsSync(path)) return undefined;
     return JSON.parse(readFileSync(path, "utf8")) as StoredMicrosoftCredential;
+  }
+
+  /** Deletes `accountLabel`'s credential; nothing when there is none. */
+  remove(accountLabel: string): void {
+    rmSync(this.credentialPath(accountLabel), { force: true });
   }
 
   load(accountLabel: string): StoredMicrosoftCredential {

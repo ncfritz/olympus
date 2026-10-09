@@ -78,17 +78,38 @@ services:
       # at the publish path.
       DIONYSUS_UPLOAD_PATH: /olympus/uploads
       DIONYSUS_PUBLISH_PATH: /dionysus/uploads
+      # Signing in (ADR 0018, docs/guides/signing-in.md). The providers file
+      # carries client secrets, so it is a secret; the signing keys are a
+      # directory, which a secret cannot be, so they are a read-only mount.
+      AUTH_SIGNING_KEYS: /run/secrets/auth-signing-keys
+      AUTH_OIDC_PROVIDERS_FILE: /run/secrets/olympus_oidc_providers
+      # Weather (ADR 0024). The key never reaches the site.
+      OPENWEATHER_API_KEY_FILE: /run/secrets/openweather_api_key
+      # ambientweather.net, for backfill (plan phase 7).
+      AMBIENT_APPLICATION_KEY_FILE: /run/secrets/ambient_application_key
+      AMBIENT_API_KEY_FILE: /run/secrets/ambient_api_key
     secrets:
       - source: amqp_olympus_api
         target: amqp_password
       - hasura_admin_secret
+      - olympus_oidc_providers
+      - openweather_api_key
+      - ambient_application_key
+      - ambient_api_key
     volumes:
-      - ${DATA_DIR:?}/dionysus/uploads:/olympus/uploads
+      - ${DATA_DIR:?}/olympus/apps/api/uploads:/olympus/uploads
+      # The weather stations' raw archive (WEATHER_ARCHIVE_DIR's default);
+      # a nightly job copies finished days to the NAS.
+      - ${DATA_DIR:?}/olympus/apps/api/weather/archive:/olympus/weather/archive
       # The services listener's certificate, key, CA and revocation lists.
       - ${SECRETS_DIR:?}/tls/olympus-api:/run/secrets/tls:ro
+      # Every ES256 key that verifies an access token; the last by filename
+      # signs. Read-only, and read once at start: adding a key is
+      # `scripts/signing-keys.sh` and a restart.
+      - ${SECRETS_DIR:?}/auth-signing-keys:/run/secrets/auth-signing-keys:ro
       # Harpocrates's published lists (compose/harpocrates.yml): after the
       # cutover, TLS_CRL_SERVICES names the Service CA's chain's here.
-      - ${DATA_DIR:?}/harpocrates/published:/srv/harpocrates/published:ro
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published:ro
     ports:
       # The mTLS listener, for the NAS's asset agent (ADR 0018).
       - "${LAN_BIND:-127.0.0.1}:3443:3443"
@@ -142,8 +163,8 @@ services:
       - nzbgeek_api_key
       - nzbget_password
     volumes:
-      - ${DATA_DIR:?}/dionysus/asset-agents/data:/dionysus
-      - ${DATA_DIR:?}/dionysus/uploads:/dionysus/uploads
+      - ${DATA_DIR:?}/olympus/agents/dionysus-asset:/dionysus
+      - ${DATA_DIR:?}/olympus/apps/api/uploads:/dionysus/uploads
       - ${SECRETS_DIR:?}/tls/dionysus-asset-agent:/run/secrets/tls:ro
     # A transcode would otherwise take the whole machine.
     cpus: ${ASSET_AGENT_CPUS:-2}
@@ -166,7 +187,7 @@ services:
         target: amqp_password
       - tmdb_api_key
     volumes:
-      - ${DATA_DIR:?}/dionysus/metadata-agents/data:/dionysus
+      - ${DATA_DIR:?}/olympus/agents/dionysus-metadata:/dionysus
       - ${SECRETS_DIR:?}/tls/dionysus-metadata-agent:/run/secrets/tls:ro
     networks:
       - backend
@@ -185,8 +206,84 @@ services:
         target: amqp_password
       - nzbgeek_api_key
     volumes:
-      - ${DATA_DIR:?}/dionysus/search-agents/data:/dionysus
+      - ${DATA_DIR:?}/olympus/agents/dionysus-search:/dionysus
       - ${SECRETS_DIR:?}/tls/dionysus-search-agent:/run/secrets/tls:ro
+    networks:
+      - backend
+      - monitoring
+
+  # Minerva mail (ADR 0030): the Gmail agent. It polls each linked mailbox,
+  # publishes what changes to the broker for the API to store, writes
+  # approved label changes and filters to Gmail, and sends new mail's text
+  # to the classifier, never storing it. Its services listener is the
+  # API's way in, to link a mailbox; nothing else calls it.
+  minerva-mail-agent:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/minerva-mail-agent:${OLYMPUS_TAG:?}
+    profiles: [minerva]
+    env_file: ../env/${OLYMPUS_ENV:?}/minerva-mail-agent.env
+    environment:
+      <<: *agent-environment
+      LISTEN_PORT: "3105"
+      AMQP_USER: ${AMQP_USER_OVERRIDE:-minerva-mail-agent}
+      # Mail's own Google OAuth client (not the calendar agent's); the
+      # refresh tokens, one file per mailbox, kept on the volume.
+      MAIL_GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/minerva_mail_google_oauth_client_secret
+      MAIL_CREDENTIALS_DIR: /data/credentials
+      # The classifier's services listener, with this agent's client
+      # certificate (the API_CLIENT_* above).
+      MAIL_ML_URL: https://minerva-mail-agent-ml:3107/v1
+      SERVICES_LISTEN_PORT: "4435"
+    secrets:
+      - source: amqp_minerva_mail
+        target: amqp_password
+      - minerva_mail_google_oauth_client_secret
+    volumes:
+      - ${DATA_DIR:?}/olympus/agents/minerva-mail:/data
+      # Its client certificate for the API and the classifier
+      # (client.crt, client.key), its services listener's (server.crt,
+      # server.key), the services CA and the three revocation lists.
+      - ${SECRETS_DIR:?}/tls/minerva-mail-agent:/run/secrets/tls:ro
+    stop_grace_period: 30s
+    networks:
+      - backend
+      - monitoring
+
+  # Minerva mail's classifier (ADR 0030, agents/minerva-mail-ml), the one
+  # Python service; its name on the network and in its certificates is
+  # minerva-mail-agent-ml. Text
+  # arrives only on its services listener (3107, mutual TLS, the mail
+  # agent alone), is featurized or embedded and dropped. The feature store
+  # and the models are on the volume, which the nightly retrain
+  # (infra/airflow, minerva_mail_retrain) mounts as well. Embeddings come
+  # from Ollama on the host (OLLAMA_URL in its environment file).
+  minerva-mail-agent-ml:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/minerva-mail-ml:${OLYMPUS_TAG:?}
+    profiles: [minerva]
+    env_file: ../env/${OLYMPUS_ENV:?}/minerva-mail-agent-ml.env
+    environment:
+      LISTEN_PORT: "3106"
+      SERVICES_LISTEN_PORT: "3107"
+      FEATURE_STORE_PATH: /var/lib/minerva-mail-ml/features.sqlite3
+      MODEL_DIR: /var/lib/minerva-mail-ml/models
+      # The API's mTLS listener, for training data and suggestions, with
+      # the classifier's client certificate.
+      API_BASE_URL: ${AGENT_API_BASE_URL:-https://olympus-api:3443/v1}
+      API_CLIENT_CERT: /run/secrets/tls/client.crt
+      API_CLIENT_KEY: /run/secrets/tls/client.key
+      API_CA_CERT: /run/secrets/tls/services-ca.crt
+      ENVIRONMENT: ${OLYMPUS_ENV:?}
+    volumes:
+      - ${DATA_DIR:?}/olympus/agents/minerva-mail-ml:/var/lib/minerva-mail-ml
+      # Its client certificate for the API (client.crt, client.key), its
+      # services listener's (server.crt, server.key), the services CA and
+      # the three revocation lists: the retrain mounts the same directory.
+      - ${SECRETS_DIR:?}/tls/minerva-mail-agent-ml:/run/secrets/tls:ro
+    # Ollama runs on the host, outside Docker.
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    stop_grace_period: 30s
     networks:
       - backend
       - monitoring
@@ -202,21 +299,12 @@ services:
     networks:
       - edge
 
-  # The site's pre-monorepo image, as it runs today, until the site is
-  # imported (roadmap phase 3). Its configuration is inside the image.
+  # The site (apps/site). No profile and nothing to configure: what it needs is
+  # compiled into the bundle at build time (docker-bake.hcl's site target), and
+  # nginx proxies to it by name on the edge network at port 3000.
   olympus-site:
-    # Unset where the profile is off; a name that fails to pull if it is
-    # on without one.
-    image: ${SITE_IMAGE:-site-image-not-set}
-    # Built on the Mac Mini and never pushed anywhere: use it as it is.
-    pull_policy: never
-    profiles: [site]
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    logging: *logging
-    volumes:
-      - ${DATA_DIR:?}/olympus/site/olr:/olr
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/site:${OLYMPUS_TAG:?}
     networks:
       - edge
 
@@ -236,7 +324,7 @@ services:
     environment:
       DATABASE_URL: file:/data/minerva.db
     volumes:
-      - ${DATA_DIR:?}/minerva:/data
+      - ${DATA_DIR:?}/olympus/agents/minerva-calendar-sync:/data
     network_mode: none
     healthcheck:
       disable: true
@@ -262,12 +350,18 @@ services:
       # OAuth tokens, kept with the database.
       GOOGLE_CREDENTIALS_DIR: /data/credentials/google
       MICROSOFT_CREDENTIALS_DIR: /data/credentials/microsoft
-      AUTH_JWT_SECRET_FILE: /run/secrets/minerva_auth_jwt_secret
       GOOGLE_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_oauth_client_secret
-      # Who may sign in to the console: a JSON list of OIDC providers,
-      # each with a client secret, so it is a file rather than a value in
-      # a committed env file.
-      AUTH_OIDC_PROVIDERS_FILE: /run/secrets/minerva_oidc_providers
+      # Accounts connected from the Olympus site sign in through web clients
+      # (ADR 0028): Google's "Web application" client and Microsoft's web
+      # platform, each a confidential client with a secret. Empty until
+      # set; accounts connected through the desktop client sync without.
+      GOOGLE_WEB_OAUTH_CLIENT_SECRET_FILE: /run/secrets/google_web_oauth_client_secret
+      MICROSOFT_OAUTH_CLIENT_SECRET_FILE: /run/secrets/microsoft_oauth_client_secret
+      # The console signs in through the Olympus API (ADR 0029): the agent
+      # reaches it over the backend network, and the browser where the
+      # site is.
+      OLYMPUS_API_URL: http://olympus-api:3100
+      OLYMPUS_SIGN_IN_URL: ${NEXT_PUBLIC_OLYMPUS_HOST:?}/api
       # nginx publishes this console at /minerva/calendar on the control
       # host, and its agent under it (ADR 0021). Those paths scope the
       # session cookie and bound where a login may return to.
@@ -276,11 +370,14 @@ services:
     secrets:
       - source: amqp_minerva
         target: amqp_password
-      - minerva_auth_jwt_secret
-      - minerva_oidc_providers
       - google_oauth_client_secret
+      - google_web_oauth_client_secret
+      - microsoft_oauth_client_secret
     volumes:
-      - ${DATA_DIR:?}/minerva:/data
+      - ${DATA_DIR:?}/olympus/agents/minerva-calendar-sync:/data
+      # The services listener's certificate, key, CA and revocation lists
+      # (ADR 0028); only the API calls it, over the backend network.
+      - ${SECRETS_DIR:?}/tls/minerva-calendar-agent:/run/secrets/tls:ro
     stop_grace_period: 30s
     networks:
       - backend
@@ -327,6 +424,8 @@ secrets:
     file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-dionysus-search-agent}.password
   amqp_minerva:
     file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-minerva-calendar-sync-agent}.password
+  amqp_minerva_mail:
+    file: ${SECRETS_DIR:?}/rabbitmq/${AMQP_USER_OVERRIDE:-minerva-mail-agent}.password
   syno_smtp_password:
     file: ${SECRETS_DIR:?}/syno_smtp_password
   socks_proxy_username:
@@ -345,9 +444,24 @@ secrets:
     file: ${SECRETS_DIR:?}/nzbget_password
   tmdb_api_key:
     file: ${SECRETS_DIR:?}/tmdb_api_key
-  minerva_auth_jwt_secret:
-    file: ${SECRETS_DIR:?}/minerva_auth_jwt_secret
-  minerva_oidc_providers:
-    file: ${SECRETS_DIR:?}/minerva_oidc_providers
+  openweather_api_key:
+    file: ${SECRETS_DIR:?}/openweather_api_key
+  ambient_application_key:
+    file: ${SECRETS_DIR:?}/ambient_application_key
+  ambient_api_key:
+    file: ${SECRETS_DIR:?}/ambient_api_key
+  # The API's own, not Minerva's: the same file shape, a different OAuth
+  # client. One file for both would mean one client secret in two places and
+  # no way to rotate either app's without the other's.
+  olympus_oidc_providers:
+    file: ${SECRETS_DIR:?}/olympus_oidc_providers
   google_oauth_client_secret:
     file: ${SECRETS_DIR:?}/google_oauth_client_secret
+  google_web_oauth_client_secret:
+    file: ${SECRETS_DIR:?}/google_web_oauth_client_secret
+  microsoft_oauth_client_secret:
+    file: ${SECRETS_DIR:?}/microsoft_oauth_client_secret
+  # Mail's own Google client (ADR 0030), not the calendar agent's: the
+  # file holds only the secret.
+  minerva_mail_google_oauth_client_secret:
+    file: ${SECRETS_DIR:?}/minerva_mail_google_oauth_client_secret

@@ -4,14 +4,13 @@ import { ALL_CONFIG } from "./config/configuration";
 import { AppController } from "./AppController";
 import { AppService } from "./AppService";
 import { AuthModule } from "./auth/AuthModule";
-import { AvailabilityModule } from "./availability/AvailabilityModule";
 import { CalendarAuthModule } from "./calendarAuth/CalendarAuthModule";
 import { CalendarColorsModule } from "./calendarColors/CalendarColorsModule";
 import { CalendarsModule } from "./calendars/CalendarsModule";
 import { EventsModule } from "./events/EventsModule";
 import { MetricsModule } from "./metrics/MetricsModule";
+import { OlympusModule } from "./olympus/OlympusModule";
 import { OutboxModule } from "./outbox/OutboxModule";
-import { OverridesModule } from "./overrides/OverridesModule";
 import { StoreModule } from "./store/StoreModule";
 import { SyncModule } from "./sync/SyncModule";
 import { SyncRunsModule } from "./syncRuns/SyncRunsModule";
@@ -36,8 +35,7 @@ import { WebhooksModule } from "./webhooks/WebhooksModule";
     CalendarsModule,
     CalendarAuthModule,
     CalendarColorsModule,
-    AvailabilityModule,
-    OverridesModule,
+    OlympusModule,
     OutboxModule.register(process.env.OUTBOX_ENABLED === "true"),
   ],
   controllers: [AppController],

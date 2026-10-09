@@ -32,16 +32,29 @@ Phases 2 and 3 are independent and can run in either order or together.
    workspace-only `dev.yml` it started with is gone), applying both on
    start. API tests keep using the GraphQL double; the auth migration
    gets an integration test against the real Hasura.
-3. **Dev CA** (`scripts/dev-ca.sh`): **done 2026-09-20** — a throwaway
-   root with Olympus Services and Olympus Devices intermediates (ECDSA
-   P-256), the API's `3443` server certificate (`olympus-api`,
+3. **Dev CA** (`scripts/dev-ca.sh`): **done 2026-09-20**, rewritten
+   **2026-09-28** — a throwaway copy of the real hierarchy
+   ([certificates.md](../../guides/certificates.md)): a root, two
+   intermediates, and an issuing CA per purpose — service, device,
+   signing, and a TLS issuer name-constrained to `localhost` (ECDSA
+   P-256). With it the API's `3443` server certificate (`olympus-api`,
    `localhost`, `api.olympus.internal.localhost`, `127.0.0.1`), a
-   certificate per agent deployment, device certificates, and the
-   revoked, expired and wrong-intermediate certificates the sign-off
-   cases need, in a git-ignored `infra/dev-ca/`. Checked against a Node
-   TLS server: valid agent certificates are accepted and the revoked,
-   expired, wrong-intermediate, device and missing ones are refused
-   during the handshake.
+   certificate per agent deployment, device certificates and `.p12`s, the
+   authorities' keys as encrypted PKCS#8, and the revoked, expired,
+   wrong-issuer and out-of-constraint certificates the sign-off cases
+   need, in a git-ignored `infra/dev-ca/`. Checked against a Node TLS
+   server: valid agent certificates are accepted and the revoked,
+   expired, wrong-issuer, device and missing ones are refused during the
+   handshake.
+
+   The depth is the point rather than fidelity for its own sake. A chain
+   is checked against a revocation list from **every** authority in it, so
+   a three-deep chain needs three lists — and a two-deep fixture lets a
+   `TLS_CRL_SERVICES` that names two of three pass, which is a listener
+   that refuses every client certificate and says so to nobody. That is
+   what happened to `dev.env`, and the script's own shape is now what
+   would have caught it.
+
 4. **Dev compose**: Postgres and Hasura (**done**). The API runs from
    the workspace against them, so its two listeners are configured in
    `apps/api/dev.env`, not in compose; the border nginx arrives in phase 6.
@@ -139,8 +152,13 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    | `olympus-ios`         | public | `olympus://auth`                                                                                  | response body   |
    | `olympus-auth-tester` | public | `http://127.0.0.1:*/callback` (loopback), `olympus-auth-tester://auth`                            | response body   |
 
-3. **Providers**: GitHub (OAuth), Google (OIDC), Synology SSO (OIDC), each
-   an API OAuth application with the API's callback URLs. Identities link
+3. **Providers**: Google (OIDC), Synology SSO (OIDC), each
+   an API OAuth application with the API's callback URLs. **GitHub is out
+   for now**: it publishes a discovery document but implements no OpenID
+   Connect in its OAuth flows and issues no ID tokens for users, and the
+   provider path reads the subject and verified email from an ID token's
+   claims. It needs a second, non-OIDC path calling `/user` and
+   `/user/emails` — worth doing, not worth blocking sign-in on. Identities link
    to users by verified email on first sign-in; a user who doesn't exist
    is refused. `pnpm --filter @ncfritz/olympus-api auth:user` adds users
    and sets roles — `add`, `show`, `list`, `roles`, `disable`/`enable` and
@@ -172,7 +190,16 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    **done 2026-09-25.**
 7. Tests: every endpoint and error, PKCE, reuse detection, expiry, a
    disabled user, the provider callbacks with a fake provider, and the
-   migration against the dev Hasura.
+   migration against the dev Hasura — **done 2026-09-26**
+   (`test/api/signIn.spec.ts`, `sessions.spec.ts`, `authRateLimits.spec.ts`).
+   The fake provider is a fake `ProviderLoginService`, not a fake identity
+   provider: what this API owns is the code store, its own PKCE check, the
+   order `authorize` refuses things in, whether a failure is a 400 or a
+   redirect, and the session lifecycle, and a fake service drives all of
+   those plus the answers a real provider will not give on demand. That
+   leaves openid-client's own leg to the live sign-in and to phase 4's
+   tester. The migration was applied to `hasura-dev` by hand and proved by
+   signing in (docs/guides/signing-in.md).
 
 ## Phase 4 — Auth testers
 
@@ -183,7 +210,7 @@ pattern for desktop apps (RFC 8252 loopback redirect):
 
 | Command                                | Does                                                                      |
 | -------------------------------------- | ------------------------------------------------------------------------- |
-| `login --provider github [--external]` | PKCE with a loopback redirect; opens the browser; stores tokens in a file |
+| `login --provider google [--external]` | PKCE with a loopback redirect; opens the browser; stores tokens in a file |
 | `whoami`                               | `DescribeCurrentUser`, and the decoded token claims                       |
 | `call <method> <path>`                 | any API call with the access token                                        |
 | `refresh`, `refresh --replay`          | rotates; `--replay` presents the previous token again (reuse detection)   |
@@ -191,10 +218,34 @@ pattern for desktop apps (RFC 8252 loopback redirect):
 | `agent-call --cert --key <path>`       | a call on `3443` with a service certificate                               |
 | `--device-cert <p12>`                  | presents a device certificate (the border, phase 6)                       |
 
-**`apps/auth-tester-mobile` (React Native, Expo)**, the mobile proof of
-concept, built the way the iOS app will be:
+**Done 2026-09-27**, apart from `--device-cert`. `tools/*` is a workspace
+glob; `tools/auth-tester/README.md` is what each command proves. The flow
+itself is `packages/auth-flow` (**2026-09-28**), platform-free and shared with
+the mobile tester: PKCE with the platform's crypto injected, the two grants
+over an injected form POST, and the claims decoder — so the two testers cannot
+disagree about what the flow is.
+`@ncfritz/olympus-client` gained `AuthApi` (the four endpoints that answer
+about the caller) and the tester's calls go through it with the `auth`
+option, so the option is exercised by something that has to refresh.
 
-- An Expo app in the workspace; Turbo runs its typecheck, lint and unit
+Two decisions the table did not settle:
+
+- **`--external` is a URL from the environment**
+  (`OLYMPUS_EXTERNAL_API_BASE_URL`), not a different default. The two runs
+  it exists for are the same commands against two fronts — the workspace
+  API here, the border in phase 6 — and naming the URL once keeps a
+  sign-off run from depending on somebody remembering a port.
+- **`--device-cert` is deferred to phase 6 and may not arrive at all.** Node's
+  HTTPS client presenting a `.p12` proves nothing that phase 6 is asking:
+  the question is whether `ASWebAuthenticationSession` and an app's own
+  requests can present one, which is what the mobile tester is for.
+
+**`tools/auth-tester-mobile` (React Native, Expo)**, the mobile proof of
+concept, built the way the iOS app will be. Under `tools/` rather than
+`apps/`, with the CLI: nobody but us ever runs it, and `apps/` is what a
+deployment contains.
+
+- An Expo app in the workspace (`tools/*` is a workspace glob); Turbo runs its typecheck, lint and unit
   tests; the app itself is built with a development build
   (`npx expo run:ios`, Xcode on a Mac), not Expo Go, because it has a
   native module.
@@ -207,13 +258,54 @@ concept, built the way the iOS app will be:
   the Keychain with `expo-secure-store`.
 - API calls through `@ncfritz/olympus-client` with its auth option (the
   first React Native use of the package).
-- A local Expo module, `client-identity` (Swift): imports a device
-  certificate (`.p12` from Files, with its password) into the app's
-  Keychain, and performs requests on a `URLSession` that answers
-  client-certificate challenges with it. React Native's own networking
-  can't present a client certificate, so the client package gets an axios
-  adapter over this module (`createOlympusClients({ axios: { adapter } })`).
+- A local Expo module, `client-identity` (Swift, **2026-09-28**): imports an
+  identity (`.p12` picked from Files, with its password) and performs requests
+  on a `URLSession` that answers client-certificate challenges with it. React
+  Native's own networking can't present a client certificate, so the client
+  package is pointed at the module by an axios adapter
+  (`createOlympusClients({ axios: { adapter } })`) — the generated SDK, the
+  interceptors and the metrics are unchanged, and only the transport differs.
   The same module is what the iOS app will use.
+
+  The identity is held **in memory**, not added to the Keychain: a tester that
+  installed identities permanently would leave them behind after a reinstall,
+  and when to persist one is the real app's decision rather than this one's.
+
+  It also pins the CA it validates the server against, because a phone does
+  not trust the dev CA and installing a throwaway root on every test device
+  is worse than holding a PEM — and the iOS app will pin the internal CA for
+  the same reason.
+
+  **Proven on a device, 2026-09-28.** `dionysus-search-agent.p12` imported into
+  the app reaches `GET /olympus/ping` on the `3443` listener, which answers the
+  question the module exists for: an app's own requests can present a client
+  certificate. `devices/dev-valid.p12` against the same listener is refused
+  during the handshake, because its issuer is the device issuer and the listener
+  trusts the service one — ADR 0023's rule seen from a phone rather than from a
+  Node test, and enforced by TLS rather than by the guard, which is why
+  `AUTH_MODE_SERVICES=report` does not soften it. `scripts/dev-ca.sh` writes a
+  `.p12` per agent identity for exactly this.
+
+  What still waits for phase 6 is the only question no code of ours can answer:
+  whether `ASWebAuthenticationSession` presents a certificate installed by
+  configuration profile.
+
+  **What the afternoon cost, so it is not paid twice.** Nothing on either side
+  of a failed handshake says what was wrong with it, and the two directions are
+  told apart only by which error arrives:
+
+  | The app says                      | Who refused whom                                     |
+  | --------------------------------- | ---------------------------------------------------- |
+  | `cancelled`                       | the app refused the **server**: the trust evaluation |
+  | `The network connection was lost` | the listener refused the **client's** certificate    |
+
+  Both leave the listener logging a caller that hung up, because under TLS 1.3
+  the client's handshake completes before the server validates its certificate.
+  Three separate causes wore that same face: a base URL pointing at the users
+  listener or at nginx, cleartext on a TLS socket, and a server certificate valid
+  for longer than the 825 days Apple permits — the last against a private anchor
+  as well, which is recorded in `docs/guides/certificates.md` and in the internal
+  CA's plan.
 
 The risks it retires:
 
@@ -221,7 +313,9 @@ The risks it retires:
    installed by configuration profile at the border.
 2. That the app's own requests can't use profile-installed identities,
    so the app must import the `.p12` itself (a second install step for
-   users), and that the native module and adapter handle it.
+   users), and that the native module and adapter handle it. **Retired
+   2026-09-28**: they do, and `@ncfritz/olympus-client` needs nothing but an
+   axios adapter to go through them.
 3. The custom-scheme redirect, Keychain storage, refresh when the app
    returns from the background, and `@ncfritz/olympus-client` under React
    Native.
@@ -234,6 +328,9 @@ dev CA; externally (phase 6) against the real border.
 The site is imported (`docs/guides/repo-import.md`) and changed **only**
 where authentication needs it; conventions, styles, the SDK wrappers and
 everything else wait for the site's own conventions work.
+
+**Steps 1-5 done 2026-09-28; step 7 was a no-op; step 6 unchanged. Not signed
+off -- see the end of this section.**
 
 1. Import with history into `apps/site`; the minimum to build in the
    workspace (package name, TS/ESLint config only where the build fails).
@@ -254,6 +351,82 @@ everything else wait for the site's own conventions work.
 7. nginx on the Mac Mini: remove any route that sends `/api/auth/` to
    NextAuth, so all of `/api/` goes to the API.
 
+**What the steps turned out to mean.** The import carried 537 commits and a
+`.env.local` that had held `NEXTAUTH_SECRET` and `GITHUB_CLIENT_SECRET`; both are
+redacted from every commit and listed in `docs/roadmap.md` for rotation at the
+source. The site keeps React 18 and Next 15 -- the workspace catalog is 19 and 16
+-- because a React major landing in the same week as the sign-in rewrite would
+make every failure ambiguous; the drift is the site's own conventions work.
+
+The flow is `packages/auth-flow`, which gained `exchangeCodeForCookie` and
+`refreshFromCookie` for a client whose refresh token it never sees. The piece
+worth knowing about is in `apps/site/src/auth/session.ts`: **one rotation at a
+time.** A page load fires a dozen calls, and a dozen refreshes of one token is
+indistinguishable from a theft, so the API would end the session -- opening the
+site would sign you out.
+
+Step 5 needed the API too. The notifications gateway authenticated nobody: it
+accepted any connection that could reach the port and then sent it every
+notification. It now verifies the handshake's token with the same code the HTTP
+guard uses, and obeys the same `AUTH_MODE_USERS`, so the site moves over without
+a flag day.
+
+Step 7 was already true: nginx sends `/api/v1/`, `/api-spec`, `/api/metrics` and
+`/socket.io` to the API and everything else to the site. NextAuth lived at
+`/api/auth/` **on the site**, so deleting the route was the whole of it.
+
+**What signing in through a browser found (2026-09-29).** Four bugs, all in the
+site half, none of them visible to the unit tests -- which had passed throughout
+-- and three of the four the same shape: work that is correct once, done more
+than once.
+
+- `5358491f` The callback page ran its effect twice, because `useRouter`'s object
+  changes identity when the route becomes ready, and `completeSignIn` consumes a
+  one-shot value. The first run exchanged the code and had its success discarded
+  by its own cleanup; the second found `sessionStorage` already emptied and
+  reported a callback belonging to no sign-in. Completion is memoised per
+  document now, as `session.ts` memoises a rotation.
+- `03d717e8` A sign-in begun from `/auth/signin` -- which the callback page's own
+  "Start again" button navigates to -- recorded that page as where to return, so
+  a successful sign-in ended back on the sign-in page, indistinguishable from a
+  failed one. `returnableTo` refuses a path under `/auth/`, and anything that is
+  not a path on this site.
+- `fc285924` `AuthProvider` asked the API to use the refresh cookie on every
+  page, the callback page included, racing the code exchange there: two
+  sessions, two `Set-Cookie`s, and which one the browser kept decided by which
+  reply landed last. One ordering away from the API seeing a refresh token twice
+  and ending the session by design. It waits for the session the exchange
+  produces instead.
+- `7f301bce`, then `socket.io-react-hook` removed altogether. The library throws
+  from its own event handlers when a handshake is in flight across an unmount:
+  it notifies connections by looking a key up in a ref, and leaves those
+  handlers attached to sockets whose entry it has deleted. Answering the
+  handshake from the held token rather than awaiting a rotation narrowed the
+  window and did not close it, and the package was last released in August 2024,
+  so there was no guarded version to move to. What the site used of it was one
+  namespace, two events and a token in the handshake -- now `listen`,
+  `useSocketEvent` and a connection that belongs to the document rather than to
+  a header that mounts and unmounts while the session settles. That last part is
+  the actual fix: a handshake cannot be cancelled, so nothing should be tying one
+  to a component's lifetime.
+
+Reaching the site at all first cost a day in the infrastructure underneath it,
+for a reason worth reading once: `infra/docker/README.md`, on a Docker network
+claiming `192.168.0.0/20` and taking the LAN away from every container on the
+host.
+
+**Not signed off.** The matrix asks for F1 (INT), F2, F3 (INT), F4 and F10. INT
+is the site running on the Mac Mini. As of 2026-09-29 it has a
+`docker-bake.hcl` target and a Compose service pointing at it, but no image has
+been built yet, so that host is still serving the pre-monorepo NextAuth build. What the pass above exercised was the dev host: a checkout on a
+developer's machine behind the Mini's nginx (ADR 0019, 0022). That is not INT
+and is not recorded as it. The phase stays open until the site has an image and
+the cases are run against it.
+
+Also still open: the gateway broadcasts every notification to every connected
+client (`server.emit`), which authenticating the socket does not change -- see
+`docs/roadmap.md`.
+
 ## Phase 6 — Border
 
 1. Olympus Devices intermediate; device certificates for each person's
@@ -269,6 +442,57 @@ everything else wait for the site's own conventions work.
 6. iOS profile and `.p12` for the tester; the phase 4 risks confirmed on a
    real device outside the LAN.
 
+**The configuration is written (2026-09-28); none of it is deployed.** Not in
+`infra/nginx/` as item 3 said -- the convention ADR 0019 settled on is
+`infra/docker/`, so the border's nginx lives in `infra/docker/nginx-border/`
+(its own `nginx.conf` and `conf.d/olympus-border.conf`) with
+`infra/docker/compose/border.yml` to run it and `NAS_BORDER_*` in `prod.env`.
+`stack.sh nginx-reload` takes a stack name now, so the border validates and
+reloads the same way the inside does.
+
+Both files pass `nginx -t` against real certificate and revocation files at the
+paths they name. Two things that check could not cover: `http2 on;` needs nginx
+1.25.1 and the validator available was 1.24 (production is 1.29.3), and nothing
+here proves a forward actually works.
+
+**Item 3 needs no change.** The Mac Mini's block already answers
+`olympus.ncfritz.net` alongside the internal name, and the border preserves the
+`Host`, so the forwarded traffic is accepted as it stands.
+
+**Prerequisites, each of which fails as a handshake and not as a message.**
+
+- The Mac Mini's server certificate has to carry `olympus.internal.ncfritz.net`,
+  because the border sets `proxy_ssl_name` to it and verifies. Its file is named
+  `olympus.ncfritz.net.crt`, which says nothing about the SANs:
+  `openssl x509 -in olympus.ncfritz.net.crt -noout -ext subjectAltName`.
+- `ssl_client_certificate` must be the **Olympus Devices chain**, not the root:
+  siblings under one parent mean a root-terminated store accepts a service
+  certificate too (ADR 0023), and nginx cannot check an issuer the way the API
+  does.
+- `ssl_crl` wants both lists in **one** file, which is the opposite of what the
+  API needs (Node reads only the first list in a file).
+- Server certificates get 825 days at most, and Apple enforces that against a
+  private anchor as well -- `docs/guides/certificates.md`. Let's Encrypt's are 90,
+  so this is about the Mac Mini's internal one.
+- The router has to forward 80 as well as 443, or http-01 cannot answer and the
+  certificates have to come from dns-01.
+
+**Open, and it will be found by whatever follows a `Location` header.**
+`api.olympus.ncfritz.net` forwards to the Mac Mini's `/api/`, which sets
+`X-Forwarded-Prefix /api`, so a resource created through that name answers
+`Location: /api/v1/...` -- and resolved against that origin it is
+`https://api.olympus.ncfritz.net/api/v1/...`, which the border would forward as
+`/api/api/v1/...`. Either the border declares the prefix and the Mac Mini honours
+what it declares, or that name reaches the API without the `/api` hop. Both amend
+ADR 0018, so the configuration implements the ADR as written and says so where it
+does it.
+
+**Worth doing before this is deployed twice:** the configuration reaches the NAS
+by `rsync` from the checkout, because Compose resolves bind mounts on the Docker
+host and the checkout is on the Mac Mini. That is the drift the docker plan's
+phase 4 spent an afternoon on. Baking it into an image built from here (ADR 0011)
+removes the copy, and the NAS already pulls one image from the registry.
+
 ## Phase 7 — Operations
 
 1. Signing key rotation: add a key, sign with it, retire the old one
@@ -278,7 +502,18 @@ everything else wait for the site's own conventions work.
    [docs/guides/certificates.md](../../guides/certificates.md)).
 3. `certificate_expiry_days` per certificate the API loads, so a renewal
    is due long before a handshake starts failing.
-4. Dashboards later (the monitoring conversation): `auth_decisions_total`
+4. **`iss` on access tokens.** The API issues none and
+   `verifyAccessToken` does not ask for one. RFC 9068 requires it, and
+   anything that validates a token without being this API — nginx, the site
+   reading claims, a service that arrives later — looks for it. Two deploys
+   in this order: emit it (from `AUTH_PUBLIC_BASE_URL`), then require it on
+   verify once nothing in circulation predates the first. Requiring it in one
+   deploy invalidates every token already issued, which is a sign-out for
+   everybody. Not urgent: the signing keys already stop a token crossing
+   environments, since another environment's `kid` is unknown — so this is
+   conformance rather than a hole, and `jti` stays out (nothing reads the
+   database to authenticate, so there is nothing to look a token up in).
+5. Dashboards later (the monitoring conversation): `auth_decisions_total`
    and the request metrics by client.
 
 ## Phase 8 — Enforcement

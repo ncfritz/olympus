@@ -41,7 +41,7 @@ describe("Calendar management (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, KNOWN_CALENDAR);
-    authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    authHeader = `Bearer ${issueE2eAccessToken()}`;
   });
 
   afterEach(async () => {
@@ -73,6 +73,21 @@ describe("Calendar management (e2e)", () => {
           accountLabel: KNOWN_CALENDAR.accountLabel,
           calendarId: KNOWN_CALENDAR.calendarId,
           source: "Dup",
+        },
+      })
+      .expect(409);
+  });
+
+  it("CreateCalendar 409s for a source another calendar already has", async () => {
+    await request(app.getHttpServer())
+      .post("/v1/calendars")
+      .set("Authorization", authHeader)
+      .send({
+        calendar: {
+          provider: KNOWN_CALENDAR.provider,
+          accountLabel: KNOWN_CALENDAR.accountLabel,
+          calendarId: "cal-other",
+          source: KNOWN_CALENDAR.source,
         },
       })
       .expect(409);

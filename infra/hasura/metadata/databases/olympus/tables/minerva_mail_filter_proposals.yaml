@@ -1,0 +1,29 @@
+table:
+  name: mail_filter_proposals
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    from_address:
+      custom_name: fromAddress
+    label_id:
+      custom_name: labelId
+    last_decided_at:
+      custom_name: lastDecidedTime
+  custom_column_names:
+    account_id: accountId
+    from_address: fromAddress
+    label_id: labelId
+    last_decided_at: lastDecidedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva

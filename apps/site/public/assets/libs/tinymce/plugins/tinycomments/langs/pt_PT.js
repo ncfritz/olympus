@@ -1,0 +1,60 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("pt-PT", {
+  " (edited)": "(editado)",
+  "1 comment will be deleted. You can't undo this action.": "Ser\xe1 eliminado 1 coment\xe1rio. N\xe3o pode anular esta a\xe7\xe3o.",
+  "1 comment will be resolved. You can't undo this action.": "Ser\xe1 resolvido 1 coment\xe1rio. N\xe3o pode anular esta a\xe7\xe3o.",
+  "1 day ago": "h\xe1 1 dia",
+  "1 hour ago": "h\xe1 1 hora",
+  "1 minute ago": "h\xe1 1 minuto",
+  "1 month ago": "h\xe1 1 m\xeas",
+  "1 reply": "1 resposta",
+  "1 week ago": "h\xe1 1 semana",
+  "1 year ago": "h\xe1 1 ano",
+  "Add comment": "Adicionar coment\xe1rio",
+  "Add comment...": "Adicionar coment\xe1rio...",
+  "Are you sure you want to delete this comment?": "Tem a certeza que quer eliminar este coment\xe1rio?",
+  "Clear": "Transparente",
+  "Comment": "Comentar",
+  "Comment Actions": "A\xe7\xf5es para coment\xe1rios",
+  "Comment or mention with @": "Coment\xe1rio ou men\xe7\xe3o com @",
+  "Comments": "Coment\xe1rios",
+  "Conversation Actions": "A\xe7\xf5es para conversa",
+  "Delete": "Eliminar",
+  "Delete all conversations": "Eliminar todas as conversas",
+  "Delete all conversations in the content? This cannot be undone.": "Eliminar todas as conversas no conte\xfado? Esta a\xe7\xe3o n\xe3o pode ser anulada.",
+  "Delete comment": "Eliminar coment\xe1rio",
+  "Delete conversation": "Eliminar conversa",
+  "Delete this conversation?": "Eliminar esta conversa?",
+  "Edit": "Editar",
+  "No users found": "Nenhum utilizador encontrado",
+  "Resolve": "Resolver",
+  "Resolve conversation": "Resolver conversa",
+  "Resolve this conversation?": "Resolver esta conversa?",
+  "SHOW LESS": "MOSTRAR MENOS",
+  "SHOW MORE": "MOSTRAR MAIS",
+  "Save": "Guardar",
+  "Saving": "A guardar",
+  "Show comments": "Mostrar coment\xe1rios",
+  "You are not allowed to delete all the conversations": "N\xe3o tem permiss\xe3o para eliminar todas as conversas",
+  "You are not allowed to delete this comment": "N\xe3o tem permiss\xe3o para eliminar este coment\xe1rio",
+  "You are not allowed to delete this conversation": "N\xe3o tem permiss\xe3o para eliminar esta conversa",
+  "You are not allowed to edit this comment": "N\xe3o tem permiss\xe3o para editar este coment\xe1rio",
+  "You are not allowed to resolve this conversation": "N\xe3o tem permiss\xe3o para resolver esta conversa",
+  "a moment ago": "h\xe1 um instante",
+  "{0} comments will be deleted. You can't undo this action.": "{0} coment\xe1rios ser\xe3o eliminados. N\xe3o pode anular esta a\xe7\xe3o.",
+  "{0} comments will be resolved. You can't undo this action.": "{0} coment\xe1rios ser\xe3o resolvidos. N\xe3o pode anular esta a\xe7\xe3o.",
+  "{0} days ago": "h\xe1 {0} dias",
+  "{0} hours ago": "h\xe1 {0} horas",
+  "{0} minutes ago": "h\xe1 {0} minutos",
+  "{0} months ago": "h\xe1 {0} meses",
+  "{0} replies": "{0} respostas",
+  "{0} weeks ago": "h\xe1 {0} semanas",
+  "{0} years ago": "h\xe1 {0} anos"
+});
+
+console.warn('TinyMCE language code "pt_PT" is deprecated, please use "pt-PT" instead.');

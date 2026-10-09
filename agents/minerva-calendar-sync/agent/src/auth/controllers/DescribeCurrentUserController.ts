@@ -10,14 +10,18 @@ import { DescribeCurrentUserResponse } from "../../model/auth";
 import { ApiStandardErrorResponses } from "../../openapi/controllerDecorators";
 import type { AuthUser } from "../authUser";
 import { CurrentUser } from "../currentUser";
+import { SessionService } from "../services/SessionService";
 
 @ApiBearerAuth()
 @Controller({ version: "1" })
 export class DescribeCurrentUserController {
+  constructor(private readonly sessions: SessionService) {}
+
   @Get("/auth/current-user")
   @ApiOperation({
     summary: "Describes the current user",
-    description: "Returns the signed-in user the access token belongs to.",
+    description:
+      "Returns the signed-in Olympus user the access token belongs to, as the Olympus API describes them now.",
     operationId: "DescribeCurrentUser",
     tags: ["Auth"],
   })
@@ -34,7 +38,7 @@ export class DescribeCurrentUserController {
     @Res() response: Response,
   ): Promise<void> {
     const responseBody: DescribeCurrentUserResponse = {
-      user: { email: user.email },
+      user: await this.sessions.describe(user),
     };
     response.status(HttpStatus.OK).send(responseBody);
   }

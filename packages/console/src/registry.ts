@@ -11,6 +11,18 @@
  * menu row that 404s is worse than a short menu.
  */
 
+/**
+ * Which icon a console shows. A name rather than a component: this module
+ * is read on the server (`readShellConfig`) and compiled into every image,
+ * so it stays plain data -- `ControlSider` is what maps these onto
+ * `@ant-design/icons`.
+ *
+ * The vocabulary grows with the suite. `console` is the one that means
+ * nothing in particular, for a console whose subject has no obvious glyph.
+ */
+export type ConsoleIconName =
+  "calendar" | "certificate" | "deploy" | "notification" | "console";
+
 /** A console, within its property. */
 export interface ConsoleEntry {
   /** Unique within its property, lower case: `calendar`. */
@@ -18,6 +30,12 @@ export interface ConsoleEntry {
   label: string;
   /** One line: the sidebar's tooltip and the index's card. */
   description: string;
+  /**
+   * The glyph for the collapsed sider, where it is all there is of the row,
+   * and for the index. Required for that reason: an iconless row is an
+   * invisible one, which is the `404s` argument above in another form.
+   */
+  icon: ConsoleIconName;
 }
 
 /** A major property of the platform, and its consoles. */
@@ -123,6 +141,7 @@ export const PROPERTIES: Registry = [
         label: "Calendar",
         description:
           "Calendar accounts, synced calendars, availability overrides and publishing",
+        icon: "calendar",
       },
     ],
   },

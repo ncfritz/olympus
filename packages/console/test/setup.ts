@@ -5,6 +5,17 @@ import { afterEach } from "vitest";
 // cleanup does not register itself.
 afterEach(cleanup);
 
+// The shell remembers choices per browser (the theme, the pages sider).
+// One jsdom serves a whole file, so without this a test inherits what the
+// one before it clicked.
+afterEach(() => {
+  try {
+    window.localStorage.clear();
+  } catch {
+    // Storage is best-effort in the code under test, and here too.
+  }
+});
+
 // jsdom implements neither of these, and antd's responsive components and
 // the theme provider both expect them.
 if (!window.matchMedia) {

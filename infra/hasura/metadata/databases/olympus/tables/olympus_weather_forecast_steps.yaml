@@ -1,0 +1,34 @@
+table:
+  name: weather_forecast_steps
+  schema: olympus
+configuration:
+  column_config:
+    condition_description:
+      custom_name: conditionDescription
+    condition_icon:
+      custom_name: conditionIcon
+    condition_id:
+      custom_name: conditionId
+    condition_main:
+      custom_name: conditionMain
+    fetched_at:
+      custom_name: fetchedTime
+    precipitation_chance:
+      custom_name: precipitationChance
+    precipitation_mm:
+      custom_name: precipitationMm
+    step_at:
+      custom_name: stepTime
+    temperature_f:
+      custom_name: temperatureF
+  custom_column_names:
+    condition_description: conditionDescription
+    condition_icon: conditionIcon
+    condition_id: conditionId
+    condition_main: conditionMain
+    fetched_at: fetchedTime
+    precipitation_chance: precipitationChance
+    precipitation_mm: precipitationMm
+    step_at: stepTime
+    temperature_f: temperatureF
+  custom_root_fields: {}

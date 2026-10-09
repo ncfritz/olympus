@@ -5,8 +5,9 @@ import type { AuthConfigType } from "../../../src/config/configuration";
 
 const auth = {
   modes: { users: "report", services: "report" },
+  rateLimits: "on",
   serviceRoles: { "dionysus-asset-agent": ["agent", "content"] },
-  users: { clientOrigins: [], providers: [] },
+  users: { clientOrigins: [], consoleBaseUrls: [], providers: [] },
   services: {
     enabled: false,
     port: 3443,

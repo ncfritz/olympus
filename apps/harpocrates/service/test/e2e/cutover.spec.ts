@@ -31,7 +31,9 @@ const devCa = () => {
 
 const read = (...parts: string[]) =>
   fs.readFileSync(path.join(...parts), "utf8");
-const caCertificate = (dir: string) => read(CA, dir, "ca.crt");
+/** An authority's certificate; dev-ca.sh keeps the intermediates in int-<n>. */
+const caCertificate = (name: string) =>
+  read(CA, name.replace(/^intermediate-/, "int-"), "ca.crt");
 
 type Imported = {
   imported: {

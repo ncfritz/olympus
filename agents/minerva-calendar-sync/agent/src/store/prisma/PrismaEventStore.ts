@@ -108,8 +108,12 @@ export class PrismaEventStore implements EventStore {
         eventId: event.id,
         source: event.source,
         action: event.deleted ? "delete" : "upsert",
-        // The message contract (@ncfritz/olympus-messages) is the event itself.
-        payload: JSON.stringify(event satisfies CalendarEventMessage),
+        // The message contract (@ncfritz/olympus-messages) is the event
+        // itself, stamped with when this snapshot of it was taken.
+        payload: JSON.stringify({
+          ...event,
+          snapshotTime: new Date().toISOString(),
+        } satisfies CalendarEventMessage),
       },
     });
     return [write, enqueue];
@@ -152,21 +156,6 @@ export class PrismaEventStore implements EventStore {
       ...(filter.cursor ? { skip: 1, cursor: { id: filter.cursor } } : {}),
     });
 
-    return rows.map(fromRow);
-  }
-
-  async listEventsOverlapping(
-    start: string,
-    end: string,
-  ): Promise<CanonicalCalendarEvent[]> {
-    const rows = await this.prisma.event.findMany({
-      where: {
-        cancelled: false,
-        deleted: false,
-        startTime: { lt: new Date(end) },
-        endTime: { gt: new Date(start) },
-      },
-    });
     return rows.map(fromRow);
   }
 

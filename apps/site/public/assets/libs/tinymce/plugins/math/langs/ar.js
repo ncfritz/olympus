@@ -1,0 +1,18 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("ar", {
+  "Formula": "\u0627\u0644\u0645\u0639\u0627\u062f\u0644\u0629",
+  "Inline with text": "\u0627\u0644\u0645\u062d\u0627\u0630\u0627\u0629 \u0641\u064a \u0627\u0644\u0633\u0637\u0631 \u0645\u0639 \u0627\u0644\u0646\u0635",
+  "Insert/Edit Math": "\u0625\u062f\u0627\u0631\u062c/\u062a\u062d\u0631\u064a\u0631 \u0627\u0644\u0645\u0639\u0627\u062f\u0644\u0629",
+  "Insert/Edit math": "\u0625\u062f\u0627\u0631\u062c/\u062a\u062d\u0631\u064a\u0631 \u0627\u0644\u0645\u0639\u0627\u062f\u0644\u0629",
+  "LaTeX": "LaTeX",
+  "Language": "\u0627\u0644\u0644\u063a\u0629",
+  "Math...": "\u0645\u0639\u0627\u062f\u0644\u0629...",
+  "Preview": "\u0645\u0639\u0627\u064a\u0646\u0629",
+  "Text Wrap": "\u0627\u0644\u062a\u0641\u0627\u0641 \u0627\u0644\u0646\u0635",
+  "Text above and below": "\u0627\u0644\u0646\u0635 \u0623\u0639\u0644\u0649 \u0648\u0623\u0633\u0641\u0644 \u0627\u0644\u0645\u0639\u0627\u062f\u0644\u0629"
+});

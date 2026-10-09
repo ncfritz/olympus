@@ -29,7 +29,7 @@ import {
   type OutboxStore,
 } from "../../store/outboxStore";
 import { SyncConfigService } from "../../sync/services/SyncConfigService";
-import { SyncEngine } from "../../sync/services/SyncEngine";
+import { SyncEngine, type SyncOptions } from "../../sync/services/SyncEngine";
 import type { SyncedCalendarConfig } from "../../sync/syncedCalendarConfig";
 
 // Pragmatic cap on one backfill request, same reasoning (and same order of
@@ -125,6 +125,23 @@ export class CalendarService {
   }
 
   /**
+   * Starts a full sync of the calendar's whole history in the background:
+   * from its first event, not the sync window's past days. Refused while a
+   * sync of it is running, which would otherwise skip this one silently.
+   */
+  async fullSync(calendarId: string): Promise<void> {
+    const calendar = await this.findConfigured(calendarId);
+    if (this.engine.isSyncing(calendarId)) {
+      throw new ConflictException(
+        `Calendar ${calendarId} is syncing now; try again when it's done`,
+      );
+    }
+    this.syncInBackground(calendar, "Full sync of the history failed for", {
+      fullHistory: true,
+    });
+  }
+
+  /**
    * Re-queues this calendar's current, non-deleted events onto the outbound
    * broker as a "backfill" resend — for standing up a fresh downstream
    * database, or recovering one that fell too far behind for its own
@@ -177,8 +194,12 @@ export class CalendarService {
     };
   }
 
-  private syncInBackground(calendar: SyncedCalendarConfig, what: string) {
-    this.engine.syncOne(calendar, "manual").catch((error) => {
+  private syncInBackground(
+    calendar: SyncedCalendarConfig,
+    what: string,
+    options: SyncOptions = {},
+  ) {
+    this.engine.syncOne(calendar, "manual", options).catch((error) => {
       this.logger.error(
         `${what} "${calendar.calendarId}": ${error instanceof Error ? error.message : error}`,
       );

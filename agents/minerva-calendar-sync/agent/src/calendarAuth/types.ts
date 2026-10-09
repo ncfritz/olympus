@@ -31,6 +31,8 @@ export interface CalendarAccountStatus {
   /** Source labels of the configured calendars that authorize with this account. */
   sources: string[];
   status: CalendarAccountAuthStatus;
+  /** The account's subject at its provider (ADR 0028), once recorded. */
+  subject?: string;
   /** OAuth scopes granted the last time the account completed the login flow. */
   scope?: string;
   /** ISO-8601: when the stored refresh token was obtained. */

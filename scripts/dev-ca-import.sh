@@ -43,7 +43,7 @@ cli import-issuer --id root-1-g1 --tier root --number 1 --generation 1 \
 for n in 1 2; do
   cli import-issuer --id "intermediate-$n-g1" --tier intermediate \
     --number "$n" --generation 1 \
-    --certificate "$ca/intermediate-$n/ca.crt" --chain "$ca/root/ca.crt"
+    --certificate "$ca/int-$n/ca.crt" --chain "$ca/root/ca.crt"
 done
 
 # issuing <dir> <slug> <purpose> <intermediate> <eku>...
@@ -61,11 +61,11 @@ issuing() {
 }
 
 echo "issuing CAs"
-issuing services service-issuing-1-g1 Service intermediate-2 "$CLIENT_AUTH" "$SERVER_AUTH"
-issuing devices device-issuing-1-g1 Device intermediate-2 "$CLIENT_AUTH"
-issuing signing signing-issuing-1-g1 Signing intermediate-2 \
+issuing services service-issuing-1-g1 Service int-2 "$CLIENT_AUTH" "$SERVER_AUTH"
+issuing devices device-issuing-1-g1 Device int-2 "$CLIENT_AUTH"
+issuing signing signing-issuing-1-g1 Signing int-2 \
   "$CODE_SIGNING" "$EMAIL" "$DOCUMENT_SIGNING"
-issuing tls tls-issuing-1-g1 TLS intermediate-1 "$SERVER_AUTH"
+issuing tls tls-issuing-1-g1 TLS int-1 "$SERVER_AUTH"
 
 # certificates <profile> <file>...
 certificates() {

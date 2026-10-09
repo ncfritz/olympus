@@ -1,0 +1,57 @@
+table:
+  name: mail_audit_runs
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    consistent_senders:
+      custom_name: consistentSenders
+    created_at:
+      custom_name: createdTime
+    finished_at:
+      custom_name: finishedTime
+    messages_examined:
+      custom_name: messagesExamined
+    senders_examined:
+      custom_name: sendersExamined
+    started_at:
+      custom_name: startedTime
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    account_id: accountId
+    consistent_senders: consistentSenders
+    created_at: createdTime
+    finished_at: finishedTime
+    messages_examined: messagesExamined
+    senders_examined: sendersExamined
+    started_at: startedTime
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      foreign_key_constraint_on: account_id
+array_relationships:
+  - name: changes
+    using:
+      foreign_key_constraint_on:
+        column: run_id
+        table:
+          name: mail_audit_changes
+          schema: minerva
+  - name: merges
+    using:
+      foreign_key_constraint_on:
+        column: run_id
+        table:
+          name: mail_audit_merges
+          schema: minerva
+  - name: threads
+    using:
+      foreign_key_constraint_on:
+        column: run_id
+        table:
+          name: mail_audit_threads
+          schema: minerva

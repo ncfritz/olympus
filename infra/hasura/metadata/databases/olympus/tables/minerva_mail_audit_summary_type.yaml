@@ -1,0 +1,31 @@
+table:
+  name: mail_audit_summary_type
+  schema: minerva
+configuration:
+  column_config:
+    classifier_changes:
+      custom_name: classifierChanges
+    classifier_finished_at:
+      custom_name: classifierFinishedTime
+    consistent_senders:
+      custom_name: consistentSenders
+    finished_at:
+      custom_name: finishedTime
+    high_confidence:
+      custom_name: highConfidence
+    messages_affected:
+      custom_name: messagesAffected
+    messages_examined:
+      custom_name: messagesExamined
+    started_at:
+      custom_name: startedTime
+  custom_column_names:
+    classifier_changes: classifierChanges
+    classifier_finished_at: classifierFinishedTime
+    consistent_senders: consistentSenders
+    finished_at: finishedTime
+    high_confidence: highConfidence
+    messages_affected: messagesAffected
+    messages_examined: messagesExamined
+    started_at: startedTime
+  custom_root_fields: {}

@@ -1,0 +1,16 @@
+table:
+  name: mail_statistics_summary_type
+  schema: minerva
+configuration:
+  column_config:
+    first_received_at:
+      custom_name: firstReceivedTime
+    labels_in_use:
+      custom_name: labelsInUse
+    last_received_at:
+      custom_name: lastReceivedTime
+  custom_column_names:
+    first_received_at: firstReceivedTime
+    labels_in_use: labelsInUse
+    last_received_at: lastReceivedTime
+  custom_root_fields: {}

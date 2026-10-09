@@ -17,8 +17,8 @@ import {
   NOTE_WITH_ASSOCIATIONS_WITH_NOTE_ID,
 } from "../queries/notes";
 
-type GraphQlNoteByPkResponse = {
-  minerva_notes_by_pk: GraphQlNote | null;
+type GraphQlNoteResponse = {
+  minerva_notes: GraphQlNote[];
 };
 
 type GraphQlCreateNoteResponse = {
@@ -26,16 +26,16 @@ type GraphQlCreateNoteResponse = {
 };
 
 type GraphQlUpdateNoteResponse = {
-  update_minerva_notes_by_pk: GraphQlNote | null;
+  update_minerva_notes: { returning: GraphQlNote[] };
 };
 
 type GraphQlGetDeletedTimeResponse = {
-  minerva_notes_by_pk: { deletedTime: string | null } | null;
+  minerva_notes: { deletedTime: string | null }[];
 };
 
 type GraphQlHardDeleteNoteResponse = {
   update_minerva_notes: { affected_rows: number };
-  delete_minerva_notes_by_pk: GraphQlNote;
+  delete_minerva_notes: { returning: GraphQlNote[] };
 };
 
 type GraphQlListNotesResponse = {
@@ -81,31 +81,56 @@ const NOTE_TYPES: (keyof NoteTypeCounts)[] = [
 const typeForId = (id: number): keyof NoteTypeCounts =>
   NOTE_TYPES[id] ?? "note";
 
-// Notes are single-user for now.
-const AUTHOR_FILTER: FilterDefinition = {
-  name: "author",
+/** Only the user's own notes (ADR 0028). */
+const userFilter = (userId: string): FilterDefinition => ({
+  name: "userId",
   type: FilterType.EQUALS,
-  value: "ncfritz",
-};
+  value: userId,
+});
 
 const notFound = (noteId: string) =>
   new NotFoundException(`Note with id ${noteId} not found`);
 
-/** Minerva notes in Hasura: every note operation's data access. */
+/**
+ * Columns a change set may not touch: the note's identity and its owner.
+ * Change sets arrive as Hasura column names, unchecked.
+ */
+const PROTECTED_COLUMNS = new Set(["id", "user_id", "userId"]);
+
+const withoutProtectedColumns = (changes: PartialNote): PartialNote =>
+  Object.fromEntries(
+    Object.entries(changes).filter(
+      ([column]) => !PROTECTED_COLUMNS.has(column),
+    ),
+  ) as PartialNote;
+
+/**
+ * Minerva notes in Hasura: every note operation's data access. Notes belong
+ * to a user (ADR 0028): every method takes the caller's user ID and reads
+ * and writes only that user's notes. Another user's note is not found.
+ */
 @Injectable()
 export class NoteService {
   private readonly logger = new Logger(NoteService.name);
 
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  /** Creates a note, as a child of `parentId` when given. */
+  /**
+   * Creates one of the user's notes, as a child of `parentId` when given,
+   * which must be the user's. @throws NotFoundException
+   */
   async create(
+    userId: string,
     note: BaseNoteWithAssociations,
     parentId?: string,
   ): Promise<Note> {
+    if (parentId !== undefined) {
+      await this.requireOwn(userId, parentId);
+    }
+
     const request = gql`
       mutation CreateNote(
-        $author: String!
+        $userId: uuid!
         $flagged: Boolean!
         $type: numeric!
         $value: String!
@@ -116,7 +141,7 @@ export class NoteService {
       ) {
         insert_minerva_notes_one(
           object: {
-            author: $author
+            userId: $userId
             flagged: $flagged
             type: $type
             value: $value
@@ -140,13 +165,16 @@ export class NoteService {
 
     const response =
       await this.graphQLClient.request<GraphQlCreateNoteResponse>(request, {
-        author: note.author,
+        userId,
         type: note.type,
         flagged: note.flagged,
         value: note.value,
         summary: note.summary,
         title: note.title,
-        associations: note.associations,
+        associations: note.associations.map((association) => ({
+          ...association,
+          userId,
+        })),
         parentId: parentId,
       });
 
@@ -154,30 +182,47 @@ export class NoteService {
   }
 
   /** @throws NotFoundException */
-  async describe(noteId: string): Promise<Note> {
+  async describe(userId: string, noteId: string): Promise<Note> {
     const request = gql`
-      query DescribeNote($id: uuid!) {
-        minerva_notes_by_pk(id: $id) {
+      query DescribeNote($id: uuid!, $userId: uuid!) {
+        minerva_notes(
+          where: { id: { _eq: $id }, userId: { _eq: $userId } }
+          limit: 1
+        ) {
           ${NOTE_WITH_ASSOCIATIONS}
         }
       }
     `;
 
-    const response = await this.graphQLClient.request<GraphQlNoteByPkResponse>(
+    const response = await this.graphQLClient.request<GraphQlNoteResponse>(
       request,
-      { id: noteId },
+      { id: noteId, userId },
     );
 
-    if (!response.minerva_notes_by_pk) throw notFound(noteId);
-    return toDomainObject(response.minerva_notes_by_pk);
+    const found = response.minerva_notes[0];
+    if (!found) throw notFound(noteId);
+    return toDomainObject(found);
   }
 
   /** Applies `changes` (Hasura column names) to a note. @throws NotFoundException */
-  async update(noteId: string, changes: PartialNote): Promise<Note> {
+  async update(
+    userId: string,
+    noteId: string,
+    changes: PartialNote,
+  ): Promise<Note> {
     const request = gql`
-      mutation UpdateNote($id: uuid!, $changes: minerva_notes_set_input = {}) {
-        update_minerva_notes_by_pk(pk_columns: { id: $id }, _set: $changes) {
-          ${NOTE_WITH_ASSOCIATIONS}
+      mutation UpdateNote(
+        $id: uuid!
+        $userId: uuid!
+        $changes: minerva_notes_set_input = {}
+      ) {
+        update_minerva_notes(
+          where: { id: { _eq: $id }, userId: { _eq: $userId } }
+          _set: $changes
+        ) {
+          returning {
+            ${NOTE_WITH_ASSOCIATIONS}
+          }
         }
       }
     `;
@@ -185,21 +230,26 @@ export class NoteService {
     const response =
       await this.graphQLClient.request<GraphQlUpdateNoteResponse>(request, {
         id: noteId,
-        changes,
+        userId,
+        changes: withoutProtectedColumns(changes),
       });
 
-    if (!response.update_minerva_notes_by_pk) throw notFound(noteId);
-    return toDomainObject(response.update_minerva_notes_by_pk);
+    const updated = response.update_minerva_notes.returning[0];
+    if (!updated) throw notFound(noteId);
+    return toDomainObject(updated);
   }
 
   /**
    * Soft-deletes a note; deleting a soft-deleted note removes it and
    * detaches its children. @throws NotFoundException
    */
-  async delete(noteId: string): Promise<DeletedNote> {
+  async delete(userId: string, noteId: string): Promise<DeletedNote> {
     const getDeletedTimeRequest = gql`
-      query GetDeletedTime($id: uuid!) {
-        minerva_notes_by_pk(id: $id) {
+      query GetDeletedTime($id: uuid!, $userId: uuid!) {
+        minerva_notes(
+          where: { id: { _eq: $id }, userId: { _eq: $userId } }
+          limit: 1
+        ) {
           deletedTime
         }
       }
@@ -208,23 +258,28 @@ export class NoteService {
     const current =
       await this.graphQLClient.request<GraphQlGetDeletedTimeResponse>(
         getDeletedTimeRequest,
-        { id: noteId },
+        { id: noteId, userId },
       );
 
-    if (!current.minerva_notes_by_pk) throw notFound(noteId);
+    const found = current.minerva_notes[0];
+    if (!found) throw notFound(noteId);
 
-    this.logger.debug(
-      `Note ${noteId} deletedTime: ${current.minerva_notes_by_pk.deletedTime}`,
-    );
+    this.logger.debug(`Note ${noteId} deletedTime: ${found.deletedTime}`);
 
-    if (current.minerva_notes_by_pk.deletedTime === null) {
+    if (found.deletedTime === null) {
       const softDeleteRequest = gql`
-        mutation SoftDeleteNote($id: uuid!, $timestamp: timestamptz!) {
-          update_minerva_notes_by_pk(
-            pk_columns: { id: $id }
+        mutation SoftDeleteNote(
+          $id: uuid!
+          $userId: uuid!
+          $timestamp: timestamptz!
+        ) {
+          update_minerva_notes(
+            where: { id: { _eq: $id }, userId: { _eq: $userId } }
             _set: { deletedTime: $timestamp }
           ) {
-            ${NOTE_WITH_ASSOCIATIONS}
+            returning {
+              ${NOTE_WITH_ASSOCIATIONS}
+            }
           }
         }
       `;
@@ -232,23 +287,31 @@ export class NoteService {
       const response =
         await this.graphQLClient.request<GraphQlUpdateNoteResponse>(
           softDeleteRequest,
-          { id: noteId, timestamp: moment.utc() },
+          { id: noteId, userId, timestamp: moment.utc() },
         );
 
-      if (!response.update_minerva_notes_by_pk) throw notFound(noteId);
+      const softDeleted = response.update_minerva_notes.returning[0];
+      if (!softDeleted) throw notFound(noteId);
       return {
-        note: toDomainObject(response.update_minerva_notes_by_pk),
+        note: toDomainObject(softDeleted),
         hardDeleted: false,
       };
     }
 
     const hardDeleteRequest = gql`
-      mutation HardDeleteNote($id: uuid!) {
-        update_minerva_notes(where: {parent_id: {_eq: $id}}, _set: {parent_id: null}) {
+      mutation HardDeleteNote($id: uuid!, $userId: uuid!) {
+        update_minerva_notes(
+          where: { parent_id: { _eq: $id }, userId: { _eq: $userId } }
+          _set: { parent_id: null }
+        ) {
           affected_rows
         }
-        delete_minerva_notes_by_pk(id: $id) {
-          ${NOTE_WITH_ASSOCIATIONS}
+        delete_minerva_notes(
+          where: { id: { _eq: $id }, userId: { _eq: $userId } }
+        ) {
+          returning {
+            ${NOTE_WITH_ASSOCIATIONS}
+          }
         }
       }
     `;
@@ -256,28 +319,32 @@ export class NoteService {
     const response =
       await this.graphQLClient.request<GraphQlHardDeleteNoteResponse>(
         hardDeleteRequest,
-        { id: noteId },
+        { id: noteId, userId },
       );
 
     this.logger.log(
       `Disassociated ${response.update_minerva_notes.affected_rows} child notes.`,
     );
 
+    const hardDeleted = response.delete_minerva_notes.returning[0];
+    if (!hardDeleted) throw notFound(noteId);
     return {
-      note: toDomainObject(response.delete_minerva_notes_by_pk),
+      note: toDomainObject(hardDeleted),
       hardDeleted: true,
     };
   }
 
   /** Clears a note's soft delete. @throws NotFoundException */
-  async restore(noteId: string): Promise<Note> {
+  async restore(userId: string, noteId: string): Promise<Note> {
     const request = gql`
-      mutation RestoreNote($id: uuid!) {
-        update_minerva_notes_by_pk(
-          pk_columns: { id: $id }
+      mutation RestoreNote($id: uuid!, $userId: uuid!) {
+        update_minerva_notes(
+          where: { id: { _eq: $id }, userId: { _eq: $userId } }
           _set: { deletedTime: null }
         ) {
-          ${NOTE_WITH_ASSOCIATIONS}
+          returning {
+            ${NOTE_WITH_ASSOCIATIONS}
+          }
         }
       }
     `;
@@ -285,19 +352,21 @@ export class NoteService {
     const response =
       await this.graphQLClient.request<GraphQlUpdateNoteResponse>(request, {
         id: noteId,
+        userId,
       });
 
-    if (!response.update_minerva_notes_by_pk) throw notFound(noteId);
-    return toDomainObject(response.update_minerva_notes_by_pk);
+    const restored = response.update_minerva_notes.returning[0];
+    if (!restored) throw notFound(noteId);
+    return toDomainObject(restored);
   }
 
   /** The children of a note, newest first. */
-  async listChildren(noteId: string): Promise<Note[]> {
+  async listChildren(userId: string, noteId: string): Promise<Note[]> {
     const whereExpression = buildFilterExpression({
       name: "_",
       type: FilterType.AND,
       value: [
-        AUTHOR_FILTER,
+        userFilter(userId),
         { name: "parent_id", type: FilterType.EQUALS, value: noteId },
       ],
     });
@@ -319,7 +388,11 @@ export class NoteService {
   }
 
   /** Top-level notes created in [start, start + days), newest first. */
-  async listForDays(start: string, days: number): Promise<Note[]> {
+  async listForDays(
+    userId: string,
+    start: string,
+    days: number,
+  ): Promise<Note[]> {
     const startTime = moment(start).utc();
     const endTime = moment(startTime).add({ days: days });
 
@@ -327,7 +400,7 @@ export class NoteService {
       name: "_",
       type: FilterType.AND,
       value: [
-        AUTHOR_FILTER,
+        userFilter(userId),
         {
           name: "_",
           type: FilterType.AND,
@@ -365,12 +438,24 @@ export class NoteService {
   }
 
   /** Notes associated with an entity, newest association first. */
-  async listForEntity(entityType: string, entityId: string): Promise<Note[]> {
+  async listForEntity(
+    userId: string,
+    entityType: string,
+    entityId: string,
+  ): Promise<Note[]> {
     const request = gql`
-      query GetNotesForEntity($entityId: String!, $entityType: String!) {
+      query GetNotesForEntity(
+        $entityId: String!
+        $entityType: String!
+        $userId: uuid!
+      ) {
         minerva_note_associations(
           where: {
-            _and: { itemId: { _eq: $entityId }, itemType: { _eq: $entityType } }
+            _and: {
+              itemId: { _eq: $entityId }
+              itemType: { _eq: $entityType }
+              userId: { _eq: $userId }
+            }
           }
           order_by: { createdTime: desc }
         ) {
@@ -384,7 +469,7 @@ export class NoteService {
     const response =
       await this.graphQLClient.request<GraphQlListNoteAssociationsResponse>(
         request,
-        { entityType, entityId },
+        { entityType, entityId, userId },
       );
     return response.minerva_note_associations.map((association) =>
       toDomainObject(association.note),
@@ -396,13 +481,19 @@ export class NoteService {
    * of the day, in time zone `tz`.
    */
   async getSummary(
+    userId: string,
     end: string,
     days: number,
     tz: string,
   ): Promise<GetSummaryResponse> {
     const endDate = moment(end);
     const startDate = moment(endDate).subtract({ days: days });
-    const variables = { start: startDate, end: endDate, tz: tz };
+    const variables = {
+      userId,
+      start: startDate,
+      end: endDate,
+      tz: tz,
+    };
 
     const counts: Record<string, NoteTypeCounts> = {};
     const hourly: Record<string, NoteTypeCounts> = {};
@@ -421,12 +512,18 @@ export class NoteService {
 
     const monthlyRequest = gql`
       query GetMonthlyCounts(
+        $userId: uuid!
         $tz: String!
         $start: timestamptz!
         $end: timestamptz!
       ) {
         minerva_notes_type_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
+          args: {
+            for_user: $userId
+            start_date: $start
+            end_date: $end
+            tz: $tz
+          }
         ) {
           created
           count
@@ -448,12 +545,18 @@ export class NoteService {
 
     const hourlyRequest = gql`
       query GetHourlyCounts(
+        $userId: uuid!
         $tz: String!
         $start: timestamptz!
         $end: timestamptz!
       ) {
         minerva_notes_hour_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
+          args: {
+            for_user: $userId
+            start_date: $start
+            end_date: $end
+            tz: $tz
+          }
         ) {
           count
           hour
@@ -474,5 +577,23 @@ export class NoteService {
     });
 
     return { counts, hourly };
+  }
+
+  /** @throws NotFoundException unless `noteId` is one of the user's notes. */
+  private async requireOwn(userId: string, noteId: string): Promise<void> {
+    const request = gql`
+      query GetOwnNote($id: uuid!, $userId: uuid!) {
+        minerva_notes(
+          where: { id: { _eq: $id }, userId: { _eq: $userId } }
+          limit: 1
+        ) {
+          id
+        }
+      }
+    `;
+    const response = await this.graphQLClient.request<{
+      minerva_notes: { id: string }[];
+    }>(request, { id: noteId, userId });
+    if (response.minerva_notes.length === 0) throw notFound(noteId);
   }
 }

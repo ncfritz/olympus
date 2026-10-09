@@ -46,7 +46,6 @@ import {
   networkRow,
   productionCompanyRow,
 } from "../fixtures/metadata";
-import { graphQlMeeting, graphQlNote } from "../fixtures/minerva";
 import { controllers } from "../support/controllers";
 import { createTestApp, type TestApp } from "../support/testApp";
 
@@ -62,7 +61,6 @@ type Case = {
 };
 
 const D = "/v1/dionysus";
-const noteId = graphQlNote().id;
 const configExists = {
   dionysus_media_asset_search_configuration_by_pk: {
     assetType: "movie",
@@ -86,33 +84,6 @@ const channel = {
 };
 
 const CASES: Case[] = [
-  // Minerva
-  {
-    name: "CreateNote",
-    method: "post",
-    url: "/v1/minerva/notes",
-    body: { note: { value: "x" } },
-    graphql: { CreateNote: { insert_minerva_notes_one: graphQlNote() } },
-    location: `/minerva/note/${noteId}`,
-  },
-  {
-    name: "CreateChildNote",
-    method: "post",
-    url: "/v1/minerva/note/parent-1/children",
-    body: { note: { value: "x" } },
-    graphql: { CreateNote: { insert_minerva_notes_one: graphQlNote() } },
-    location: `/minerva/note/${noteId}`,
-  },
-  {
-    name: "CreateCalendarItem",
-    method: "post",
-    url: "/v1/minerva/meetings",
-    body: { item: { id: "meeting-1", organizer: {}, attendees: [] } },
-    graphql: {
-      CreateMeeting: { insert_minerva_meetings_one: graphQlMeeting() },
-    },
-    location: `/minerva/meeting/${graphQlMeeting().id}`,
-  },
   // Dionysus content
   {
     name: "CreateContentAsset",
@@ -161,7 +132,9 @@ const CASES: Case[] = [
     url: `${D}/content/assetTags`,
     body: { tag: { name: "beach", type: "user" } },
     graphql: {
-      CreateTag: { insert_dionysus_content_tags_one: graphQlContentTag() },
+      CreateContentAssetTag: {
+        insert_dionysus_content_tags_one: graphQlContentTag(),
+      },
     },
   },
   {
@@ -636,7 +609,57 @@ describe("Location headers of created resources", () => {
 
   it("has a case for every operation that answers 201 with one resource", () => {
     // No GET route for a notification; an upload creates several workflows.
-    const exempt = ["CreateNotification", "UploadAssets"];
+    // These need a signed-in caller, which this app has no keys for; their
+    // own specs (weatherLocations, weatherStations, and minerva's notes,
+    // calendar, tags, goalCategories, goalCycles, goals, reviews,
+    // reviewPrompts, reviewItems, reviewAnswers and availability) assert their Location
+    // headers.
+    // CreateGoalMilestone, CreateGoalCheckin, CreateReviewPin and
+    // CreateReviewAnswerItem have no GET route, so they set none; nor has
+    // AddCalendar, whose calendar is listed but not described alone, nor
+    // CreateMailLabelFamily, whose families are listed only (mailLabels),
+    // nor CreateMailSuggestionRun and CreateMailSuggestions, whose runs and
+    // suggestions the classifier only writes (mailSuggestions), nor the
+    // cluster runs' creates, whose runs are read only as the newest map
+    // (mailClusters), nor CreateMailFilter, whose filters are listed only
+    // (mailFilters).
+    // ApplyMailChanges, UndoMailChangeBatch and MergeMailLabels need a
+    // signed-in caller too; mailChanges asserts their Location headers.
+    const exempt = [
+      "CreateNotification",
+      "UploadAssets",
+      "CreateWeatherLocation",
+      "CreateWeatherStation",
+      "CreateNote",
+      "CreateChildNote",
+      "CreateCalendarItem",
+      "CreateTag",
+      "CreateGoalCategory",
+      "CreateGoalCycle",
+      "CreateGoal",
+      "CreateGoalMilestone",
+      "CreateGoalCheckin",
+      "CreateReview",
+      "CreateReviewPrompt",
+      "CreateReviewItem",
+      "CarryReviewItem",
+      "CreateReviewPin",
+      "CreateReviewAnswerItem",
+      "CreateReviewAnswerTodo",
+      "AddCalendar",
+      "CreateAvailabilityBlock",
+      "CreateMailLabelFamily",
+      "CreateMailSuggestionRun",
+      "CreateMailSuggestions",
+      "CreateMailClusterRun",
+      "CreateMailClusters",
+      "CreateMailClusterMembers",
+      "CreateMailClusterPoints",
+      "CreateMailFilter",
+      "ApplyMailChanges",
+      "UndoMailChangeBatch",
+      "MergeMailLabels",
+    ];
     const creates = controllers
       .filter((c) => "201" in (c.routes[0]?.responses ?? {}))
       .map((c) => c.className.replace(/Controller$/, ""))

@@ -26,6 +26,7 @@ export const MEETING_CORE = `id
   importance
   location
   occurrence_type
+  organizer_email
   organizer {
     ${MEETING_USER}
   }

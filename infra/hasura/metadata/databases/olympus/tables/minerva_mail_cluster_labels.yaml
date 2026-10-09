@@ -1,0 +1,26 @@
+table:
+  name: mail_cluster_labels
+  schema: minerva
+configuration:
+  column_config:
+    cluster_id:
+      custom_name: clusterId
+    created_at:
+      custom_name: createdTime
+    label_id:
+      custom_name: labelId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    cluster_id: clusterId
+    created_at: createdTime
+    label_id: labelId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: cluster
+    using:
+      foreign_key_constraint_on: cluster_id
+  - name: label
+    using:
+      foreign_key_constraint_on: label_id

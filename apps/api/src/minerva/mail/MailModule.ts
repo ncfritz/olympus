@@ -1,0 +1,191 @@
+import { ApproveMailMessagesController } from "./controllers/ApproveMailMessagesController";
+import { GetMailMessageContentController } from "./controllers/GetMailMessageContentController";
+import { ListMailInboxToScoreController } from "./controllers/ListMailInboxToScoreController";
+import { ListMailTrainingDecisionsController } from "./controllers/ListMailTrainingDecisionsController";
+import { ListMailInboxController } from "./controllers/ListMailInboxController";
+import { SkipMailMessagesController } from "./controllers/SkipMailMessagesController";
+import { UpdateMailMessageFlagsController } from "./controllers/UpdateMailMessageFlagsController";
+import { ApplyMailChangesController } from "./controllers/ApplyMailChangesController";
+import { MergeMailLabelsController } from "./controllers/MergeMailLabelsController";
+import { PreviewMailLabelMergeController } from "./controllers/PreviewMailLabelMergeController";
+import { ApplyMatchingMailProposalsController } from "./controllers/ApplyMatchingMailProposalsController";
+import { DismissMatchingMailProposalsController } from "./controllers/DismissMatchingMailProposalsController";
+import { DescribeMailChangeBatchController } from "./controllers/DescribeMailChangeBatchController";
+import { DismissMailProposalsController } from "./controllers/DismissMailProposalsController";
+import { ListMailChangeBatchesController } from "./controllers/ListMailChangeBatchesController";
+import { UndoMailChangeBatchController } from "./controllers/UndoMailChangeBatchController";
+import { UpdateMailChangeBatchController } from "./controllers/UpdateMailChangeBatchController";
+import { MailChangeService } from "./services/MailChangeService";
+import { Module } from "@nestjs/common";
+import { GraphQLClientModule } from "../../infra/GraphQLClientModule";
+import { RabbitModule } from "../../infra/RabbitModule";
+import { CompleteMailAccountConnectController } from "./controllers/CompleteMailAccountConnectController";
+import { ConnectMailAccountController } from "./controllers/ConnectMailAccountController";
+import { CreateMailLabelFamilyController } from "./controllers/CreateMailLabelFamilyController";
+import { CreateMailSuggestionRunController } from "./controllers/CreateMailSuggestionRunController";
+import { CreateMailSuggestionsController } from "./controllers/CreateMailSuggestionsController";
+import { DeleteMailLabelFamilyController } from "./controllers/DeleteMailLabelFamilyController";
+import { ExportMailAuditChangesController } from "./controllers/ExportMailAuditChangesController";
+import { GetMailAuditController } from "./controllers/GetMailAuditController";
+import { GetMailStatisticsController } from "./controllers/GetMailStatisticsController";
+import { ImportMailAccountController } from "./controllers/ImportMailAccountController";
+import { ListMailAccountsController } from "./controllers/ListMailAccountsController";
+import { ListMailMessageStatesController } from "./controllers/ListMailMessageStatesController";
+import { ListMailAuditChangesController } from "./controllers/ListMailAuditChangesController";
+import { ListMailLabelFamiliesController } from "./controllers/ListMailLabelFamiliesController";
+import { ListMailLabelsController } from "./controllers/ListMailLabelsController";
+import { ListMailSyncAccountsController } from "./controllers/ListMailSyncAccountsController";
+import { ListMailTrainingAccountsController } from "./controllers/ListMailTrainingAccountsController";
+import { ListMailTrainingExamplesController } from "./controllers/ListMailTrainingExamplesController";
+import { ListMailTrainingLabelsController } from "./controllers/ListMailTrainingLabelsController";
+import { PublishMailSuggestionRunController } from "./controllers/PublishMailSuggestionRunController";
+import { RecordMailMessageSuggestionsController } from "./controllers/RecordMailMessageSuggestionsController";
+import { SyncMailLabelsController } from "./controllers/SyncMailLabelsController";
+import { UpdateMailAccountSyncController } from "./controllers/UpdateMailAccountSyncController";
+import { RunMailAuditController } from "./controllers/RunMailAuditController";
+import { UpdateMailLabelController } from "./controllers/UpdateMailLabelController";
+import { MailMessageHandler } from "./handlers/MailMessageHandler";
+import { MailAccountService } from "./services/MailAccountService";
+import { MailAuditService } from "./services/MailAuditService";
+import { MailLabelService } from "./services/MailLabelService";
+import { MailLinkService } from "./services/MailLinkService";
+import { MailMessageQueues } from "./services/MailMessageQueues";
+import { MailMessageService } from "./services/MailMessageService";
+import { MailStatisticsService } from "./services/MailStatisticsService";
+import { MailSuggestionService } from "./services/MailSuggestionService";
+import { MailInboxService } from "./services/MailInboxService";
+import { MailClusterService } from "./services/MailClusterService";
+import { MailStarService } from "./services/MailStarService";
+import { MailPaymentService } from "./services/MailPaymentService";
+import { MailFilterService } from "./services/MailFilterService";
+import { AcceptMailPaymentMatchesController } from "./controllers/AcceptMailPaymentMatchesController";
+import { ListMailPaymentExamplesController } from "./controllers/ListMailPaymentExamplesController";
+import { RecordMailPaymentScoresController } from "./controllers/RecordMailPaymentScoresController";
+import { ListMailFilterProposalsController } from "./controllers/ListMailFilterProposalsController";
+import { ListMailFiltersController } from "./controllers/ListMailFiltersController";
+import { CreateMailFilterController } from "./controllers/CreateMailFilterController";
+import { DismissMailFilterProposalController } from "./controllers/DismissMailFilterProposalController";
+import { DeleteMailFilterController } from "./controllers/DeleteMailFilterController";
+import { ListMailPaymentMatchesController } from "./controllers/ListMailPaymentMatchesController";
+import { ListMailOpenBillsController } from "./controllers/ListMailOpenBillsController";
+import { DismissMailPaymentMatchesController } from "./controllers/DismissMailPaymentMatchesController";
+import { ListMailStarMismatchesController } from "./controllers/ListMailStarMismatchesController";
+import { ListMailThreadMessagesController } from "./controllers/ListMailThreadMessagesController";
+import { CreateMailClusterRunController } from "./controllers/CreateMailClusterRunController";
+import { CreateMailClustersController } from "./controllers/CreateMailClustersController";
+import { CreateMailClusterMembersController } from "./controllers/CreateMailClusterMembersController";
+import { CreateMailClusterPointsController } from "./controllers/CreateMailClusterPointsController";
+import { PublishMailClusterRunController } from "./controllers/PublishMailClusterRunController";
+import { GetMailClusterMapController } from "./controllers/GetMailClusterMapController";
+import { DescribeMailClusterController } from "./controllers/DescribeMailClusterController";
+import { ListMailClusterMembersController } from "./controllers/ListMailClusterMembersController";
+import { ListMailClusterSuggestionsController } from "./controllers/ListMailClusterSuggestionsController";
+import { ProxyMailImageController } from "./controllers/ProxyMailImageController";
+import { MailImageFetcher } from "./services/MailImageFetcher";
+import { MailImageProxy } from "./services/MailImageProxy";
+import { MailSyncService } from "./services/MailSyncService";
+import { MailTrainingService } from "./services/MailTrainingService";
+import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
+
+/**
+ * Mail: each user's Gmail labels, message metadata, label suggestions and
+ * reviewed changes (ADR 0030, docs/plans/email-management/README.md): the
+ * agent's account import, the consumer of its message metadata, and the
+ * statistics and audit over it, label kinds, and the classifier's
+ * training data and suggestions, and linking mailboxes to Gmail and
+ * keeping them in step with it.
+ */
+@Module({
+  imports: [GraphQLClientModule, RabbitModule],
+  providers: [
+    MailAccountService,
+    MailAuditService,
+    MailLabelService,
+    MailLinkService,
+    MailMessageService,
+    MailMessageQueues,
+    MailMessageHandler,
+    MailStatisticsService,
+    MailSuggestionService,
+    MailInboxService,
+    MailClusterService,
+    MailStarService,
+    MailPaymentService,
+    MailFilterService,
+    MailSyncService,
+    MailChangeService,
+    MailTrainingService,
+    MinervaMailAgentClient,
+    MailImageProxy,
+    MailImageFetcher,
+  ],
+  controllers: [
+    // The static callback before ImportMailAccount's sibling routes.
+    CompleteMailAccountConnectController,
+    ConnectMailAccountController,
+    ProxyMailImageController,
+    CreateMailLabelFamilyController,
+    CreateMailSuggestionRunController,
+    CreateMailSuggestionsController,
+    DeleteMailLabelFamilyController,
+    ExportMailAuditChangesController,
+    GetMailAuditController,
+    GetMailStatisticsController,
+    ImportMailAccountController,
+    ListMailAccountsController,
+    ListMailMessageStatesController,
+    ApplyMailChangesController,
+    ApproveMailMessagesController,
+    GetMailMessageContentController,
+    ListMailInboxController,
+    ListMailInboxToScoreController,
+    ListMailTrainingDecisionsController,
+    SkipMailMessagesController,
+    UpdateMailMessageFlagsController,
+    MergeMailLabelsController,
+    PreviewMailLabelMergeController,
+    ApplyMatchingMailProposalsController,
+    DismissMatchingMailProposalsController,
+    DescribeMailChangeBatchController,
+    DismissMailProposalsController,
+    ListMailChangeBatchesController,
+    UndoMailChangeBatchController,
+    UpdateMailChangeBatchController,
+    ListMailAuditChangesController,
+    ListMailLabelFamiliesController,
+    ListMailLabelsController,
+    ListMailSyncAccountsController,
+    ListMailTrainingAccountsController,
+    ListMailTrainingExamplesController,
+    ListMailTrainingLabelsController,
+    PublishMailSuggestionRunController,
+    ListMailStarMismatchesController,
+    ListMailThreadMessagesController,
+    AcceptMailPaymentMatchesController,
+    ListMailPaymentExamplesController,
+    RecordMailPaymentScoresController,
+    ListMailFilterProposalsController,
+    ListMailFiltersController,
+    CreateMailFilterController,
+    DismissMailFilterProposalController,
+    DeleteMailFilterController,
+    ListMailPaymentMatchesController,
+    ListMailOpenBillsController,
+    DismissMailPaymentMatchesController,
+    CreateMailClusterRunController,
+    CreateMailClustersController,
+    CreateMailClusterMembersController,
+    CreateMailClusterPointsController,
+    PublishMailClusterRunController,
+    GetMailClusterMapController,
+    DescribeMailClusterController,
+    ListMailClusterMembersController,
+    ListMailClusterSuggestionsController,
+    RecordMailMessageSuggestionsController,
+    RunMailAuditController,
+    SyncMailLabelsController,
+    UpdateMailAccountSyncController,
+    UpdateMailLabelController,
+  ],
+})
+export class MailModule {}

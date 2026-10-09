@@ -5,7 +5,8 @@ import { AppModule } from "../../src/AppModule";
 import { configureApp } from "../../src/configureApp";
 import { issueE2eAccessToken } from "./auth-fixtures";
 import { seedCalendar } from "./calendar-fixtures";
-import { afterEach, describe, expect, it } from "vitest";
+import { SyncEngine } from "../../src/sync/services/SyncEngine";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // A never-real account label: SyncEngine's fire-and-forget attempt to
 // resolve it fails fast on a missing local credential file (no network
@@ -44,7 +45,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendars")
@@ -68,7 +69,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendars")
@@ -84,7 +85,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .post("/v1/calendar/unknown/sync")
@@ -100,12 +101,61 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .post(`/v1/calendar/${FAKE_CALENDAR.calendarId}/sync`)
       .set("Authorization", authHeader)
       .expect(202);
+  });
+
+  it("FullSyncCalendar 404s for an unconfigured calendar", async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleFixture.createNestApplication();
+    configureApp(app);
+    await app.init();
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
+
+    await request(app.getHttpServer())
+      .post("/v1/calendar/unknown/full-sync")
+      .set("Authorization", authHeader)
+      .expect(404);
+  });
+
+  it("FullSyncCalendar accepts a configured calendar", async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleFixture.createNestApplication();
+    configureApp(app);
+    await app.init();
+    await seedCalendar(app, FAKE_CALENDAR);
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
+
+    await request(app.getHttpServer())
+      .post(`/v1/calendar/${FAKE_CALENDAR.calendarId}/full-sync`)
+      .set("Authorization", authHeader)
+      .expect(202);
+  });
+
+  it("FullSyncCalendar refuses a calendar that is syncing now, rather than skipping it silently", async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleFixture.createNestApplication();
+    configureApp(app);
+    await app.init();
+    await seedCalendar(app, FAKE_CALENDAR);
+    vi.spyOn(app.get(SyncEngine), "isSyncing").mockReturnValue(true);
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
+
+    const response = await request(app.getHttpServer())
+      .post(`/v1/calendar/${FAKE_CALENDAR.calendarId}/full-sync`)
+      .set("Authorization", authHeader)
+      .expect(409);
+    expect(response.body.message).toMatch(/syncing now/);
   });
 
   it("UpdateCalendar (enabled) 404s for an unconfigured calendar", async () => {
@@ -115,7 +165,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put("/v1/calendar/unknown")
@@ -132,7 +182,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)
@@ -182,7 +232,7 @@ describe("Calendars (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put("/v1/calendar/unknown")
@@ -199,7 +249,7 @@ describe("Calendars (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .put(`/v1/calendar/${FAKE_CALENDAR.calendarId}`)

@@ -1,7 +1,15 @@
 import { ApiTimestamp } from "@ncfritz/olympus-model";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsIn, IsOptional, ValidateNested } from "class-validator";
+import {
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Length,
+  ValidateNested,
+} from "class-validator";
 import type { Moment } from "moment";
 import {
   CALENDAR_ACCOUNT_AUTH_STATUS_VALUES,
@@ -50,6 +58,14 @@ export class CalendarAccount {
       "The credential's status: ok, expired (a new sign-in is needed), reauth_pending, not_connected or error",
   })
   status: CalendarAccountAuthStatus;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The account's permanent ID at its provider (Google's sub; Microsoft's <tid>:<oid>), once recorded",
+  })
+  subject?: string;
 
   @ApiProperty({
     type: String,
@@ -197,6 +213,17 @@ export class CalendarAccountProviderQuery {
   provider?: CalendarProviderName;
 }
 
+/** Which provider's account to delete: required, since a deletion must not guess. */
+export class CalendarAccountRemovalQuery {
+  @ApiProperty({
+    ...CALENDAR_PROVIDER_ENUM,
+    required: true,
+    description: "The account's provider",
+  })
+  @IsIn(CALENDAR_PROVIDER_VALUES)
+  provider: CalendarProviderName;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -246,4 +273,184 @@ export class ListAvailableCalendarsResponse {
     description: "The account's calendars.",
   })
   availableCalendars: AvailableCalendar[];
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* Web sign-ins (ADR 0028): started and redeemed by the Olympus API                                                   */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+/** A sign-in the Olympus API starts at the provider, for one of its users. */
+export class BaseCalendarAccountWebSignIn {
+  @ApiProperty({
+    ...CALENDAR_PROVIDER_ENUM,
+    required: true,
+    description: "The provider to sign in at",
+  })
+  @IsIn(CALENDAR_PROVIDER_VALUES)
+  provider: CalendarProviderName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The Olympus API's callback URL, registered with the provider",
+  })
+  @IsUrl({ require_tld: false, require_protocol: true })
+  redirectUri: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The state the callback must carry back",
+  })
+  @IsString()
+  @Length(16, 200)
+  state: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The PKCE challenge (S256) of the verifier the API keeps",
+  })
+  @IsString()
+  @Length(43, 128)
+  codeChallenge: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The label of a stored account to sign in again; none connects a new one",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  accountLabel?: string;
+}
+
+/** The provider's redirect back to the Olympus API, to redeem. */
+export class CalendarAccountWebSignInCallback {
+  @ApiProperty({
+    ...CALENDAR_PROVIDER_ENUM,
+    required: true,
+    description: "The provider signed in at",
+  })
+  @IsIn(CALENDAR_PROVIDER_VALUES)
+  provider: CalendarProviderName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The whole URL the provider redirected to",
+  })
+  @IsUrl({ require_tld: false, require_protocol: true })
+  callbackUrl: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The callback URL the sign-in was started with",
+  })
+  @IsUrl({ require_tld: false, require_protocol: true })
+  redirectUri: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The state the sign-in was started with",
+  })
+  @IsString()
+  @Length(16, 200)
+  state: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The PKCE verifier of the sign-in's challenge",
+  })
+  @IsString()
+  @Length(43, 128)
+  codeVerifier: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The label of the stored account being signed in again; another account signing in is refused",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  accountLabel?: string;
+}
+
+/** Who signed in. */
+export class CalendarAccountWebSignInResult {
+  @ApiProperty({
+    ...CALENDAR_PROVIDER_ENUM,
+    required: true,
+    description: "The account's provider",
+  })
+  provider: CalendarProviderName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The account's label: its verified email",
+  })
+  accountLabel: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The account's subject at the provider",
+  })
+  subject?: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether the agent held no credential for the account before this sign-in",
+  })
+  created: boolean;
+}
+
+export class StartCalendarAccountWebSignInRequest {
+  @ApiProperty({
+    type: () => BaseCalendarAccountWebSignIn,
+    required: true,
+    description: "The sign-in to start.",
+  })
+  @ValidateNested()
+  @Type(() => BaseCalendarAccountWebSignIn)
+  webSignIn: BaseCalendarAccountWebSignIn;
+}
+
+export class StartCalendarAccountWebSignInResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The provider's URL to send the browser to.",
+  })
+  authUrl: string;
+}
+
+export class CompleteCalendarAccountWebSignInRequest {
+  @ApiProperty({
+    type: () => CalendarAccountWebSignInCallback,
+    required: true,
+    description: "The provider's redirect.",
+  })
+  @ValidateNested()
+  @Type(() => CalendarAccountWebSignInCallback)
+  callback: CalendarAccountWebSignInCallback;
+}
+
+export class CompleteCalendarAccountWebSignInResponse {
+  @ApiProperty({
+    type: () => CalendarAccountWebSignInResult,
+    required: true,
+    description: "The account that signed in.",
+  })
+  calendarAccount: CalendarAccountWebSignInResult;
 }

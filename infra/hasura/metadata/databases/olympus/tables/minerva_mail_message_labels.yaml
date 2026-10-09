@@ -1,0 +1,26 @@
+table:
+  name: mail_message_labels
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    label_id:
+      custom_name: labelId
+    message_id:
+      custom_name: messageId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    created_at: createdTime
+    label_id: labelId
+    message_id: messageId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: label
+    using:
+      foreign_key_constraint_on: label_id
+  - name: message
+    using:
+      foreign_key_constraint_on: message_id

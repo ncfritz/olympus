@@ -1,0 +1,32 @@
+table:
+  name: mail_payment_acceptances
+  schema: minerva
+configuration:
+  column_config:
+    batch_id:
+      custom_name: batchId
+    bill_id:
+      custom_name: billId
+    confirmation_id:
+      custom_name: confirmationId
+    created_at:
+      custom_name: createdTime
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    batch_id: batchId
+    bill_id: billId
+    confirmation_id: confirmationId
+    created_at: createdTime
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: bill
+    using:
+      foreign_key_constraint_on: bill_id
+  - name: confirmation
+    using:
+      foreign_key_constraint_on: confirmation_id

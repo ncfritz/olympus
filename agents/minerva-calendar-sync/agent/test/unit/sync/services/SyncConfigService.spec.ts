@@ -76,6 +76,15 @@ describe("SyncConfigService", () => {
         service.add({ ...CALENDAR, source: "Duplicate" }),
       ).rejects.toThrow(ConflictException);
     });
+
+    it("rejects a source another calendar already has", async () => {
+      const { service, store } = makeService([CALENDAR]);
+
+      await expect(
+        service.add({ ...CALENDAR, calendarId: "another" }),
+      ).rejects.toThrow(/already has the source "Work"/);
+      expect(store.calendars).toEqual([CALENDAR]);
+    });
   });
 
   describe("remove", () => {

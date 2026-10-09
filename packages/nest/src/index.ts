@@ -13,3 +13,6 @@ export * from "./logging/createWinstonLogger";
 export * from "./metrics/ExecuteWithMetrics";
 export * from "./metrics/MetricsModule";
 export * from "./metrics/httpServerMetrics";
+export * from "./mtls/clientCertificateListener";
+export * from "./mtls/peerCertificate";
+export * from "./mtls/revocation";

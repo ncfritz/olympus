@@ -7,7 +7,6 @@ describe("NoteConverter.toDomainObject", () => {
     const note = toDomainObject(graphQlNote());
     expect(note).toMatchObject({
       id: "8f7d2c1e-0000-4000-8000-000000000001",
-      author: "ncfritz",
       flagged: false,
       title: "Shopping",
       summary: "Groceries",
@@ -16,6 +15,8 @@ describe("NoteConverter.toDomainObject", () => {
       childCount: 2,
       deletedTime: undefined,
     });
+    // The owner is the note's user, not a free-text author (ADR 0028).
+    expect(note).not.toHaveProperty("author");
     expect(note.createdTime.toISOString()).toBe("2026-09-01T10:00:00.000Z");
     expect(note.lastUpdatedTime.toISOString()).toBe("2026-09-02T11:30:00.000Z");
     expect(note.associations).toHaveLength(1);

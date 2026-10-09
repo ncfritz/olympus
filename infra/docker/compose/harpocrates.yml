@@ -10,7 +10,7 @@
 #   harpocrates-migrate   applies the service's migrations, then exits
 #   harpocrates           the management API and the list scheduler
 #
-# The published directory (${DATA_DIR}/harpocrates/published) is written
+# The published directory (${DATA_DIR}/olympus/apps/harpocrates/published) is written
 # here and mounted read-only by nginx, which serves it as
 # http://pki.internal.ncfritz.net, and by the API, which reads the Service
 # CA's chain's lists from it.
@@ -44,7 +44,7 @@ services:
     secrets:
       - harpocrates_postgres_password
     volumes:
-      - ${DATA_DIR:?}/harpocrates/postgres:/var/lib/postgresql/data
+      - ${DATA_DIR:?}/harpocrates-postgres:/var/lib/postgresql/data
     networks:
       - harpocrates
     healthcheck:
@@ -77,7 +77,7 @@ services:
       - harpocrates-socket:/run/service
       # The key store, uid 10001's. Never in the same backup as the
       # unseal key, which is in SECRETS_DIR.
-      - ${DATA_DIR:?}/harpocrates/signer:/data
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/signer:/data
     # No listener in any configuration (ADR 0020): nothing on any network
     # can reach it, and it reaches nothing.
     network_mode: none
@@ -133,7 +133,7 @@ services:
       - "10001"
     volumes:
       - harpocrates-socket:/run/harpocrates-signer
-      - ${DATA_DIR:?}/harpocrates/published:/srv/harpocrates/published
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published
     # Publication reads each list back through the distribution URL: the
     # host's nginx, whatever this container's DNS says of the name.
     extra_hosts:
@@ -150,9 +150,14 @@ volumes:
 
 networks:
   # Postgres and the service only: nothing else reaches the CA's database.
+  # Its subnet is named, as stack.sh names the others' (NETWORK_SUBNETS):
+  # left to Docker, a busy host hands out 192.168.x, the LAN's own range.
   harpocrates:
     name: harpocrates
     internal: true
+    ipam:
+      config:
+        - subnet: 10.210.5.0/24
   edge:
     name: olympus-edge
     external: true

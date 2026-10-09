@@ -1,0 +1,26 @@
+table:
+  name: goal_cycles
+  schema: minerva
+configuration:
+  column_config:
+    buffer_weeks:
+      custom_name: bufferWeeks
+    created_at:
+      custom_name: createdTime
+    start_date:
+      custom_name: startDate
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    buffer_weeks: bufferWeeks
+    created_at: createdTime
+    start_date: startDate
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}
+object_relationships:
+  - name: user
+    using:
+      foreign_key_constraint_on: user_id

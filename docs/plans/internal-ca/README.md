@@ -41,11 +41,14 @@ from its OpenAPI page and the break-glass CLI.
    database, an `openapi` task writing `apps/harpocrates/service/openapi/harpocrates.json`, and
    `packages/sdk` generating a `harpocrates` client from it. A generated client
    for the signer's document, internal to `apps/harpocrates/service`.
-5. **Done 2026-09-25.** **Dev CA**: `scripts/dev-ca.sh` takes production's three tiers (a
-   root, two intermediates, the issuing CAs beneath them) and adds a
-   **TLS Issuing CA Dev**, name-constrained to `localhost` and
-   `internal.localhost`; it writes every CA key as encrypted PKCS#8, the
-   format the signer imports.
+5. **Done 2026-09-25.** **Dev CA**: `scripts/dev-ca.sh` builds the
+   hierarchy three deep with an issuing CA per purpose, including a TLS
+   issuer name-constrained to `localhost`, `internal.localhost` and
+   `127.0.0.0/8` (with `tls/out-of-bounds.crt` for a name it forbids), and
+   writes every authority's key as encrypted PKCS#8 — the format the
+   signer imports — under `certs/keys/`. The passphrase is `olympus`.
+   (Built on both branches; main's version, which keeps what exists and
+   adds `--san`, is the one kept at the merge.)
 6. **Done 2026-09-25.** **Dev compose**: `apps/harpocrates/docker-compose.yml` runs
    `harpocrates-postgres` on its own port, beside the existing Postgres
    and Hasura; both services run from the workspace (`pnpm dev`), the
@@ -53,6 +56,13 @@ from its OpenAPI page and the break-glass CLI.
 
 **Sign-off:** both services start, `/health` answers, the Turbo tasks
 pass, and the SDK builds with an empty `harpocrates` client; no functional flows.
+
+**A constraint on every TLS server certificate this issues:** 825 days of
+validity, at most. Apple refuses a longer one and does so against a private
+anchor as well, reporting it as the client cancelling rather than as anything to
+do with the certificate — so an iPhone on the house network is what would find
+it, one afternoon, with nothing in any log to say why. `docs/guides/certificates.md`
+has the rest of that page's requirements; the templates already satisfy them.
 
 ## Phase 1 — The signer
 
@@ -255,7 +265,7 @@ differs from the steps below:
   tester). `cli export-key` likewise, for device certificates. The
   ceremonies' plans are `apps/harpocrates/ceremonies`.
 - **Directories, not named volumes**: the published directory is
-  `${DATA_DIR}/harpocrates/published`, bind-mounted into the stack, nginx
+  `${DATA_DIR}/olympus/apps/harpocrates/published`, bind-mounted into the stack, nginx
   (`nginx/pki.conf`) and the API, as the other stacks keep their data.
 - `bootstrap` makes the stack's secrets (random), except the unseal key,
   which starts empty (an empty file is no key: the signer starts sealed)
@@ -430,7 +440,8 @@ From phase 3:
       Prometheus and scrape the service as job `harpocrates`.
 - [ ] `brew install prometheus` on the Mac, for `check:alerts`.
 - [ ] Install the NAS pull (`infra/nas/README.md`) at the cutover.
-      From phase 4:
+
+From phase 4:
 
 - [ ] Run the cutover ([the guide](../../guides/harpocrates-cutover.md))
       and its sign-off (C8, C1.2, C5.4, C6, C4.7, C12, C13.5), and fill
@@ -446,6 +457,20 @@ From phase 3:
 - [ ] Run the outstanding DEV sign-offs: phase 1 (C1, C2, C13.1–C13.4),
       phase 2 (C3, C4.1–C4.6, C7, C14) and phase 3 (C5, C6.1,
       C16.1–C16.2).
+
+From the merge with `main` (2026-10-09):
+
+- [ ] Server certificates: `main` now issues listeners' server
+      certificates from XCA's Issuing CA 2 and clients' from the Service
+      CA, and `stack.sh check` holds each to its issuer
+      (`TLS_SERVER_ISSUER`). Harpocrates's `api-server` profile signs
+      from the Service CA, and the TLS CA's name constraints exclude the
+      services' Docker names (`olympus-api`). Decide whether servers stay
+      on the Service CA (then `TLS_SERVER_ISSUER` changes after the
+      cutover, as the guide says) or get an issuer of their own.
+- [ ] ADR 0031 (Proposed): when Control deploys releases rather than a
+      checkout, `nginx/pki.conf` and the `harpocrates` stack move with
+      it, and its pre-issued certificate pairs are phase 5's renewal.
 
 ## Later
 

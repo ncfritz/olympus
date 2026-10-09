@@ -1,12 +1,33 @@
 import { apiClient } from "./client";
+import {
+  type AvailabilityBlock,
+  type AvailabilityLevel,
+  type CalendarEventDeadLetters,
+  type CalendarEventRedrive,
+  clearMeetingAvailability,
+  describeCalendarEventDeadLetters,
+  redriveCalendarEventDeadLetters,
+  createAvailabilityBlock,
+  deleteAvailabilityBlock,
+  getAvailability,
+  listAvailabilityBlocks,
+  listMeetingAvailabilities,
+  setMeetingAvailability,
+  updateAvailabilityBlock,
+} from "./olympus";
 import type { components } from "../../generated/api";
 
 export type EventDto = components["schemas"]["Event"];
 export type CalendarStatus = components["schemas"]["Calendar"];
-export type AvailabilityStatus = components["schemas"]["AvailabilityStatus"];
+/** The signed-in user's availability is Olympus's (ADR 0029), in its words. */
+export type AvailabilityStatus = AvailabilityLevel;
 export type FreeBusyStatus = EventDto["status"];
-export type EventOverrideDto = components["schemas"]["EventOverride"];
-export type OverrideBlockDto = components["schemas"]["OverrideBlock"];
+/** A level the user set for one of their meetings. */
+export interface EventOverrideDto {
+  eventId: string;
+  status: AvailabilityStatus;
+}
+export type OverrideBlockDto = AvailabilityBlock;
 export type CalendarAccountStatus = components["schemas"]["CalendarAccount"];
 export type AvailableCalendar = components["schemas"]["AvailableCalendar"];
 export type SyncRun = components["schemas"]["SyncRun"];
@@ -51,6 +72,24 @@ export async function triggerCalendarSync(
     params: { path: { calendarId } },
   });
   return response.ok;
+}
+
+/**
+ * Starts a full sync of the calendar's whole history. Refused (409) while
+ * the calendar is syncing; the refusal's message is returned to show.
+ */
+export async function triggerFullCalendarSync(
+  calendarId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { response, error } = await apiClient.POST(
+    "/v1/calendar/{calendarId}/full-sync",
+    { params: { path: { calendarId } } },
+  );
+  if (response.ok) return { ok: true };
+  const message =
+    (error as { message?: string } | undefined)?.message ??
+    `Failed to start a full sync of "${calendarId}"`;
+  return { ok: false, message };
 }
 
 export async function setCalendarEnabled(
@@ -220,25 +259,68 @@ export async function fetchEvents(filters: EventFilters): Promise<EventDto[]> {
   return data?.events ?? [];
 }
 
-/** Bulk lookup — one request for a whole page of events rather than N. */
+/*
+ * Availability: the signed-in user's, from the Olympus API through the
+ * agent (ADR 0029). Only the user's own meetings have a level; an event of
+ * an account that is not theirs has none, and setting one is not found.
+ */
+
+/** The API's longest range, in milliseconds (92 days). */
+const MAX_RANGE_MS = 92 * 24 * 60 * 60 * 1000;
+
+/** How many meetings one lookup names: their IDs ride in the query string. */
+const MEETING_IDS_PER_REQUEST = 25;
+
+/** [start, end) in pieces the API will take. */
+function rangeChunks(
+  start: string,
+  end: string,
+): { start: string; end: string }[] {
+  const chunks: { start: string; end: string }[] = [];
+  const last = Date.parse(end);
+  for (let from = Date.parse(start); from < last; from += MAX_RANGE_MS) {
+    chunks.push({
+      start: new Date(from).toISOString(),
+      end: new Date(Math.min(from + MAX_RANGE_MS, last)).toISOString(),
+    });
+  }
+  return chunks;
+}
+
+/** The levels the user set for these events — those of their meetings that have one. */
 export async function fetchEventOverrides(
   eventIds: string[],
 ): Promise<EventOverrideDto[]> {
-  if (eventIds.length === 0) return [];
-  const { data } = await apiClient.GET("/v1/event-overrides", {
-    params: { query: { ids: eventIds.join(",") } },
-  });
-  return data?.eventOverrides ?? [];
+  const pages: string[][] = [];
+  for (let i = 0; i < eventIds.length; i += MEETING_IDS_PER_REQUEST) {
+    pages.push(eventIds.slice(i, i + MEETING_IDS_PER_REQUEST));
+  }
+  const answers = await Promise.all(
+    pages.map((ids) =>
+      listMeetingAvailabilities({ query: { meetingIds: ids.join(",") } }),
+    ),
+  );
+  return answers
+    .flatMap(({ data }) => data.meetings)
+    .filter((meeting) => meeting.overridden)
+    .map((meeting) => ({ eventId: meeting.meetingId, status: meeting.status }));
 }
 
 export async function fetchOverrideBlocks(
   start: string,
   end: string,
 ): Promise<OverrideBlockDto[]> {
-  const { data } = await apiClient.GET("/v1/override-blocks", {
-    params: { query: { start, end } },
-  });
-  return data?.overrideBlocks ?? [];
+  const answers = await Promise.all(
+    rangeChunks(start, end).map((range) =>
+      listAvailabilityBlocks({ query: range }),
+    ),
+  );
+  // A block across two pieces is in both.
+  const byId = new Map<string, OverrideBlockDto>();
+  for (const { data } of answers) {
+    for (const block of data.blocks) byId.set(block.id, block);
+  }
+  return [...byId.values()];
 }
 
 export async function fetchStatusTimeline(
@@ -251,39 +333,42 @@ export async function fetchStatusTimeline(
     timezone: string;
   },
 ): Promise<StatusTimeline> {
-  const { data } = await apiClient.GET("/v1/availability/timeline", {
-    params: {
-      query: {
-        start,
-        end,
-        dayStart: settings?.dayStart,
-        dayEnd: settings?.dayEnd,
-        treatWeekendsAsWorking: settings?.treatWeekendsAsWorking,
-        timezone: settings?.timezone,
-      },
-    },
-  });
-  return data?.timeline ?? {};
+  const answers = await Promise.all(
+    rangeChunks(start, end).map((range) =>
+      getAvailability({
+        query: {
+          ...range,
+          dayStart: settings?.dayStart,
+          dayEnd: settings?.dayEnd,
+          includeWeekends: settings?.treatWeekendsAsWorking,
+        },
+        headers: settings?.timezone
+          ? { "x-ncfritz-tz": settings.timezone }
+          : undefined,
+      }),
+    ),
+  );
+  const timeline: StatusTimeline = {};
+  for (const { data } of answers) {
+    for (const slot of data.availability.slots) {
+      timeline[String(Date.parse(slot.startTime) / 60_000)] = slot.status;
+    }
+  }
+  return timeline;
 }
 
 export async function setEventOverride(
   eventId: string,
   status: AvailabilityStatus,
 ): Promise<void> {
-  const { error } = await apiClient.PUT("/v1/event/{eventId}/override", {
-    params: { path: { eventId } },
-    body: { eventOverride: { status } },
+  await setMeetingAvailability({
+    path: { meetingId: eventId },
+    body: { availability: { status } },
   });
-  if (error)
-    throw new Error(`Failed to set override: ${JSON.stringify(error)}`);
 }
 
 export async function clearEventOverride(eventId: string): Promise<void> {
-  const { error } = await apiClient.DELETE("/v1/event/{eventId}/override", {
-    params: { path: { eventId } },
-  });
-  if (error)
-    throw new Error(`Failed to clear override: ${JSON.stringify(error)}`);
+  await clearMeetingAvailability({ path: { meetingId: eventId } });
 }
 
 export async function createOverrideBlock(block: {
@@ -292,43 +377,23 @@ export async function createOverrideBlock(block: {
   status: AvailabilityStatus;
   label?: string;
 }): Promise<OverrideBlockDto> {
-  const { data, error } = await apiClient.POST("/v1/override-blocks", {
-    body: { overrideBlock: block },
-  });
-  if (error || !data)
-    throw new Error(
-      `Failed to create override block: ${JSON.stringify(error)}`,
-    );
-  return data.overrideBlock;
+  const { data } = await createAvailabilityBlock({ body: { block } });
+  return data.block;
 }
 
 export async function updateOverrideBlock(
   id: string,
   status: AvailabilityStatus,
 ): Promise<OverrideBlockDto> {
-  const { data, error } = await apiClient.PUT(
-    "/v1/override-block/{overrideBlockId}",
-    {
-      params: { path: { overrideBlockId: id } },
-      body: { overrideBlock: { status } },
-    },
-  );
-  if (error || !data)
-    throw new Error(
-      `Failed to update override block: ${JSON.stringify(error)}`,
-    );
-  return data.overrideBlock;
+  const { data } = await updateAvailabilityBlock({
+    path: { blockId: id },
+    body: { block: { status } },
+  });
+  return data.block;
 }
 
 export async function deleteOverrideBlock(id: string): Promise<void> {
-  const { error } = await apiClient.DELETE(
-    "/v1/override-block/{overrideBlockId}",
-    { params: { path: { overrideBlockId: id } } },
-  );
-  if (error)
-    throw new Error(
-      `Failed to delete override block: ${JSON.stringify(error)}`,
-    );
+  await deleteAvailabilityBlock({ path: { blockId: id } });
 }
 
 export async function fetchOutboxSummary(): Promise<OutboxSummary> {
@@ -373,4 +438,22 @@ export async function backfillCalendar(
   if (error || !data)
     throw new Error(`Failed to start backfill: ${JSON.stringify(error)}`);
   return data.backfill;
+}
+
+/*
+ * Events the Olympus API could not write to Minerva (ADR 0028, amended):
+ * its dead-letter queue, through the agent. For admins, as the console is.
+ */
+
+export type DeadLetters = CalendarEventDeadLetters;
+export type DeadLetter = CalendarEventDeadLetters["sample"][number];
+
+export async function fetchDeadLetters(): Promise<DeadLetters> {
+  const { data } = await describeCalendarEventDeadLetters();
+  return data.deadLetters;
+}
+
+export async function redriveDeadLetters(): Promise<CalendarEventRedrive> {
+  const { data } = await redriveCalendarEventDeadLetters();
+  return data.redrive;
 }

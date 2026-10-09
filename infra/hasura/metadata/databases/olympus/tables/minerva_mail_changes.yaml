@@ -1,0 +1,37 @@
+table:
+  name: mail_changes
+  schema: minerva
+configuration:
+  column_config:
+    batch_id:
+      custom_name: batchId
+    created_at:
+      custom_name: createdTime
+    gmail_id:
+      custom_name: gmailId
+    message_id:
+      custom_name: messageId
+    updated_at:
+      custom_name: lastUpdatedTime
+  custom_column_names:
+    batch_id: batchId
+    created_at: createdTime
+    gmail_id: gmailId
+    message_id: messageId
+    updated_at: lastUpdatedTime
+  custom_root_fields: {}
+object_relationships:
+  - name: batch
+    using:
+      foreign_key_constraint_on: batch_id
+  - name: message
+    using:
+      foreign_key_constraint_on: message_id
+array_relationships:
+  - name: labels
+    using:
+      foreign_key_constraint_on:
+        column: change_id
+        table:
+          name: mail_change_labels
+          schema: minerva

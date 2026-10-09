@@ -95,3 +95,25 @@ export const notificationRoute = <C extends NotificationChannel>(channel: C) =>
     NOTIFICATIONS_TRIGGER_EXCHANGE,
     notificationRoutingKey(channel),
   );
+
+/**
+ * `minerva_calendar_account_claim` (ADR 0028): mailed to a calendar
+ * account's address when a user claims it. The API sends it on the email
+ * channel; the notification agent renders it.
+ */
+export const CALENDAR_ACCOUNT_CLAIM_NOTIFICATION =
+  "minerva_calendar_account_claim";
+
+export interface CalendarAccountClaimContext {
+  /** Who asked, as Olympus knows them. */
+  claimantName: string;
+  claimantEmail: string;
+  /** `google` or `microsoft`. */
+  provider: string;
+  /** The claimed account's address, where the mail goes. */
+  accountEmail: string;
+  /** The site page that confirms the claim, with its token. */
+  link: string;
+  /** ISO-8601: when the link stops working. */
+  expiresTime: string;
+}

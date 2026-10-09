@@ -6,8 +6,14 @@ import {
   ApiOperation,
   ApiParam,
   ApiProduces,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { NoteService } from "../services/NoteService";
 
@@ -16,6 +22,7 @@ export class RestoreNoteController {
   constructor(private readonly notes: NoteService) {}
 
   @Patch("/note/:noteId")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Restores a deleted note",
     description: "Restores a soft-deleted note by clearing its deleted time.",
@@ -33,13 +40,19 @@ export class RestoreNoteController {
     description: "The record has been successfully restored.",
     type: SingleNoteResponse,
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @Param("noteId") noteId: string,
     @Res() response: Response,
   ): Promise<void> {
+    const user = requireUser(principal);
     const responseBody: SingleNoteResponse = {
-      note: await this.notes.restore(noteId),
+      note: await this.notes.restore(user.userId, noteId),
     };
     response.status(HttpStatus.OK).json(responseBody);
   }

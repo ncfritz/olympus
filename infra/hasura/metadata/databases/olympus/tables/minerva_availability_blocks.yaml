@@ -1,0 +1,22 @@
+table:
+  name: availability_blocks
+  schema: minerva
+configuration:
+  column_config:
+    created_at:
+      custom_name: createdTime
+    end_time:
+      custom_name: endTime
+    start_time:
+      custom_name: startTime
+    updated_at:
+      custom_name: lastUpdatedTime
+    user_id:
+      custom_name: userId
+  custom_column_names:
+    created_at: createdTime
+    end_time: endTime
+    start_time: startTime
+    updated_at: lastUpdatedTime
+    user_id: userId
+  custom_root_fields: {}

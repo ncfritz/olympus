@@ -7,6 +7,7 @@ asynchronous agents.
 apps/       api, site, desktop (and Minerva calendar sync)
 agents/     RabbitMQ workers
 packages/   config, model, sdk, ui, theme, shared
+tools/      developer tools: auth-tester
 infra/      hasura/, docker/
 turbo/      generators/
 docs/       architecture, conventions, decisions, guides, roadmap

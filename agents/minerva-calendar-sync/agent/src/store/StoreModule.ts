@@ -3,17 +3,13 @@ import { outboxConfig, type OutboxConfigType } from "../config/configuration";
 import { CALENDAR_BUSY_INCLUSION_STORE } from "./calendarBusyInclusionStore";
 import { CALENDAR_COLOR_STORE } from "./calendarColorStore";
 import { CALENDAR_ENABLEMENT_STORE } from "./calendarEnablementStore";
-import { EVENT_OVERRIDE_STORE } from "./eventOverrideStore";
 import { EVENT_STORE } from "./eventStore";
 import { OUTBOX_ENABLED, OUTBOX_STORE } from "./outboxStore";
-import { OVERRIDE_BLOCK_STORE } from "./overrideBlockStore";
 import { PrismaCalendarBusyInclusionStore } from "./prisma/PrismaCalendarBusyInclusionStore";
 import { PrismaCalendarColorStore } from "./prisma/PrismaCalendarColorStore";
 import { PrismaCalendarEnablementStore } from "./prisma/PrismaCalendarEnablementStore";
-import { PrismaEventOverrideStore } from "./prisma/PrismaEventOverrideStore";
 import { PrismaEventStore } from "./prisma/PrismaEventStore";
 import { PrismaOutboxStore } from "./prisma/PrismaOutboxStore";
-import { PrismaOverrideBlockStore } from "./prisma/PrismaOverrideBlockStore";
 import { PrismaService } from "./prisma/PrismaService";
 import { PrismaSyncedCalendarStore } from "./prisma/PrismaSyncedCalendarStore";
 import { PrismaSyncRunStore } from "./prisma/PrismaSyncRunStore";
@@ -37,10 +33,6 @@ import { SYNC_RUN_STORE } from "./syncRunStore";
     { provide: EVENT_STORE, useExisting: PrismaEventStore },
     PrismaOutboxStore,
     { provide: OUTBOX_STORE, useExisting: PrismaOutboxStore },
-    PrismaEventOverrideStore,
-    { provide: EVENT_OVERRIDE_STORE, useExisting: PrismaEventOverrideStore },
-    PrismaOverrideBlockStore,
-    { provide: OVERRIDE_BLOCK_STORE, useExisting: PrismaOverrideBlockStore },
     PrismaCalendarColorStore,
     { provide: CALENDAR_COLOR_STORE, useExisting: PrismaCalendarColorStore },
     PrismaCalendarEnablementStore,
@@ -63,8 +55,6 @@ import { SYNC_RUN_STORE } from "./syncRunStore";
     EVENT_STORE,
     OUTBOX_STORE,
     OUTBOX_ENABLED,
-    EVENT_OVERRIDE_STORE,
-    OVERRIDE_BLOCK_STORE,
     CALENDAR_COLOR_STORE,
     CALENDAR_ENABLEMENT_STORE,
     SYNCED_CALENDAR_STORE,

@@ -1,0 +1,23 @@
+{{#> general_layout}}
+  <div class="innerWrapper">
+    <p>
+      <strong>{{claimantName}}</strong>{{#if claimantEmail}} ({{claimantEmail}}){{/if}}
+      asked Olympus to link the {{providerName}} calendar account
+      <strong>{{accountEmail}}</strong> to their Olympus account.
+    </p>
+    <p>
+      If that was you, open this link while signed in to Olympus as
+      {{claimantName}}, and confirm:
+    </p>
+    <p class="action">
+      <a href="{{link}}">Confirm the claim</a>
+    </p>
+    <p class="expiry">
+      The link works once, until {{expiresText}}.
+    </p>
+    <p class="notYou">
+      If it was not you, ignore this email: nothing changes unless the link
+      is confirmed by the person who asked.
+    </p>
+  </div>
+{{/general_layout}}

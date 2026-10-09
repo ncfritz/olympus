@@ -15,6 +15,7 @@ fails the build instead of silently dropping messages.
 | `downloads`      | `download.trigger`, `download.update`               | API → asset agents; NZBGet scripts → asset agents |
 | `search`         | `search.execution.trigger`, `search.fanout.trigger` | API and search agents → search agents             |
 | `calendarEvents` | `calendar.events`                                   | Minerva calendar sync agent → its consumers       |
+| `mail`           | `mail.messages`                                     | Minerva mail agent → API (metadata only)          |
 
 ## Use
 

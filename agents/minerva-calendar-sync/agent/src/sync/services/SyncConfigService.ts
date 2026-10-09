@@ -30,13 +30,20 @@ export class SyncConfigService {
    * Adds a calendar discovered through the Sync page. CalendarsController
    * checks the account is actually connected (CalendarAuthService.isConnected)
    * before calling this — this layer only guards against double-adding the
-   * same calendar.
+   * same calendar, and against a source another calendar already has: a
+   * source names the calendar's events (`<source>:<uid>`), so two calendars
+   * sharing one would overwrite each other's events downstream (ADR 0028).
    */
   async add(calendar: SyncedCalendarConfig): Promise<void> {
     const existing = await this.getAll();
     if (existing.some((c) => c.calendarId === calendar.calendarId)) {
       throw new ConflictException(
         `"${calendar.calendarId}" is already being synced`,
+      );
+    }
+    if (existing.some((c) => c.source === calendar.source)) {
+      throw new ConflictException(
+        `Another calendar already has the source "${calendar.source}"`,
       );
     }
     await this.store.add(calendar);

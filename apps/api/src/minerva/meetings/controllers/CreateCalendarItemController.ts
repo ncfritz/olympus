@@ -10,8 +10,14 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiProduces,
+  ApiResponse,
 } from "@nestjs/swagger";
 import { type Request, type Response } from "express";
+import {
+  CurrentPrincipal,
+  RequiresIdentity,
+} from "../../../auth/authDecorators";
+import { type Principal, requireUser } from "../../../auth/principal";
 import { ApiStandardErrorResponses } from "../../../utils/controllerDecorators";
 import { DescribeCalendarItemController } from "./DescribeCalendarItemController";
 import { setLocation } from "../../../utils/location";
@@ -22,6 +28,7 @@ export class CreateCalendarItemController {
   constructor(private readonly meetings: MeetingService) {}
 
   @Post("/meetings")
+  @RequiresIdentity()
   @ApiOperation({
     summary: "Creates a new calendar item",
     description: "Creates a new calendar item.",
@@ -45,13 +52,22 @@ export class CreateCalendarItemController {
       },
     },
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: "No access token, or one that does not verify.",
+  })
   @ApiStandardErrorResponses()
   async handle(
+    @CurrentPrincipal() principal: Principal | undefined,
     @Body() request: CreateCalendarItemRequest,
     @Req() httpRequest: Request,
     @Res() response: Response,
   ): Promise<void> {
-    const createdMeeting: Meeting = await this.meetings.create(request.item);
+    const user = requireUser(principal);
+    const createdMeeting: Meeting = await this.meetings.create(
+      user.userId,
+      request.item,
+    );
 
     const responseBody: SingleCalendarItemResponse = {
       item: createdMeeting,

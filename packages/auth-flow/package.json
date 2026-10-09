@@ -1,0 +1,35 @@
+{
+  "name": "@ncfritz/olympus-auth-flow",
+  "description": "The user sign-in flow of ADR 0018 as platform-free functions: PKCE, the token grants, access-token claims",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "lintfix": "eslint src test --fix",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@ncfritz/olympus-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist"
+  ]
+}

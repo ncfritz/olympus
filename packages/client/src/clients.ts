@@ -29,6 +29,20 @@ export interface OlympusClientOptions {
   serverName?: string;
   /** Where to record request metrics; nothing is recorded without it (browsers). */
   metrics?: RequestMetrics;
+  /**
+   * The access token for every request, as `Authorization: Bearer <token>`
+   * (ADR 0018).
+   *
+   * A function, called per request, rather than a token. An access token
+   * lives ten minutes, and a client here is constructed once and held for
+   * the life of the process -- given a string it would carry the token it
+   * was built with long after that token expired. The provider is where
+   * refreshing lives, and it is the caller's business.
+   *
+   * Returning undefined sends no header, so "not signed in yet" is the same
+   * code path as signed in rather than a special case.
+   */
+  auth?: () => string | undefined | Promise<string | undefined>;
   /** More axios configuration for every client: headers, timeout, withCredentials, adapter. */
   axios?: Record<string, unknown>;
 }
@@ -98,9 +112,16 @@ const instrument = (
   options: OlympusClientOptions,
 ) => {
   const interceptors = client.instance.interceptors;
-  interceptors.request.use((config) => {
+  interceptors.request.use(async (config) => {
     const timed = config as unknown as TimedConfig;
     timed.headers?.set?.(CLIENT_HEADER, options.clientName);
+    if (options.auth !== undefined) {
+      const token = await options.auth();
+      if (token) timed.headers?.set?.("Authorization", `Bearer ${token}`);
+    }
+    // After the token, not before: a provider that refreshes makes a request
+    // of its own, and counting it here would charge this call for someone
+    // else's round trip.
     timed.olympusStartedAt = performance.now();
     return config;
   });

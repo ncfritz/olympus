@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "fs";
 import { OAuth2Client } from "google-auth-library";
@@ -18,6 +19,18 @@ export interface StoredGoogleCredential {
   refreshToken: string;
   scope: string;
   obtainedAt: string;
+  /**
+   * The account's Google `sub` (ADR 0028), recorded at sign-in; read once
+   * from a fresh access token for a credential stored before it was kept.
+   */
+  subject?: string;
+  /**
+   * Which OAuth client issued the refresh token, and so must redeem it:
+   * the "Desktop app" client (the console and the setup script; the
+   * default, for credentials stored before) or the "Web application"
+   * client (connected from the Olympus site).
+   */
+  client?: "desktop" | "web";
 }
 
 /**
@@ -73,7 +86,22 @@ export class GoogleCredentialStore {
   }
 
   /** The OAuth client ID and secret; throws when either isn't configured. */
-  oauthClient(): { clientId: string; clientSecret: string } {
+  oauthClient(kind: "desktop" | "web" = "desktop"): {
+    clientId: string;
+    clientSecret: string;
+  } {
+    if (kind === "web") {
+      return {
+        clientId: required(
+          "GOOGLE_WEB_OAUTH_CLIENT_ID",
+          this.google.webClientId,
+        ),
+        clientSecret: required(
+          "GOOGLE_WEB_OAUTH_CLIENT_SECRET",
+          this.google.webClientSecret,
+        ),
+      };
+    }
     return {
       clientId: required("GOOGLE_OAUTH_CLIENT_ID", this.google.clientId),
       clientSecret: required(
@@ -83,10 +111,17 @@ export class GoogleCredentialStore {
     };
   }
 
+  /** Deletes `accountLabel`'s credential; nothing when there is none. */
+  remove(accountLabel: string): void {
+    rmSync(this.credentialPath(accountLabel), { force: true });
+  }
+
   /** Builds an OAuth2Client authorized for `accountLabel`, ready to pass into GoogleCalendarProvider. */
   createAuthorizedClient(accountLabel: string): OAuth2Client {
     const credential = this.load(accountLabel);
-    const { clientId, clientSecret } = this.oauthClient();
+    const { clientId, clientSecret } = this.oauthClient(
+      credential.client ?? "desktop",
+    );
     const client = new OAuth2Client(clientId, clientSecret);
     client.setCredentials({ refresh_token: credential.refreshToken });
     return client;

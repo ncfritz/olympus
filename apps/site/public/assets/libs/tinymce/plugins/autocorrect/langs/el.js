@@ -1,0 +1,11 @@
+/*!
+ * TinyMCE Language Pack
+ *
+ * Copyright (c) 2024 Ephox Corporation DBA Tiny Technologies, Inc.
+ * Licensed under the Tiny commercial license. See https://www.tiny.cloud/legal/
+ */
+tinymce.addI18n("el", {
+  "Auto correct {0}": "\u0391\u03c5\u03c4\u03cc\u03bc\u03b1\u03c4\u03b7 \u03b4\u03b9\u03cc\u03c1\u03b8\u03c9\u03c3\u03b7 {0}",
+  "Autocorrect": "\u0391\u03c5\u03c4\u03cc\u03bc\u03b1\u03c4\u03b7 \u03b4\u03b9\u03cc\u03c1\u03b8\u03c9\u03c3\u03b7",
+  "Capitalization": "\u039c\u03b5\u03c4\u03b1\u03c4\u03c1\u03bf\u03c0\u03ae \u03c3\u03b5 \u03ba\u03b5\u03c6\u03b1\u03bb\u03b1\u03af\u03b1"
+});

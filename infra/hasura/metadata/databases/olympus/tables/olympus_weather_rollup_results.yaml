@@ -1,0 +1,13 @@
+table:
+  name: weather_rollup_results
+  schema: olympus
+configuration:
+  column_config:
+    rows_pruned:
+      custom_name: rowsPruned
+    rows_written:
+      custom_name: rowsWritten
+  custom_column_names:
+    rows_pruned: rowsPruned
+    rows_written: rowsWritten
+  custom_root_fields: {}

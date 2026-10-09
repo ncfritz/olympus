@@ -1,0 +1,54 @@
+/* The meetings pages' side panel: room above the date picker, and above
+   what the statistics tabs (Today, Week, Month, Configuration) show. */
+.datePicker {
+  padding-top: 16px;
+}
+/* antd 6 calls a tab's content .ant-tabs-content (5 called it
+   .ant-tabs-tabpane). */
+.statisticsTabs
+  > :global(.ant-tabs-body-holder)
+  > :global(.ant-tabs-body)
+  > :global(.ant-tabs-content) {
+  padding-top: 16px;
+}
+/* The statistics tabs start 8px in, so the active tab's bar doesn't run
+   into the panel's border. */
+.statisticsTabs > :global(.ant-tabs-nav) :global(.ant-tabs-nav-list) {
+  margin-left: 8px;
+}
+/* The month's month picker, sized and set as the date picker is: its year
+   as the date picker's caption, its months as round cells, the one shown
+   marked as a selected day is (.rdp.minerva-standard). */
+.monthPicker {
+  /* The date picker's own margin (react-day-picker's 1em). */
+  padding: 16px;
+}
+.monthPickerYear {
+  font-size: 18px;
+}
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.month {
+  height: 40px;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+}
+.month:hover {
+  background-color: #f5f5f5;
+}
+.month:focus-visible {
+  outline: 2px solid #1677ff;
+}
+.monthShown,
+.monthShown:hover {
+  background-color: #fffbf0;
+}
+.monthCurrent {
+  font-weight: 700;
+}

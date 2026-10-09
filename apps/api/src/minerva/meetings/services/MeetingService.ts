@@ -6,31 +6,34 @@ import {
   MeetingStatusStatistics,
   PartialMeeting,
 } from "@ncfritz/olympus-model";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { gql, GraphQLClient } from "graphql-request";
 import moment from "moment-timezone";
 import { GraphQlMeeting, toDomainObject } from "../converters/MeetingConverter";
 import {
   BASE_MEETING,
-  MEETING_ATTENDEE,
-  MEETING_CORE,
   MEETING_WITH_ATTENDEE_EMAILS,
 } from "../queries/meetings";
 
+type GraphQlCalendarItemOwnerResponse = {
+  minerva_meetings_by_pk: { user_id: string } | null;
+};
+
 type GraphQlCreateCalendarItemResponse = {
-  insert_minerva_meetings_one: GraphQlMeeting;
+  insert_minerva_meetings_one: { id: string } | null;
 };
 
 type GraphQlDescribeCalendarItemResponse = {
-  minerva_meetings_by_pk: GraphQlMeeting;
+  minerva_meetings: GraphQlMeeting[];
 };
 
 type GraphQlUpdateMeetingResponse = {
-  update_minerva_meetings_by_pk: GraphQlMeeting;
-};
-
-type GraphQlDeleteCalendarItemResponse = {
-  update_minerva_meetings_by_pk: GraphQlMeeting | null;
+  update_minerva_meetings: { returning: GraphQlMeeting[] };
 };
 
 type GraphQlListCalendarItemsResponse = {
@@ -38,10 +41,10 @@ type GraphQlListCalendarItemsResponse = {
 };
 
 type GraphQlGetMeetingStartTimeResponse = {
-  minerva_meetings_by_pk: {
+  minerva_meetings: {
     start_time: string;
     uid?: string;
-  };
+  }[];
 };
 
 type GraphQlGetMeetingsSummaryResponse = {
@@ -94,73 +97,80 @@ const EMPTY_COUNTS = (): MeetingStatusStatistics => {
 const notFound = (meetingId: string) =>
   new NotFoundException(`Calendar Item with id ${meetingId} not found`);
 
-/** Minerva calendar items (meetings) in Hasura. */
+/**
+ * Columns a change set may not touch: the item's identity and its owner.
+ * Change sets arrive as Hasura column names, unchecked.
+ */
+const PROTECTED_COLUMNS = new Set(["id", "user_id", "userId", "account_id"]);
+
+const withoutProtectedColumns = (changes: PartialMeeting): PartialMeeting =>
+  Object.fromEntries(
+    Object.entries(changes).filter(
+      ([column]) => !PROTECTED_COLUMNS.has(column),
+    ),
+  ) as PartialMeeting;
+
+/**
+ * Minerva calendar items (meetings) in Hasura. Every item, and the people
+ * on it, belong to a user (ADR 0028): every method takes the caller's user
+ * ID and reads and writes only that user's rows. Another user's item is
+ * not found.
+ */
+/** The most days one ListCalendarItems spans. */
+export const LIST_DAYS_MAX = 92;
+
 @Injectable()
 export class MeetingService {
   constructor(private readonly graphQLClient: GraphQLClient) {}
 
-  /** Creates (or upserts) a calendar item. */
-  async create(item: Meeting): Promise<Meeting> {
+  /**
+   * Creates (or upserts) one of the user's calendar items, with its
+   * organizer and attendees. An ID that is another user's item is refused.
+   * @throws ConflictException
+   */
+  async create(userId: string, item: Meeting): Promise<Meeting> {
+    const ownerRequest = gql`
+      query GetCalendarItemOwner($id: String!) {
+        minerva_meetings_by_pk(id: $id) {
+          user_id
+        }
+      }
+    `;
+    const owner =
+      await this.graphQLClient.request<GraphQlCalendarItemOwnerResponse>(
+        ownerRequest,
+        { id: item.id },
+      );
+    const ownerId = owner.minerva_meetings_by_pk?.user_id;
+    if (ownerId !== undefined && ownerId !== userId) {
+      throw new ConflictException(
+        `Calendar Item with id ${item.id} already exists`,
+      );
+    }
+
+    // Three inserts in one mutation, so one transaction: the people first
+    // (the meeting's organizer and its attendees' rows point at them), then
+    // the meeting, then its attendees. The meeting's upsert only updates a
+    // row of the same user's, should one appear between the check above and
+    // this.
     const insertRequest = gql`
       mutation CreateMeeting(
-        $all_day: Boolean!
-        $cancelled: Boolean!
-        $deleted: Boolean!
-        $duration: numeric!
-        $end_time: timestamptz!
-        $id: String!
-        $uid: String
-        $recurrence_id: String
-        $importance: String!
-        $location: String!
-        $occurrence_type: String!
-        $reminder: Boolean!
-        $response: String!
-        $sensitivity: String!
-        $start_time: timestamptz!
-        $status: String!
-        $source: String!
-        $subject: String!
-        $type: String!
+        $meeting: minerva_meetings_insert_input!
+        $people: [minerva_meeting_user_insert_input!]!
         $attendees: [minerva_meeting_attendees_insert_input!]!
-        $organizer: minerva_meeting_user_insert_input!
+        $user_id: uuid!
       ) {
-        insert_minerva_meetings_one(
-          object: {
-            all_day: $all_day
-            cancelled: $cancelled
-            deleted: $deleted
-            duration: $duration
-            end_time: $end_time
-            id: $id
-            uid: $uid
-            recurrence_id: $recurrence_id
-            importance: $importance
-            location: $location
-            occurrence_type: $occurrence_type
-            reminder: $reminder
-            response: $response
-            sensitivity: $sensitivity
-            start_time: $start_time
-            status: $status
-            source: $source
-            subject: $subject
-            type: $type
-            organizer: {
-              data: $organizer
-              on_conflict: {
-                constraint: meeting_user_pkey
-                update_columns: [alias, given_name, surname, type]
-              }
-            }
-            attendees: {
-              data: $attendees
-              on_conflict: {
-                constraint: meeting_attendees_pkey
-                update_columns: [attendance, response]
-              }
-            }
+        insert_minerva_meeting_user(
+          objects: $people
+          on_conflict: {
+            constraint: meeting_user_pkey
+            update_columns: [alias, given_name, surname, type]
           }
+        ) {
+          affected_rows
+        }
+        insert_minerva_meetings_one(
+          object: $meeting
           on_conflict: {
             constraint: meetings_pkey
             update_columns: [
@@ -174,6 +184,7 @@ export class MeetingService {
               importance
               location
               occurrence_type
+              organizer_email
               reminder
               response
               sensitivity
@@ -182,76 +193,99 @@ export class MeetingService {
               subject
               type
             ]
+            where: { user_id: { _eq: $user_id } }
           }
         ) {
-          ${MEETING_CORE}
-          attendees {
-            ${MEETING_ATTENDEE}
+          id
+        }
+        insert_minerva_meeting_attendees(
+          objects: $attendees
+          on_conflict: {
+            constraint: meeting_attendees_pkey
+            update_columns: [attendance, response]
           }
+        ) {
+          affected_rows
         }
       }
     `;
+
+    // One row per address: the organizer may also be an attendee, and an
+    // upsert cannot touch the same row twice.
+    const people = new Map<string, Record<string, unknown>>();
+    for (const person of [
+      ...(item.organizer ? [item.organizer] : []),
+      ...item.attendees,
+    ]) {
+      people.set(person.email, {
+        user_id: userId,
+        alias: person.alias,
+        email: person.email,
+        given_name: person.givenName,
+        surname: person.surname,
+        type: person.type,
+      });
+    }
 
     const insertResponse =
       await this.graphQLClient.request<GraphQlCreateCalendarItemResponse>(
         insertRequest,
         {
-          all_day: item.isAllDay,
-          cancelled: item.isCancelled,
-          deleted: false,
-          duration: item.duration,
-          end_time: item.endTime,
-          id: item.id,
-          uid: item.uid,
-          recurrence_id: item.recurrenceId,
-          source: item.source,
-          importance: item.importance,
-          location: item.location,
-          occurrence_type: item.occurrenceType,
-          reminder: item.reminder,
-          response: item.response,
-          sensitivity: item.sensitivity,
-          start_time: item.startTime,
-          status: item.status,
-          subject: item.subject,
-          type: item.type,
-          organizer: {
-            alias: item.organizer.alias,
-            email: item.organizer.email,
-            given_name: item.organizer.givenName,
-            surname: item.organizer.surname,
-            type: item.organizer.type,
+          user_id: userId,
+          people: [...people.values()],
+          meeting: {
+            user_id: userId,
+            all_day: item.isAllDay,
+            cancelled: item.isCancelled,
+            deleted: false,
+            duration: item.duration,
+            end_time: item.endTime,
+            id: item.id,
+            uid: item.uid,
+            recurrence_id: item.recurrenceId,
+            source: item.source,
+            importance: item.importance,
+            location: item.location,
+            occurrence_type: item.occurrenceType,
+            organizer_email:
+              item.organizer?.email ?? item.organizerEmail ?? null,
+            reminder: item.reminder,
+            response: item.response,
+            sensitivity: item.sensitivity,
+            start_time: item.startTime,
+            status: item.status,
+            subject: item.subject,
+            type: item.type,
           },
           attendees: item.attendees.map((attendee) => {
             return {
+              user_id: userId,
+              meeting_id: item.id,
+              attendee_email: attendee.email,
               attendance: attendee.attendance,
               response: attendee.response,
-              user: {
-                data: {
-                  alias: attendee.alias,
-                  email: attendee.email,
-                  given_name: attendee.givenName,
-                  surname: attendee.surname,
-                  type: attendee.type,
-                },
-                on_conflict: {
-                  constraint: "meeting_user_pkey",
-                  update_columns: ["alias", "given_name", "surname", "type"],
-                },
-              },
             };
           }),
         },
       );
 
-    return toDomainObject(insertResponse.insert_minerva_meetings_one);
+    if (!insertResponse.insert_minerva_meetings_one) {
+      throw new ConflictException(
+        `Calendar Item with id ${item.id} already exists`,
+      );
+    }
+
+    return this.describe(userId, item.id);
   }
 
   /** @throws NotFoundException */
-  async describe(meetingId: string): Promise<Meeting> {
+  async describe(userId: string, meetingId: string): Promise<Meeting> {
     const queryRequest = gql`
-      query DescribeCalendarItem($id: String!) {
-        minerva_meetings_by_pk(id: $id) {
+      query DescribeCalendarItem($id: String!, $user_id: uuid!) {
+        minerva_meetings(
+          where: { id: { _eq: $id }, user_id: { _eq: $user_id } }
+          limit: 1
+        ) {
           ${BASE_MEETING}
         }
       }
@@ -262,22 +296,34 @@ export class MeetingService {
         queryRequest,
         {
           id: meetingId,
+          user_id: userId,
         },
       );
 
-    if (!queryResponse.minerva_meetings_by_pk) throw notFound(meetingId);
-    return toDomainObject(queryResponse.minerva_meetings_by_pk);
+    const meeting = queryResponse.minerva_meetings[0];
+    if (!meeting) throw notFound(meetingId);
+    return toDomainObject(meeting);
   }
 
   /** Applies `changes` (Hasura column names) to a calendar item. @throws NotFoundException */
-  async update(meetingId: string, changes: PartialMeeting): Promise<Meeting> {
+  async update(
+    userId: string,
+    meetingId: string,
+    changes: PartialMeeting,
+  ): Promise<Meeting> {
     const updateRequest = gql`
       mutation UpdateMeeting(
         $id: String!
+        $user_id: uuid!
         $changes: minerva_meetings_set_input = {}
       ) {
-        update_minerva_meetings_by_pk(pk_columns: { id: $id }, _set: $changes) {
-          ${MEETING_WITH_ATTENDEE_EMAILS}
+        update_minerva_meetings(
+          where: { id: { _eq: $id }, user_id: { _eq: $user_id } }
+          _set: $changes
+        ) {
+          returning {
+            ${MEETING_WITH_ATTENDEE_EMAILS}
+          }
         }
       }
     `;
@@ -285,68 +331,93 @@ export class MeetingService {
     const updateResponse =
       await this.graphQLClient.request<GraphQlUpdateMeetingResponse>(
         updateRequest,
-        { id: meetingId, changes: changes },
+        {
+          id: meetingId,
+          user_id: userId,
+          changes: withoutProtectedColumns(changes),
+        },
       );
 
-    if (updateResponse.update_minerva_meetings_by_pk === null) {
-      throw notFound(meetingId);
-    }
-
-    return toDomainObject(updateResponse.update_minerva_meetings_by_pk);
+    const meeting = updateResponse.update_minerva_meetings.returning[0];
+    if (!meeting) throw notFound(meetingId);
+    return toDomainObject(meeting);
   }
 
   /** Soft-deletes a calendar item. @throws NotFoundException */
-  async delete(meetingId: string): Promise<Meeting> {
+  async delete(userId: string, meetingId: string): Promise<Meeting> {
     const deleteRequest = gql`
-      mutation DeleteCalendarItem($id: String!) {
-        update_minerva_meetings_by_pk(
-          pk_columns: { id: $id }
+      mutation DeleteCalendarItem($id: String!, $user_id: uuid!) {
+        update_minerva_meetings(
+          where: { id: { _eq: $id }, user_id: { _eq: $user_id } }
           _set: { deleted: true }
         ) {
-          ${MEETING_WITH_ATTENDEE_EMAILS}
+          returning {
+            ${MEETING_WITH_ATTENDEE_EMAILS}
+          }
         }
       }
     `;
 
     const deleteResponse =
-      await this.graphQLClient.request<GraphQlDeleteCalendarItemResponse>(
+      await this.graphQLClient.request<GraphQlUpdateMeetingResponse>(
         deleteRequest,
         {
           id: meetingId,
+          user_id: userId,
         },
       );
 
-    if (deleteResponse.update_minerva_meetings_by_pk === null) {
-      throw notFound(meetingId);
-    }
-
-    return toDomainObject(deleteResponse.update_minerva_meetings_by_pk);
+    const meeting = deleteResponse.update_minerva_meetings.returning[0];
+    if (!meeting) throw notFound(meetingId);
+    return toDomainObject(meeting);
   }
 
   /** Lists the calendar items in the `days` days from `start`. */
-  async list(start: string, days: number): Promise<Meeting[]> {
-    const startTime = moment(start);
-    const endTime = moment(startTime).add({ days: days });
-    //               {
-    //                 _and: { start_time: { _lte: $start }, end_time: { _lte: $end } }
-    //               },
-    //               {
-    //                 _and: { start_time: { _gte: $start }, end_time: { _gte: $end } }
-    //               }
+  /**
+   * The user's items that overlap `days` days from `start` (YYYY-MM-DD),
+   * the days read in `tz`: one that began the evening before or runs on
+   * past the last day is listed too. Deleted items are not.
+   * @throws BadRequestException
+   */
+  async list(
+    userId: string,
+    tz: string,
+    start: string,
+    days: number,
+  ): Promise<Meeting[]> {
+    const problems: string[] = [];
+    if (!moment.tz.zone(tz)) problems.push(`${tz} is not a known timezone`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(start) ||
+      !moment(start, "YYYY-MM-DD", true).isValid()
+    ) {
+      problems.push("start must be a day, YYYY-MM-DD");
+    }
+    if (!Number.isInteger(days) || days < 1 || days > LIST_DAYS_MAX) {
+      problems.push(`days must be a whole number from 1 to ${LIST_DAYS_MAX}`);
+    }
+    if (problems.length) throw new BadRequestException(problems);
+
+    const startTime = moment.tz(start, "YYYY-MM-DD", tz).startOf("day");
+    const endTime = moment(startTime).add(days, "days");
 
     const queryRequest = gql`
-      query ListCalendarItems($start: timestamptz!, $end: timestamptz!) {
+      query ListCalendarItems(
+        $start: timestamptz!
+        $end: timestamptz!
+        $user_id: uuid!
+      ) {
         minerva_meetings(
           where: {
+            user_id: { _eq: $user_id }
+            deleted: { _eq: false }
+            start_time: { _lt: $end }
             _or: [
-              {
-                _and: { start_time: { _gte: $start }, end_time: { _lte: $end } }
-              }
-              {
-                _and: { start_time: { _lte: $start }, end_time: { _gte: $end } }
-              }
+              { end_time: { _gt: $start } }
+              { end_time: { _is_null: true }, start_time: { _gte: $start } }
             ]
           }
+          order_by: { start_time: asc }
         ) {
           ${MEETING_WITH_ATTENDEE_EMAILS}
         }
@@ -357,8 +428,9 @@ export class MeetingService {
       await this.graphQLClient.request<GraphQlListCalendarItemsResponse>(
         queryRequest,
         {
-          start: startTime,
-          end: endTime,
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+          user_id: userId,
         },
       );
 
@@ -371,17 +443,22 @@ export class MeetingService {
    * The next occurrence of a meeting's series, if any.
    * @throws NotFoundException
    */
-  async getNextOccurrence(meetingId: string): Promise<Meeting | undefined> {
-    const current = await this.getSeriesPosition(meetingId);
+  async getNextOccurrence(
+    userId: string,
+    meetingId: string,
+  ): Promise<Meeting | undefined> {
+    const current = await this.getSeriesPosition(userId, meetingId);
 
     const queryRequest = gql`
       query GetNextCalendarItemOccurrence(
         $uid: String!
         $current_start_time: timestamptz!
+        $user_id: uuid!
       ) {
         minerva_meetings(
           where: {
             _and: {
+              user_id: { _eq: $user_id }
               uid: { _eq: $uid }
               start_time: { _gt: $current_start_time }
             }
@@ -400,6 +477,7 @@ export class MeetingService {
         {
           uid: current.uid,
           current_start_time: current.start_time,
+          user_id: userId,
         },
       );
 
@@ -413,20 +491,23 @@ export class MeetingService {
    * @throws NotFoundException
    */
   async listPreviousOccurrences(
+    userId: string,
     meetingId: string,
     limit: number,
   ): Promise<Meeting[]> {
-    const current = await this.getSeriesPosition(meetingId);
+    const current = await this.getSeriesPosition(userId, meetingId);
 
     const queryRequest = gql`
       query ListPreviousCalendarItemOccurrences(
         $uid: String!
         $current_start_time: timestamptz!
         $limit: Int!
+        $user_id: uuid!
       ) {
         minerva_meetings(
           where: {
             _and: {
+              user_id: { _eq: $user_id }
               uid: { _like: $uid }
               start_time: { _lt: $current_start_time }
             }
@@ -446,6 +527,7 @@ export class MeetingService {
           uid: current.uid,
           current_start_time: current.start_time,
           limit: limit,
+          user_id: userId,
         },
       );
 
@@ -456,6 +538,7 @@ export class MeetingService {
 
   /** Meeting counts by status for each day of the period, in `tz`. */
   async getSummary(
+    userId: string,
     tz: string,
     start: string,
     days: number,
@@ -463,6 +546,7 @@ export class MeetingService {
     const startDate = moment(start);
     const endDate = moment(startDate).add(days + 1, "days");
     const queryInput = {
+      user_id: userId,
       start: startDate,
       end: endDate,
       tz: tz,
@@ -475,12 +559,18 @@ export class MeetingService {
 
     const statisticsRequest = gql`
       query GetMeetingsSummary(
+        $user_id: uuid!
         $tz: String!
         $start: timestamptz!
         $end: timestamptz!
       ) {
         minerva_meeting_status_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
+          args: {
+            for_user: $user_id
+            start_date: $start
+            end_date: $end
+            tz: $tz
+          }
         ) {
           count
           duration
@@ -513,6 +603,7 @@ export class MeetingService {
 
   /** Meeting counts by status per hour of day and day of week, in `tz`. */
   async getStatistics(
+    userId: string,
     tz: string,
     start: string,
     days: number,
@@ -522,6 +613,7 @@ export class MeetingService {
       .add(days + 1, "days")
       .subtract(1, "second");
     const queryInput = {
+      user_id: userId,
       start: startDate,
       end: endDate,
       tz: tz,
@@ -540,12 +632,18 @@ export class MeetingService {
 
     const statisticsRequest = gql`
       query GetMeetingsStatistics(
+        $user_id: uuid!
         $tz: String!
         $start: timestamptz!
         $end: timestamptz!
       ) {
         minerva_meeting_hour_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
+          args: {
+            for_user: $user_id
+            start_date: $start
+            end_date: $end
+            tz: $tz
+          }
         ) {
           count
           duration
@@ -553,7 +651,12 @@ export class MeetingService {
           status
         }
         minerva_meeting_day_statistics(
-          args: { start_date: $start, end_date: $end, tz: $tz }
+          args: {
+            for_user: $user_id
+            start_date: $start
+            end_date: $end
+            tz: $tz
+          }
         ) {
           count
           day
@@ -588,10 +691,16 @@ export class MeetingService {
   }
 
   /** The series uid and start time of a meeting. @throws NotFoundException */
-  private async getSeriesPosition(meetingId: string): Promise<SeriesPosition> {
+  private async getSeriesPosition(
+    userId: string,
+    meetingId: string,
+  ): Promise<SeriesPosition> {
     const currentMeetingQueryRequest = gql`
-      query GetCalendarItemSeries($id: String!) {
-        minerva_meetings_by_pk(id: $id) {
+      query GetCalendarItemSeries($id: String!, $user_id: uuid!) {
+        minerva_meetings(
+          where: { id: { _eq: $id }, user_id: { _eq: $user_id } }
+          limit: 1
+        ) {
           start_time
           uid
         }
@@ -603,16 +712,18 @@ export class MeetingService {
         currentMeetingQueryRequest,
         {
           id: meetingId,
+          user_id: userId,
         },
       );
 
-    if (!currentMeetingQueryResponse.minerva_meetings_by_pk?.uid) {
+    const current = currentMeetingQueryResponse.minerva_meetings[0];
+    if (!current?.uid) {
       throw notFound(meetingId);
     }
 
     return {
-      uid: currentMeetingQueryResponse.minerva_meetings_by_pk.uid,
-      start_time: currentMeetingQueryResponse.minerva_meetings_by_pk.start_time,
+      uid: current.uid,
+      start_time: current.start_time,
     };
   }
 }

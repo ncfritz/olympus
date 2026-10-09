@@ -1,0 +1,68 @@
+table:
+  name: mail_inbox
+  schema: minerva
+configuration:
+  column_config:
+    account_id:
+      custom_name: accountId
+    decided_at:
+      custom_name: decidedTime
+    gmail_id:
+      custom_name: gmailId
+    in_inbox:
+      custom_name: inInbox
+    message_id:
+      custom_name: messageId
+    model_run:
+      custom_name: modelRun
+    received_at:
+      custom_name: receivedTime
+    scored_at:
+      custom_name: scoredTime
+    thread_id:
+      custom_name: threadId
+    thread_size:
+      custom_name: threadSize
+    top_score:
+      custom_name: topScore
+  custom_column_names:
+    account_id: accountId
+    decided_at: decidedTime
+    gmail_id: gmailId
+    in_inbox: inInbox
+    message_id: messageId
+    model_run: modelRun
+    received_at: receivedTime
+    scored_at: scoredTime
+    thread_id: threadId
+    thread_size: threadSize
+    top_score: topScore
+  custom_root_fields: {}
+object_relationships:
+  - name: account
+    using:
+      manual_configuration:
+        column_mapping:
+          account_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_accounts
+          schema: minerva
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          message_id: id
+        insertion_order: null
+        remote_table:
+          name: mail_messages
+          schema: minerva
+  - name: payment
+    using:
+      manual_configuration:
+        column_mapping:
+          message_id: confirmation_id
+        insertion_order: null
+        remote_table:
+          name: mail_payment_matches
+          schema: minerva

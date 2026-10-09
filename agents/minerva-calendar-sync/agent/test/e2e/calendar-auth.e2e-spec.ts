@@ -55,7 +55,7 @@ describe("Calendar accounts (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendar-accounts")
@@ -72,7 +72,7 @@ describe("Calendar accounts (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendar-accounts")
@@ -96,7 +96,7 @@ describe("Calendar accounts (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_MICROSOFT_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendar-accounts")
@@ -120,7 +120,7 @@ describe("Calendar accounts (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_MICROSOFT_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .get(
@@ -143,7 +143,7 @@ describe("Calendar accounts (e2e)", () => {
       ...FAKE_MICROSOFT_CALENDAR,
       accountLabel: sharedLabel,
     });
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     const res = await request(app.getHttpServer())
       .get("/v1/calendar-accounts")
@@ -181,7 +181,7 @@ describe("Calendar accounts (e2e)", () => {
       ...FAKE_MICROSOFT_CALENDAR,
       accountLabel: sharedLabel,
     });
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     // Neither has a stored credential, so both 404 as "hasn't completed
     // sign-in yet" — the point here is that ?provider= is what's resolving
@@ -206,7 +206,7 @@ describe("Calendar accounts (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .post("/v1/calendar-account/unknown/reauthorize")
@@ -221,7 +221,7 @@ describe("Calendar accounts (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .get("/v1/calendar-account/unknown/calendars")
@@ -237,7 +237,7 @@ describe("Calendar accounts (e2e)", () => {
     configureApp(app);
     await app.init();
     await seedCalendar(app, FAKE_CALENDAR);
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .get(`/v1/calendar-account/${FAKE_CALENDAR.accountLabel}/calendars`)
@@ -252,7 +252,7 @@ describe("Calendar accounts (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .get("/v1/calendar-account-authorization/unknown-transaction")
@@ -270,7 +270,7 @@ describe("Calendar accounts (e2e)", () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
-    const authHeader = `Bearer ${issueE2eAccessToken(app)}`;
+    const authHeader = `Bearer ${issueE2eAccessToken()}`;
 
     await request(app.getHttpServer())
       .post("/v1/calendar-account-authorizations")
