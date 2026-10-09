@@ -1,28 +1,37 @@
 # Internal CA: phased implementation plan
 
-The implementation of [ADR 0020](../../decisions/0020-internal-certificate-authority.md).
-Each phase ends in a working, deployable state and a functional sign-off
-against [signoff.md](signoff.md). XCA stays authoritative until phase 4,
-which retires it; until then everything runs against the dev CA. The
-[capabilities review](capabilities.md) is the reasoning behind the
-2026-09-25 amendments.
+The implementation of [ADR 0020](../../decisions/0020-internal-certificate-authority.md),
+as [ADR 0032](../../decisions/0032-harpocrates-roots-and-migration.md)
+(Proposed) would amend it. Each phase ends in a working, deployable state
+and a functional sign-off against [signoff.md](signoff.md). XCA stays in
+place: production Harpocrates starts empty and creates its own roots
+(phase 5), and what XCA issued is replaced in phase 8, after which XCA is
+retired. The [capabilities review](capabilities.md) is the reasoning
+behind the 2026-09-25 amendments.
 
-| Phase | Delivers                                                                          | Depends on                              | Sign-off flows                       |
-| ----- | --------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------ |
-| 0     | Scaffolding: both services, Python toolchain, dev CA, dev compose                 | —                                       | —                                    |
-| 1     | The signer: key store, automatic unseal, signing, invariants, ceremonies          | 0                                       | C1 (DEV), C2, C13.1–C13.4            |
-| 2     | Management core: CAs, profiles, keys and enrollments, issuance, escrow, audit     | 1; authentication phase 3 (`auth_time`) | C3, C4.1–C4.6, C7, C14               |
-| 3     | Revocation lists and monitoring: scheduling, publication, relying parties, alerts | 2                                       | C5, C6.1 (DEV), C16.1–C16.2          |
-| 4     | Production cutover from XCA, and XCA retired                                      | 3; Docker plan phase 3                  | C8, C1.2, C5.4, C6, C4.7, C12, C13.5 |
-| 5     | Renewal over mutual TLS, deploy targets, endpoint checks                          | 4                                       | C9, C16.3                            |
-| 6     | ACME, with ARI                                                                    | 4                                       | C10                                  |
-| 7     | The console on Olympus Control                                                    | 2; console plan                         | C11, C16.4                           |
-| 8     | SSH certificates                                                                  | 5                                       | C15                                  |
-| Later | SCEP, `dns-01`, hardware keys, discovery, a timestamping authority                |                                         |                                      |
+**Reordered 2026-10-09 (ADR 0032).** The console moves ahead of renewal
+and ACME, so each phase is exercised through it; the cutover from XCA
+becomes a migration after ACME. Phases 5 to 8 were renumbered: the
+console was 7, renewal 5, ACME 6, SSH 8.
 
-Phases 5 and 6 are independent. Phase 7 can start once phase 2's API
-exists and grows with each phase after it; until then the API is driven
-from its OpenAPI page and the break-glass CLI.
+| Phase | Delivers                                                                                       | Depends on                              | Sign-off flows                                |
+| ----- | ---------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------- |
+| 0     | Scaffolding: both services, Python toolchain, dev CA, dev compose                              | —                                       | —                                             |
+| 1     | The signer: key store, automatic unseal, signing, invariants, ceremonies                       | 0                                       | C1 (DEV), C2, C13.1–C13.4                     |
+| 2     | Management core: CAs, profiles, keys and enrollments, issuance, escrow, audit                  | 1; authentication phase 3 (`auth_time`) | C3, C4.1–C4.6, C7, C14                        |
+| 3     | Revocation lists and monitoring: scheduling, publication, relying parties, alerts              | 2                                       | C5, C6.1 (DEV), C16.1–C16.2                   |
+| 4     | The production stack, empty: deployed and initialised                                          | 3; Docker plan phase 3                  | C1.2                                          |
+| 5     | The console, and roots: bootstrap, three shapes, overridable settings; the three roots created | 4; console plan                         | C11.1–C11.4, C11.6, C13.5–C13.10, C16.4, C4.8 |
+| 6     | Renewal over mutual TLS, deploy targets, endpoint checks                                       | 5                                       | C9, C16.3                                     |
+| 7     | ACME, with ARI                                                                                 | 5                                       | C10, C11.5                                    |
+| 8     | The migration from XCA, and XCA retired                                                        | 6, 7                                    | C8, C5.4, C6, C4.7, C12                       |
+| 9     | SSH certificates                                                                               | 6                                       | C15                                           |
+| Later | SCEP, `dns-01`, hardware keys, discovery, a timestamping authority                             |                                         |                                               |
+
+Phases 6 and 7 are independent. The console (phase 5) grows with each
+phase after it: renewal and deploy targets, ACME and the migration each
+add their screens. Until it exists the API is driven from its OpenAPI
+page and the break-glass CLI.
 
 ## Phase 0 — Scaffolding
 
@@ -194,7 +203,7 @@ What differs from the steps below:
 ## Phase 3 — Revocation lists and monitoring
 
 **Done 2026-09-25** (steps 1 to 6; the sign-off runs on DEV are
-outstanding, and C6.2–C6.3 on the NAS are phase 4's). Described in
+outstanding, and C6.2–C6.3 on the NAS are phase 8's). Described in
 [the service's README](../../../apps/harpocrates/service/README.md),
 Revocation lists and Metrics and alerts. What differs from the steps
 below:
@@ -246,75 +255,101 @@ below:
 
 **Sign-off:** C5, C6.1 (DEV), C16.1–C16.2.
 
-## Phase 4 — Production cutover from XCA
+## Phase 4 — The production stack, empty
 
-**Built 2026-09-25; the cutover itself is outstanding.** Everything it
-needs is in the repository: the stack, nginx, the imports, the CLI
-ceremonies, and [the cutover guide](../../guides/harpocrates-cutover.md),
-which is step 3 to 6 below as commands, with the record to fill in. What
-differs from the steps below:
+**Built 2026-09-25 as the cutover from XCA; that cutover is withdrawn
+(ADR 0032).** What stays is the stack and everything around it; what goes
+is adopting XCA.
 
-- **XCA's exports, not its database**: every certificate as PEM and each
-  CA's list generated at the cutover; `import-certificates` records the
-  certificates under the CAs that signed them and `import-crl` revokes
-  what the lists name, with XCA's dates and reasons. Nothing depends on
-  XCA's database layout.
-- **Ceremonies from the CLI** (`cli ceremony --plan`), with passphrases
-  asked for on the terminal: the API's need an access token with a recent
-  sign-in, and nothing mints one yet (the console, phase 7, or the auth
-  tester). `cli export-key` likewise, for device certificates. The
-  ceremonies' plans are `apps/harpocrates/ceremonies`.
+Stays, and is deployed:
+
+- **The `harpocrates` stack** (`infra/docker/compose/harpocrates.yml`) on
+  ADR 0019's conventions: its own Postgres on an internal network, the
+  signer with no network (`network_mode: none`, the socket shared through
+  a volume, group read-write for gid 10001, which the service joins), the
+  migrations, the service. File secrets throughout, including
+  `DATABASE_URL_FILE`.
 - **Directories, not named volumes**: the published directory is
-  `${DATA_DIR}/olympus/apps/harpocrates/published`, bind-mounted into the stack, nginx
-  (`nginx/pki.conf`) and the API, as the other stacks keep their data.
+  `${DATA_DIR}/olympus/apps/harpocrates/published`, bind-mounted into the
+  stack, nginx (`nginx/pki.conf`) and the API.
+- **nginx**: `pki.internal.ncfritz.net` serving the published directory
+  over plain HTTP, and `/harpocrates/ca/api` on the control host. The
+  internal DNS record.
 - `bootstrap` makes the stack's secrets (random), except the unseal key,
   which starts empty (an empty file is no key: the signer starts sealed)
   until `initialise`.
-- The signer has no network (`network_mode: none`); the socket is shared
-  through a volume, group read-write for gid 10001, which the service
-  joins.
-- The API's `TLS_CRL_SERVICES` switch is a commented line in
-  `env/prod/olympus-api.env`, uncommented at step 10 of the guide, not
-  before: the lists must be published first.
-- The service reads `DATABASE_URL_FILE`, so the URL with its password is
-  a file secret like the rest.
+- The CLI's import commands (`import-issuer`, `import-certificates`,
+  `import-crl`), used by `scripts/dev-ca-import.sh` and kept for CAs
+  Harpocrates does not create.
 
-1. **The `harpocrates` stack** in `infra/docker/compose/harpocrates.yml`
-   on ADR 0019's conventions (shared `x-service`, file secrets for the
-   signer token and the Postgres password, pinned images), with
-   `harpocrates-published` mounted into the nginx and `olympus` stacks
-   read-only.
-2. **nginx**: `pki.internal.ncfritz.net` serving the published directory
-   over plain HTTP, and `/harpocrates/ca/api` on the control host
-   proxied to the management API. The internal DNS record.
-3. **Ceremony** (a guide, followed once and recorded):
-   1. `initialise` the signer: the unseal key into `${SECRETS_DIR}` as
-      `harpocrates_signer_unseal_key`, and it and the recovery
-      passphrase into the password manager. Restart the stack and
-      confirm it unseals by itself.
-   2. Export every CA key from XCA as encrypted PKCS#8. Import the
-      Service and Device CAs (online), and Issuing CA 1 and 2 - G1
-      (online, closed); import the root and both intermediates as
-      offline CAs (their certificates and CRL numbers; their keys stay
-      on offline media and in the password manager). Delete every other
-      exported file.
-   3. Import every certificate the CAs have issued, with its serial, and
-      their revocations, from the XCA database; each list's next number
-      continues from XCA's last.
-   4. In ceremonies: Intermediate CA 1 signs the new TLS CA, Intermediate
-      CA 2 the new Signing CA (their keys generated in the signer, path
-      length 0, name constraints per the ADR); each offline CA signs its
-      list (13 months).
-   5. Issue `harpocrates`'s own `9443` certificate from the TLS CA.
-   6. Archive the XCA database; XCA is retired.
-4. **Switch the relying parties** to the published lists: the API's
-   `TLS_CRL_SERVICES`, the NAS pull job.
-5. **Rewrite [the certificates guide](../../guides/certificates.md)** for
-   the console, the ceremonies and the CLI.
+Withdrawn, and removed in phase 5 once the console's bootstrap replaces
+it: [the cutover guide](../../guides/harpocrates-cutover.md) (its steps 1
+and 2, the stack and `initialise`, remain the way to do this until then),
+the ceremony plans in `apps/harpocrates/ceremonies`, and the commented
+`TLS_CRL_SERVICES` line in `env/prod/olympus-api.env`, which phase 8
+replaces with one naming both chains.
 
-**Sign-off:** C8, C1.2, C5.4, C6, C4.7, C12, C13.5.
+1. Build and push the images; `stack.sh bootstrap`, `check` and
+   `up harpocrates` on the Mac Mini.
+2. `initialise` the signer; the unseal key into `${SECRETS_DIR}` as
+   `harpocrates_signer_unseal_key` and, with the recovery passphrase, into
+   the password manager. Restart and confirm it unseals by itself.
 
-## Phase 5 — Renewal, deploy targets and endpoint checks
+Nothing is created: no root, no CA, no certificate. That is phase 5,
+through the console.
+
+**Sign-off:** C1.2.
+
+## Phase 5 — The console, and roots
+
+`apps/harpocrates/console` (`@ncfritz/harpocrates-console`), on
+`packages/console` (ADR 0021, the shell with the rail, the page list and
+the trail) and the SDK's `harpocrates` client, with what ADR 0032 adds to
+the signer and the service. The mockups are the design canvas
+(`claude/harpocrates-console-layout.md` in the project).
+
+1. **Wiring**: the Harpocrates property and its `ca` console in the
+   registry, `/harpocrates/ca` and `/harpocrates/ca/api` in nginx on the
+   control host, the `harpocrates-ca-console` bake target, the host's
+   `CONTROL_CONSOLES`.
+2. **Bootstrap**: initialise from the console (the service calls the
+   signer's `initialise`; the unseal key shown once); the restart check;
+   the seal state on every page and unseal for `pki-admin`.
+3. **Roots** (signer and service):
+   - a root's **shape** (three tiers, two tiers, direct) and its path
+     length from it; ceremonies offer only what the shape allows;
+   - **per-root naming**: organisation and an optional purpose, and a
+     subject written outright, unique across Harpocrates;
+   - **prove the backup**: the new root's key given back from the
+     offline media opens its first ceremony; **discard** a root that
+     has signed nothing;
+   - a root's **first list** signed in its first ceremony, and its
+     certificate and list published before anything beneath it.
+4. **Overrides**: every create request (root, intermediate, issuing CA)
+   takes overrides of the defaults (subject, validity, key, path length,
+   key usage, EKU, name constraints, URLs, list validity); the service
+   checks them, the signer enforces the invariants, the audit log
+   records what changed.
+5. **Ceremonies**: a two-tier root signs issuing CAs; a direct root
+   generates leaf keys and signs leaves from a profile that lists its
+   extensions exactly (SKI and AKI only for the bespoke consumer), and
+   escrows the keys by default.
+6. **Escrow** as a profile setting (default on) for every generated key,
+   with a per-certificate override where the profile allows it.
+7. **Screens**: the dashboard; CAs (the roots, each root's tree, chain,
+   constraints, issuing window and list status); new root, ceremonies;
+   certificates (search, detail, issue, revoke, download, export an
+   escrowed key); profiles (read-only at first); audit (filters, export,
+   the chain's verification status).
+8. **The three roots** (ADR 0032), created through the console once their
+   names and settings are agreed: Primary and Dev (three tiers, with their
+   intermediates and issuing CAs), and the bespoke root (direct). Their
+   certificates go to the relying parties that need them; nothing
+   migrates yet.
+
+**Sign-off:** C11.1–C11.4, C11.6, C13.5–C13.10, C16.4, C4.8.
+
+## Phase 6 — Renewal, deploy targets and endpoint checks
 
 1. The `9443` listener (HTTPS, client certificate requested, not
    required); `POST /v1/renew`: a current, unrevoked certificate from the
@@ -334,7 +369,7 @@ differs from the steps below:
 
 **Sign-off:** C9, C16.3.
 
-## Phase 6 — ACME
+## Phase 7 — ACME
 
 1. **Schema**: `acme_accounts`, `acme_eab_credentials`,
    `acme_name_policies`, `acme_orders`, `acme_authorizations`,
@@ -358,36 +393,27 @@ differs from the steps below:
    `api.olympus.internal` certificates; the NAS's DSM certificate through
    acme.sh's Synology deploy hook.
 
-**Sign-off:** C10.
+**Sign-off:** C10, C11.5.
 
-## Phase 7 — The console on Olympus Control
+## Phase 8 — The migration from XCA
 
-`apps/harpocrates/console` (`@ncfritz/harpocrates-console`), on
-`packages/console` (ADR 0021) and the SDK's `harpocrates` client:
+1. **Trust both**: the Primary root beside XCA's on every relying party;
+   the API's `TLS_CA_SERVICES`, `TLS_CRL_SERVICES` and
+   `AUTH_SERVICES_ISSUER` naming both Service issuing CAs and their
+   chains' lists; the NAS pull for both.
+2. **An inventory of XCA's certificates** (from its exports, outside
+   Harpocrates) with a column for what replaces each.
+3. **Replace**: ACME (phase 7) for every holder that speaks it; the rest
+   reissued from the new CAs, by hand or through deploy targets (phase
+   6): the agents' client certificates, the listeners' server
+   certificates, people's devices, the printer.
+4. **Retire XCA** once nothing trusts a certificate it issued: its root
+   out of the trust stores, its lists' pull removed, its database
+   archived encrypted beside the offline media.
 
-1. **Wiring**: the Harpocrates property and its `ca` console in the
-   registry, `/harpocrates/ca` and `/harpocrates/ca/api` in nginx on the
-   control host, the `harpocrates-ca-console` bake target, the host's
-   `CONTROL_CONSOLES`.
-2. **Dashboard** (the front page): counts by state, a 90-day expiry
-   timeline by issuer, what needs a person this month, issuing windows,
-   each list's next update, the seal state and the last publication,
-   the week's renewals, orders and failures, deployed-versus-issued.
-3. **CAs**: the tree, with chain, constraints, issuing window and list
-   status; the create wizard (root, internal, external) and ceremonies.
-4. **Certificates**: search by subject, SAN, serial, issuer, status and
-   expiry; expiry as time remaining, banded, with how it renews; detail
-   with chain, extensions, key lineage and deploy targets; issue (a
-   wizard driven by the profile), renew, revoke, download, export an
-   escrowed key (with a reason and a recent sign-in).
-5. **Profiles** (read-only at first); **ACME**: accounts, EAB
-   credentials and their name policies, orders; **audit**: filters and
-   export, and the chain's verification status.
-6. The seal state on every page, and unseal for `pki-admin`.
+**Sign-off:** C8, C5.4, C6, C4.7, C12.
 
-**Sign-off:** C11, C16.4.
-
-## Phase 8 — SSH certificates
+## Phase 9 — SSH certificates
 
 1. **Signer**: `sign/ssh` (user and host certificates, Ed25519 CA keys)
    and `sign/krl`; the invariants: a CA signs only its own kind, within
@@ -414,11 +440,8 @@ Loose ends from phase 0, to close on the Mac before phase 4 at the latest:
       `dev.env` and `local.env`, which are not in git.
 - [ ] Run `scripts/dev-ca.sh --force` with macOS's `openssl` (LibreSSL);
       it was checked with OpenSSL 3 only.
-- [ ] Confirm the Device CA's name in XCA (`… Device Issuing CA 1`, with
-      or without `- G1`) and correct ADR 0020's tree if it differs.
 - [ ] Build the `harpocrates-signer` image on the Mac Mini
       (`docker buildx bake harpocrates`); it has never been built.
-- [ ] Confirm the Signing CA's place under Intermediate CA 2.
 - [ ] `apps/api/openapi/olympus.json` is stale on `main` (the `/auth/me`
       and `/auth/sessions` endpoints); regenerate it, apart from this work.
 
@@ -439,16 +462,14 @@ From phase 3:
 - [ ] Load `monitoring/harpocrates.rules.yml` in the monitoring stack's
       Prometheus and scrape the service as job `harpocrates`.
 - [ ] `brew install prometheus` on the Mac, for `check:alerts`.
-- [ ] Install the NAS pull (`infra/nas/README.md`) at the cutover.
+- [ ] Install the NAS pull (`infra/nas/README.md`) in phase 8.
 
 From phase 4:
 
-- [ ] Run the cutover ([the guide](../../guides/harpocrates-cutover.md))
-      and its sign-off (C8, C1.2, C5.4, C6, C4.7, C12, C13.5), and fill
-      in its record.
-- [ ] Before the ceremonies, confirm the plans' name constraints: the
-      TLS CA's LAN range (`192.168.15.0/24`) and the Signing CA's mail
-      domains (`ncfritz.net`).
+- [ ] Deploy the empty stack and initialise it (phase 4, C1.2).
+- [ ] Before the root ceremonies (phase 5), agree each CA's name and
+      settings, including the TLS CA's LAN range (`192.168.15.0/24`)
+      and the Signing CA's mail domains (`ncfritz.net`).
 - [ ] Build and push the images; neither Harpocrates image has been
       built yet:
       `docker buildx bake harpocrates services --push`.
@@ -460,17 +481,13 @@ From phase 4:
 
 From the merge with `main` (2026-10-09):
 
-- [ ] Server certificates: `main` now issues listeners' server
-      certificates from XCA's Issuing CA 2 and clients' from the Service
-      CA, and `stack.sh check` holds each to its issuer
-      (`TLS_SERVER_ISSUER`). Harpocrates's `api-server` profile signs
-      from the Service CA, and the TLS CA's name constraints exclude the
-      services' Docker names (`olympus-api`). Decide whether servers stay
-      on the Service CA (then `TLS_SERVER_ISSUER` changes after the
-      cutover, as the guide says) or get an issuer of their own.
+- [x] Server certificates: decided in ADR 0032 (Proposed), a Server
+      issuing CA of their own under the Primary root; the `api-server`
+      profile moves to it in phase 5, and `TLS_SERVER_ISSUER` changes
+      in phase 8.
 - [ ] ADR 0031 (Proposed): when Control deploys releases rather than a
       checkout, `nginx/pki.conf` and the `harpocrates` stack move with
-      it, and its pre-issued certificate pairs are phase 5's renewal.
+      it, and its pre-issued certificate pairs are phase 6's renewal.
 
 ## Later
 

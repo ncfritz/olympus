@@ -1,6 +1,7 @@
 # Internal CA: functional sign-off
 
-One test plan per flow of [ADR 0020](../../decisions/0020-internal-certificate-authority.md),
+One test plan per flow of [ADR 0020](../../decisions/0020-internal-certificate-authority.md)
+and [ADR 0032](../../decisions/0032-harpocrates-roots-and-migration.md) (Proposed),
 used to sign off each phase of the [plan](README.md). Automated tests
 cover the logic; these checks prove the flows end to end on the real
 pieces: the signer and its store, certificates, relying parties, ACME
@@ -11,7 +12,7 @@ clients, devices.
 | Id      | Where                                                                                             | Used from |
 | ------- | ------------------------------------------------------------------------------------------------- | --------- |
 | **DEV** | the dev compose: `harpocrates`, `harpocrates-signer`, `harpocrates-postgres`, the API, the dev CA | phase 1   |
-| **INT** | the Mac Mini's `harpocrates` stack with the production issuers; the API, NAS and LAN clients      | phase 4   |
+| **INT** | the Mac Mini's `harpocrates` stack with the production roots; the API, NAS and LAN clients        | phase 4   |
 | **EXT** | outside the LAN (a phone on mobile data), for device certificates issued by the CA                | phase 4   |
 
 ## Fixtures
@@ -31,6 +32,7 @@ clients, devices.
 | `acme-clients`                 | certbot, lego, acme.sh and Caddy in containers, each able to answer `http-01`   |
 | `crl-root`, `crl-forged`       | the root's list signed in a ceremony; a list for the root signed by another key |
 | `root-key`                     | the dev root's and intermediates' keys as encrypted PKCS#8, with passphrases    |
+| `root-key-copy`                | a new root's key file as downloaded, and a copy with one byte changed           |
 | `ssh-user-key`, `ssh-host-key` | an Ed25519 public key for a user; a host's `ssh_host_ed25519_key.pub`           |
 | `endpoint-stale`               | an nginx on the dev stack still serving a certificate that has been renewed     |
 | `printer`                      | the HP Color LaserJet Pro MFP M479fdw and its embedded web server               |
@@ -91,15 +93,16 @@ recovery passphrase is used.
 
 ## C4 — Generated keys and escrow
 
-| Id   | Env | Steps                                                                                   | Expected                                                                          | Evidence                      |
-| ---- | --- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------- |
-| C4.1 | DEV | As `pki-admin`, issue `device` with a generated key; download PKCS#12 with a passphrase | a PKCS#12 holding key, certificate and chain; audit `issue` and `export`          | `openssl pkcs12 -info`; audit |
-| C4.2 | DEV | Export `dev-escrowed` again a day later, with a reason, just after signing in           | the same key (public key matches the certificate); audit `export` with the reason | `openssl` compare; audit      |
-| C4.3 | DEV | Export with a sign-in older than the limit (`auth_time`)                                | `403` asking for a recent sign-in; nothing exported                               | response; audit (refused)     |
-| C4.4 | DEV | Export as `pki-operator`; as `user-reader`                                              | `403`                                                                             | response                      |
-| C4.5 | DEV | Export without a reason                                                                 | `400`                                                                             | response                      |
-| C4.6 | DEV | Revoke `dev-escrowed`; try to export                                                    | `404`/`410`; the key is gone from the signer's store                              | response; store query         |
-| C4.7 | EXT | Install a CA-issued `device` PKCS#12 on an iPhone (profile) and a Mac (keychain)        | the border accepts both (authentication F9.1 passes for them)                     | screenshot; NAS log           |
+| Id   | Env | Steps                                                                                                                                             | Expected                                                                                                                     | Evidence                      |
+| ---- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| C4.1 | DEV | As `pki-admin`, issue `device` with a generated key; download PKCS#12 with a passphrase                                                           | a PKCS#12 holding key, certificate and chain; audit `issue` and `export`                                                     | `openssl pkcs12 -info`; audit |
+| C4.2 | DEV | Export `dev-escrowed` again a day later, with a reason, just after signing in                                                                     | the same key (public key matches the certificate); audit `export` with the reason                                            | `openssl` compare; audit      |
+| C4.3 | DEV | Export with a sign-in older than the limit (`auth_time`)                                                                                          | `403` asking for a recent sign-in; nothing exported                                                                          | response; audit (refused)     |
+| C4.4 | DEV | Export as `pki-operator`; as `user-reader`                                                                                                        | `403`                                                                                                                        | response                      |
+| C4.5 | DEV | Export without a reason                                                                                                                           | `400`                                                                                                                        | response                      |
+| C4.6 | DEV | Revoke `dev-escrowed`; try to export                                                                                                              | `404`/`410`; the key is gone from the signer's store                                                                         | response; store query         |
+| C4.7 | EXT | Install a CA-issued `device` PKCS#12 on an iPhone (profile) and a Mac (keychain)                                                                  | the border accepts both (authentication F9.1 passes for them)                                                                | screenshot; NAS log           |
+| C4.8 | DEV | Issue with a generated key from every profile that generates keys; from one whose escrow default is on but overridable, issue once without escrow | each escrowed by default and exportable (C4.2); the one without escrow cannot be exported again; the profile's setting shown | audit; response               |
 
 ## C5 — Revocation and revocation lists
 
@@ -134,16 +137,16 @@ recovery passphrase is used.
 | C7.5 | DEV | Stop the API (no JWKS); use the break-glass CLI to issue and revoke        | both work; audited as the CLI                                                          | CLI output; audit      |
 | C7.6 | DEV | The OpenAPI document `/harpocrates` and the SDK's `harpocrates` client     | every management operation present; the SDK builds                                     | document; build output |
 
-## C8 — Cutover from XCA
+## C8 — The migration from XCA
 
-| Id   | Env | Steps                                                        | Expected                                                                                                                           | Evidence                           |
-| ---- | --- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| C8.1 | INT | After the ceremonies, the TLS CA and Signing CA certificates | signed by Intermediate CA 1 and 2; path length 0; name constraints and EKUs as the ADR; keys never left the signer                 | `openssl x509 -text`; ceremony log |
-| C8.2 | INT | Every certificate XCA issued, under every CA                 | present with its serial, dates and status; revoked ones revoked with their dates                                                   | comparison against the XCA export  |
-| C8.3 | INT | The first published lists                                    | numbers above XCA's last for each issuer; the same revoked serials XCA's last lists held                                           | `openssl crl -text` side by side   |
-| C8.4 | INT | Existing agents and devices, untouched                       | keep working (authentication F6.1, F7.1, F9.1)                                                                                     | as those cases                     |
-| C8.5 | INT | The exported XCA key files; XCA itself                       | intermediate keys deleted; the root's only on offline media and in the password manager; the XCA database archived and XCA retired | ceremony log                       |
-| C8.6 | INT | `harpocrates`'s own `9443` certificate                       | issued by TLS CA; a LAN client trusting the root connects without a warning                                                        | `openssl s_client`                 |
+| Id   | Env      | Steps                                                                      | Expected                                                                                          | Evidence                       |
+| ---- | -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------ |
+| C8.1 | INT      | During the migration: an agent with an XCA certificate, one with a new one | the API accepts both; a revoked certificate from either chain is refused                          | API log; tester                |
+| C8.2 | INT      | The inventory of XCA's certificates                                        | each has a replacement (ACME or reissued) or is recorded as left to expire                        | the inventory                  |
+| C8.3 | INT      | Each relying party after the switch                                        | trusts the Primary root; then, at retirement, no longer trusts XCA's root                         | trust stores; `openssl verify` |
+| C8.4 | INT      | Existing agents and devices through the migration                          | keep working (authentication F6.1, F7.1, F9.1)                                                    | as those cases                 |
+| C8.5 | INT      | XCA at retirement                                                          | nothing valid chains to it; its database archived encrypted beside the offline media; XCA removed | inventory; archive             |
+| C8.6 | INT, EXT | `harpocrates`'s own `9443` certificate                                     | issued by the TLS issuing CA; a LAN client trusting the Primary root connects without a warning   | `openssl s_client`             |
 
 ## C9 — Renewal
 
@@ -174,13 +177,14 @@ recovery passphrase is used.
 
 ## C11 — The console
 
-| Id    | Env | Steps                                                                   | Expected                                                                          | Evidence    |
-| ----- | --- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- |
-| C11.1 | INT | As `pki-admin`, every action of the certificates guide from the console | each works: issue (both modes), renew, revoke, download, export                   | screenshots |
-| C11.2 | INT | Seal the signer                                                         | every page of the area shows sealed; actions that sign are disabled; unseal works | screenshot  |
-| C11.3 | INT | Export an escrowed key with an old sign-in                              | the console sends the user through sign-in again, then exports                    | screenshot  |
-| C11.4 | INT | As `user-reader`                                                        | the console is not offered; direct URLs show "not allowed"                        | screenshot  |
-| C11.5 | INT | Create an EAB credential with a name policy; use it (C10.2)             | the account appears under the credential with its orders                          | screenshot  |
+| Id    | Env | Steps                                                                   | Expected                                                                                             | Evidence               |
+| ----- | --- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
+| C11.1 | INT | As `pki-admin`, every action of the certificates guide from the console | each works: issue (both modes), renew, revoke, download, export                                      | screenshots            |
+| C11.2 | INT | Seal the signer                                                         | every page of the area shows sealed; actions that sign are disabled; unseal works                    | screenshot             |
+| C11.3 | INT | Export an escrowed key with an old sign-in                              | the console sends the user through sign-in again, then exports                                       | screenshot             |
+| C11.4 | INT | As `user-reader`                                                        | the console is not offered; direct URLs show "not allowed"                                           | screenshot             |
+| C11.5 | INT | Create an EAB credential with a name policy; use it (C10.2)             | the account appears under the credential with its orders                                             | screenshot             |
+| C11.6 | DEV | On an empty stack, initialise the signer from the console; restart it   | the unseal key is shown once, never again; after the restart the console shows it unsealed by itself | screenshot; signer log |
 
 ## C12 — The printer
 
@@ -192,13 +196,18 @@ recovery passphrase is used.
 
 ## C13 — Ceremonies
 
-| Id    | Env | Steps                                                                                                                              | Expected                                                                                   | Evidence                     |
-| ----- | --- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------- |
-| C13.1 | DEV | Create a root in a ceremony                                                                                                        | a self-signed root, path length 2; its key returned encrypted once; none left in the store | `openssl x509`; signer store |
-| C13.2 | DEV | Open a ceremony with `root-key`; sign an intermediate and the root's list; close; then, with the intermediate's key, an issuing CA | all verify to the root; path lengths 1 and 0; each key is gone after its ceremony          | `openssl verify`; store      |
-| C13.3 | DEV | Open a ceremony and restart the signer; separately, open one and wait an hour                                                      | the root's key is gone in both; signing with it is refused                                 | signer log; response         |
-| C13.4 | DEV | Ask an online intermediate to sign `CA:TRUE`                                                                                       | refused                                                                                    | response; signer log         |
-| C13.5 | INT | The production root and intermediates after the cutover                                                                            | imported as offline; their keys only on offline media and in the password manager          | store; ceremony log          |
+| Id     | Env | Steps                                                                                                                                   | Expected                                                                                                         | Evidence                     |
+| ------ | --- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| C13.1  | DEV | Create a root in a ceremony                                                                                                             | a self-signed root, path length 2; its key returned encrypted once; none left in the store                       | `openssl x509`; signer store |
+| C13.2  | DEV | Open a ceremony with `root-key`; sign an intermediate and the root's list; close; then, with the intermediate's key, an issuing CA      | all verify to the root; path lengths 1 and 0; each key is gone after its ceremony                                | `openssl verify`; store      |
+| C13.3  | DEV | Open a ceremony and restart the signer; separately, open one and wait an hour                                                           | the root's key is gone in both; signing with it is refused                                                       | signer log; response         |
+| C13.4  | DEV | Ask an online intermediate to sign `CA:TRUE`                                                                                            | refused                                                                                                          | response; signer log         |
+| C13.5  | INT | Create the Primary root from the console, three tiers, defaults reviewed; prove the backup with the downloaded file                     | the backup proves and opens a ceremony; the root's key is nowhere in the store                                   | store; ceremony log          |
+| C13.6  | DEV | Prove a new root's backup with `root-key-copy` (one byte changed), and with the wrong passphrase                                        | refused, nothing opened; the root is still unproved and can be discarded                                         | response; audit              |
+| C13.7  | DEV | Discard a root that has signed nothing; then try to discard one that has                                                                | the first is revoked in the record and never published; the second is refused                                    | audit; response              |
+| C13.8  | DEV | A two-tier root: in its ceremony, create an issuing CA; try to create an intermediate                                                   | the issuing CA verifies to the root, path length 0; the intermediate is refused                                  | `openssl verify`; response   |
+| C13.9  | DEV | A direct root: in its ceremony, generate and sign a leaf from the bespoke profile; try to sign a CA                                     | the leaf is P-256, `ecdsa-with-SHA256`, with SKI and AKI and no other extension; escrowed; the CA is refused     | `openssl x509 -text`; audit  |
+| C13.10 | DEV | Create an intermediate with an overridden validity and name constraints; then one that outlives its root, and one without `keyCertSign` | the first is signed with the overrides, and the audit names what changed; the others are refused with the reason | `openssl x509`; audit        |
 
 ## C14 — Keys and enrollments
 
@@ -231,13 +240,14 @@ recovery passphrase is used.
 
 ## Sign-off matrix
 
-| Phase | Flows to pass                          |
-| ----- | -------------------------------------- |
-| 1     | C1.1, C1.3–C1.9, C2, C13.1–C13.4 (DEV) |
-| 2     | C3, C4.1–C4.6, C7, C14 (DEV)           |
-| 3     | C5, C6.1, C16.1–C16.2 (DEV)            |
-| 4     | C8, C1.2, C5.4, C6, C4.7, C12, C13.5   |
-| 5     | C9, C16.3                              |
-| 6     | C10                                    |
-| 7     | C11, C16.4                             |
-| 8     | C15                                    |
+| Phase | Flows to pass                                                                 |
+| ----- | ----------------------------------------------------------------------------- |
+| 1     | C1.1, C1.3–C1.9, C2, C13.1–C13.4 (DEV)                                        |
+| 2     | C3, C4.1–C4.6, C7, C14 (DEV)                                                  |
+| 3     | C5, C6.1, C16.1–C16.2 (DEV)                                                   |
+| 4     | C1.2                                                                          |
+| 5     | C11.1–C11.4, C11.6, C13.5–C13.10, C16.4, C4.8 (renewal in C11.1 with phase 6) |
+| 6     | C9, C16.3                                                                     |
+| 7     | C10, C11.5                                                                    |
+| 8     | C8, C5.4, C6, C4.7, C12                                                       |
+| 9     | C15                                                                           |

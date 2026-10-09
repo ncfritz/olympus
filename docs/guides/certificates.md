@@ -2,8 +2,16 @@
 
 The certificates behind [ADR 0018](../decisions/0018-authentication.md),
 issued by Harpocrates, the internal CA
-([ADR 0020](../decisions/0020-internal-certificate-authority.md)). XCA
-issued them until [the cutover](harpocrates-cutover.md); it is retired.
+([ADR 0020](../decisions/0020-internal-certificate-authority.md)).
+
+**Status, 2026-10-09.** XCA still issues production's certificates.
+[ADR 0032](../decisions/0032-harpocrates-roots-and-migration.md)
+(Proposed) replaces the cutover with new roots created in Harpocrates
+(plan phase 5) and a migration from XCA later (phase 8). The procedures
+below are Harpocrates's and hold once those roots exist; the hierarchy
+shown is ADR 0020's and will be replaced by the roots ADR 0032 creates,
+whose names are not chosen yet. This guide is rewritten when ADR 0032 is
+accepted.
 
 For development, `scripts/dev-ca.sh` writes a throwaway copy of the whole
 hierarchy into `infra/dev-ca/certs`, in the same shape with `Dev` in every
@@ -33,6 +41,10 @@ authority in the chain, which at this depth is three.
   path is `harpocrates:/tmp/...`).
 
 ## The hierarchy
+
+ADR 0020's, adopting XCA's; ADR 0032 (Proposed) replaces it with a
+Primary root of the same three-tier layout plus a Server issuing CA, a
+Dev root, and a bespoke root that signs directly.
 
 ```
 ncfritz.net Root CA 1                          offline
@@ -118,10 +130,11 @@ XCA issued these from **Issuing CA 2**, under Intermediate CA 1, so until
 they are reissued a caller verifies a listener with a CA file holding Root
 CA 1, Intermediate CA 1 and Issuing CA 2 (`API_CA_CERT`,
 `<SERVICE>_CA_CERT`), and `TLS_SERVER_ISSUER` in `env/prod.env` names
-Issuing CA 2. Issuing CA 2 is closed at the cutover: a server certificate
-reissued from Harpocrates comes from the Service CA, so the caller's CA
-file becomes `services-ca.crt`, and `TLS_SERVER_ISSUER` the Service CA's
-name, once every listener has moved.
+Issuing CA 2. Under ADR 0032 (Proposed) a server certificate reissued
+from Harpocrates comes from a Server issuing CA of its own under the
+Primary root, so the caller's CA file becomes that chain, and
+`TLS_SERVER_ISSUER` that CA's name, once every listener has moved (plan
+phase 8).
 
 **Never longer than 825 days.** Apple refuses a TLS server certificate
 issued after 1 July 2019 whose validity is longer, and it refuses it
@@ -194,7 +207,6 @@ hcli ceremony --issuer intermediate-1-g1 --key /tmp/intermediate-1-g1.p8 --remov
   --plan /tmp/plan.json --crl
 ```
 
-A plan lists the issuing CAs to create
-(`apps/harpocrates/ceremonies` has the cutover's). The key file is
+A plan lists the issuing CAs to create. The key file is
 removed once the ceremony opens, and the key leaves the signer when it
 closes, whatever happened.

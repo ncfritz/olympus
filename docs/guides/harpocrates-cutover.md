@@ -1,5 +1,13 @@
 # The cutover from XCA to Harpocrates
 
+> **Withdrawn (2026-10-09).** [ADR 0032](../decisions/0032-harpocrates-roots-and-migration.md)
+> (Proposed) replaces this cutover: production Harpocrates starts empty,
+> creates its own roots through the console (plan phase 5), and replaces
+> what XCA issued in a later migration (phase 8). Steps 1 and 2 below
+> (the stack, and initialising the signer) still apply until the console
+> does them; nothing from step 3 on is to be run. The guide is removed in
+> phase 5.
+
 Followed once, on the Mac Mini, and recorded (at the end). It brings up
 the `harpocrates` stack, moves XCA's CAs, certificates and revocations into
 it, creates the two new issuing CAs in ceremonies, switches the relying

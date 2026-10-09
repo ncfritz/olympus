@@ -77,8 +77,10 @@ listener. The management API is published at
 `bootstrap` makes its directories and three of its four secrets (random:
 the signer's token, the Postgres password and the database URL built from
 it). The fourth, `harpocrates_signer_unseal_key`, starts empty, and the
-signer starts sealed until it is initialised: the steps, and the XCA
-cutover that follows, are [the cutover guide](../../docs/guides/harpocrates-cutover.md).
+signer starts sealed until it is initialised: steps 1 and 2 of
+[the cutover guide](../../docs/guides/harpocrates-cutover.md), whose
+cutover itself is withdrawn by ADR 0032 (Proposed) in favour of new roots
+and a later migration.
 
 The signer runs as uid 10001 and keeps its store in
 `${DATA_DIR}/olympus/apps/harpocrates/signer`; on a Linux host that

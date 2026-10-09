@@ -2,29 +2,29 @@
 
 ## Phases
 
-| #   | Phase                                                                                                | Status                                                                                       |
-| --- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                                                        |
-| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                                                     |
-| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK and all four agents **done**                                                             |
-| 3   | Import site and desktop shell (the site first changes only for authentication, phase 9)              |                                                                                              |
-| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         | baseline and workflow **done** (2026-09-20); cli-migrations image in the deployment work     |
-| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                                                              |
-| 6   | Central Docker builds and compose stacks (ADR 0011, 0019, [plan](plans/docker/README.md))            | planned; before authentication phase 3                                                       |
-| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                                                              |
-| 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                        |
-| 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                              |
-| 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                     |
-| 10  | Internal CA: Harpocrates (ADR 0020, [plan](plans/internal-ca/README.md))                             | phases 0 to 3 done; phase 4 built, cutover to run; next: phase 5                             |
-| 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                               |
-| 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                     |
-| 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | phases 0–4 **done** (2026-10-01); phase 5 built, not signed off; phases 6–9 planned          |
-| 14  | Email management: label audit and suggestions (ADR 0030, [plan](plans/email-management/README.md))   | phases 0, 1a and 3 **done** (M0, M5 signed off); 2 built, M3 and M4 next; 4.1 built, 1b next |
-| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                      |
-| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                     |
-| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                     |
-| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                                                     |
-| —   | Shared API client and request metrics (ADR 0017)                                                     | **done** (2026-09-20)                                                                        |
+| #   | Phase                                                                                                | Status                                                                                                                   |
+| --- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 0   | Monorepo scaffolding, decisions, conventions                                                         | **done** (2026-09-18)                                                                                                    |
+| 1   | Import model and API; `openapi` task; convention checks; `api-operation` generator                   | **done**                                                                                                                 |
+| 2   | Import SDK and agents; retire publishing and `olympus-release`                                       | SDK and all four agents **done**                                                                                         |
+| 3   | Import site and desktop shell (the site first changes only for authentication, phase 9)              |                                                                                                                          |
+| 4   | Hasura baseline in `infra/hasura`; migrations workflow; cli-migrations image                         | baseline and workflow **done** (2026-09-20); cli-migrations image in the deployment work                                 |
+| 5   | Referential integrity: orphan audit, foreign keys, derived relationships; metadata generation script |                                                                                                                          |
+| 6   | Central Docker builds and compose stacks (ADR 0011, 0019, [plan](plans/docker/README.md))            | planned; before authentication phase 3                                                                                   |
+| 7   | Theme package; inline-style migration; `packages/ui`                                                 |                                                                                                                          |
+| 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                                                    |
+| 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                                                          |
+| 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                                                 |
+| 10  | Internal CA: Harpocrates (ADR 0020, 0032, [plan](plans/internal-ca/README.md))                       | phases 0 to 3 done; phase 4 (empty production stack) built; next: phase 5, the console and new roots (ADR 0032 proposed) |
+| 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                                                           |
+| 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                                                 |
+| 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | phases 0–4 **done** (2026-10-01); phase 5 built, not signed off; phases 6–9 planned                                      |
+| 14  | Email management: label audit and suggestions (ADR 0030, [plan](plans/email-management/README.md))   | phases 0, 1a and 3 **done** (M0, M5 signed off); 2 built, M3 and M4 next; 4.1 built, 1b next                             |
+| —   | Tests are added in every phase (ADR 0010)                                                            | ongoing                                                                                                                  |
+| —   | Dionysus endpoint tests, one area per commit ([plan](guides/api-testing.md#dionysus-plan))           | **done**                                                                                                                 |
+| —   | Dionysus metadata converter tests; null-safe object relationships                                    | **done**                                                                                                                 |
+| —   | API aligned with NestJS (ADR 0014): feature folders; services per entity; guards, config, logger     | **done**                                                                                                                 |
+| —   | Shared API client and request metrics (ADR 0017)                                                     | **done** (2026-09-20)                                                                                                    |
 
 ## Open decisions
 
