@@ -1,6 +1,6 @@
 # 0020. An internal certificate authority: Harpocrates
 
-- **Status:** Accepted; amendments proposed in [ADR 0032](0032-harpocrates-roots-and-migration.md) (new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key)
+- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key
 - **Date:** 2026-09-21; amended and accepted 2026-09-25
 
 ## Context

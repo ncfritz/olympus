@@ -1,7 +1,7 @@
 # The cutover from XCA to Harpocrates
 
 > **Withdrawn (2026-10-09).** [ADR 0032](../decisions/0032-harpocrates-roots-and-migration.md)
-> (Proposed) replaces this cutover: production Harpocrates starts empty,
+> replaces this cutover: production Harpocrates starts empty,
 > creates its own roots through the console (plan phase 5), and replaces
 > what XCA issued in a later migration (phase 8). Steps 1 and 2 below
 > (the stack, and initialising the signer) still apply until the console

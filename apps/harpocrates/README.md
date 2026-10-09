@@ -13,7 +13,7 @@ console, built, versioned and deployed together:
 In production they run as the `harpocrates` stack
 (`infra/docker/compose/harpocrates.yml`, [infra/docker](../../infra/docker/README.md#harpocrates)),
 brought up empty, with its roots created through the console
-([ADR 0032](../../docs/decisions/0032-harpocrates-roots-and-migration.md), Proposed;
+([ADR 0032](../../docs/decisions/0032-harpocrates-roots-and-migration.md);
 until then [the cutover guide](../../docs/guides/harpocrates-cutover.md)'s first two steps);
 issuing and revoking is [the certificates guide](../../docs/guides/certificates.md).
 

@@ -6,7 +6,7 @@ issued by Harpocrates, the internal CA
 
 **Status, 2026-10-09.** XCA still issues production's certificates.
 [ADR 0032](../decisions/0032-harpocrates-roots-and-migration.md)
-(Proposed) replaces the cutover with new roots created in Harpocrates
+replaces the cutover with new roots created in Harpocrates
 (plan phase 5) and a migration from XCA later (phase 8). The procedures
 below are Harpocrates's and hold once those roots exist; the hierarchy
 shown is ADR 0020's and will be replaced by the roots ADR 0032 creates,
@@ -42,7 +42,7 @@ authority in the chain, which at this depth is three.
 
 ## The hierarchy
 
-ADR 0020's, adopting XCA's; ADR 0032 (Proposed) replaces it with a
+ADR 0020's, adopting XCA's; ADR 0032 replaces it with a
 Primary root of the same three-tier layout plus a Server issuing CA, a
 Dev root, and a bespoke root that signs directly.
 
@@ -130,7 +130,7 @@ XCA issued these from **Issuing CA 2**, under Intermediate CA 1, so until
 they are reissued a caller verifies a listener with a CA file holding Root
 CA 1, Intermediate CA 1 and Issuing CA 2 (`API_CA_CERT`,
 `<SERVICE>_CA_CERT`), and `TLS_SERVER_ISSUER` in `env/prod.env` names
-Issuing CA 2. Under ADR 0032 (Proposed) a server certificate reissued
+Issuing CA 2. Under ADR 0032 a server certificate reissued
 from Harpocrates comes from a Server issuing CA of its own under the
 Primary root, so the caller's CA file becomes that chain, and
 `TLS_SERVER_ISSUER` that CA's name, once every listener has moved (plan

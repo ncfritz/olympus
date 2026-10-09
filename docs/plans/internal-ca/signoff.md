@@ -1,7 +1,7 @@
 # Internal CA: functional sign-off
 
 One test plan per flow of [ADR 0020](../../decisions/0020-internal-certificate-authority.md)
-and [ADR 0032](../../decisions/0032-harpocrates-roots-and-migration.md) (Proposed),
+and [ADR 0032](../../decisions/0032-harpocrates-roots-and-migration.md),
 used to sign off each phase of the [plan](README.md). Automated tests
 cover the logic; these checks prove the flows end to end on the real
 pieces: the signer and its store, certificates, relying parties, ACME

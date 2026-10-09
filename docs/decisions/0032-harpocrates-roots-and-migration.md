@@ -1,7 +1,7 @@
 # 0032. Harpocrates: new roots, three shapes, and a migration from XCA
 
-- **Status:** Proposed
-- **Date:** 2026-10-09
+- **Status:** Accepted
+- **Date:** 2026-10-09; accepted 2026-10-09
 - **Amends:** [ADR 0020](0020-internal-certificate-authority.md)
 
 ## Context

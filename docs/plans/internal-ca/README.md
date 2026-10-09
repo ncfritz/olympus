@@ -2,7 +2,7 @@
 
 The implementation of [ADR 0020](../../decisions/0020-internal-certificate-authority.md),
 as [ADR 0032](../../decisions/0032-harpocrates-roots-and-migration.md)
-(Proposed) would amend it. Each phase ends in a working, deployable state
+amends it. Each phase ends in a working, deployable state
 and a functional sign-off against [signoff.md](signoff.md). XCA stays in
 place: production Harpocrates starts empty and creates its own roots
 (phase 5), and what XCA issued is replaced in phase 8, after which XCA is
@@ -481,7 +481,7 @@ From phase 4:
 
 From the merge with `main` (2026-10-09):
 
-- [x] Server certificates: decided in ADR 0032 (Proposed), a Server
+- [x] Server certificates: decided in ADR 0032, a Server
       issuing CA of their own under the Primary root; the `api-server`
       profile moves to it in phase 5, and `TLS_SERVER_ISSUER` changes
       in phase 8.
