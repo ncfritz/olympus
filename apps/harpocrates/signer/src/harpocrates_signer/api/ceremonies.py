@@ -74,9 +74,11 @@ def close_ceremony(ceremony_id: str, signer: SignerDep) -> None:
 
 @router.post(
     "/ceremonies/{ceremony_id}/certificates",
-    summary="Signs a CA certificate in a ceremony",
+    summary="Signs a certificate in a ceremony",
     description="A CA below the ceremony's (a path length below its own): "
-    "an issuing CA whose key is in the store, or a cross-signed successor.",
+    "an intermediate, an issuing CA whose key is in the store, or a "
+    "cross-signed successor. A root that signs directly (path length 0) "
+    "signs leaves instead, never a CA.",
     status_code=status.HTTP_201_CREATED,
     responses=errors(400, 404, 422, 503),
 )

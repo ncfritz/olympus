@@ -71,6 +71,9 @@ class CertificateRequest:
     name_constraints: NameConstraintsRequest | None = None
     crl_distribution_points: tuple[str, ...] = ()
     issuer_urls: tuple[str, ...] = ()
+    # Only the key identifiers: for a consumer that accepts nothing else
+    # (ADR 0032, the direct root's leaves). Never for a CA.
+    minimal_extensions: bool = False
 
 
 @dataclass(frozen=True)
@@ -111,6 +114,8 @@ def build_certificate(
     unknown = request.key_usage - set(KEY_USAGES)
     if unknown:
         raise BadRequestError(f"unknown key usages: {', '.join(sorted(unknown))}")
+    if request.minimal_extensions:
+        return _build_minimal(request, issuer_name, issuer_public_key, signing_key)
     usage = {name: name in request.key_usage for name in KEY_USAGES}
     builder = (
         x509.CertificateBuilder()
@@ -186,6 +191,52 @@ def build_certificate(
             ),
             critical=False,
         )
+    return builder.sign(signing_key, signature_hash(signing_key))
+
+
+def _build_minimal(
+    request: CertificateRequest,
+    issuer_name: x509.Name,
+    issuer_public_key: PublicKey,
+    signing_key: PrivateKey,
+) -> x509.Certificate:
+    """A leaf with the subject and authority key identifiers and nothing
+    else: every other part of the request must be empty, so nothing asked
+    for is silently dropped."""
+    asked = [
+        name
+        for name, present in (
+            ("ca", request.ca),
+            ("keyUsage", bool(request.key_usage)),
+            ("extendedKeyUsages", bool(request.extended_key_usages)),
+            ("sans", bool(request.sans)),
+            ("nameConstraints", request.name_constraints is not None),
+            ("crlDistributionPoints", bool(request.crl_distribution_points)),
+            ("issuerUrls", bool(request.issuer_urls)),
+        )
+        if present
+    ]
+    if asked:
+        raise BadRequestError(
+            "minimal extensions carry only the key identifiers, not " + ", ".join(asked)
+        )
+    builder = (
+        x509.CertificateBuilder()
+        .subject_name(request.subject)
+        .issuer_name(issuer_name)
+        .public_key(request.subject_key)
+        .serial_number(request.serial)
+        .not_valid_before(request.not_before)
+        .not_valid_after(request.not_after)
+        .add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(request.subject_key),
+            critical=False,
+        )
+        .add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(issuer_public_key),
+            critical=False,
+        )
+    )
     return builder.sign(signing_key, signature_hash(signing_key))
 
 

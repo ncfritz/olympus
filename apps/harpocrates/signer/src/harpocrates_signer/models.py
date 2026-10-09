@@ -197,6 +197,11 @@ class NameConstraintsSpec(Wire):
     excluded: Names = Field(default_factory=Names)
 
 
+class ExtensionSet(StrEnum):
+    STANDARD = "standard"
+    MINIMAL = "minimal"
+
+
 class CertificateSpec(Wire):
     """Everything the certificate says. Exactly one of publicKey, csr and
     keyId gives the subject's key; a CSR's own subject and extensions are
@@ -219,6 +224,12 @@ class CertificateSpec(Wire):
     name_constraints: NameConstraintsSpec | None = None
     crl_distribution_points: list[str] = Field(default_factory=list[str])
     issuer_urls: list[str] = Field(default_factory=list[str])
+    extensions: ExtensionSet = Field(
+        default=ExtensionSet.STANDARD,
+        description="`minimal`: the key identifiers only, for a leaf whose "
+        "consumer accepts nothing else; keyUsage and everything after it must "
+        "then be empty.",
+    )
 
 
 class CertificateResponse(Wire):
@@ -395,6 +406,7 @@ def certificate_request(
         name_constraints=constraints,
         crl_distribution_points=tuple(spec.crl_distribution_points),
         issuer_urls=tuple(spec.issuer_urls),
+        minimal_extensions=spec.extensions is ExtensionSet.MINIMAL,
     )
 
 

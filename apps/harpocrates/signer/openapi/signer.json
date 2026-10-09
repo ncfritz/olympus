@@ -1582,8 +1582,8 @@
         "tags": [
           "Ceremonies"
         ],
-        "summary": "Signs a CA certificate in a ceremony",
-        "description": "A CA below the ceremony's (a path length below its own): an issuing CA whose key is in the store, or a cross-signed successor.",
+        "summary": "Signs a certificate in a ceremony",
+        "description": "A CA below the ceremony's (a path length below its own): an intermediate, an issuing CA whose key is in the store, or a cross-signed successor. A root that signs directly (path length 0) signs leaves instead, never a CA.",
         "operationId": "SignCeremonyCertificate",
         "parameters": [
           {
@@ -2159,6 +2159,11 @@
             },
             "type": "array",
             "title": "Issuerurls"
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/ExtensionSet",
+            "description": "`minimal`: the key identifiers only, for a leaf whose consumer accepts nothing else; keyUsage and everything after it must then be empty.",
+            "default": "standard"
           }
         },
         "additionalProperties": false,
@@ -2341,6 +2346,14 @@
           "data"
         ],
         "title": "ExportKeyResponse"
+      },
+      "ExtensionSet": {
+        "type": "string",
+        "enum": [
+          "standard",
+          "minimal"
+        ],
+        "title": "ExtensionSet"
       },
       "GenerateKeyRequest": {
         "properties": {

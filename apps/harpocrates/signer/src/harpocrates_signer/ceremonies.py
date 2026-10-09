@@ -5,6 +5,11 @@ what the operator lists, and is forgotten when the ceremony closes, when
 it times out, when the signer is sealed, or when the process ends. It is
 never written to the store. Only in a ceremony may a certificate say
 `CA:TRUE`.
+
+What a ceremony signs follows from its CA's path length (ADR 0032,
+shapes): a CA with path length 1 or more signs CAs below it, never a
+leaf; a root with path length 0 (a root that signs directly) signs
+leaves, never a CA.
 """
 
 import logging
@@ -14,6 +19,7 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
 
 from harpocrates_signer import invariants
@@ -38,6 +44,7 @@ from harpocrates_signer.signing import (
     build_certificate,
     build_crl,
     check_ca_key,
+    check_subject_key,
 )
 from harpocrates_signer.vault import Vault
 
@@ -82,7 +89,9 @@ def export_encrypted(key: PrivateKey, passphrase: str) -> bytes:
 def _check_ca_request(signer: x509.Certificate, request: CertificateRequest) -> None:
     if not request.ca:
         raise RefusedError(
-            "ceremony", "a ceremony signs CAs; certificates come from issuing CAs"
+            "ceremony",
+            "this CA signs CAs; leaves come from issuing CAs, or from a root "
+            "that signs directly",
         )
     invariants.check_serial(request.serial)
     invariants.check_path_length(signer, request.path_length)
@@ -96,6 +105,30 @@ def _check_ca_request(signer: x509.Certificate, request: CertificateRequest) -> 
         request.extended_key_usages,
         frozenset(oid.dotted_string for oid in request.extended_key_usages),
         (signer,),
+    )
+
+
+def _check_leaf_request(signer: x509.Certificate, request: CertificateRequest) -> None:
+    """What a root that signs directly may sign: leaves, inside its own
+    validity, extended key usages and name constraints."""
+    if request.ca:
+        raise RefusedError(
+            "ceremony", "a root with path length 0 signs leaves, never a CA"
+        )
+    invariants.check_serial(request.serial)
+    if request.not_after <= request.not_before:
+        raise RefusedError("validity", "notAfter must be after notBefore")
+    if request.not_before < signer.not_valid_before_utc:
+        raise RefusedError("validity", "notBefore is before the signer's own")
+    if request.not_after > signer.not_valid_after_utc:
+        raise RefusedError("validity", "notAfter is past the signer's own expiry")
+    invariants.check_extended_key_usages(
+        request.extended_key_usages,
+        frozenset(oid.dotted_string for oid in request.extended_key_usages),
+        (signer,),
+    )
+    invariants.check_name_constraints(
+        invariants.names_of(request.subject, request.sans), (signer,)
     )
 
 
@@ -119,9 +152,11 @@ class Ceremonies:
             certificate.public_key()  # type: ignore[arg-type]  # compared, not used
         ):
             raise RefusedError("ceremony", "the certificate is not for this key")
-        if not _signs_cas(certificate):
+        if not (_signs_cas(certificate) or _signs_directly(certificate)):
             raise RefusedError(
-                "ceremony", "an offline CA signs CAs: a CA with path length 1 or more"
+                "ceremony",
+                "a ceremony is for an offline CA: a CA with path length 1 or "
+                "more, or a root that signs directly (path length 0)",
             )
         with self._lock:
             if self._open is not None:
@@ -176,8 +211,12 @@ class Ceremonies:
         self, ceremony_id: str, request: CertificateRequest
     ) -> x509.Certificate:
         held = self._held(ceremony_id)
-        _check_ca_request(held.certificate, request)
-        check_ca_key(request.subject_key, self._keys)
+        if _signs_directly(held.certificate):
+            _check_leaf_request(held.certificate, request)
+            check_subject_key(request.subject_key, self._keys)
+        else:
+            _check_ca_request(held.certificate, request)
+            check_ca_key(request.subject_key, self._keys)
         return build_certificate(
             request, held.certificate.subject, held.key.public_key(), held.key
         )
@@ -228,6 +267,26 @@ def _signs_cas(certificate: x509.Certificate) -> bool:
     return constraints.ca and (
         constraints.path_length is None or constraints.path_length >= 1
     )
+
+
+def _signs_directly(certificate: x509.Certificate) -> bool:
+    """A self-signed CA with path length 0: a root with nothing below it
+    but the leaves it signs in its ceremonies."""
+    try:
+        constraints = certificate.extensions.get_extension_for_class(
+            x509.BasicConstraints
+        ).value
+    except x509.ExtensionNotFound:
+        return False
+    if not constraints.ca or constraints.path_length != 0:
+        return False
+    if certificate.subject != certificate.issuer:
+        return False
+    try:
+        certificate.verify_directly_issued_by(certificate)
+    except (ValueError, TypeError, InvalidSignature):
+        return False
+    return True
 
 
 def _load_certificate(pem: str) -> x509.Certificate:

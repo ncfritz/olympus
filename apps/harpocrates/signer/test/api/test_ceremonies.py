@@ -1,6 +1,7 @@
 import time
 from datetime import timedelta
 
+from cryptography.x509.oid import ExtensionOID
 from fastapi.testclient import TestClient
 
 from harpocrates_signer.config import Config
@@ -10,6 +11,7 @@ from test.conftest import (
     build_hierarchy,
     ca_spec,
     csr_for,
+    load,
     ok,
     open_client,
     spec,
@@ -151,3 +153,122 @@ def test_a_root_needs_a_path_length(unsealed: TestClient):
         "/v1/roots", json={"certificate": body, "exportPassphrase": EXPORT_PASSPHRASE}
     )
     assert response.status_code == 422
+
+
+# ---- shapes (ADR 0032)
+
+
+def make_root(client: TestClient, subject: str, path_length: int) -> dict[str, str]:
+    return ok(
+        client.post(
+            "/v1/roots",
+            json={
+                "certificate": ca_spec(subject, path_length, days=7300),
+                "exportPassphrase": EXPORT_PASSPHRASE,
+            },
+        )
+    )
+
+
+def test_a_two_tier_root_signs_issuing_cas_not_intermediates(unsealed: TestClient):
+    root = make_root(unsealed, "CN=Two Tier Root CA 1", 1)
+    ceremony = ok(open_ceremony(unsealed, root["encryptedKey"], root["certificate"]))
+    key = ok(unsealed.post("/v1/keys", json={"purpose": "issuer"}))
+    issuing = load(
+        ok(
+            unsealed.post(
+                f"/v1/ceremonies/{ceremony['id']}/certificates",
+                json=ca_spec("CN=Two Tier Issuing CA 1", 0, days=1825, keyId=key["id"]),
+            )
+        )["certificate"]
+    )
+    issuing.verify_directly_issued_by(load(root["certificate"]))
+    other = ok(unsealed.post("/v1/keys", json={"purpose": "issuer"}))
+    response = unsealed.post(
+        f"/v1/ceremonies/{ceremony['id']}/certificates",
+        json=ca_spec("CN=Two Tier Intermediate", 1, days=1825, keyId=other["id"]),
+    )
+    assert response.status_code == 422
+    assert response.json()["invariant"] == "path-length"
+
+
+def test_a_direct_root_opens_a_ceremony_and_signs_minimal_leaves(
+    unsealed: TestClient,
+):
+    root = make_root(unsealed, "CN=Direct Root CA 1", 0)
+    ceremony = ok(open_ceremony(unsealed, root["encryptedKey"], root["certificate"]))
+    key = ok(unsealed.post("/v1/keys", json={"purpose": "subject"}))
+    leaf = load(
+        ok(
+            unsealed.post(
+                f"/v1/ceremonies/{ceremony['id']}/certificates",
+                json=spec(
+                    "CN=Bespoke Leaf 1",
+                    days=365,
+                    keyId=key["id"],
+                    keyUsage=[],
+                    extensions="minimal",
+                ),
+            )
+        )["certificate"]
+    )
+    leaf.verify_directly_issued_by(load(root["certificate"]))
+    assert [e.oid for e in leaf.extensions] == [
+        ExtensionOID.SUBJECT_KEY_IDENTIFIER,
+        ExtensionOID.AUTHORITY_KEY_IDENTIFIER,
+    ]
+    assert leaf.signature_hash_algorithm is not None
+    assert leaf.signature_hash_algorithm.name == "sha256"
+
+
+def test_a_direct_root_signs_no_ca(unsealed: TestClient):
+    root = make_root(unsealed, "CN=Direct Root CA 2", 0)
+    ceremony = ok(open_ceremony(unsealed, root["encryptedKey"], root["certificate"]))
+    key = ok(unsealed.post("/v1/keys", json={"purpose": "issuer"}))
+    response = unsealed.post(
+        f"/v1/ceremonies/{ceremony['id']}/certificates",
+        json=ca_spec("CN=Below Direct", 0, days=365, keyId=key["id"]),
+    )
+    assert response.status_code == 422
+    assert response.json()["invariant"] == "ceremony"
+
+
+def test_a_direct_root_signs_no_issuer_key(unsealed: TestClient):
+    root = make_root(unsealed, "CN=Direct Root CA 3", 0)
+    ceremony = ok(open_ceremony(unsealed, root["encryptedKey"], root["certificate"]))
+    key = ok(unsealed.post("/v1/keys", json={"purpose": "issuer"}))
+    response = unsealed.post(
+        f"/v1/ceremonies/{ceremony['id']}/certificates",
+        json=spec("CN=Leaf With Issuer Key", days=30, keyId=key["id"]),
+    )
+    assert response.status_code == 422
+    assert response.json()["invariant"] == "subject-key"
+
+
+def test_a_direct_leaf_stays_inside_the_root(unsealed: TestClient):
+    root = make_root(unsealed, "CN=Direct Root CA 4", 0)
+    ceremony = ok(open_ceremony(unsealed, root["encryptedKey"], root["certificate"]))
+    key = ok(unsealed.post("/v1/keys", json={"purpose": "subject"}))
+    response = unsealed.post(
+        f"/v1/ceremonies/{ceremony['id']}/certificates",
+        json=spec("CN=Too Long", days=7400, keyId=key["id"]),
+    )
+    assert response.status_code == 422
+    assert response.json()["invariant"] == "validity"
+
+
+def test_minimal_extensions_refuse_anything_else(unsealed: TestClient):
+    root = make_root(unsealed, "CN=Direct Root CA 5", 0)
+    ceremony = ok(open_ceremony(unsealed, root["encryptedKey"], root["certificate"]))
+    key = ok(unsealed.post("/v1/keys", json={"purpose": "subject"}))
+    response = unsealed.post(
+        f"/v1/ceremonies/{ceremony['id']}/certificates",
+        json=spec(
+            "CN=Minimal With Usage",
+            days=30,
+            keyId=key["id"],
+            extensions="minimal",
+        ),
+    )
+    assert response.status_code == 400
+    assert "keyUsage" in response.json()["message"]
