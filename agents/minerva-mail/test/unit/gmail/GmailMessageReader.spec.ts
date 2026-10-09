@@ -115,3 +115,55 @@ describe("GmailMessageReader", () => {
     expect(mailbox.raw).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("a message's own images", () => {
+  it("are put into its HTML, where the frame can show them", async () => {
+    const pixel = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    const raw = [
+      "From: Example Air <trips@example.test>",
+      "To: someone@example.test",
+      "Subject: Your trip",
+      "MIME-Version: 1.0",
+      'Content-Type: multipart/related; boundary="r1"',
+      "",
+      "--r1",
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      '<p><img src="cid:logo@example.test" alt="Example Air"></p>',
+      "--r1",
+      "Content-Type: image/png",
+      "Content-ID: <logo@example.test>",
+      "Content-Disposition: inline",
+      "Content-Transfer-Encoding: base64",
+      "",
+      pixel.toString("base64"),
+      "--r1--",
+      "",
+    ].join("\r\n");
+    const mailbox = {
+      raw: vi.fn(async (id: string) => ({
+        id,
+        threadId: "f1",
+        labelIds: ["INBOX"],
+        internalDate: String(Date.parse("2026-10-05T10:00:01Z")),
+        raw: Buffer.from(raw).toString("base64url"),
+      })),
+    };
+    const content = await new GmailMessageReader({} as GmailClient).read(
+      "someone@example.test",
+      "1a",
+      () => mailbox as unknown as GmailMailbox,
+    );
+    expect(content.html).toContain(
+      `src="data:image/png;base64,${pixel.toString("base64")}"`,
+    );
+    expect(content.html).not.toContain("cid:");
+    // Still listed as inline, without its content.
+    expect(content.attachments).toEqual([
+      expect.objectContaining({ mimeType: "image/png", inline: true }),
+    ]);
+  });
+});

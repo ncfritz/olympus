@@ -189,6 +189,28 @@ describe("containedHtml", () => {
   });
 });
 
+describe("containedHtml with the image proxy", () => {
+  it("allows images from the proxy and nowhere else remote", () => {
+    const proxy = "https://olympus.example.test/api/v1/minerva/mail/image/";
+    expect(containedHtml("<p>Hi</p>", proxy)).toContain(
+      `default-src 'none'; img-src data: ${proxy}; style-src`,
+    );
+  });
+
+  it("will not take a source that could widen the policy", () => {
+    for (const bad of [
+      "https://a.example/; script-src *",
+      "https://a.example/x",
+      "* ",
+      "javascript:alert(1)/",
+    ]) {
+      expect(containedHtml("<p>Hi</p>", bad)).toContain(
+        "default-src 'none'; img-src data:; style-src",
+      );
+    }
+  });
+});
+
 describe("nextToReview", () => {
   it("opens the next undecided message, and none at the end", () => {
     const a = message({ gmailId: "1a" });

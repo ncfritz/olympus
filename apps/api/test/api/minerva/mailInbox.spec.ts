@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  MailImageFetcher,
+  MailImageFetchError,
+} from "../../../src/minerva/mail/services/MailImageFetcher";
 import { MinervaMailAgentClient } from "../../../src/minerva/mail/services/MinervaMailAgentClient";
 import { signedInApp, USER } from "../../support/signedInApp";
 
@@ -16,6 +20,12 @@ const agent = {
   startWrites: vi.fn(),
   readMessage: vi.fn(),
 };
+
+const fetcher = { fetch: vi.fn() };
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "base64",
+);
 
 const count = (n: number) => ({ aggregate: { count: n } });
 
@@ -95,8 +105,14 @@ const row = (overrides: Record<string, unknown> = {}) => ({
  */
 describe("Mail inbox", () => {
   const ctx = signedInApp({
-    env: { MINERVA_MAIL_WRITES_ENABLED: "true" },
-    overrides: [{ provide: MinervaMailAgentClient, useValue: agent }],
+    env: {
+      MINERVA_MAIL_WRITES_ENABLED: "true",
+      AUTH_PUBLIC_BASE_URL: "https://olympus.example.test/api",
+    },
+    overrides: [
+      { provide: MinervaMailAgentClient, useValue: agent },
+      { provide: MailImageFetcher, useValue: fetcher },
+    ],
   });
 
   const owned = () =>
@@ -759,6 +775,69 @@ describe("Mail inbox", () => {
       });
       // Gmail's label IDs are not passed on.
       expect(res.body.content.labelIds).toBeUndefined();
+    });
+
+    it("points the HTML's remote images at the API, which fetches them for the frame", async () => {
+      account();
+      agent.readMessage.mockResolvedValue({
+        gmailId: "1a",
+        threadId: "f1",
+        labelIds: [],
+        replyTo: [],
+        to: [],
+        cc: [],
+        receivedTime: "2026-10-05T10:00:01.000Z",
+        text: "Sale",
+        html: '<img src="https://cdn.example.test/hero.png?u=1&amp;v=2"><img src="data:image/png;base64,AA">',
+        truncated: false,
+        attachments: [],
+      });
+
+      const res = await open();
+
+      const proxy = "https://olympus.example.test/api/v1/minerva/mail/image/";
+      expect(res.body.content.imageProxy).toBe(proxy);
+      const html: string = res.body.content.html;
+      expect(html).not.toContain("cdn.example.test");
+      expect(html).toContain('src="data:image/png;base64,AA"');
+      const token = html
+        .slice(html.indexOf(proxy) + proxy.length)
+        .split('"')[0];
+
+      // The frame asks without an access token: the signed path is enough.
+      fetcher.fetch.mockResolvedValue({ contentType: "image/png", body: PNG });
+      const image = await ctx.t
+        .http()
+        .get(`${BASE}/mail/image/${token}`)
+        .buffer(true)
+        .parse((r, done) => {
+          const chunks: Buffer[] = [];
+          r.on("data", (c: Buffer) => chunks.push(c));
+          r.on("end", () => done(null, Buffer.concat(chunks)));
+        });
+      expect(image.status).toBe(200);
+      expect(fetcher.fetch).toHaveBeenCalledWith(
+        "https://cdn.example.test/hero.png?u=1&v=2",
+      );
+      expect(image.headers["content-type"]).toBe("image/png");
+      expect(image.headers["x-content-type-options"]).toBe("nosniff");
+      expect(image.headers["cross-origin-resource-policy"]).toBe(
+        "cross-origin",
+      );
+      expect(image.headers["content-security-policy"]).toContain("sandbox");
+      expect((image.body as Buffer).equals(PNG)).toBe(true);
+
+      // What cannot be fetched, and a token not this API's, are not found.
+      fetcher.fetch.mockRejectedValue(new MailImageFetchError("Answered 404"));
+      expect(
+        (await ctx.t.http().get(`${BASE}/mail/image/${token}`)).status,
+      ).toBe(404);
+      fetcher.fetch.mockClear();
+      expect(
+        (await ctx.t.http().get(`${BASE}/mail/image/${token.slice(0, -2)}xx`))
+          .status,
+      ).toBe(404);
+      expect(fetcher.fetch).not.toHaveBeenCalled();
     });
 
     it("answers 404 for another user's account, 409 when not linked, 400 for an ID that is not one", async () => {

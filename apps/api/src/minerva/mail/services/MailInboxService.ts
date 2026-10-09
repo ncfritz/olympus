@@ -30,6 +30,7 @@ import {
   toPaymentMatch,
 } from "../converters/MailPaymentConverter";
 import { MAIL_FLAG_LABELS, MailChangeService } from "./MailChangeService";
+import { MailImageProxy } from "./MailImageProxy";
 import { MinervaMailAgentClient } from "./MinervaMailAgentClient";
 
 /** Messages an inbox action takes at once. */
@@ -235,6 +236,7 @@ export class MailInboxService {
     private readonly graphQLClient: GraphQLClient,
     private readonly changes: MailChangeService,
     private readonly agent: MinervaMailAgentClient,
+    private readonly images: MailImageProxy,
   ) {}
 
   /**
@@ -739,6 +741,8 @@ export class MailInboxService {
       );
     }
     const m = await this.agent.readMessage(account.email, gmailId);
+    // Its remote images through the API's proxy (MailImageProxy).
+    const html = m.html !== undefined ? this.images.rewrite(m.html) : undefined;
     return {
       gmailId: m.gmailId,
       threadId: m.threadId,
@@ -750,7 +754,8 @@ export class MailInboxService {
       ...(m.sentTime ? { sentTime: moment(m.sentTime) } : {}),
       receivedTime: moment(m.receivedTime),
       text: m.text,
-      ...(m.html !== undefined ? { html: m.html } : {}),
+      ...(html ? { html: html.html } : {}),
+      ...(html?.imageProxy ? { imageProxy: html.imageProxy } : {}),
       truncated: m.truncated,
       attachments: m.attachments,
     };

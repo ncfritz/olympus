@@ -188,23 +188,32 @@ export const flagChangeText = (
 /** A refresh would take the frame to another page: removed. */
 const REFRESH = /<meta\b[^>]*http-equiv\s*=\s*["']?\s*refresh[^>]*>/gi;
 
+/** An image proxy's address as a policy source: an http(s) URL ending in /. */
+const PROXY_SOURCE = /^https?:\/\/[^\s;,'"]+\/$/;
+
 /**
  * The HTML of a message as the viewer's frame shows it: no script runs
- * (the frame's sandbox), nothing remote loads, not even an image (this
- * policy), it cannot send itself elsewhere (a refresh is removed), and
- * links open in a new tab.
+ * (the frame's sandbox), nothing remote loads (this policy) but images
+ * through the API's proxy (`imageProxy`, GetMailMessageContent's, which
+ * the HTML's remote images were rewritten to), it cannot send itself
+ * elsewhere (a refresh is removed), and links open in a new tab.
  */
-export const containedHtml = (html: string): string =>
-  [
+export const containedHtml = (html: string, imageProxy?: string): string => {
+  const images =
+    imageProxy && PROXY_SOURCE.test(imageProxy)
+      ? `img-src data: ${imageProxy}`
+      : "img-src data:";
+  return [
     "<!doctype html><html><head>",
     '<meta charset="utf-8">',
-    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; form-action 'none'">`,
+    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; ${images}; style-src 'unsafe-inline'; font-src data:; form-action 'none'">`,
     '<base target="_blank">',
     "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;margin:12px;color:#1f1f1f;word-wrap:break-word}img{max-width:100%}</style>",
     "</head><body>",
     html.replace(REFRESH, ""),
     "</body></html>",
   ].join("");
+};
 
 /**
  * The message to open once `current` is reviewed: the next in the list

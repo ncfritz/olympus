@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import PostalMime, { type Address, type Email } from "postal-mime";
 import type { GmailMessageAddress, GmailMessageContent } from "../model/gmail";
 import { htmlToText } from "../sources/bodyText";
+import { embedInlineImages } from "../sources/inlineImages";
 import { MimeParseError } from "../sources/MimeParseError";
 import { GmailClient, type GmailMailbox, gmailStatusOf } from "./GmailClient";
 
@@ -72,7 +73,12 @@ export class GmailMessageReader {
           ? htmlToText(parsed.html)
           : "",
     );
+    // Cut first, then the message's own images put in: the bound is on
+    // what was sent, and the images have their own (inlineImages.ts).
     const html = parsed.html ? cut(parsed.html) : undefined;
+    if (html) {
+      html.value = embedInlineImages(html.value, parsed.attachments).html;
+    }
     const sent = parsed.date ? new Date(parsed.date) : undefined;
     const from = addresses(parsed.from)[0];
     return {

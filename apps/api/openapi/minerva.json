@@ -7426,6 +7426,108 @@
         ]
       }
     },
+    "/minerva/mail/image/{token}": {
+      "get": {
+        "description": "The message viewer's images (docs/plans/email-management phase 5): GetMailMessageContent rewrites the HTML's remote image URLs to this operation, each with a token signed by the API that names one URL and expires after an hour. The API fetches the image itself, from a public address only (never this host, the LAN or the Docker networks), on port 80 or 443, following at most three redirects, each checked again; PNG, JPEG, GIF, WebP, AVIF, BMP or ICO only (no SVG), at most 5 MB in 10 seconds, eight at a time, the bytes checked against the type. No cookie, referrer or browser of the user's reaches the sender. Not found when the token is forged or expired, or the image cannot be fetched; why is logged, never the URL.",
+        "operationId": "ProxyMailImage",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The signed token GetMailMessageContent put in the HTML",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetches a remote image of a message for its viewer",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
     "/minerva/mail/families": {
       "post": {
         "description": "Makes two or more of the caller's topical labels, of one account, the states of a family (`Bills`: `*Payable`, then `*Paid`): each open or closed, one open state the initial, with the moves allowed between them. The classifier then predicts the family and applies the initial state.",
@@ -19026,7 +19128,11 @@
           },
           "html": {
             "type": "string",
-            "description": "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters"
+            "description": "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters. Its own images (cid:) are put in as data: URLs, and its remote images point at ProxyMailImage when imageProxy is given"
+          },
+          "imageProxy": {
+            "type": "string",
+            "description": "Where the HTML's remote images were pointed (ProxyMailImage's address, ending in /): the one remote source the frame should allow images from. Absent when the API has no public address, and the images were left as sent"
           },
           "truncated": {
             "type": "boolean",

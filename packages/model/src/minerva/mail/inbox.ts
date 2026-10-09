@@ -419,9 +419,17 @@ export class MailMessageContent {
     type: String,
     required: false,
     description:
-      "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters",
+      "The HTML body as sent, not sanitized: show it only in a sandboxed frame with remote content blocked; at most 1,000,000 characters. Its own images (cid:) are put in as data: URLs, and its remote images point at ProxyMailImage when imageProxy is given",
   })
   html?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Where the HTML's remote images were pointed (ProxyMailImage's address, ending in /): the one remote source the frame should allow images from. Absent when the API has no public address, and the images were left as sent",
+  })
+  imageProxy?: string;
 
   @ApiProperty({
     type: Boolean,

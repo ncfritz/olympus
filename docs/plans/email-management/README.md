@@ -761,6 +761,27 @@ DEV the night before.
    without the content; nothing stored, logged or cached (`no-store`).
    The HTML is as sent: the site shows it in a sandboxed frame with
    remote content blocked. **Step 2 built.**
+
+   **Images (2026-10-09).** The message's own images (`cid:` parts:
+   logos, signatures) are put into the HTML by the agent as `data:` URLs,
+   raster types only, at most 1 MB each and 4 MB a message. Its remote
+   images go through the API: `GetMailMessageContent` rewrites each
+   image URL (`src`, `srcset`, `background`, `poster`, CSS `url()`) to
+   `ProxyMailImage` (`/v1/minerva/mail/image/:token`) and says where
+   (`imageProxy`), and the frame's policy allows images from there and
+   nowhere else remote. The token is the authorisation (the sandboxed
+   frame has no access token): an HMAC over the URL and an expiry an
+   hour away, with a key made when the API starts, so it fetches only
+   what a message the user opened named. The API fetches from public
+   addresses only (never this host, the LAN, the Docker networks, or an
+   IPv6 range carrying a private IPv4 address), resolving the name itself
+   and connecting to the address it checked; ports 80 and 443; at most
+   three redirects, each checked again; PNG, JPEG, GIF, WebP, AVIF, BMP
+   or ICO, the bytes checked against the type (no SVG); at most 5 MB in
+   10 seconds, eight at a time; no cookie, referrer or browser of the user's. The sender
+   still learns the message was opened, from the Mini's address. Off
+   without `AUTH_PUBLIC_BASE_URL`.
+
 3. **Learning**: every approval and amendment is a training example,
    corrections weighed more; sender history updates at once, the linear
    model by `partial_fit`. **Built** 2026-10-06. The API: training
@@ -800,8 +821,8 @@ DEV the night before.
    Skip, Open message). The mailboxes fold away once one is linked. Open
    message: headers, attachments by name and size, the HTML in a sandboxed
    frame (no scripts, forms or same-origin; a policy blocking everything
-   remote, images included; a refresh removed; links to a new tab) and the
-   plain text. The home page's Mail widget, under the calendar: To review,
+   remote but images through the API's proxy, step 2; a refresh removed;
+   links to a new tab) and the plain text. The home page's Mail widget, under the calendar: To review,
    Unread and Approved with counts, Accept all ≥ 90%, ten rows, one
    expanded at a time into the same panel; approving folds the labels into
    the row with Undo. The change log shows archiving and marking read as

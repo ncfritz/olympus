@@ -80,6 +80,9 @@ import { GetMailClusterMapController } from "./controllers/GetMailClusterMapCont
 import { DescribeMailClusterController } from "./controllers/DescribeMailClusterController";
 import { ListMailClusterMembersController } from "./controllers/ListMailClusterMembersController";
 import { ListMailClusterSuggestionsController } from "./controllers/ListMailClusterSuggestionsController";
+import { ProxyMailImageController } from "./controllers/ProxyMailImageController";
+import { MailImageFetcher } from "./services/MailImageFetcher";
+import { MailImageProxy } from "./services/MailImageProxy";
 import { MailSyncService } from "./services/MailSyncService";
 import { MailTrainingService } from "./services/MailTrainingService";
 import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
@@ -113,11 +116,14 @@ import { MinervaMailAgentClient } from "./services/MinervaMailAgentClient";
     MailChangeService,
     MailTrainingService,
     MinervaMailAgentClient,
+    MailImageProxy,
+    MailImageFetcher,
   ],
   controllers: [
     // The static callback before ImportMailAccount's sibling routes.
     CompleteMailAccountConnectController,
     ConnectMailAccountController,
+    ProxyMailImageController,
     CreateMailLabelFamilyController,
     CreateMailSuggestionRunController,
     CreateMailSuggestionsController,

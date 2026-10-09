@@ -40,7 +40,8 @@ export interface MessageViewerProps {
  * A message read live from Gmail and shown once (docs/plans/
  * email-management phase 5; ADR 0030): its headers, its body and what is
  * attached. The HTML is shown in a frame that runs no script and loads
- * nothing remote; nothing of the message is kept once this closes.
+ * nothing remote but its images, through the API's proxy; nothing of the
+ * message is kept once this closes.
  */
 const MessageViewer: React.FunctionComponent<MessageViewerProps> = ({
   message,
@@ -160,7 +161,10 @@ const MessageViewer: React.FunctionComponent<MessageViewerProps> = ({
                             "allow-popups allow-popups-to-escape-sandbox"
                           }
                           referrerPolicy={"no-referrer"}
-                          srcDoc={containedHtml(content.html)}
+                          srcDoc={containedHtml(
+                            content.html,
+                            content.imageProxy,
+                          )}
                           style={{
                             width: "100%",
                             height: "60vh",
@@ -193,8 +197,10 @@ const MessageViewer: React.FunctionComponent<MessageViewerProps> = ({
             ]}
           />
           <Text type={"secondary"} style={{ fontSize: 12 }}>
-            Read from Gmail just now. Images and other remote content are not
-            loaded; nothing of the message is kept.
+            Read from Gmail just now; nothing of the message is kept.
+            {content.imageProxy
+              ? " Its images are fetched by Olympus, so the sender sees no cookie or browser of yours; other remote content is not loaded."
+              : " Images and other remote content are not loaded."}
           </Text>
         </Space>
       )}
