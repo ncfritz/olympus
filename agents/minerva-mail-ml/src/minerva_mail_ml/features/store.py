@@ -323,6 +323,34 @@ class FeatureStore:
         ).fetchall()
         return [EmbeddingVersionStatus(*r) for r in rows]
 
+    def missing_embeddings(
+        self,
+        feature_version: str,
+        embedding_version: str,
+        account_id: str,
+        limit: int,
+    ) -> tuple[list[str], int]:
+        """The account's messages featurized in `feature_version` but not
+        embedded in `embedding_version`, newest first, at most `limit` of
+        them; and how many there are in all. Mail featurized while the
+        embedding model was down, for the nightly backstop to embed."""
+        where = (
+            " FROM message_features f WHERE f.version = ? AND f.account_id = ?"
+            " AND NOT EXISTS (SELECT 1 FROM message_embeddings e"
+            " WHERE e.version = ? AND e.account_id = f.account_id"
+            " AND e.gmail_id = f.gmail_id)"
+        )
+        args = (feature_version, account_id, embedding_version)
+        total = self._db.execute("SELECT count(*)" + where, args).fetchone()[0]
+        ids = [
+            r[0]
+            for r in self._db.execute(
+                "SELECT f.gmail_id" + where + " ORDER BY f.received_at DESC LIMIT ?",
+                (*args, limit),
+            )
+        ]
+        return ids, int(total)
+
     def embedding_dims(self, version: str) -> int:
         row = self._db.execute(
             "SELECT dims FROM embedding_versions WHERE version = ?", (version,)

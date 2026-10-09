@@ -47,6 +47,15 @@ export type EmbeddingVersion = {
   serving: boolean;
 };
 
+/** Featurized mail without a vector in the classifier's embedding version. */
+export type MissingEmbeddings = {
+  version: string;
+  /** How many of the account's messages have none. */
+  missing: number;
+  /** The newest of them, at most the limit asked for. */
+  gmailIds: string[];
+};
+
 export type FeatureVersion = {
   version: string;
   status: "building" | "ready";
@@ -136,6 +145,30 @@ export class ClassifierClient {
         { accountId, messages },
       )
     ).data;
+  }
+
+  /**
+   * The account's messages the classifier featurized but has no vector
+   * for, newest first, at most `limit`: mail that came while the
+   * embedding model was down. Undefined when the classifier has no
+   * embedding model (its 503).
+   */
+  async listMissingEmbeddings(
+    accountId: string,
+    limit: number,
+  ): Promise<MissingEmbeddings | undefined> {
+    try {
+      return (
+        await this.client().get<MissingEmbeddings>("/embeddings/missing", {
+          params: { accountId, limit },
+        })
+      ).data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 503) {
+        return undefined;
+      }
+      throw error;
+    }
   }
 
   /** Marks an embedding version built, so training uses it. */

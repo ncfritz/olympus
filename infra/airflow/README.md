@@ -229,14 +229,21 @@ the NAS.
 
 ### `minerva_mail_retrain` (Minerva Mail Retrain)
 
-Nightly at 03:43, **created paused**: the classifier is not yet part of the
-deployed stack, and its first run belongs after the Takeout archive has been
-featurized ([the plan](../../docs/plans/email-management/README.md), phase 3).
-Two tasks run in the classifier's image
+Nightly at 03:43, **created paused**: its first run belongs after the
+Takeout archive has been featurized and embedded
+([the plan](../../docs/plans/email-management/README.md), Deploying to prod).
+
+First, `embed_missing` runs `gmail embed-missing` in the running mail
+agent's container (found by its Compose labels, through the Docker
+socket): mail featurized while Ollama was down is read from Gmail again
+and embedded. It fails if the agent is down or the model fails, and the
+retrain goes on regardless (`train` runs on `all_done`).
+
+Then five tasks run in the classifier's image
 (`${IMAGE_PREFIX}/minerva-mail-ml:${OLYMPUS_TAG}`) on `olympus-backend`:
-`train` (`minerva-mail-ml-train run`), then `suggest`
-(`minerva-mail-ml-train suggest`, suggestions over the whole mailbox for the
-Re-classification page), each with:
+`train` (`minerva-mail-ml-train run`), `suggest` (suggestions over the
+whole mailbox for the Re-classification page), `score_inbox`, `payments`
+and `cluster`, each with:
 
 - `${DATA_DIR}/olympus/agents/minerva-mail-ml` at `/var/lib/minerva-mail-ml`: the feature
   store it reads and the model registry it writes, the same directory the

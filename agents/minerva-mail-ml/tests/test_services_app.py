@@ -167,3 +167,46 @@ def test_embeddings_need_a_model(store, models) -> None:
     )
     assert response.status_code == 502
     assert SECRET not in response.text
+
+
+def test_lists_featurized_mail_the_model_missed_newest_first(store, models) -> None:
+    # Featurized while the model was down: no vectors.
+    down = TestClient(create_services_app(store, models, FakeEmbedder(fail=True)))
+    down.post(
+        "/v1/features",
+        json={
+            "accountId": ACCOUNT,
+            "messages": [
+                message("0a1d", receivedAt="2026-09-01T12:00:00Z"),
+                message("0e3e", receivedAt="2026-10-02T12:00:00Z"),
+                message("0d1d", receivedAt="2026-09-15T12:00:00Z"),
+            ],
+        },
+    )
+    up = TestClient(create_services_app(store, models, FakeEmbedder()))
+    up.post("/v1/features", json={"accountId": ACCOUNT, "messages": [message("0c0c")]})
+    response = up.get(
+        "/v1/embeddings/missing", params={"accountId": ACCOUNT, "limit": 2}
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "version": "fake-embed-384",
+        "missing": 3,
+        "gmailIds": ["0e3e", "0d1d"],
+    }
+    # The backstop embeds them; then nothing is missing.
+    up.post(
+        "/v1/embeddings",
+        json={
+            "accountId": ACCOUNT,
+            "messages": [message(g) for g in ("0e3e", "0d1d", "0a1d")],
+        },
+    )
+    after = up.get("/v1/embeddings/missing", params={"accountId": ACCOUNT}).json()
+    assert after == {"version": "fake-embed-384", "missing": 0, "gmailIds": []}
+
+
+def test_missing_embeddings_need_a_model(store, models) -> None:
+    client = TestClient(create_services_app(store, models))
+    response = client.get("/v1/embeddings/missing", params={"accountId": ACCOUNT})
+    assert response.status_code == 503

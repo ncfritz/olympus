@@ -101,6 +101,21 @@ that fails part way is repeated. A mailbox with no `historyId` yet, or
 whose history Gmail no longer keeps (404, after about a week), is
 reconciled instead, at most once an hour.
 
+```sh
+pnpm --filter @ncfritz/minerva-mail-agent gmail embed-missing [neil@example.net] [--limit 1000]
+```
+
+`embed-missing` is the backstop for embeddings. New mail is embedded as
+it is featurized, unless Ollama was down at the time; the classifier
+keeps no text, so it cannot embed that mail later on its own. It lists
+what it featurized without a vector in its embedding version (newest
+first, at most `--limit` a mailbox), and each message is read whole
+from Gmail again and its text sent to `/v1/embeddings`, held only until
+its batch is sent. A message deleted from Gmail since is counted as
+gone. If the model fails a batch, that mailbox stops there and the
+command exits 1. The nightly retrain (`infra/airflow`) runs it first,
+in the running agent's container (`node dist/gmail.js embed-missing`).
+
 ## Writing to Gmail
 
 With `MAIL_WRITES_ENABLED=true` (and the API's

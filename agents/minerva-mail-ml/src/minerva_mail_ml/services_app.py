@@ -12,7 +12,7 @@ from datetime import datetime
 from uuid import UUID
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter
@@ -60,6 +60,9 @@ EMBED_FAILURES = Counter(
 )
 
 MAX_BATCH = 500
+# Messages missing a vector, listed at a time for the nightly backstop.
+MISSING_LIMIT = 1000
+MAX_MISSING_LIMIT = 10_000
 
 
 class FeatureMessage(BaseModel):
@@ -99,6 +102,15 @@ class EmbeddingsRequest(BaseModel):
 class EmbeddingsResponse(BaseModel):
     version: str
     stored: int
+
+
+class MissingEmbeddingsResponse(BaseModel):
+    # The embedding version they are missing from: this classifier's.
+    version: str
+    # How many of the account's featurized messages have no vector.
+    missing: int
+    # The newest of them, at most `limit`.
+    gmailIds: list[str]  # noqa: N815
 
 
 class EmbeddingVersionResponse(BaseModel):
@@ -291,6 +303,27 @@ def create_services_app(
             )
         logger.info("Embedding version %s complete", request.version)
         return describe_embeddings(request.version)
+
+    @app.get("/v1/embeddings/missing", response_model=MissingEmbeddingsResponse)
+    def missing_embeddings(
+        accountId: UUID,  # noqa: N803
+        limit: int = Query(default=MISSING_LIMIT, ge=1, le=MAX_MISSING_LIMIT),
+    ) -> MissingEmbeddingsResponse:
+        """The account's messages featurized but not embedded, newest first:
+        new mail that arrived while the embedding model was down. The mail
+        agent reads them from Gmail again and sends them to /v1/embeddings
+        (its `gmail embed-missing`, nightly)."""
+        if embedder is None:
+            raise HTTPException(
+                status_code=503,
+                detail="No embedding model: set OLLAMA_URL (and EMBED_MODEL)",
+            )
+        ids, total = store.missing_embeddings(
+            FEATURE_VERSION, embedder.version, str(accountId), limit
+        )
+        return MissingEmbeddingsResponse(
+            version=embedder.version, missing=total, gmailIds=ids
+        )
 
     @app.get("/v1/embeddings/versions", response_model=list[EmbeddingVersionResponse])
     def embedding_versions() -> list[EmbeddingVersionResponse]:

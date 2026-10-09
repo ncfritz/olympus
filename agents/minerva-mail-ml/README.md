@@ -17,15 +17,16 @@ certificate from the services issuer, and only the services in
 `SERVICES_ALLOWED_CLIENTS` (the mail agent), checked as each connection
 opens.
 
-| Route                          | What                                                            |
-| ------------------------------ | --------------------------------------------------------------- |
-| `POST /v1/features`            | A batch of up to 500 messages' text, featurized and stored      |
-| `POST /v1/features/complete`   | Marks a feature version built: it serves from then on           |
-| `GET /v1/features/versions`    | The versions in the store, their messages, and which one serves |
-| `POST /v1/suggestions`         | Up to 500 messages' text in, each one's suggested labels out    |
-| `POST /v1/embeddings`          | A batch's text embedded by Ollama and stored (the archive pass) |
-| `POST /v1/embeddings/complete` | Marks an embedding version built: training uses it from then on |
-| `GET /v1/embeddings/versions`  | The embedding versions, their messages, and which one serves    |
+| Route                                          | What                                                                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `POST /v1/features`                            | A batch of up to 500 messages' text, featurized and stored                                                   |
+| `POST /v1/features/complete`                   | Marks a feature version built: it serves from then on                                                        |
+| `GET /v1/features/versions`                    | The versions in the store, their messages, and which one serves                                              |
+| `POST /v1/suggestions`                         | Up to 500 messages' text in, each one's suggested labels out                                                 |
+| `POST /v1/embeddings`                          | A batch's text embedded by Ollama and stored (the archive pass)                                              |
+| `POST /v1/embeddings/complete`                 | Marks an embedding version built: training uses it from then on                                              |
+| `GET /v1/embeddings/versions`                  | The embedding versions, their messages, and which one serves                                                 |
+| `GET /v1/embeddings/missing?accountId=&limit=` | Featurized mail with no vector (the model was down), newest first: the agent's nightly `gmail embed-missing` |
 
 The feature store is SQLite (`FEATURE_STORE_PATH`): per feature version,
 each message's hashed token counts (subject, the body's first 5,000

@@ -4,6 +4,10 @@ import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { validateEnvironment } from "./config/configuration";
 import { GmailCommandModule } from "./gmail/GmailCommandModule";
+import {
+  EMBED_MISSING_LIMIT,
+  GmailEmbedMissing,
+} from "./gmail/GmailEmbedMissing";
 import { GmailPoll } from "./gmail/GmailPoll";
 import { GmailReconcile } from "./gmail/GmailReconcile";
 import { GmailSuggestInbox } from "./gmail/GmailSuggestInbox";
@@ -12,6 +16,7 @@ const USAGE = `Usage:
   gmail reconcile <mailbox email>
   gmail poll [mailbox email]
   gmail suggest <mailbox email>
+  gmail embed-missing [mailbox email] [--limit N]
 
   reconcile  Brings a linked mailbox into step with Gmail: labels get their
              Gmail IDs (new ones added); every message's labels and flags
@@ -34,13 +39,35 @@ const USAGE = `Usage:
              scored as it came (new mail is scored by poll and reconcile).
              Reads each message whole from Gmail; its text goes only to
              the classifier. Prints counts as JSON. Safe to run again.
+
+  embed-missing
+             The nightly backstop for embeddings: mail featurized while
+             the embedding model was down has no vector. The classifier
+             lists them (every linked mailbox, or the one named; the
+             newest, at most --limit, default ${EMBED_MISSING_LIMIT}); each is read
+             whole from Gmail again and its text sent only to the
+             classifier to embed. Prints counts as JSON. Safe to run
+             again; infra/airflow's minerva_mail_retrain runs it first.
 `;
 
-const main = async (args: string[]): Promise<number> => {
+/** `--limit N` taken out of the arguments, the rest left in order. */
+const takeLimit = (args: string[]): { rest: string[]; limit?: number } => {
+  const at = args.indexOf("--limit");
+  if (at === -1) return { rest: args };
+  const limit = Number(args[at + 1]);
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error("--limit takes a whole number of messages, at least 1");
+  }
+  return { rest: [...args.slice(0, at), ...args.slice(at + 2)], limit };
+};
+
+const main = async (argv: string[]): Promise<number> => {
+  const { rest: args, limit } = takeLimit(argv);
   const [command, email] = args;
   if (
     ((command === "reconcile" || command === "suggest") && email) ||
-    command === "poll"
+    command === "poll" ||
+    command === "embed-missing"
   ) {
     const config = validateEnvironment();
     if (!config.gmail) {
@@ -52,6 +79,12 @@ const main = async (args: string[]): Promise<number> => {
       logger: ["log", "warn", "error"],
     });
     try {
+      if (command === "embed-missing") {
+        const reports = await app.get(GmailEmbedMissing).run(email, { limit });
+        process.stdout.write(`${JSON.stringify(reports, null, 1)}\n`);
+        // A run that could not embed is a failed nightly step.
+        return reports.some((r) => r.failed > 0) ? 1 : 0;
+      }
       if (command === "suggest") {
         const report = await app.get(GmailSuggestInbox).run(email, {
           onProgress: (done, of) => {

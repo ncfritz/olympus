@@ -886,6 +886,15 @@ the top suggestion on the third or fourth); left as it is.
 **M11 signed off 2026-10-07**: clusters ran on Neil's mailbox on DEV the
 night before. A round of UX changes follows from use.
 
+**The embedding backstop (2026-10-08)**: new mail is embedded as it is
+featurized, unless Ollama is down at the time, and the classifier keeps
+no text to embed it from later. So the nightly retrain first runs the
+agent's `gmail embed-missing` in its container: the classifier lists
+(`GET /v1/embeddings/missing`) what it featurized without a vector,
+newest first, 1,000 a mailbox a night; the agent reads each again from
+Gmail and sends it to `/v1/embeddings`. Mail deleted from Gmail since is
+counted as gone and listed again each night; it is bounded by the limit.
+
 ## Phase 7 — Workflows, stars and filters
 
 Settled with Neil, 2026-10-07: the attention star is the red bang and the

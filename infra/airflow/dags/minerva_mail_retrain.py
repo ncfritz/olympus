@@ -1,10 +1,17 @@
 """The mail classifier, retrained nightly (ADR 0030; docs/plans/
 email-management phase 3).
 
-Five tasks, each a command in the classifier's own image with the
-classifier's data directory, so they read the same feature store and the
-same model registry the service serves from:
+First the embedding backstop, then five tasks, each a command in the
+classifier's own image with the classifier's data directory, so they read
+the same feature store and the same model registry the service serves
+from:
 
+0. `gmail embed-missing`, in the running mail agent's container (it holds
+   the Gmail credentials and the classifier's client certificate): new
+   mail is embedded as it is featurized, unless Ollama was down then; the
+   classifier lists what has no vector, and the agent reads it from Gmail
+   again and sends it to be embedded (phase 6). A failure here is logged
+   and the retrain goes on without it.
 1. `minerva-mail-ml-train run` trains every mail account on the serving
    feature version, evaluates it on the last six months, and records the
    run; the service picks up the new model on its next request. A run that
@@ -24,24 +31,24 @@ same model registry the service serves from:
    unlabelled mail wants a label, and which labels mix kinds of mail
    (phase 6). Last, so a failure here leaves the inbox scored.
 
-The container calls the API's mTLS listener on the backend network with the
-classifier's client certificate (ADR 0018), from its TLS directory
+The containers call the API's mTLS listener on the backend network with
+the classifier's client certificate (ADR 0018), from its TLS directory
 `${SECRETS_DIR}/tls/minerva-mail-agent-ml`, as the agents do (compose/olympus.yml).
 The API needs `minerva-mail-agent-ml:agent` in AUTH_SERVICE_ROLES.
 
-The DAG is created paused: the classifier is not yet part of the deployed
-stack, and its first run belongs after the archive has been featurized.
+The DAG is created paused: its first run belongs after the archive has
+been featurized and embedded (the plan's Deploying to prod, step 8).
 """
-
 from __future__ import annotations
 
+import logging
 import os
 from datetime import timedelta
 from pathlib import Path
 
 import pendulum
 from airflow.providers.docker.operators.docker import DockerOperator
-from airflow.sdk import DAG
+from airflow.sdk import DAG, task
 from docker.types import Mount
 
 REPO = Path(os.environ.get("OLYMPUS_ROOT", Path(__file__).resolve().parents[3]))
@@ -66,6 +73,38 @@ def settings() -> dict[str, str]:
 
 
 ENV = settings()
+
+logger = logging.getLogger(__name__)
+
+# The running mail agent, found by Compose's labels, and its backstop.
+AGENT_LABELS = [
+    "com.docker.compose.project=olympus",
+    "com.docker.compose.service=minerva-mail-agent",
+]
+EMBED_MISSING = ["node", "dist/gmail.js", "embed-missing"]
+
+
+def embed_missing(client=None) -> None:
+    """Runs the agent's `gmail embed-missing` in its own container, where
+    the Gmail credentials and its certificates are, and fails when it
+    does. Its output is counts, never content (agents/minerva-mail).
+    """
+    if client is None:
+        import docker
+
+        client = docker.from_env()
+    running = client.containers.list(
+        filters={"label": AGENT_LABELS, "status": "running"}
+    )
+    if not running:
+        raise RuntimeError("The mail agent is not running: nothing to embed with")
+    result = running[0].exec_run(EMBED_MISSING, demux=True)
+    out, err = result.output or (None, None)
+    for stream in (out, err):
+        if stream:
+            logger.info("%s", stream.decode(errors="replace").rstrip())
+    if result.exit_code != 0:
+        raise RuntimeError(f"gmail embed-missing exited {result.exit_code}")
 IMAGE = ENV["IMAGE_PREFIX"] + "/minerva-mail-ml:" + ENV["OLYMPUS_TAG"]
 
 MOUNTS = [
@@ -107,7 +146,13 @@ with DAG(
     default_args={"retries": 0},
     tags=["olympus", "minerva", "mail"],
 ) as dag:
-    def trainer(task_id: str, name: str, command: str) -> DockerOperator:
+    @task(task_id="embed_missing", task_display_name="Embed what Ollama missed")
+    def embed_missing_task() -> None:
+        embed_missing()
+
+    def trainer(
+        task_id: str, name: str, command: str, **kwargs: object
+    ) -> DockerOperator:
         return DockerOperator(
             task_id=task_id,
             task_display_name=name,
@@ -121,10 +166,13 @@ with DAG(
             mount_tmp_dir=False,
             auto_remove="success",
             execution_timeout=timedelta(hours=3),
+            **kwargs,
         )
 
     (
-        trainer("train", "Train and evaluate", "run")
+        embed_missing_task()
+        # Whether or not the backstop managed: the retrain does not need it.
+        >> trainer("train", "Train and evaluate", "run", trigger_rule="all_done")
         >> trainer("suggest", "Suggest over the mailbox", "suggest")
         >> trainer("score_inbox", "Score the inbox again", "score-inbox")
         >> trainer("payments", "Learn payments", "payments")

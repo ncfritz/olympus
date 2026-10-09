@@ -14,6 +14,7 @@ import { GetGmailMessageController } from "./controllers/GetGmailMessageControll
 import { StartGmailWritesController } from "./controllers/StartGmailWritesController";
 import { GmailClient } from "./GmailClient";
 import { GmailCredentialStore } from "./GmailCredentialStore";
+import { GmailEmbedMissing } from "./GmailEmbedMissing";
 import { GmailFilters } from "./GmailFilters";
 import { GmailMessageReader } from "./GmailMessageReader";
 import { GmailMessages } from "./GmailMessages";
@@ -28,7 +29,8 @@ import { GmailWriter } from "./GmailWriter";
  * mail.messages, new mail's text to the classifier, the accounts' labels
  * and sync through the API; label changes written to Gmail for the API
  * (phase 4); and a message read live for the API to show (phase 5). The running agent polls and writes with it (AppModule); the
- * gmail command reconciles, polls once or scores the inbox
+ * gmail command reconciles, polls once, scores the inbox or embeds
+ * what the embedding model missed
  * (GmailCommandModule).
  */
 @Module({
@@ -52,6 +54,7 @@ import { GmailWriter } from "./GmailWriter";
     GmailPoll,
     GmailWriter,
     GmailSuggestInbox,
+    GmailEmbedMissing,
     GmailMessageReader,
     GmailFilters,
     ServicesOnlyGuard,
@@ -62,6 +65,12 @@ import { GmailWriter } from "./GmailWriter";
     CreateGmailFilterController,
     DeleteGmailFilterController,
   ],
-  exports: [GmailReconcile, GmailPoll, GmailWriter, GmailSuggestInbox],
+  exports: [
+    GmailReconcile,
+    GmailPoll,
+    GmailWriter,
+    GmailSuggestInbox,
+    GmailEmbedMissing,
+  ],
 })
 export class GmailSyncModule {}
