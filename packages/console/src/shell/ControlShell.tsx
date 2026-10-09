@@ -1,7 +1,7 @@
 "use client";
 
 import { Flex, Layout, Spin, theme } from "antd";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { ConsoleAuth } from "../auth/useConsoleAuth";
 import {
   findConsole,
@@ -9,10 +9,13 @@ import {
   type ConsoleKey,
   type Registry,
 } from "../registry";
+import { breadcrumbItems } from "./breadcrumbs";
+import { ConsoleRail } from "./ConsoleRail";
 import { ControlHeader } from "./ControlHeader";
-import { ControlSider } from "./ControlSider";
+import { loadPagesCollapsed, savePagesCollapsed } from "./pagesCollapsed";
+import { PagesSider } from "./PagesSider";
 import { SignInCard } from "./SignInCard";
-import type { ShellTab, SignInProvider } from "./types";
+import type { ShellPage, SignInProvider } from "./types";
 
 const { Content } = Layout;
 
@@ -28,8 +31,11 @@ export interface ControlShellProps {
   origin?: string;
   /** The session, from `useConsoleAuth`. The index has no agent to have one with. */
   auth?: ConsoleAuth;
-  tabs?: ShellTab[];
-  activeTab?: string;
+  /** This console's own pages, for the sider beside the rail. */
+  pages?: ShellPage[];
+  activePage?: string;
+  /** Routes within the console. Without it a page is a document load. */
+  onNavigate?: (href: string) => void;
   /** Console-specific header controls, to the left of the session menu. */
   actions?: ReactNode;
   /** The suite's wordmark for the header, served by the application. */
@@ -39,28 +45,40 @@ export interface ControlShellProps {
 }
 
 /**
- * The chrome every console wears: the suite in the sider, the console's
- * own pages in the header (ADR 0021). It routes nothing and fetches
- * nothing — the console passes its tabs and its session in.
+ * The chrome every console wears (ADR 0021), arranged as the main
+ * Olympus site is: the suite across the top, its consoles in a fixed
+ * rail, and this console's pages in the collapsible sider beside it.
+ *
+ * It routes nothing and fetches nothing — the console passes its pages
+ * and its session in.
  */
 export const ControlShell = ({
   nav,
   current,
   origin,
   auth,
-  tabs,
-  activeTab,
+  pages = [],
+  activePage,
+  onNavigate,
   actions,
   logo,
   signIn = [],
   children,
 }: ControlShellProps) => {
+  // Per browser rather than per render: crossing the suite is a document
+  // load, and a sider that springs open each time is not a choice.
   const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => setCollapsed(loadPagesCollapsed()), []);
+  const collapsePages = (next: boolean) => {
+    setCollapsed(next);
+    savePagesCollapsed(next);
+  };
+
   const { token } = theme.useToken();
 
   // The host's list can leave this console out — a misconfiguration, but
   // not a reason to render nothing, so the name comes from the full
-  // registry and the sider shows whatever the host allowed.
+  // registry and the rail shows whatever the host allowed.
   const here = current
     ? (findConsole(nav, current) ?? findConsole(PROPERTIES, current))
     : undefined;
@@ -88,23 +106,24 @@ export const ControlShell = ({
 
   return (
     <Layout style={{ height: "100vh", overflow: "hidden" }}>
-      <ControlSider
-        nav={nav}
-        current={current}
-        origin={origin}
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
+      <ControlHeader
+        logo={logo}
+        crumbs={breadcrumbItems({ nav, current, origin, pages, activePage })}
+        actions={actions}
+        email={auth?.email}
+        onLogout={() => void auth?.logout()}
       />
       <Layout>
-        <ControlHeader
-          logo={logo}
-          title={current ? title : undefined}
-          tabs={tabs}
-          activeTab={activeTab}
-          actions={actions}
-          email={auth?.email}
-          onLogout={() => void auth?.logout()}
-        />
+        <ConsoleRail nav={nav} current={current} origin={origin} />
+        {pages.length > 0 ? (
+          <PagesSider
+            pages={pages}
+            activePage={activePage}
+            collapsed={collapsed}
+            onCollapse={collapsePages}
+            onNavigate={onNavigate}
+          />
+        ) : null}
         <Content
           style={{
             flex: 1,

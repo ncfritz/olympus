@@ -11,17 +11,28 @@ two of them is a document load, not a route change, so the part of the
 chrome that spans the suite is rendered from shared, static knowledge and
 looks identical in every image.
 
-| Level                | Control     | Comes from                         |
-| -------------------- | ----------- | ---------------------------------- |
-| Property and console | the sider   | `PROPERTIES`, narrowed by the host |
-| The console's pages  | header tabs | the console, as `tabs`             |
+| Level               | Control             | Comes from                         |
+| ------------------- | ------------------- | ---------------------------------- |
+| The consoles        | the fixed rail      | `PROPERTIES`, narrowed by the host |
+| The console's pages | the sider beside it | the console, as `pages`            |
+| Where you are       | the header's trail  | both of the above                  |
 
-The sider collapses the way the main Olympus site's does: a pill on its
-edge, at eye height rather than at the foot, and a rail of icons rather
-than nothing. Collapsed, the property headings go — a heading with no
-room for its text is worse than none — and each console is its glyph, its
-tooltip and its link. It is the only control for it; the header has
-none.
+It is arranged as the main Olympus site is. A fixed rail of glyphs holds
+the suite — Control, then every console the host runs — and does not
+collapse: it is the one thing on the screen that is the same in every
+console image. Beside it, this console's own pages, as a light panel that
+collapses to a second rail behind a pill on its edge, at eye height
+rather than at the foot. The header carries the wordmark, the trail and
+the session, and no navigation at all.
+
+The properties are not rows in the rail. A property is how a console is
+_named_ — `minerva/calendar`, and so its path, image and metrics client —
+not anywhere a person can go, and a rail is too narrow to say both. The
+tooltip carries it, for the day two properties have a Calendar.
+
+The collapsed state is stored per browser, not held in React: crossing
+the suite is a document load, and a sider that springs open every time is
+not a choice.
 
 ## Using it
 
@@ -57,8 +68,9 @@ return (
     current="minerva/calendar"
     origin={origin}
     auth={auth}
-    tabs={TABS}
-    activeTab={usePathname()}
+    pages={PAGES}
+    activePage={usePathname()}
+    onNavigate={(href) => router.push(href)}
     logo={<img src="/header.png" alt="Olympus" height={64} />}
     signIn={[{ name: "google", label: "Sign in with Google" }]}
   >
@@ -67,10 +79,21 @@ return (
 );
 ```
 
+A page is `{ key, label, icon, href }`, and a section is one with
+`children` and no `href` of its own. The icon is not optional: collapsed,
+it is the whole of the row. Each row is an anchor, so a page can be
+opened in a new tab and the address bar is the address — `onNavigate`
+takes over only the plain left click, which is the one a router does
+better than a document load.
+
 `logo` is the suite's wordmark, at the head of the bar. The application
 passes it because the application serves the file; the shell has no
-`public/` of its own. It is the header's own height, 64px, and about the
-width of the open sider so the two line up.
+`public/` of its own. It is the header's own height, 64px; 80px wide sits
+it over the rail, and 380px over the rail and the open sider both.
+
+Nothing supplies the breadcrumbs. They are read off `nav`, `current`,
+`pages` and `activePage` — the suite, the property, the console, then the
+page and whatever section it is under.
 
 ## The registry
 

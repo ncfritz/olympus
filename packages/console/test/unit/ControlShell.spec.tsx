@@ -1,10 +1,12 @@
+import { CalendarOutlined, SettingOutlined } from "@ant-design/icons";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ConsoleAuth } from "../../src/auth/useConsoleAuth";
 import {
   ControlShell,
   type ControlShellProps,
 } from "../../src/shell/ControlShell";
+import type { ShellPage } from "../../src/shell/types";
 import { ThemeModeProvider } from "../../src/theme/ThemeModeProvider";
 import { testRegistry } from "../support/registry";
 
@@ -14,6 +16,28 @@ const authenticated: ConsoleAuth = {
   logout: async () => {},
   signInHref: (provider) => `/minerva/calendar/api/auth/login/${provider}`,
 };
+
+const pages: ShellPage[] = [
+  {
+    key: "/",
+    label: "Accounts",
+    icon: <CalendarOutlined />,
+    href: "/minerva/calendar",
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    icon: <SettingOutlined />,
+    children: [
+      {
+        key: "/sync",
+        label: "Sync",
+        icon: <SettingOutlined />,
+        href: "/minerva/calendar/sync",
+      },
+    ],
+  },
+];
 
 const renderShell = (props: Partial<ControlShellProps> = {}) =>
   render(
@@ -35,176 +59,203 @@ const part = (container: HTMLElement, selector: string): HTMLElement => {
   return element;
 };
 
+const siders = (container: HTMLElement): HTMLElement[] =>
+  Array.from(container.querySelectorAll<HTMLElement>(".ant-layout-sider"));
+
+/** The console rail: the first sider, and the only one on the index. */
+const rail = (container: HTMLElement): HTMLElement => {
+  const [first] = siders(container);
+  if (!first) throw new Error("no rail");
+  return first;
+};
+
 const hrefs = (element: HTMLElement): (string | null)[] =>
   Array.from(element.querySelectorAll<HTMLAnchorElement>("a")).map((link) =>
     link.getAttribute("href"),
   );
 
 describe("ControlShell", () => {
-  it("shows the whole suite, grouped by property", () => {
-    const { container } = renderShell();
-    const text = part(container, ".ant-layout-sider").textContent ?? "";
-
-    for (const label of [
-      "Olympus",
-      "Notifications",
-      "CA",
-      "Minerva",
-      "Calendar",
-    ]) {
-      expect(text).toContain(label);
-    }
-  });
-
-  it("links to the other consoles as documents, not routes", () => {
-    const { container } = renderShell();
-
-    expect(hrefs(part(container, ".ant-layout-sider"))).toEqual([
-      "/olympus/notifications",
-      "/olympus/ca",
-      "/minerva/calendar",
-    ]);
-  });
-
-  it("points at the suite's own origin when it is somewhere else", () => {
-    const { container } = renderShell({
-      origin: "https://control.olympus.ncfritz.net",
-    });
-
-    expect(hrefs(part(container, ".ant-layout-sider"))[0]).toBe(
-      "https://control.olympus.ncfritz.net/olympus/notifications",
-    );
-  });
-
-  it("marks the console it is", () => {
-    const { container } = renderShell();
-
-    expect(
-      part(container, ".ant-layout-sider .ant-menu-item-selected").textContent,
-    ).toContain("Calendar");
-  });
-
-  describe("collapsing the console list", () => {
-    const collapse = (container: HTMLElement) => {
-      fireEvent.click(screen.getByLabelText("Collapse the console list"));
-      return part(container, ".ant-layout-sider");
-    };
-
-    it("collapses to a rail rather than out of view", () => {
-      const { container } = renderShell();
-      const sider = collapse(container);
-
-      expect(sider.classList.contains("ant-layout-sider-collapsed")).toBe(true);
-      // The site's rail, not a hidden sider: still 80px of icons.
-      expect(sider.style.width).toBe("80px");
-    });
-
-    it("still links every console from the rail", () => {
+  describe("the console rail", () => {
+    it("is the suite, flat: the index and every console", () => {
       const { container } = renderShell();
 
-      expect(hrefs(collapse(container))).toEqual([
+      expect(hrefs(rail(container))).toEqual([
+        "/",
         "/olympus/notifications",
         "/olympus/ca",
         "/minerva/calendar",
       ]);
     });
 
-    it("drops the property headings, which have no room for their text", () => {
+    it("leaves the properties to the tooltips, having no room for them", () => {
       const { container } = renderShell();
 
-      expect(
-        part(container, ".ant-layout-sider").querySelectorAll(
-          ".ant-menu-item-group",
-        ),
-      ).toHaveLength(2);
-      expect(
-        collapse(container).querySelector(".ant-menu-item-group"),
-      ).toBeNull();
-    });
-
-    it("names each console where its label used to be", () => {
-      const { container } = renderShell();
-      collapse(container);
-
+      expect(rail(container).querySelector(".ant-menu-item-group")).toBeNull();
       expect(screen.getByLabelText("Minerva · Calendar")).toHaveProperty(
         "tagName",
         "A",
       );
     });
 
-    it("offers the way back", () => {
-      const { container } = renderShell();
-      collapse(container);
+    it("points at the suite's own origin when it is somewhere else", () => {
+      const { container } = renderShell({
+        origin: "https://control.olympus.ncfritz.net",
+      });
 
-      fireEvent.click(screen.getByLabelText("Expand the console list"));
+      expect(hrefs(rail(container))).toContain(
+        "https://control.olympus.ncfritz.net/olympus/notifications",
+      );
+    });
+
+    it("marks the console it is", () => {
+      const { container } = renderShell();
 
       expect(
-        part(container, ".ant-layout-sider").classList.contains(
-          "ant-layout-sider-collapsed",
-        ),
-      ).toBe(false);
+        part(rail(container), ".ant-menu-item-selected").getAttribute(
+          "aria-label",
+        ) ??
+          part(rail(container), ".ant-menu-item-selected a")?.getAttribute(
+            "aria-label",
+          ),
+      ).toBe("Minerva · Calendar");
     });
 
-    it("is the only control for it, and not in the header", () => {
+    it("does not collapse: it is the one fixed thing on the screen", () => {
+      const { container } = renderShell({ pages });
+
+      expect(rail(container).classList).toContain("ant-layout-sider-collapsed");
+      expect(
+        rail(container).querySelector(".ant-layout-sider-trigger"),
+      ).toBeNull();
+    });
+  });
+
+  describe("the console's own pages", () => {
+    const pagesSider = (container: HTMLElement): HTMLElement => {
+      const second = siders(container)[1];
+      if (!second) throw new Error("no pages sider");
+      return second;
+    };
+
+    const collapse = (container: HTMLElement) => {
+      fireEvent.click(screen.getByLabelText("Collapse the page list"));
+      return pagesSider(container);
+    };
+
+    it("are a sider of their own, beside the rail", () => {
+      const { container } = renderShell({ pages, activePage: "/" });
+
+      expect(pagesSider(container).textContent).toContain("Accounts");
+      expect(
+        part(pagesSider(container), ".ant-menu-item-selected").textContent,
+      ).toContain("Accounts");
+    });
+
+    it("is not there at all for a console with none", () => {
       const { container } = renderShell();
-      const header = part(container, ".ant-layout-header");
 
-      expect(header.querySelector('[aria-label*="console list"]')).toBeNull();
-      expect(screen.getAllByLabelText(/console list/)).toHaveLength(1);
+      expect(siders(container)).toHaveLength(1);
+    });
+
+    it("collapses to a rail rather than out of view", () => {
+      const { container } = renderShell({ pages });
+      const sider = collapse(container);
+
+      expect(sider.classList).toContain("ant-layout-sider-collapsed");
+      expect(sider.style.width).toBe("80px");
+    });
+
+    it("still links every page from the rail", () => {
+      const { container } = renderShell({ pages });
+
+      expect(hrefs(collapse(container))).toEqual(["/minerva/calendar"]);
+    });
+
+    it("offers the way back", () => {
+      const { container } = renderShell({ pages });
+      collapse(container);
+
+      fireEvent.click(screen.getByLabelText("Expand the page list"));
+
+      expect(pagesSider(container).classList).not.toContain(
+        "ant-layout-sider-collapsed",
+      );
+    });
+
+    it("lets the console route its own plain clicks", () => {
+      const onNavigate = vi.fn();
+      renderShell({ pages, onNavigate });
+
+      fireEvent.click(screen.getByText("Accounts"));
+
+      expect(onNavigate).toHaveBeenCalledWith("/minerva/calendar");
+    });
+
+    it("leaves a new-tab click to the browser", () => {
+      const onNavigate = vi.fn();
+      renderShell({ pages, onNavigate });
+
+      fireEvent.click(screen.getByText("Accounts"), { metaKey: true });
+
+      expect(onNavigate).not.toHaveBeenCalled();
     });
   });
 
-  it("names the console and its property in the header", () => {
-    renderShell();
+  describe("the header", () => {
+    const header = (container: HTMLElement) =>
+      part(container, ".ant-layout-header");
 
-    expect(screen.getByText("Minerva · Calendar")).toBeDefined();
-  });
+    it("says where you are, down to the page", () => {
+      const { container } = renderShell({ pages, activePage: "/sync" });
 
-  it("still names a console the host's list leaves out of the sidebar", () => {
-    const { container } = renderShell({
-      nav: testRegistry.filter((property) => property.key === "olympus"),
+      expect(header(container).textContent).toContain("Control");
+      expect(header(container).textContent).toContain("Minerva");
+      expect(header(container).textContent).toContain("Calendar");
+      expect(header(container).textContent).toContain("Settings");
+      expect(header(container).textContent).toContain("Sync");
     });
 
-    expect(screen.getByText("Minerva · Calendar")).toBeDefined();
-    expect(part(container, ".ant-layout-sider").textContent).not.toContain(
-      "Calendar",
-    );
-  });
+    it("links the suite and the console, but not the property", () => {
+      const { container } = renderShell();
 
-  it("shows the console's own pages, and which one is open", () => {
-    const { container } = renderShell({
-      tabs: [
-        { key: "/", label: "Events" },
-        { key: "/sync", label: "Sync" },
-      ],
-      activeTab: "/sync",
-    });
-    const header = part(container, ".ant-layout-header");
-
-    expect(header.textContent).toContain("Events");
-    expect(
-      part(container, ".ant-layout-header .ant-menu-item-selected").textContent,
-    ).toContain("Sync");
-  });
-
-  it("puts the console's own controls in the header", () => {
-    const { container } = renderShell({
-      actions: <button type="button">Settings</button>,
+      expect(hrefs(header(container))).toEqual(["/", "/minerva/calendar"]);
     });
 
-    expect(part(container, ".ant-layout-header").textContent).toContain(
-      "Settings",
-    );
-  });
+    it("still names a console the host's list leaves out of the rail", () => {
+      const { container } = renderShell({
+        nav: testRegistry.filter((property) => property.key === "olympus"),
+      });
 
-  it("shows the suite's wordmark in the header when it is given one", () => {
-    const { container } = renderShell({
-      logo: <img src="/header.png" alt="Olympus" height={64} />,
+      expect(header(container).textContent).toContain("Calendar");
+      expect(rail(container).textContent).not.toContain("Calendar");
     });
 
-    expect(part(container, ".ant-layout-header img").getAttribute("alt")).toBe(
-      "Olympus",
-    );
+    it("holds no navigation of its own", () => {
+      const { container } = renderShell({ pages });
+
+      expect(header(container).querySelector(".ant-menu")).toBeNull();
+      expect(
+        header(container).querySelector('[aria-label*="page list"]'),
+      ).toBeNull();
+    });
+
+    it("puts the console's own controls in it", () => {
+      const { container } = renderShell({
+        actions: <button type="button">Settings</button>,
+      });
+
+      expect(header(container).textContent).toContain("Settings");
+    });
+
+    it("shows the suite's wordmark when it is given one", () => {
+      const { container } = renderShell({
+        logo: <img src="/header.png" alt="Olympus" height={64} />,
+      });
+
+      expect(
+        part(container, ".ant-layout-header img").getAttribute("alt"),
+      ).toBe("Olympus");
+    });
   });
 
   it("renders the page", () => {
@@ -239,19 +290,26 @@ describe("ControlShell", () => {
     it("shows the suite and the page", () => {
       const { container } = renderIndex();
 
-      expect(hrefs(part(container, ".ant-layout-sider"))).toHaveLength(3);
+      expect(hrefs(rail(container))).toHaveLength(4);
       expect(screen.getByText("the index")).toBeDefined();
     });
 
-    it("marks no console, and leaves the naming to the sider", () => {
+    it("marks itself in the rail, and no console", () => {
       const { container } = renderIndex();
 
-      expect(container.querySelector(".ant-menu-item-selected")).toBeNull();
-      // The sider's wordmark already says it; the header would be saying
-      // "Olympus Control" a second time.
-      expect(part(container, ".ant-layout-header").textContent).not.toContain(
-        "Olympus Control",
-      );
+      expect(
+        part(rail(container), ".ant-menu-item-selected a").getAttribute(
+          "aria-label",
+        ),
+      ).toBe("Olympus Control");
+    });
+
+    it("is the whole of the trail", () => {
+      const { container } = renderIndex();
+
+      expect(
+        part(container, ".ant-layout-header").textContent?.trim(),
+      ).toContain("Control");
     });
 
     it("offers no session menu", () => {
