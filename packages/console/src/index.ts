@@ -10,4 +10,5 @@ export * from "./shell/types";
 export * from "./shell/ControlShell";
 export * from "./shell/ControlHeader";
 export * from "./shell/ControlSider";
+export * from "./shell/icons";
 export * from "./shell/SignInCard";

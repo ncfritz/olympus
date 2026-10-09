@@ -4,7 +4,6 @@ import {
   DesktopOutlined,
   DownOutlined,
   LogoutOutlined,
-  MenuOutlined,
   MoonOutlined,
   SunOutlined,
 } from "@ant-design/icons";
@@ -34,6 +33,12 @@ const THEME_MODE_OPTIONS: { value: ThemeMode; icon: ReactNode }[] = [
 
 export interface ControlHeaderProps {
   /**
+   * The suite's wordmark, at the head of the bar. An image of the header's
+   * own height, passed by the application because it serves the file; the
+   * shell has no public directory of its own.
+   */
+  logo?: ReactNode;
+  /**
    * What this console is called, with its property: "Minerva · Calendar".
    * The suite's index has none — the sider already names the suite.
    */
@@ -43,7 +48,6 @@ export interface ControlHeaderProps {
   actions?: ReactNode;
   email?: string;
   onLogout: () => void;
-  onToggleNav: () => void;
 }
 
 /**
@@ -52,13 +56,13 @@ export interface ControlHeaderProps {
  * the part of the suite that is shared is in the sider.
  */
 export const ControlHeader = ({
+  logo,
   title,
   tabs,
   activeTab,
   actions,
   email,
   onLogout,
-  onToggleNav,
 }: ControlHeaderProps) => (
   <Header
     style={{
@@ -66,16 +70,16 @@ export const ControlHeader = ({
       alignItems: "center",
       gap: 16,
       flexShrink: 0,
-      paddingInline: 16,
+      // The wordmark bleeds to the edge, as the main site's does; without
+      // one the bar is padded like any other.
+      paddingInline: logo ? "0 16px" : 16,
     }}
   >
-    <Button
-      type="text"
-      icon={<MenuOutlined />}
-      onClick={onToggleNav}
-      aria-label="Toggle the console list"
-      style={{ color: "#fff", flexShrink: 0 }}
-    />
+    {logo ? (
+      <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+        {logo}
+      </div>
+    ) : null}
     {title ? (
       <Text strong style={{ color: "#fff", whiteSpace: "nowrap" }}>
         {title}

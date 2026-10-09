@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ConsoleAuth } from "../../src/auth/useConsoleAuth";
 import {
@@ -84,6 +84,76 @@ describe("ControlShell", () => {
     ).toContain("Calendar");
   });
 
+  describe("collapsing the console list", () => {
+    const collapse = (container: HTMLElement) => {
+      fireEvent.click(screen.getByLabelText("Collapse the console list"));
+      return part(container, ".ant-layout-sider");
+    };
+
+    it("collapses to a rail rather than out of view", () => {
+      const { container } = renderShell();
+      const sider = collapse(container);
+
+      expect(sider.classList.contains("ant-layout-sider-collapsed")).toBe(true);
+      // The site's rail, not a hidden sider: still 80px of icons.
+      expect(sider.style.width).toBe("80px");
+    });
+
+    it("still links every console from the rail", () => {
+      const { container } = renderShell();
+
+      expect(hrefs(collapse(container))).toEqual([
+        "/olympus/notifications",
+        "/olympus/ca",
+        "/minerva/calendar",
+      ]);
+    });
+
+    it("drops the property headings, which have no room for their text", () => {
+      const { container } = renderShell();
+
+      expect(
+        part(container, ".ant-layout-sider").querySelectorAll(
+          ".ant-menu-item-group",
+        ),
+      ).toHaveLength(2);
+      expect(
+        collapse(container).querySelector(".ant-menu-item-group"),
+      ).toBeNull();
+    });
+
+    it("names each console where its label used to be", () => {
+      const { container } = renderShell();
+      collapse(container);
+
+      expect(screen.getByLabelText("Minerva · Calendar")).toHaveProperty(
+        "tagName",
+        "A",
+      );
+    });
+
+    it("offers the way back", () => {
+      const { container } = renderShell();
+      collapse(container);
+
+      fireEvent.click(screen.getByLabelText("Expand the console list"));
+
+      expect(
+        part(container, ".ant-layout-sider").classList.contains(
+          "ant-layout-sider-collapsed",
+        ),
+      ).toBe(false);
+    });
+
+    it("is the only control for it, and not in the header", () => {
+      const { container } = renderShell();
+      const header = part(container, ".ant-layout-header");
+
+      expect(header.querySelector('[aria-label*="console list"]')).toBeNull();
+      expect(screen.getAllByLabelText(/console list/)).toHaveLength(1);
+    });
+  });
+
   it("names the console and its property in the header", () => {
     renderShell();
 
@@ -124,6 +194,16 @@ describe("ControlShell", () => {
 
     expect(part(container, ".ant-layout-header").textContent).toContain(
       "Settings",
+    );
+  });
+
+  it("shows the suite's wordmark in the header when it is given one", () => {
+    const { container } = renderShell({
+      logo: <img src="/header.png" alt="Olympus" height={64} />,
+    });
+
+    expect(part(container, ".ant-layout-header img").getAttribute("alt")).toBe(
+      "Olympus",
     );
   });
 

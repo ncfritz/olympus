@@ -16,6 +16,13 @@ looks identical in every image.
 | Property and console | the sider   | `PROPERTIES`, narrowed by the host |
 | The console's pages  | header tabs | the console, as `tabs`             |
 
+The sider collapses the way the main Olympus site's does: a pill on its
+edge, at eye height rather than at the foot, and a rail of icons rather
+than nothing. Collapsed, the property headings go — a heading with no
+room for its text is worse than none — and each console is its glyph, its
+tooltip and its link. It is the only control for it; the header has
+none.
+
 ## Using it
 
 This package is consumed as **source**: it is `"use client"` React, so
@@ -52,12 +59,18 @@ return (
     auth={auth}
     tabs={TABS}
     activeTab={usePathname()}
+    logo={<img src="/header.png" alt="Olympus" height={64} />}
     signIn={[{ name: "google", label: "Sign in with Google" }]}
   >
     {children}
   </ControlShell>
 );
 ```
+
+`logo` is the suite's wordmark, at the head of the bar. The application
+passes it because the application serves the file; the shell has no
+`public/` of its own. It is the header's own height, 64px, and about the
+width of the open sider so the two line up.
 
 ## The registry
 
@@ -66,6 +79,12 @@ return (
 the Docker image and Compose service names, and the `X-Olympus-Client`
 value (ADR 0017). An entry is added when its console is **built**, not
 when it is planned — a menu row that 404s is worse than a short menu.
+
+An entry also names an `icon`, which is the whole of its row in the
+collapsed rail and the avatar on the index. It is a name rather than a
+component, because `readShellConfig` reads this module on the server and
+it stays plain data; `src/shell/icons.tsx` is where the names are drawn,
+and the only place the suite's glyphs are chosen.
 
 ## Styles
 

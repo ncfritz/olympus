@@ -32,6 +32,8 @@ export interface ControlShellProps {
   activeTab?: string;
   /** Console-specific header controls, to the left of the session menu. */
   actions?: ReactNode;
+  /** The suite's wordmark for the header, served by the application. */
+  logo?: ReactNode;
   signIn?: SignInProvider[];
   children: ReactNode;
 }
@@ -49,6 +51,7 @@ export const ControlShell = ({
   tabs,
   activeTab,
   actions,
+  logo,
   signIn = [],
   children,
 }: ControlShellProps) => {
@@ -94,13 +97,13 @@ export const ControlShell = ({
       />
       <Layout>
         <ControlHeader
+          logo={logo}
           title={current ? title : undefined}
           tabs={tabs}
           activeTab={activeTab}
           actions={actions}
           email={auth?.email}
           onLogout={() => void auth?.logout()}
-          onToggleNav={() => setCollapsed((open) => !open)}
         />
         <Content
           style={{
