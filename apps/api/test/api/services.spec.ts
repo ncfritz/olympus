@@ -1,5 +1,7 @@
+import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as https from "https";
+import * as os from "os";
 import * as path from "path";
 import type { Server } from "https";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -135,6 +137,145 @@ describe("the services listener", () => {
     expect(response.status).toBe(200);
     expect(await decisions()).toMatch(
       /^auth_decisions_total\{[^}]*outcome="would_reject",reason="client header mismatch"[^}]*\} [1-9]/m,
+    );
+  });
+});
+
+/**
+ * Harpocrates publishes each list as DER and replaces it by renaming a new
+ * file over it (ADR 0020); the listener reloads every replacement.
+ */
+describe("the services listener's revocation lists", () => {
+  let t: TestApp;
+  let server: Server;
+  let port: number;
+  let dir: string;
+  let servicesList: string;
+
+  const connect = (name: string) =>
+    new Promise<number | string>((resolve) => {
+      https
+        .get(
+          {
+            host: "127.0.0.1",
+            port,
+            path: "/v1/olympus/ping",
+            servername: "localhost",
+            ca: fs.readFileSync(path.join(devCa(), "services-ca.crt")),
+            ...identity(name),
+            agent: false,
+          },
+          (response) => {
+            response.resume();
+            resolve(response.statusCode ?? 0);
+          },
+        )
+        .on("error", (error: NodeJS.ErrnoException) =>
+          resolve(error.code ?? error.message),
+        );
+    });
+
+  /** As Harpocrates publishes: written beside, then renamed over. */
+  const publish = (data: Buffer) => {
+    fs.writeFileSync(`${servicesList}.tmp`, data);
+    fs.renameSync(`${servicesList}.tmp`, servicesList);
+  };
+
+  const eventually = async (check: () => Promise<boolean>) => {
+    for (let i = 0; i < 50; i += 1) {
+      if (await check()) return;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error("not within 5 seconds");
+  };
+
+  /** The Service CA's list with one more certificate revoked, DER. */
+  const listRevoking = (name: string): Buffer => {
+    const authority = path.join(dir, "services");
+    fs.cpSync(path.resolve(devCa(), "../services"), authority, {
+      recursive: true,
+    });
+    const config = path.join(authority, "openssl.cnf");
+    fs.writeFileSync(
+      config,
+      fs
+        .readFileSync(config, "utf8")
+        .replace(/^dir\s*=.*$/m, `dir = ${authority}`),
+    );
+    const run = (...args: string[]) =>
+      execFileSync("openssl", args, {
+        stdio: "ignore",
+        // The configuration's server extensions read it.
+        env: { ...process.env, SAN: "DNS:localhost" },
+      });
+    run(
+      "ca",
+      "-batch",
+      "-config",
+      config,
+      "-revoke",
+      path.join(devCa(), `${name}.crt`),
+    );
+    run(
+      "ca",
+      "-batch",
+      "-config",
+      config,
+      "-gencrl",
+      "-out",
+      path.join(dir, "next.pem"),
+    );
+    run(
+      "crl",
+      "-in",
+      path.join(dir, "next.pem"),
+      "-outform",
+      "DER",
+      "-out",
+      path.join(dir, "next.der"),
+    );
+    return fs.readFileSync(path.join(dir, "next.der"));
+  };
+
+  beforeAll(async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "api-crl-"));
+    const config = servicesConfig();
+    servicesList = path.join(dir, "services.crl");
+    const others = config.revocationLists.filter(
+      (list) => path.basename(list) !== "services.crl",
+    );
+    fs.copyFileSync(path.join(devCa(), "services.crl"), servicesList);
+    t = await createTestApp();
+    server = createServicesListener(
+      t.app,
+      {
+        ...config,
+        revocationLists: [servicesList, ...others],
+      },
+      50,
+    );
+    await new Promise((resolve) => server.once("listening", resolve));
+    port = (server.address() as { port: number }).port;
+  });
+
+  afterAll(async () => {
+    server.close();
+    await t.app.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("takes a DER list renamed over the old one, and the next one too", async () => {
+    const original = fs.readFileSync(servicesList);
+    expect(await connect("agents/dionysus-search-agent")).toBe(200);
+
+    publish(listRevoking("agents/dionysus-search-agent"));
+    await eventually(
+      async () => (await connect("agents/dionysus-search-agent")) !== 200,
+    );
+
+    publish(original);
+    await eventually(
+      async () => (await connect("agents/dionysus-search-agent")) === 200,
     );
   });
 });

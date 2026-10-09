@@ -1,0 +1,245 @@
+# promtool test rules harpocrates.rules.test.yml
+rule_files:
+  - harpocrates.rules.yml
+evaluation_interval: 1m
+tests:
+  - name: a sealed signer pages after 10 minutes
+    interval: 1m
+    input_series:
+      - series: harpocrates_signer_sealed{job="harpocrates"}
+        values: 0 1x15
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: HarpocratesSignerSealed
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: HarpocratesSignerSealed
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: harpocrates
+            exp_annotations:
+              summary: The signer has been sealed or unreachable for 10 minutes
+              description:
+                "Nothing can be signed, lists included: unseal it with the recovery passphrase (console
+                or `harpocrates-signer unseal`), or find out why it was sealed. The audit log records who sealed
+                it."
+  - name: the service down for 10 minutes
+    interval: 1m
+    input_series:
+      - series: up{job="harpocrates"}
+        values: 1 0x15
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: HarpocratesDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: harpocrates
+            exp_annotations:
+              summary: Harpocrates is not answering scrapes
+              description:
+                Nothing is issued, renewed or revoked, and no list is signed, while it is down. The
+                lists already published keep working until their next update; the list alerts below keep firing
+                from the last values scraped.
+  - name: a list waiting to be published
+    interval: 1m
+    input_series:
+      - series: harpocrates_crl_publication_pending_seconds{issuer="tls-issuing-1-g1",tier="issuing"}
+        values: 0 60 120 180 240 300 360
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HarpocratesCrlPublicationFailing
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: HarpocratesCrlPublicationFailing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: tls-issuing-1-g1
+              tier: issuing
+            exp_annotations:
+              summary: tls-issuing-1-g1's newest revocation list is not published
+              description:
+                "It has waited 6m 0s: written to the published directory, or read back from the distribution
+                URL, failed. The CA's lists show the error (GET /v1/issuer/tls-issuing-1-g1/crls); publication
+                is retried."
+  - name: signing refused, but not for being sealed
+    interval: 1m
+    input_series:
+      - series: harpocrates_crl_signing_failures_total{issuer="tls-issuing-1-g1",reason="sealed"}
+        values: 0 1 2 3
+      - series: harpocrates_crl_signing_failures_total{issuer="service-issuing-1-g1",reason="refused"}
+        values: 0 0 1 1
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HarpocratesCrlSigningFailing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: service-issuing-1-g1
+              reason: refused
+            exp_annotations:
+              summary: service-issuing-1-g1's revocation list could not be signed
+              description:
+                The signer refused it or the call failed (refused); the service's log has the message.
+                Sealed signers alert on their own.
+  # A list whose next update is 3 days after the start: nothing at first;
+  # with a day and a half left, the page. The series stops at 30 minutes
+  # (the service stopped) and the alert fires regardless (sign-off C16.2).
+  - name: an online CA's list lapsing, with the service stopped
+    interval: 30m
+    input_series:
+      - series: harpocrates_crl_next_update_timestamp_seconds{issuer="tls-issuing-1-g1",tier="issuing"}
+        values: 259200 259200
+    alert_rule_test:
+      - eval_time: 12h
+        alertname: HarpocratesCrlExpiring
+        exp_alerts: []
+      - eval_time: 36h
+        alertname: HarpocratesCrlExpiring
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              issuer: tls-issuing-1-g1
+              tier: issuing
+            exp_annotations:
+              summary: tls-issuing-1-g1's published revocation list lapses within 2 days
+              description:
+                It lapses in 1d 12h 0m 0s; after that every relying party refuses every certificate
+                the CA issued. Lists are re-signed daily, so the service, the signer or publication has been
+                failing for days.
+  # Its next update is 70 days after the start.
+  - name: an offline CA's list inside 60 days
+    interval: 1d
+    input_series:
+      - series: harpocrates_crl_next_update_timestamp_seconds{issuer="root-1-g1",tier="root"}
+        values: 6048000x20
+    alert_rule_test:
+      - eval_time: 5d
+        alertname: HarpocratesOfflineCrlExpiring
+        exp_alerts: []
+      - eval_time: 15d
+        alertname: HarpocratesOfflineCrlExpiring
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: root-1-g1
+              tier: root
+            exp_annotations:
+              summary: root-1-g1's revocation list lapses within 60 days
+              description:
+                It lapses in 55d 0h 0m 0s, and it can only be re-signed in a ceremony (POST /v1/ceremony/{id}/crl),
+                with the offline media and the passphrase. A lapsed list breaks every relying party beneath
+                the CA.
+      - eval_time: 15d
+        alertname: HarpocratesCrlExpiring
+        exp_alerts: []
+  - name: an active CA with no list
+    interval: 1m
+    input_series:
+      - series: harpocrates_issuing_window_days{issuer="tls-issuing-1-g1"}
+        values: 900x100
+      - series: harpocrates_issuing_window_days{issuer="root-1-g1"}
+        values: 3600x100
+      - series: harpocrates_crl_next_update_timestamp_seconds{issuer="root-1-g1",tier="root"}
+        values: 99999999x100
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: HarpocratesCrlMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: tls-issuing-1-g1
+            exp_annotations:
+              summary: tls-issuing-1-g1 is active and has no published revocation list
+              description:
+                An online CA's is signed within a minute of it starting; an offline CA's needs a
+                ceremony or an imported list.
+  - name: an issuing window under a year
+    interval: 1d
+    input_series:
+      - series: harpocrates_issuing_window_days{issuer="tls-issuing-1-g1"}
+        values: 366 365 364
+      - series: harpocrates_issuing_window_days{issuer="service-issuing-1-g1"}
+        values: 900 899 898
+    alert_rule_test:
+      - eval_time: 2d
+        alertname: HarpocratesIssuingWindowClosing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: tls-issuing-1-g1
+            exp_annotations:
+              summary: tls-issuing-1-g1 stops issuing within a year
+              description:
+                364 days until it can no longer fit its longest certificate. Create its successor
+                (the next generation) in a ceremony before then.
+  # internal-tls renews with 30 days left, service with 122; the ACME
+  # certificate renews itself.
+  - name: certificates past their profile's threshold
+    interval: 1m
+    input_series:
+      - series: harpocrates_profile_renewal_due_days{profile="internal-tls"}
+        values: 30
+      - series: harpocrates_profile_renewal_due_days{profile="service"}
+        values: 122
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=nas",serial="aa",renewal="manual"}
+        values: 29
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=git",serial="bb",renewal="manual"}
+        values: 45
+      - series: certificate_expiry_days{issuer="service-issuing-1-g1",profile="service",subject="CN=minerva",serial="cc",renewal="manual"}
+        values: 100
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=acme",serial="dd",renewal="automatic"}
+        values: 20
+    alert_rule_test:
+      - eval_time: 0m
+        alertname: HarpocratesCertificateNeedsRenewal
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: tls-issuing-1-g1
+              profile: internal-tls
+              subject: CN=nas
+              serial: aa
+              renewal: manual
+            exp_annotations:
+              summary: CN=nas is due for renewal
+              description:
+                It expires in 29 days (internal-tls certificate from tls-issuing-1-g1, serial aa),
+                and nothing renews it by itself.
+          - exp_labels:
+              severity: warning
+              issuer: service-issuing-1-g1
+              profile: service
+              subject: CN=minerva
+              serial: cc
+              renewal: manual
+            exp_annotations:
+              summary: CN=minerva is due for renewal
+              description:
+                It expires in 100 days (service certificate from service-issuing-1-g1, serial cc),
+                and nothing renews it by itself.
+  - name: anything inside a week, renewing itself or not
+    interval: 1m
+    input_series:
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=acme",serial="dd",renewal="automatic"}
+        values: 6
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=git",serial="bb",renewal="manual"}
+        values: 8
+    alert_rule_test:
+      - eval_time: 0m
+        alertname: HarpocratesCertificateExpiring
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              issuer: tls-issuing-1-g1
+              profile: internal-tls
+              subject: CN=acme
+              serial: dd
+              renewal: automatic
+            exp_annotations:
+              summary: CN=acme expires within a week
+              description:
+                6.0 days left (internal-tls certificate from tls-issuing-1-g1, serial dd), whether
+                or not something should have renewed it.

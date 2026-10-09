@@ -26,6 +26,9 @@ beyond health and metrics.
 
 - The four convention areas (model, API, agent, UX) map to `packages/model`,
   `apps/api`, `agents/*`, and `apps/site` + `packages/ui` + `packages/theme`.
+- An app made of several processes deployed together is one directory
+  with a package per process, as `apps/harpocrates/{service,signer}`
+  (ADR 0020), included in the workspace by name.
 - Where Minerva calendar sync lands (one directory with nested apps, or
   split into `apps/minerva-sync-api` and `apps/minerva-sync-web`) is decided
   at import time.

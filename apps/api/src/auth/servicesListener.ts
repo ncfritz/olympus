@@ -10,11 +10,13 @@ import type { Listener, RequestWithPrincipal } from "./principal";
  * where a client certificate from the Olympus Services chain is required.
  * A connection without one never reaches the application. Built on the
  * shared listener; this marks its requests as the services listener's and
- * counts refused handshakes in auth_decisions_total.
+ * counts refused handshakes in auth_decisions_total. `pollMs` is how
+ * often the revocation lists are checked for a change (tests shorten it).
  */
 export const createServicesListener = (
   app: INestApplication,
   services: AuthConfig["services"],
+  pollMs?: number,
 ): https.Server =>
   createClientCertificateListener(app, services, {
     name: "ServicesListener",
@@ -23,4 +25,5 @@ export const createServicesListener = (
         "services" satisfies Listener;
     },
     onRefused: () => recordAuthDecision("services", "reject", "handshake"),
+    pollMs,
   });

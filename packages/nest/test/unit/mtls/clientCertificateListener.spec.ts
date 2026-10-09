@@ -1,16 +1,50 @@
 import type { INestApplication } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
+import { execFileSync } from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as tls from "tls";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createClientCertificateListener,
+  readRevocationList,
   refusalMessage,
 } from "../../../src/mtls/clientCertificateListener";
 
 /** The repository's dev CA (`scripts/dev-ca.sh`), run once first. */
 const DEV_CA = path.resolve(__dirname, "../../../../../infra/dev-ca/certs");
+
+describe("readRevocationList", () => {
+  const list = path.join(DEV_CA, "services.crl");
+
+  it("returns a PEM list as it is", () => {
+    expect(readRevocationList(list)).toEqual(fs.readFileSync(list));
+  });
+
+  it("turns a DER list, as Harpocrates publishes, into the same PEM", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nest-crl-"));
+    try {
+      const der = path.join(dir, "services.crl");
+      execFileSync("openssl", [
+        "crl",
+        "-in",
+        list,
+        "-outform",
+        "DER",
+        "-out",
+        der,
+      ]);
+      const pem = readRevocationList(der).toString("latin1");
+      expect(pem).toMatch(/^-----BEGIN X509 CRL-----\n/);
+      expect(pem.replace(/\s/g, "")).toBe(
+        fs.readFileSync(list, "latin1").replace(/\s/g, ""),
+      );
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("refusalMessage", () => {
   it("names the caller's address", () => {

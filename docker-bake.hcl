@@ -64,7 +64,13 @@ function "image" {
 }
 
 group "default" {
-  targets = ["services", "hasura", "rabbitmq"]
+  targets = ["services", "harpocrates", "hasura", "rabbitmq"]
+}
+
+# The certificate authority (ADR 0020): its own stack, deployed apart from
+# the services so a platform deploy never restarts it.
+group "harpocrates" {
+  targets = ["harpocrates", "harpocrates-signer"]
 }
 
 group "services" {
@@ -138,6 +144,30 @@ target "minerva-calendar-agent" {
     RUNTIME_PACKAGES = "openssl"
   }
   tags = image("minerva-calendar-agent")
+}
+
+target "harpocrates" {
+  inherits = ["_node"]
+  args = {
+    APP = "@ncfritz/harpocrates-service"
+    # Prisma's client and query engine, for this image's platform.
+    POST_DEPLOY      = "node node_modules/prisma/build/index.js generate --schema prisma/schema.prisma"
+    RUNTIME_PACKAGES = "openssl"
+  }
+  tags = image("harpocrates")
+}
+
+# The signer holds the CA's keys; Python, with its own Dockerfile.
+target "harpocrates-signer" {
+  context    = "."
+  dockerfile = "infra/docker/python/Dockerfile"
+  platforms  = ["linux/arm64"]
+  args = {
+    APP_DIR      = "apps/harpocrates/signer"
+    MODULE       = "harpocrates_signer"
+    GIT_REVISION = GIT_REVISION
+  }
+  tags = image("harpocrates-signer")
 }
 
 # The Next.js apps share one Dockerfile, as the Node services share theirs.

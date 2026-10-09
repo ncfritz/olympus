@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // src/generated/signer is committed here (openapi-ts.config.ts), so,
+    // unlike the SDK's, it is part of what the build compiles.
+    "build": { "inputs": ["$TURBO_DEFAULT$", "!openapi/**"] },
+    // The signer client's check reads the signer's committed document.
+    "check:conventions": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/harpocrates/signer/openapi/signer.json"
+      ]
+    }
+  }
+}

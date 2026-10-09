@@ -15,7 +15,7 @@
 | 8a  | Minerva calendar sync import (ADR 0016)                                                              | **done** (2026-09-20)                                                                        |
 | 8b  | Minerva → Hasura integration (ADR 0013)                                                              |                                                                                              |
 | 9   | Authentication (ADR 0018, [plan](plans/authentication/README.md))                                    | phases 0 and 1 **done** (2026-09-20); phases 2-8 planned                                     |
-| 10  | Internal CA: PKI service and signer (ADR 0020, [plan](plans/internal-ca/README.md))                  | proposed                                                                                     |
+| 10  | Internal CA: Harpocrates (ADR 0020, [plan](plans/internal-ca/README.md))                             | phases 0 to 3 done; phase 4 built, cutover to run; next: phase 5                             |
 | 11  | Olympus Control: the console suite (ADR 0021, [plan](plans/console/README.md))                       | planned; after the Docker work                                                               |
 | 12  | Weather: forecasts, radar, stations (ADR 0024, [plan](plans/weather/README.md))                      | proposed                                                                                     |
 | 13  | Minerva goals: categories, goals, check-ins, habits (ADR 0026, [plan](plans/goals/README.md))        | phases 0–4 **done** (2026-10-01); phase 5 built, not signed off; phases 6–9 planned          |

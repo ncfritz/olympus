@@ -5,6 +5,7 @@ out/
 coverage/
 test-report/
 .openapi-check/
+.signer-client-check/
 .turbo/
 *.tsbuildinfo
 logs/

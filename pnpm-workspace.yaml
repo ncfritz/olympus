@@ -4,6 +4,8 @@ packages:
   # An agent with a management console (ADR 0016): agents/<name>/{agent,console}
   - "agents/*/agent"
   - "agents/*/console"
+  # Harpocrates, the certificate authority (ADR 0020): a service and its signer.
+  - "apps/harpocrates/*"
   - "packages/*"
   # Developer tools: not deployed, not depended on by anything that is.
   - "tools/*"

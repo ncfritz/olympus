@@ -15,6 +15,13 @@
 **/.venv
 **/__pycache__
 
+# Python environments and caches (the signer, ADR 0020).
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+apps/harpocrates/.run
+
 # Configuration and secrets stay on the host.
 **/*.env
 **/*.env.*

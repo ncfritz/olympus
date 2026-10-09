@@ -69,10 +69,15 @@ served. The services listener only starts when it has certificates.
 | TLS_CERT             | The API's server certificate (with TLS_KEY and TLS_CA_SERVICES)    | (off)    |
 | TLS_KEY              | Its private key                                                    | (off)    |
 | TLS_CA_SERVICES      | The Olympus Services chain the listener trusts                     | (off)    |
-| TLS_CRL_SERVICES     | Revocation lists, one file each: the intermediate's and the root's | (empty)  |
+| TLS_CRL_SERVICES     | Revocation lists, one file each, PEM or DER: every CA in the chain | (empty)  |
 
 `scripts/dev-ca.sh` writes a throwaway CA and the certificates the tests
 and a local run need into `infra/dev-ca/certs`.
+
+The revocation lists are checked for a change every 5 seconds and
+reloaded without a restart. Harpocrates publishes them as DER and
+replaces each by renaming a new file over it (ADR 0020); the listener
+takes both.
 
 ##### Logging
 

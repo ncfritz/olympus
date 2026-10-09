@@ -2,12 +2,15 @@
 
 TypeScript client for the Olympus APIs, generated with
 [Hey API](https://heyapi.dev/) from the OpenAPI documents the API commits in
-`apps/api/openapi/`. One entry point per API:
+`apps/api/openapi/`, and Harpocrates's in
+`apps/harpocrates/service/openapi/` (ADR 0020). One entry point per API,
+listed in `scripts/documents.mjs`:
 
 ```ts
 import { describeNote } from "@ncfritz/olympus-sdk/minerva";
 import { listMovies } from "@ncfritz/olympus-sdk/dionysus";
 import { sendNotification } from "@ncfritz/olympus-sdk/olympus";
+import { client } from "@ncfritz/olympus-sdk/harpocrates";
 ```
 
 Consumers depend on it with `"@ncfritz/olympus-sdk": "workspace:*"`.

@@ -107,6 +107,9 @@ services:
       # signs. Read-only, and read once at start: adding a key is
       # `scripts/signing-keys.sh` and a restart.
       - ${SECRETS_DIR:?}/auth-signing-keys:/run/secrets/auth-signing-keys:ro
+      # Harpocrates's published lists (compose/harpocrates.yml): after the
+      # cutover, TLS_CRL_SERVICES names the Service CA's chain's here.
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published:ro
     ports:
       # The mTLS listener, for the NAS's asset agent (ADR 0018).
       - "${LAN_BIND:-127.0.0.1}:3443:3443"

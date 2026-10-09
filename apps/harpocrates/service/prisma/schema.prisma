@@ -1,0 +1,428 @@
+// Harpocrates's own database (ADR 0020, Data): harpocrates-postgres, not
+// the data stack's Postgres, and not tracked by Hasura. Tables, columns,
+// foreign keys and constraints; no JSON documents in rows (ADR 0007).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---- Certificate authorities
+
+enum IssuerTier {
+  root
+  intermediate
+  issuing
+}
+
+/// pending: waiting for its certificate (an external parent).
+/// active: signs. closed: signs nothing new (its window, or by choice).
+/// revoked: its certificate is revoked.
+enum IssuerStatus {
+  pending
+  active
+  closed
+  revoked
+}
+
+enum NameConstraintKind {
+  permitted
+  excluded
+}
+
+enum NameType {
+  dns
+  ip
+  email
+  uri
+}
+
+/// A CA. Roots and intermediates are offline: their keys are never in the
+/// signer's store. Issuing CAs are online, their keys in the signer.
+model Issuer {
+  /// The slug: `tls-issuing-1-g1` (ADR 0020, Naming).
+  id                     String       @id
+  subject                String       @unique
+  tier                   IssuerTier
+  status                 IssuerStatus
+  /// What an issuing CA is for (`TLS`, `Service`, ...); null for a root.
+  purpose                String?
+  number                 Int
+  generation             Int
+  parentId               String?      @map("parent_id")
+  parent                 Issuer?      @relation("IssuerParent", fields: [parentId], references: [id])
+  children               Issuer[]     @relation("IssuerParent")
+  /// Its parent is outside Harpocrates (a CSR went out).
+  external               Boolean      @default(false)
+  keyId                  String       @unique @map("key_id") @db.Uuid
+  key                    Key          @relation(fields: [keyId], references: [id])
+  certificate            Bytes?
+  csr                    Bytes?
+  serial                 String?
+  notBefore              DateTime?    @map("not_before")
+  notAfter               DateTime?    @map("not_after")
+  pathLength             Int?         @map("path_length")
+  /// The longest certificate it may sign, in days.
+  maxValidityDays        Int          @map("max_validity_days")
+  crlUrl                 String       @map("crl_url")
+  caIssuersUrl           String       @map("ca_issuers_url")
+  nextCrlNumber          BigInt       @default(1) @map("next_crl_number")
+  /// A new list is wanted (a revocation, an imported list): the scheduler
+  /// signs one at its next run and clears this.
+  crlDueAt               DateTime?    @map("crl_due_at")
+  /// When its certificate was last written to the published directory.
+  certificatePublishedAt DateTime?    @map("certificate_published_at")
+  createdAt              DateTime     @default(now()) @map("created_at")
+  updatedAt              DateTime     @updatedAt @map("updated_at")
+
+  extendedKeyUsages   IssuerExtendedKeyUsage[]
+  nameConstraints     IssuerNameConstraint[]
+  profiles            Profile[]
+  certificates        Certificate[]
+  crls                Crl[]
+  ceremonies          Ceremony[]
+  importedRevocations ImportedRevocation[]
+
+  @@unique([purpose, tier, number, generation])
+  @@map("issuers")
+}
+
+model IssuerExtendedKeyUsage {
+  issuerId String @map("issuer_id")
+  issuer   Issuer @relation(fields: [issuerId], references: [id], onDelete: Cascade)
+  oid      String
+
+  @@id([issuerId, oid])
+  @@map("issuer_extended_key_usages")
+}
+
+model IssuerNameConstraint {
+  id       Int                @id @default(autoincrement())
+  issuerId String             @map("issuer_id")
+  issuer   Issuer             @relation(fields: [issuerId], references: [id], onDelete: Cascade)
+  kind     NameConstraintKind
+  type     NameType
+  value    String
+
+  @@unique([issuerId, kind, type, value])
+  @@map("issuer_name_constraints")
+}
+
+/// An offline CA's key, in the signer for one ceremony.
+model Ceremony {
+  /// The signer's ceremony id.
+  id        String    @id
+  issuerId  String    @map("issuer_id")
+  issuer    Issuer    @relation(fields: [issuerId], references: [id])
+  principal String
+  openedAt  DateTime  @default(now()) @map("opened_at")
+  closedAt  DateTime? @map("closed_at")
+
+  crls Crl[]
+
+  @@map("ceremonies")
+}
+
+// ---- Profiles
+
+enum KeyAlgorithm {
+  P_256    @map("P-256")
+  RSA_2048 @map("RSA-2048")
+}
+
+/// What a certificate may be (ADR 0020, Profiles).
+model Profile {
+  id             String       @id
+  description    String
+  /// The default issuer; the operator may choose another that could sign.
+  issuerId       String?      @map("issuer_id")
+  issuer         Issuer?      @relation(fields: [issuerId], references: [id])
+  /// The issuing CA purpose this profile belongs to, to find an issuer.
+  issuerPurpose  String       @map("issuer_purpose")
+  keyAlgorithm   KeyAlgorithm @map("key_algorithm")
+  validityDays   Int          @map("validity_days")
+  renewAtDays    Int          @map("renew_at_days")
+  maxKeyAgeDays  Int          @map("max_key_age_days")
+  allowCsr       Boolean      @map("allow_csr")
+  allowGenerated Boolean      @map("allow_generated")
+  /// PKCS#12 without the chain, SHA-1 and 3DES: the printer.
+  legacyExport   Boolean      @default(false) @map("legacy_export")
+  requireSan     Boolean      @map("require_san")
+
+  keyUsages         ProfileKeyUsage[]
+  extendedKeyUsages ProfileExtendedKeyUsage[]
+  nameTypes         ProfileNameType[]
+  enrollments       Enrollment[]
+  certificates      Certificate[]
+
+  @@map("profiles")
+}
+
+model ProfileKeyUsage {
+  profileId String  @map("profile_id")
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  usage     String
+
+  @@id([profileId, usage])
+  @@map("profile_key_usages")
+}
+
+model ProfileExtendedKeyUsage {
+  profileId String  @map("profile_id")
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  oid       String
+
+  @@id([profileId, oid])
+  @@map("profile_extended_key_usages")
+}
+
+/// The subject alternative name types a profile allows.
+model ProfileNameType {
+  profileId String   @map("profile_id")
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  type      NameType
+
+  @@id([profileId, type])
+  @@map("profile_name_types")
+}
+
+// ---- Keys, enrollments, certificates
+
+enum KeyPurpose {
+  issuer
+  subject
+}
+
+/// Where the private key is.
+enum KeyLocation {
+  /// In the signer's store: an issuing CA's, or an escrowed subject key.
+  signer
+  /// Only the subscriber has it (CSR enrollment).
+  subscriber
+  /// On offline media: a root's or an intermediate's.
+  offline
+}
+
+/// Every key Harpocrates has seen, once: its SubjectPublicKeyInfo hash is
+/// unique across CAs, subjects and SSH (ADR 0020, Keys and enrollment).
+model Key {
+  id          String      @id @default(uuid()) @db.Uuid
+  spkiSha256  String      @unique @map("spki_sha256")
+  publicKey   Bytes       @map("public_key")
+  algorithm   String
+  purpose     KeyPurpose
+  location    KeyLocation
+  /// The signer's id for it, when the signer holds it.
+  signerKeyId String?     @unique @map("signer_key_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  destroyedAt DateTime?   @map("destroyed_at")
+  /// Revoked for keyCompromise: never certified again.
+  blockedAt   DateTime?   @map("blocked_at")
+
+  issuer        Issuer?
+  enrollment    Enrollment?
+  escrowExports EscrowExport[]
+
+  @@map("keys")
+}
+
+/// csr: the subscriber's key. generated: the signer's (escrowed).
+/// imported: a certificate another CA product issued (XCA), with its key
+/// wherever it was.
+enum EnrollmentMode {
+  csr
+  generated
+  imported
+}
+
+/// The request that introduced a key: its CSR, subject, names and profile.
+/// The key's certificates (first issue, renewals) are its lineage.
+model Enrollment {
+  id         String         @id @default(uuid()) @db.Uuid
+  keyId      String         @unique @map("key_id") @db.Uuid
+  key        Key            @relation(fields: [keyId], references: [id])
+  profileId  String         @map("profile_id")
+  profile    Profile        @relation(fields: [profileId], references: [id])
+  mode       EnrollmentMode
+  subject    String
+  csr        Bytes?
+  /// The enrollment a rekey replaced.
+  replacesId String?        @unique @map("replaces_id") @db.Uuid
+  replaces   Enrollment?    @relation("EnrollmentReplaces", fields: [replacesId], references: [id])
+  replacedBy Enrollment?    @relation("EnrollmentReplaces")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  names        EnrollmentName[]
+  certificates Certificate[]
+
+  @@map("enrollments")
+}
+
+model EnrollmentName {
+  id           Int        @id @default(autoincrement())
+  enrollmentId String     @map("enrollment_id") @db.Uuid
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  type         NameType
+  value        String
+
+  @@unique([enrollmentId, type, value])
+  @@map("enrollment_names")
+}
+
+enum CertificateStatus {
+  valid
+  revoked
+}
+
+model Certificate {
+  id           String            @id @default(uuid()) @db.Uuid
+  issuerId     String            @map("issuer_id")
+  issuer       Issuer            @relation(fields: [issuerId], references: [id])
+  /// Hex, 159 random bits (ADR 0020, Serials).
+  serial       String
+  enrollmentId String?           @map("enrollment_id") @db.Uuid
+  enrollment   Enrollment?       @relation(fields: [enrollmentId], references: [id])
+  profileId    String?           @map("profile_id")
+  profile      Profile?          @relation(fields: [profileId], references: [id])
+  subject      String
+  notBefore    DateTime          @map("not_before")
+  notAfter     DateTime          @map("not_after")
+  status       CertificateStatus @default(valid)
+  der          Bytes
+  /// The certificate this one renewed.
+  renewsId     String?           @unique @map("renews_id") @db.Uuid
+  renews       Certificate?      @relation("CertificateRenews", fields: [renewsId], references: [id])
+  renewedBy    Certificate?      @relation("CertificateRenews")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  revocation    Revocation?
+  escrowExports EscrowExport[]
+
+  @@unique([issuerId, serial])
+  @@index([notAfter])
+  @@map("certificates")
+}
+
+enum RevocationReason {
+  unspecified
+  keyCompromise
+  cACompromise
+  affiliationChanged
+  superseded
+  cessationOfOperation
+  privilegeWithdrawn
+}
+
+model Revocation {
+  certificateId String           @id @map("certificate_id") @db.Uuid
+  certificate   Certificate      @relation(fields: [certificateId], references: [id])
+  reason        RevocationReason
+  comment       String?
+  principal     String
+  revokedAt     DateTime         @default(now()) @map("revoked_at")
+
+  @@map("revocations")
+}
+
+/// signed: by the signer, for an online CA. ceremony: by an offline CA's
+/// key in a ceremony. imported: signed elsewhere (XCA, the offline media)
+/// and offered for publication, verified against the CA's certificate.
+enum CrlSource {
+  signed
+  ceremony
+  imported
+}
+
+/// A revocation list. Only an issuer's newest is published.
+model Crl {
+  id              Int       @id @default(autoincrement())
+  issuerId        String    @map("issuer_id")
+  issuer          Issuer    @relation(fields: [issuerId], references: [id])
+  number          BigInt
+  source          CrlSource @default(signed)
+  ceremonyId      String?   @map("ceremony_id")
+  ceremony        Ceremony? @relation(fields: [ceremonyId], references: [id])
+  thisUpdate      DateTime  @map("this_update")
+  nextUpdate      DateTime  @map("next_update")
+  /// How many serials it lists.
+  entries         Int       @default(0)
+  der             Bytes
+  createdAt       DateTime  @default(now()) @map("created_at")
+  publishedAt     DateTime? @map("published_at")
+  publishAttempts Int       @default(0) @map("publish_attempts")
+  lastAttemptAt   DateTime? @map("last_attempt_at")
+  /// Why the last attempt to publish it failed.
+  lastError       String?   @map("last_error")
+
+  @@unique([issuerId, number])
+  @@index([issuerId, publishedAt])
+  @@map("crls")
+}
+
+/// A revocation Harpocrates knows only from a list it imported: a
+/// certificate it never issued or imported (XCA's). Every list the issuer
+/// signs afterwards carries it.
+model ImportedRevocation {
+  id        Int              @id @default(autoincrement())
+  issuerId  String           @map("issuer_id")
+  issuer    Issuer           @relation(fields: [issuerId], references: [id])
+  serial    String
+  revokedAt DateTime         @map("revoked_at")
+  reason    RevocationReason
+  /// The list it came from.
+  crlNumber BigInt           @map("crl_number")
+
+  @@unique([issuerId, serial])
+  @@map("imported_revocations")
+}
+
+model EscrowExport {
+  id            Int         @id @default(autoincrement())
+  keyId         String      @map("key_id") @db.Uuid
+  key           Key         @relation(fields: [keyId], references: [id])
+  certificateId String      @map("certificate_id") @db.Uuid
+  certificate   Certificate @relation(fields: [certificateId], references: [id])
+  format        String
+  principal     String
+  reason        String
+  exportedAt    DateTime    @default(now()) @map("exported_at")
+
+  @@map("escrow_exports")
+}
+
+// ---- Audit
+
+/// Append-only and hash-chained: each event's hash covers the previous
+/// event's hash and its own fields and attributes.
+model AuditEvent {
+  sequence     BigInt   @id @default(autoincrement())
+  occurredAt   DateTime @default(now()) @map("occurred_at")
+  kind         String
+  principal    String
+  /// Where it came from: api, cli, acme, renewal, system.
+  surface      String
+  subjectType  String?  @map("subject_type")
+  subjectId    String?  @map("subject_id")
+  reason       String?
+  previousHash String   @map("previous_hash")
+  hash         String   @unique
+
+  attributes AuditEventAttribute[]
+
+  @@index([occurredAt])
+  @@index([subjectType, subjectId])
+  @@map("audit_events")
+}
+
+model AuditEventAttribute {
+  sequence BigInt     @map("event_sequence")
+  event    AuditEvent @relation(fields: [sequence], references: [sequence], onDelete: Restrict)
+  name     String
+  value    String
+
+  @@id([sequence, name])
+  @@map("audit_event_attributes")
+}

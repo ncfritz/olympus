@@ -1,6 +1,6 @@
 # 0021. The control host and console navigation
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR 0020](0020-internal-certificate-authority.md) (2026-09-25)
 - **Date:** 2026-09-22
 
 ## Context
@@ -16,11 +16,12 @@ That does not survive the consoles that are coming. The platform is a
 hierarchy — Olympus over Dionysus and Minerva — and each property wants
 several:
 
-| Property | Consoles                                                                           |
-| -------- | ---------------------------------------------------------------------------------- |
-| Olympus  | notifications, deployment, CA ([ADR 0020](0020-internal-certificate-authority.md)) |
-| Dionysus | metadata, search, assets                                                           |
-| Minerva  | calendar, document indexing                                                        |
+| Property    | Consoles                                                                  |
+| ----------- | ------------------------------------------------------------------------- |
+| Olympus     | notifications, deployment                                                 |
+| Dionysus    | metadata, search, assets                                                  |
+| Minerva     | calendar, document indexing                                               |
+| Harpocrates | CA ([ADR 0020](0020-internal-certificate-authority.md)), added 2026-09-25 |
 
 Nine names, nine DNS records, nine certificates, nine sets of cookies — and
 nothing telling a visitor to one of them that the other eight exist. Two
@@ -52,7 +53,7 @@ console's own `/api`:
 | ----------------- | -------------------- | ------------------------ |
 | Minerva calendar  | `/minerva/calendar`  | `/minerva/calendar/api`  |
 | Dionysus metadata | `/dionysus/metadata` | `/dionysus/metadata/api` |
-| Olympus CA        | `/olympus/ca`        | `/olympus/ca/api`        |
+| Harpocrates CA    | `/harpocrates/ca`    | `/harpocrates/ca/api`    |
 
 The property in the path is not decoration: Dionysus has a search console
 and Olympus will want one, and without it the two collide. It also groups
@@ -73,7 +74,6 @@ name (ADR 0017, which requires `[a-z][a-z0-9-]*`) are
 │ OLYMPUS          ├──────────────────────────────────────────┤
 │   Notifications  │                                          │
 │   Deployment     │                                          │
-│   CA             │                                          │
 │ DIONYSUS         │                                          │
 │   Metadata       │                                          │
 │   Search         │                                          │
@@ -81,6 +81,8 @@ name (ADR 0017, which requires `[a-z][a-z0-9-]*`) are
 │ MINERVA          │                                          │
 │ > Calendar       │                                          │
 │   Documents      │                                          │
+│ HARPOCRATES      │                                          │
+│   CA             │                                          │
 └──────────────────┴──────────────────────────────────────────┘
    suite-owned: a registry      console-owned: its own routes
 ```
@@ -91,8 +93,8 @@ name (ADR 0017, which requires `[a-z][a-z0-9-]*`) are
 - **Nothing below that is chrome.** A calendar's events, a certificate's
   detail: content — a nested route, a drawer, a master/detail split.
 
-The suite fits in one sidebar — three groups and nine consoles is about
-twelve rows, with room to double — so there is nothing to hide behind a
+The suite fits in one sidebar — four groups and nine consoles is about
+thirteen rows, with room to double — so there is nothing to hide behind a
 property switcher, and anywhere in the suite is one click away. The control
 that has to survive a cross-console page load is then also the control that
 never changes: only the content area and the tab strip swap, so a full load
@@ -129,8 +131,10 @@ registry can be static: consoles cannot drift apart.
 ### Where a console lives
 
 - Belongs to an agent: `agents/<name>/console`, unchanged from ADR 0016.
-- Has no agent of its own, or spans a property (deployment tools, the CA
-  console): `apps/<name>-console`.
+- Has no agent of its own, or spans a property (deployment tools):
+  `apps/<name>-console`.
+- Built and deployed with the service it manages, in that service's
+  directory: `apps/harpocrates/console` (ADR 0020, 2026-09-25).
 - The suite's index at `/` is `apps/control`, a small app on the same
   shell that lists the properties and their consoles.
 

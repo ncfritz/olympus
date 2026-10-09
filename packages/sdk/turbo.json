@@ -2,8 +2,9 @@
   "$schema": "https://turborepo.com/schema.json",
   "extends": ["//"],
   "tasks": {
-    // The client is generated from apps/api/openapi/*.json (the API's
-    // `openapi` task) before it is compiled or checked.
+    // The clients are generated from the committed API documents
+    // (scripts/documents.mjs; each package's `openapi` task) before they
+    // are compiled or checked.
     "build": { "dependsOn": ["generate", "^build"] },
     "typecheck": { "dependsOn": ["generate"] }
   }

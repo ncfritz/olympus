@@ -1,0 +1,27 @@
+{
+  "name": "@ncfritz/harpocrates-signer",
+  "description": "Harpocrates's signer (Python): holds the CA's private keys and signs; its Turbo tasks call uv",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Neil Fritz (ncfritz@ncfritz.net)",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "uv sync --locked",
+    "openapi": "uv run --locked python -m harpocrates_signer openapi openapi",
+    "typecheck": "uv sync --locked --quiet && pyright",
+    "lint": "uv run --locked ruff check && uv run --locked ruff format --check",
+    "lintfix": "uv run --locked ruff check --fix && uv run --locked ruff format",
+    "test": "uv run --locked pytest",
+    "check:conventions": "pnpm check:openapi && pnpm lint:openapi",
+    "check:openapi": "rm -rf .openapi-check && uv run --locked python -m harpocrates_signer openapi .openapi-check > /dev/null && diff -r openapi .openapi-check && rm -rf .openapi-check",
+    "lint:openapi": "spectral lint \"openapi/*.json\" --fail-severity=error",
+    "clean": "rm -rf .venv .pytest_cache .ruff_cache",
+    "start": "uv run --locked --env-file dev.env python -m harpocrates_signer serve",
+    "dev": "uv run --locked --env-file dev.env python -m harpocrates_signer serve --reload",
+    "signer": "uv run --locked --env-file dev.env python -m harpocrates_signer"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "catalog:",
+    "pyright": "1.1.414"
+  }
+}

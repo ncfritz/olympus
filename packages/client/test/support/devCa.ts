@@ -12,7 +12,7 @@ const certs = path.join(root, "infra/dev-ca/certs");
 
 /** The path of a file in the dev CA's output, creating it if need be. */
 export const devCaFile = (name: string): string => {
-  if (!fs.existsSync(path.join(certs, "api.crt"))) {
+  if (!fs.existsSync(path.join(certs, "keys/root-1-g1.p8"))) {
     execFileSync("bash", [path.join(root, "scripts/dev-ca.sh")], {
       stdio: "ignore",
     });
