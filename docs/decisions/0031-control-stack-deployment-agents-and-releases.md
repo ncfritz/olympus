@@ -260,12 +260,18 @@ nginx-reload`, which validates before it reloads.
 
 ### Local development
 
-- **Processes are defined in a file on the laptop**, not typed into the
-  console: `olympus-processes.json` in the Docker data folder (Neil,
-  2026-10-08). It lists each one: package, script, env file, port,
-  readiness check and dependencies (the API before the site). The agent
-  runs only what is listed, so the console is never a remote shell, and
-  the file is edited on the laptop, never through the console.
+- **Processes are defined in a file on the laptop**:
+  `olympus-processes.json` in the Docker data folder (Neil, 2026-10-08).
+  Each entry names a package, one of its scripts, an env file, a port, a
+  readiness check and its dependencies (the API before the site).
+- **The console edits it through a simple form** (Neil, 2026-10-08), and
+  the form only picks from what exists. Packages and their scripts come
+  from the dev checkout's `package.json` files, env files from those
+  beside each package, and dependencies from the other entries. There is
+  no field for a command, so the console still cannot run anything that
+  is not a package script, and is never a remote shell. The local agent
+  validates every change before writing the file, and a change made to
+  the file by hand shows up in the console.
 - Long-running processes (`pnpm dev`) can be started, stopped and
   restarted, singly or as a group. One-shot tasks (build, typecheck,
   lint, test) are run with exit status, duration and history.
