@@ -5,10 +5,12 @@
 # signer run from the workspace (`pnpm dev`). Production is
 # infra/docker/compose/harpocrates.yml (phase 4).
 #
-# Postgres's password and where it listens come from .env beside this file
-# (.env.example): localhost by default, or the LAN when it runs on another
-# machine than the service. The distribution host stays on localhost: it
-# serves .run/published, which only a service on the same machine writes.
+# Postgres's password is a secret file, as the stacks' are (ADR 0019):
+# .run/postgres-password, git-ignored (`openssl rand -hex 32`). Where it
+# listens comes from .env beside this file (.env.example): localhost by
+# default, or the LAN when the service runs on another machine. The
+# distribution host stays on localhost: it serves .run/published, which only
+# a service on the same machine writes.
 name: harpocrates-dev
 
 services:
@@ -17,9 +19,11 @@ services:
     environment:
       POSTGRES_USER: harpocrates
       # Read when the volume is first initialised; after that, change it
-      # with ALTER USER (or recreate the volume, which loses the data).
-      POSTGRES_PASSWORD: ${HARPOCRATES_DEV_POSTGRES_PASSWORD:?set it in .env (see .env.example)}
+      # with \password in psql (or recreate the volume, losing the data).
+      POSTGRES_PASSWORD_FILE: /run/secrets/harpocrates_dev_postgres_password
       POSTGRES_DB: harpocrates
+    secrets:
+      - harpocrates_dev_postgres_password
     ports:
       - "${HARPOCRATES_DEV_POSTGRES_BIND:-127.0.0.1}:5433:5432"
     volumes:
@@ -38,6 +42,10 @@ services:
       - ./dev/pki.conf:/etc/nginx/conf.d/default.conf:ro
       # The service's PKI_PUBLISHED_DIR in dev.env.example.
       - ./.run/published:/srv/pki:ro
+
+secrets:
+  harpocrates_dev_postgres_password:
+    file: ./.run/postgres-password
 
 volumes:
   harpocrates-postgres:

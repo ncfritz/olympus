@@ -31,8 +31,8 @@
     "start:prod": "node --env-file=production.env dist/main.js",
     "dev": "nest start --env-file dev.env --watch",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "node --env-file=dev.env node_modules/prisma/build/index.js migrate dev",
-    "prisma:deploy": "node --env-file=dev.env node_modules/prisma/build/index.js migrate deploy",
+    "prisma:migrate": "node scripts/prisma-dev.mjs migrate dev",
+    "prisma:deploy": "node scripts/prisma-dev.mjs migrate deploy",
     "cli": "node --env-file=dev.env dist/cli.js",
     "test:e2e": "vitest run --project e2e"
   },
