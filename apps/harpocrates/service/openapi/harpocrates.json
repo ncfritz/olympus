@@ -964,6 +964,75 @@
         ]
       }
     },
+    "/v1/issuers/preview": {
+      "post": {
+        "description": "Returns a root, intermediate or issuing CA as creating it would make it, with every setting beside its default and the reasons creating it would be refused (ADR 0032, Names and settings). Nothing is signed or recorded: the console shows it for review before the CA is created.",
+        "operationId": "PreviewIssuer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The CA's tier, parent, parts and any settings instead of their defaults.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The CA as it would be created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Previews a new CA",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
     "/v1/ceremonies": {
       "post": {
         "description": "Puts an offline CA's key in the signer for one ceremony: an hour at most, and never across a restart or a seal. One ceremony at a time.",
@@ -3850,6 +3919,213 @@
         },
         "required": [
           "issuer"
+        ]
+      },
+      "PreviewIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "organization": {
+            "type": "string",
+            "description": "Its organisation: O, and the start of the CN; by default its root's, or the CA's configured one for a root"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
+          },
+          "algorithm": {
+            "description": "Its key type (P-256 by default)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "nameConstraints": {
+            "description": "Its name constraints; none by default, everything beneath it is held to them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          },
+          "tier": {
+            "description": "The tier of the CA to preview",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerTier"
+              }
+            ]
+          },
+          "parentId": {
+            "type": "string",
+            "description": "The CA that would sign it: required below a root, whose ceremony would create it"
+          },
+          "shape": {
+            "description": "A root's shape (three_tier by default)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerShape"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What it is for, in its name; required for an issuing CA (TLS, Service, Device, Signing)"
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number, 1 for the first of its kind"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation, 1 unless it succeeds a CA"
+          },
+          "maxValidityDays": {
+            "type": "number",
+            "description": "An issuing CA's longest certificate, in days; by default the longest of the profiles of its purpose"
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages an issuing CA may sign, dotted OIDs; by default those of the profiles of its purpose",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "tier",
+          "number",
+          "generation"
+        ]
+      },
+      "IssuerPreview": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its slug, from its parts, e.g. dev-root-1-g1"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its subject, RFC 4514"
+          },
+          "organization": {
+            "type": "string",
+            "description": "Its organisation: O, and the start of the CN, unless the subject is written outright"
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "Its validity in days"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it would expire, were it signed now"
+          },
+          "algorithm": {
+            "description": "Its key type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "pathLength": {
+            "type": "number",
+            "description": "Its path length constraint: how many tiers of CAs may be below it"
+          },
+          "keyUsages": {
+            "description": "Its key usages",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages it may sign, dotted OIDs; empty means not restricted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxValidityDays": {
+            "type": "number",
+            "description": "The longest certificate it signs, in days: for an offline CA, the tier below it"
+          },
+          "nameConstraints": {
+            "description": "Its name constraints, if any",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameConstraints"
+              }
+            ]
+          },
+          "crlUrl": {
+            "type": "string",
+            "description": "Where its own revocation list would be published"
+          },
+          "caIssuersUrl": {
+            "type": "string",
+            "description": "Where its certificate would be published"
+          },
+          "crlDistributionPoint": {
+            "type": "string",
+            "description": "The parent's list, written into its certificate as the distribution point; none for a root"
+          },
+          "issuerUrl": {
+            "type": "string",
+            "description": "The parent's certificate, written into its certificate as the issuer URL; none for a root"
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "organization",
+          "validityDays",
+          "notAfter",
+          "algorithm",
+          "pathLength",
+          "keyUsages",
+          "extendedKeyUsages",
+          "maxValidityDays",
+          "crlUrl",
+          "caIssuersUrl"
+        ]
+      },
+      "PreviewIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "preview": {
+            "description": "The CA as the request would make it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerPreview"
+              }
+            ]
+          },
+          "defaults": {
+            "description": "The same CA with every overridable setting at its default, to compare",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerPreview"
+              }
+            ]
+          },
+          "problems": {
+            "description": "Why creating it would be refused, as the create operation would say; empty when it would not",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "preview",
+          "defaults",
+          "problems"
         ]
       },
       "OpenCeremonyRequest": {

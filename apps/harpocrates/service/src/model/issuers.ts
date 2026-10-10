@@ -268,6 +268,125 @@ export class CreatedOfflineIssuer {
   encryptedKey: string;
 }
 
+/**
+ * What a new CA would be, before anything is signed (ADR 0032, Names and
+ * settings): every setting as the service would use it.
+ */
+export class IssuerPreview {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its slug, from its parts, e.g. dev-root-1-g1",
+  })
+  id: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its subject, RFC 4514",
+  })
+  subject: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "Its organisation: O, and the start of the CN, unless the subject is written outright",
+  })
+  organization: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its validity in days",
+  })
+  validityDays: number;
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string: when it would expire, were it signed now",
+  })
+  notAfter: Moment;
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    required: true,
+    description: "Its key type",
+  })
+  algorithm: KeyAlgorithmName;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Its path length constraint: how many tiers of CAs may be below it",
+  })
+  pathLength: number;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Its key usages",
+  })
+  keyUsages: string[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "The extended key usages it may sign, dotted OIDs; empty means not restricted",
+  })
+  extendedKeyUsages: string[];
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The longest certificate it signs, in days: for an offline CA, the tier below it",
+  })
+  maxValidityDays: number;
+
+  @ApiProperty({
+    type: () => NameConstraints,
+    required: false,
+    description: "Its name constraints, if any",
+  })
+  nameConstraints?: NameConstraints;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Where its own revocation list would be published",
+  })
+  crlUrl: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Where its certificate would be published",
+  })
+  caIssuersUrl: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The parent's list, written into its certificate as the distribution point; none for a root",
+  })
+  crlDistributionPoint?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The parent's certificate, written into its certificate as the issuer URL; none for a root",
+  })
+  issuerUrl?: string;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -437,6 +556,89 @@ export class CreateIssuingIssuerRequest extends CaOverrides {
   extendedKeyUsages: string[];
 }
 
+export class PreviewIssuerRequest extends CaOverrides {
+  @ApiProperty({
+    ...ISSUER_TIER_ENUM,
+    required: true,
+    description: "The tier of the CA to preview",
+  })
+  @IsIn([...ISSUER_TIER_VALUES])
+  tier: IssuerTierName;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The CA that would sign it: required below a root, whose ceremony would create it",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  parentId?: string;
+
+  @ApiProperty({
+    ...ISSUER_SHAPE_ENUM,
+    required: false,
+    description: "A root's shape (three_tier by default)",
+  })
+  @IsOptional()
+  @IsIn([...ISSUER_SHAPE_VALUES])
+  shape?: IssuerShapeName;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "What it is for, in its name; required for an issuing CA (TLS, Service, Device, Signing)",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Z][A-Za-z]*( [A-Z][A-Za-z]*)*$/)
+  purpose?: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its number, 1 for the first of its kind",
+  })
+  @IsInt()
+  @Min(1)
+  number: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its generation, 1 unless it succeeds a CA",
+  })
+  @IsInt()
+  @Min(1)
+  generation: number;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description:
+      "An issuing CA's longest certificate, in days; by default the longest of the profiles of its purpose",
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  maxValidityDays?: number;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description:
+      "The extended key usages an issuing CA may sign, dotted OIDs; by default those of the profiles of its purpose",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  extendedKeyUsages?: string[];
+}
+
 export class ImportIssuerRequest {
   @ApiProperty({
     type: String,
@@ -592,4 +794,30 @@ export class ImportIssuerResponse {
     description: "The imported CA",
   })
   issuer: FullIssuer;
+}
+
+export class PreviewIssuerResponse {
+  @ApiProperty({
+    type: () => IssuerPreview,
+    required: true,
+    description: "The CA as the request would make it",
+  })
+  preview: IssuerPreview;
+
+  @ApiProperty({
+    type: () => IssuerPreview,
+    required: true,
+    description:
+      "The same CA with every overridable setting at its default, to compare",
+  })
+  defaults: IssuerPreview;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "Why creating it would be refused, as the create operation would say; empty when it would not",
+  })
+  problems: string[];
 }

@@ -93,3 +93,26 @@ export const childNotAfter = (
   const wanted = addDays(notBefore, TIER_VALIDITY_DAYS[tier]);
   return wanted < parentNotAfter ? wanted : parentNotAfter;
 };
+
+/** What an offline CA signs in its ceremonies: CAs of a tier, or leaves. */
+export type SignedInCeremony = "intermediate" | "issuing" | "leaf";
+
+/**
+ * What an offline CA signs (ADR 0032, Three shapes): an intermediate
+ * signs issuing CAs; a root, what its shape says.
+ */
+export const signedInCeremony = (parent: {
+  tier: IssuerTierName;
+  shape?: IssuerShapeName | null;
+}): SignedInCeremony =>
+  parent.tier === "intermediate"
+    ? "issuing"
+    : parent.shape === "two_tier"
+      ? "issuing"
+      : parent.shape === "direct"
+        ? "leaf"
+        : "intermediate";
+
+/** "intermediate CAs", "leaves": for messages. */
+export const describeSigned = (signed: SignedInCeremony): string =>
+  signed === "leaf" ? "leaves" : `${signed} CAs`;

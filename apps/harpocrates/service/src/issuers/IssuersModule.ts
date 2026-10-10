@@ -4,6 +4,8 @@ import { CreateRootIssuerController } from "./controllers/CreateRootIssuerContro
 import { DescribeIssuerController } from "./controllers/DescribeIssuerController";
 import { ImportIssuerController } from "./controllers/ImportIssuerController";
 import { ListIssuersController } from "./controllers/ListIssuersController";
+import { PreviewIssuerController } from "./controllers/PreviewIssuerController";
+import { IssuerPreviewService } from "./services/IssuerPreviewService";
 import { IssuerService } from "./services/IssuerService";
 
 @Module({
@@ -13,8 +15,9 @@ import { IssuerService } from "./services/IssuerService";
     ImportIssuerController,
     DescribeIssuerController,
     DiscardIssuerController,
+    PreviewIssuerController,
   ],
-  providers: [IssuerService],
+  providers: [IssuerService, IssuerPreviewService],
   exports: [IssuerService],
 })
 export class IssuersModule {}

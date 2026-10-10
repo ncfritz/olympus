@@ -88,6 +88,7 @@ from it.
 | ---------------------------------------------------------------------- | --------------------- |
 | `GET /issuers`, `GET /issuer/{id}`                                     | either role           |
 | `POST /issuers/roots`, `POST /issuers/import`                          | admin, recent sign-in |
+| `POST /issuers/preview` (a new CA's settings and defaults, unsigned)   | admin                 |
 | `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing` | admin, recent sign-in |
 | `GET /ceremony/{id}`, `DELETE /ceremony/{id}`                          | admin                 |
 | `GET /profiles`, `GET /profile/{id}`                                   | either role           |

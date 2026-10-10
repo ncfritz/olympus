@@ -137,6 +137,11 @@ export class IssuerService {
     });
   }
 
+  /** The O a CA's subject carries: its own or its root's, or the configured one. */
+  organizationFor(organization?: string): string {
+    return organization ?? this.pki.organization;
+  }
+
   /**
    * The subject a new CA gets: the one given outright, or the one built
    * from its parts. Either way it is new: a subject is never reused.

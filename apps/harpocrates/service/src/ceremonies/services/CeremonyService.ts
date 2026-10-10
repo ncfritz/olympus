@@ -15,7 +15,10 @@ import { issuerSlug } from "../../issuers/issuerNames";
 import {
   addDays,
   childNotAfter,
+  describeSigned,
   isIssuingWindowOpen,
+  type SignedInCeremony,
+  signedInCeremony,
   TIER_PATH_LENGTH,
 } from "../../issuers/issuingWindow";
 import { overridesGiven, signerConstraints } from "../../issuers/overrides";
@@ -319,26 +322,16 @@ export class CeremonyService {
    * under an intermediate or a two-tier root; a leaf only under a root that
    * signs directly.
    */
-  private async openParent(
-    ceremonyId: string,
-    what: "intermediate" | "issuing" | "leaf",
-  ) {
+  private async openParent(ceremonyId: string, what: SignedInCeremony) {
     const ceremony = await this.row(ceremonyId);
     if (ceremony.closedAt) {
       throw new ConflictException(`Ceremony ${ceremonyId} is closed`);
     }
     const parent = await this.issuers.row(ceremony.issuerId);
-    const signs =
-      parent.tier === "intermediate"
-        ? "issuing"
-        : parent.shape === "two_tier"
-          ? "issuing"
-          : parent.shape === "direct"
-            ? "leaf"
-            : "intermediate";
+    const signs = signedInCeremony(parent);
     if (signs !== what) {
       throw new UnprocessableEntityException(
-        `${parent.id} signs ${signs === "leaf" ? "leaves" : `${signs} CAs`}, not ${what === "leaf" ? "leaves" : `${what} CAs`}`,
+        `${parent.id} signs ${describeSigned(signs)}, not ${describeSigned(what)}`,
       );
     }
     if (
