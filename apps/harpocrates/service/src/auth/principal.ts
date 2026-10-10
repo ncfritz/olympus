@@ -19,7 +19,7 @@ export type Principal = {
   /** When the session's sign-in completed, in seconds; 0 for the CLI. */
   authTime: number;
   /** Where it came from (ADR 0020, Audit). */
-  surface: "api" | "cli" | "system";
+  surface: "api" | "cli" | "system" | "renewal";
 };
 
 export type AuthenticatedRequest = Request & {

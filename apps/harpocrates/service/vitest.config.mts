@@ -25,6 +25,8 @@ export default mergeConfig(
         PKI_PUBLISHED_DIR: "/nonexistent/published",
         // The e2e tests run the scheduler's steps themselves.
         CRL_SCHEDULE_SECONDS: "0",
+        // The renewal listener is off unless a test starts it.
+        RENEWAL_LISTEN_PORT: "0",
       },
       outputFile: { html: "test-report/index.html" },
       projects: [

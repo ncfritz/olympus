@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   Min,
   MinLength,
@@ -548,6 +549,28 @@ export class CreateCeremonyCertificateResponse {
     description: "The new certificate, signed by the ceremony's root",
   })
   certificate: FullCertificate;
+}
+
+export class RenewPresentedCertificateRequest {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "A CSR, PEM, for the same subject: with a new key it rekeys; without one the same key is certified again while it is young enough",
+  })
+  @IsOptional()
+  @IsString()
+  csr?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The certificate to renew; it must be the one presented. Without it, the presented certificate is renewed",
+  })
+  @IsOptional()
+  @IsUUID()
+  certificateId?: string;
 }
 
 export class RenewCertificateResponse {

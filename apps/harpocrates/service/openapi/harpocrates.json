@@ -3022,6 +3022,105 @@
           "Profiles"
         ]
       }
+    },
+    "/v1/renew": {
+      "post": {
+        "description": "On the renewal listener (9443) only: renews the client certificate the caller presents, with the same subject and profile. Without a CSR the same key is certified again while it is young enough; a CSR for a new key rekeys. The certificate must be one Harpocrates issued, current, not revoked and not already renewed.",
+        "operationId": "RenewPresentedCertificate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A CSR, to rekey; `{}` keeps the key.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewPresentedCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The renewal was issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenewCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "clientCertificate": []
+          }
+        ],
+        "summary": "Renews the presented certificate",
+        "tags": [
+          "Renewal"
+        ]
+      }
     }
   },
   "info": {
@@ -3054,6 +3153,9 @@
       "name": "Profiles"
     },
     {
+      "name": "Renewal"
+    },
+    {
       "name": "Revocation Lists"
     },
     {
@@ -3067,6 +3169,10 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http"
+      },
+      "clientCertificate": {
+        "type": "mutualTLS",
+        "description": "A current certificate Harpocrates issued, presented to the renewal listener (9443)"
       }
     },
     "schemas": {
@@ -5301,6 +5407,19 @@
         "required": [
           "profile"
         ]
+      },
+      "RenewPresentedCertificateRequest": {
+        "type": "object",
+        "properties": {
+          "csr": {
+            "type": "string",
+            "description": "A CSR, PEM, for the same subject: with a new key it rekeys; without one the same key is certified again while it is young enough"
+          },
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate to renew; it must be the one presented. Without it, the presented certificate is renewed"
+          }
+        }
       }
     }
   }

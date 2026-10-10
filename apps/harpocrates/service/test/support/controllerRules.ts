@@ -38,7 +38,9 @@
  *   standard-errors    @ApiStandardErrorResponses()
  *   access-token       operations behind the access token have
  *                      @ApiBearerAuth() and document 401; @Public() ones
- *                      have no @ApiBearerAuth()
+ *                      have no @ApiBearerAuth(); @ClientCertificate() ones
+ *                      (the renewal listener) document
+ *                      @ApiSecurity("clientCertificate") and 401 instead
  *   success-response   at least one 2xx response documented
  *   status-sent        every documented 2xx status is sent
  *   location           Location is set with setLocation() (utils/location),
@@ -173,10 +175,17 @@ export function checkControllers(controllers: ControllerInfo[]): Finding[] {
     }
     const codes = Object.keys(route.responses).map(Number);
     const bearer = /@ApiBearerAuth\(/.test(c.source);
-    if (c.public && bearer) {
+    const mutual = /@ApiSecurity\("clientCertificate"\)/.test(c.source);
+    if (c.clientCertificate) {
+      if (bearer || !mutual || !codes.includes(401)) {
+        report(
+          "access-token",
+          '@ClientCertificate() needs @ApiSecurity("clientCertificate"), a documented 401 and no @ApiBearerAuth()',
+        );
+      }
+    } else if (c.public && bearer) {
       report("access-token", "@Public() but documents @ApiBearerAuth()");
-    }
-    if (!c.public && (!bearer || !codes.includes(401))) {
+    } else if (!c.public && (!bearer || !codes.includes(401))) {
       report("access-token", "needs @ApiBearerAuth() and a documented 401");
     }
 

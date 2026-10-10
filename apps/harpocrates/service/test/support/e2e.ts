@@ -145,7 +145,11 @@ const waitForSigner = async (
  * and unsealed.
  */
 export const startHarness = async (
-  options: { initialise?: boolean } = {},
+  options: {
+    initialise?: boolean;
+    /** More of the service's environment, set before it starts. */
+    env?: Record<string, string>;
+  } = {},
 ): Promise<Harness> => {
   if (!E2E_DATABASE_URL)
     throw new Error("HARPOCRATES_E2E_DATABASE_URL is unset");
@@ -237,6 +241,7 @@ export const startHarness = async (
     process.env.PKI_DISTRIBUTION_URL = distribution.url;
     process.env.SIGNER_SOCKET_PATH = socketPath;
     process.env.SIGNER_TOKEN_FILE = tokenFile;
+    Object.assign(process.env, options.env);
 
     const app = await createApp();
     await app.init();

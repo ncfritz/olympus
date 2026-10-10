@@ -88,6 +88,21 @@ export type CrlConfig = {
   scheduleSeconds: number;
 };
 
+/** The renewal listener (ADR 0020, Renewal and delivery). */
+export type RenewalConfig = {
+  /** Its port (9443); 0 turns it off. */
+  port: number;
+  /**
+   * Where it keeps its own key and certificate, which it issues itself
+   * from the TLS CA and renews at two-thirds of their life.
+   */
+  tlsDir: string;
+  /** The names it is reached by: its certificate's CN and DNS names. */
+  hostnames: string[];
+  /** The profile its own certificate is issued under. */
+  profileId: string;
+};
+
 export type HarpocratesConfig = {
   server: ServerConfig;
   logging: LoggingConfig;
@@ -96,6 +111,7 @@ export type HarpocratesConfig = {
   auth: AuthConfig;
   pki: PkiConfig;
   crl: CrlConfig;
+  renewal: RenewalConfig;
 };
 
 const integer = (
@@ -201,7 +217,22 @@ export const readConfig = (
       offlineValidityDays: integer(read, "CRL_OFFLINE_VALIDITY_DAYS", 395),
       scheduleSeconds: integer(read, "CRL_SCHEDULE_SECONDS", 30, 0),
     },
+    renewal: {
+      port: integer(read, "RENEWAL_LISTEN_PORT", 9443, 0),
+      tlsDir: read.string(
+        "RENEWAL_TLS_DIR",
+        "/var/lib/harpocrates/renewal-tls",
+      ),
+      hostnames: read.list("RENEWAL_HOSTNAMES", ["pki.internal.ncfritz.net"]),
+      profileId: read.string("RENEWAL_TLS_PROFILE", "internal-tls"),
+    },
   };
+  if (config.renewal.port > 65535) {
+    read.problems.push("RENEWAL_LISTEN_PORT must be a port number");
+  }
+  if (config.renewal.hostnames.length === 0) {
+    read.problems.push("RENEWAL_HOSTNAMES must name at least one host");
+  }
   if (config.crl.refreshHours >= config.crl.validityHours) {
     read.problems.push(
       "CRL_REFRESH_HOURS must be less than CRL_VALIDITY_HOURS: a list must be replaced before it expires",
@@ -237,6 +268,10 @@ export const authConfig = registerAs(
 );
 export const pkiConfig = registerAs("pki", () => readConfig(process.env).pki);
 export const crlConfig = registerAs("crl", () => readConfig(process.env).crl);
+export const renewalConfig = registerAs(
+  "renewal",
+  () => readConfig(process.env).renewal,
+);
 
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type LoggingConfigType = ConfigType<typeof loggingConfig>;
@@ -245,6 +280,7 @@ export type SignerConfigType = ConfigType<typeof signerConfig>;
 export type AuthConfigType = ConfigType<typeof authConfig>;
 export type PkiConfigType = ConfigType<typeof pkiConfig>;
 export type CrlConfigType = ConfigType<typeof crlConfig>;
+export type RenewalConfigType = ConfigType<typeof renewalConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
@@ -254,4 +290,5 @@ export const ALL_CONFIG = [
   authConfig,
   pkiConfig,
   crlConfig,
+  renewalConfig,
 ];

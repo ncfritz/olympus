@@ -20,6 +20,7 @@ import { DECORATORS } from "@nestjs/swagger";
 import * as fs from "fs";
 import * as path from "path";
 import { AppModule } from "../../src/AppModule";
+import { CLIENT_CERTIFICATE_KEY } from "../../src/auth/clientCertificate";
 import { IS_PUBLIC_KEY } from "../../src/auth/public";
 
 export type ApiOperationMetadata = {
@@ -48,6 +49,8 @@ export type ControllerInfo = {
   excluded: boolean;
   /** Marked @Public() (no access token), on the class or the route. */
   public: boolean;
+  /** A renewal listener route: its caller is a client certificate. */
+  clientCertificate: boolean;
   /** Names of the constructor's injected types. */
   injects: string[];
   routes: RouteInfo[];
@@ -188,6 +191,10 @@ export const loadControllers = async (): Promise<ControllerInfo[]> =>
               Reflect.getMetadata(IS_PUBLIC_KEY, cls) === true ||
               (handler !== undefined &&
                 Reflect.getMetadata(IS_PUBLIC_KEY, handler) === true),
+            clientCertificate:
+              Reflect.getMetadata(CLIENT_CERTIFICATE_KEY, cls) === true ||
+              (handler !== undefined &&
+                Reflect.getMetadata(CLIENT_CERTIFICATE_KEY, handler) === true),
             injects: (
               (Reflect.getMetadata("design:paramtypes", cls) ?? []) as {
                 name?: string;

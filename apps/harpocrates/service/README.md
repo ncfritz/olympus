@@ -107,6 +107,24 @@ from it.
 "Recent" is `AUTH_RECENT_SIGN_IN_SECONDS` since the token's `auth_time`.
 `/health` and `/metrics` are open.
 
+### Renewal over mutual TLS
+
+A second listener on `RENEWAL_LISTEN_PORT` (9443, ADR 0020) serves
+`POST /v1/renew` and nothing else, and that route is a 404 on 3200. It
+asks for a client certificate and accepts any in the handshake; the route
+then requires one Harpocrates issued, byte for byte, current, not revoked
+and not already renewed (401 otherwise), and renews it: the same subject
+and profile, keeping the key without a CSR while the profile allows, a
+new key with one. A body naming another certificate, or a CSR for
+another common name, is a 403. The audit log records the caller as
+`certificate:<serial>` on the `renewal` surface.
+
+The listener's own certificate comes from the TLS CA: the service makes a
+key in `RENEWAL_TLS_DIR`, issues itself a certificate for
+`RENEWAL_HOSTNAMES` under `RENEWAL_TLS_PROFILE`, and renews it at
+two-thirds of its life without a restart. Until there is a TLS issuing CA
+and the signer is unsealed it waits, and checks again every five minutes.
+
 The CA console (`apps/harpocrates/console`) signs in through Olympus
 (ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
 service completes the sign-in and keeps the tokens in httpOnly cookies
@@ -215,28 +233,32 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 
 ## Environment
 
-| Variable                      | Default                           | Meaning                                                                                |
-| ----------------------------- | --------------------------------- | -------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | —                                 | `harpocrates-postgres`; or `DATABASE_URL_FILE`, a file holding it (the stack's secret) |
-| `LISTEN_PORT`                 | `3200`                            | The management API, `/health` and `/metrics`                                           |
-| `SIGNER_SOCKET_PATH`          | —                                 | The signer's socket                                                                    |
-| `SIGNER_TOKEN_FILE`           | —                                 | The shared token (a secret)                                                            |
-| `AUTH_JWKS_URL`               | —                                 | The API's published keys; or                                                           |
-| `AUTH_JWKS_FILE`              | —                                 | the same as a file (exactly one of the two)                                            |
-| `AUTH_AUDIENCE`               | `olympus-api`                     | The tokens' audience                                                                   |
-| `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                             | How recent a sign-in ceremonies and escrow export need                                 |
-| `OLYMPUS_API_URL`             | —                                 | The API, server to server, for the console's sign-in; unset, there is none             |
-| `OLYMPUS_SIGN_IN_URL`         | `OLYMPUS_API_URL`                 | Where a browser reaches the API to sign in                                             |
-| `AUTH_BASE_URL`               | `http://localhost:<LISTEN_PORT>`  | Where a browser reaches this service; the sign-in completes at `/auth/callback` here   |
-| `WEB_APP_URL`                 | —                                 | The console: the cookies' path, CORS, and where a sign-in may return to                |
-| `PKI_REALM`                   | `ncfritz.net`                     | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                |
-| `PKI_ORGANIZATION`            | `ncfritz.net`                     | `O=` in the names it issues                                                            |
-| `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net` | Where lists and CA certificates are served, and read back from                         |
-| `PKI_PUBLISHED_DIR`           | —                                 | The directory the distribution host serves                                             |
-| `CRL_VALIDITY_HOURS`          | `168`                             | An online CA's list's validity                                                         |
-| `CRL_REFRESH_HOURS`           | `24`                              | How old an online CA's list gets before it is re-signed                                |
-| `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                             | An offline CA's list's validity, signed in a ceremony                                  |
-| `CRL_SCHEDULE_SECONDS`        | `30`                              | How often the scheduler runs; `0` turns it off                                         |
+| Variable                      | Default                            | Meaning                                                                                |
+| ----------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                | —                                  | `harpocrates-postgres`; or `DATABASE_URL_FILE`, a file holding it (the stack's secret) |
+| `LISTEN_PORT`                 | `3200`                             | The management API, `/health` and `/metrics`                                           |
+| `SIGNER_SOCKET_PATH`          | —                                  | The signer's socket                                                                    |
+| `SIGNER_TOKEN_FILE`           | —                                  | The shared token (a secret)                                                            |
+| `AUTH_JWKS_URL`               | —                                  | The API's published keys; or                                                           |
+| `AUTH_JWKS_FILE`              | —                                  | the same as a file (exactly one of the two)                                            |
+| `AUTH_AUDIENCE`               | `olympus-api`                      | The tokens' audience                                                                   |
+| `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                              | How recent a sign-in ceremonies and escrow export need                                 |
+| `OLYMPUS_API_URL`             | —                                  | The API, server to server, for the console's sign-in; unset, there is none             |
+| `OLYMPUS_SIGN_IN_URL`         | `OLYMPUS_API_URL`                  | Where a browser reaches the API to sign in                                             |
+| `AUTH_BASE_URL`               | `http://localhost:<LISTEN_PORT>`   | Where a browser reaches this service; the sign-in completes at `/auth/callback` here   |
+| `WEB_APP_URL`                 | —                                  | The console: the cookies' path, CORS, and where a sign-in may return to                |
+| `PKI_REALM`                   | `ncfritz.net`                      | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                |
+| `PKI_ORGANIZATION`            | `ncfritz.net`                      | `O=` in the names it issues                                                            |
+| `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net`  | Where lists and CA certificates are served, and read back from                         |
+| `PKI_PUBLISHED_DIR`           | —                                  | The directory the distribution host serves                                             |
+| `CRL_VALIDITY_HOURS`          | `168`                              | An online CA's list's validity                                                         |
+| `CRL_REFRESH_HOURS`           | `24`                               | How old an online CA's list gets before it is re-signed                                |
+| `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                              | An offline CA's list's validity, signed in a ceremony                                  |
+| `CRL_SCHEDULE_SECONDS`        | `30`                               | How often the scheduler runs; `0` turns it off                                         |
+| `RENEWAL_LISTEN_PORT`         | `9443`                             | The renewal listener; `0` turns it off                                                 |
+| `RENEWAL_TLS_DIR`             | `/var/lib/harpocrates/renewal-tls` | Its own key and certificate                                                            |
+| `RENEWAL_HOSTNAMES`           | `pki.internal.ncfritz.net`         | The names its certificate is issued for, comma-separated                               |
+| `RENEWAL_TLS_PROFILE`         | `internal-tls`                     | The profile it is issued under                                                         |
 
 Logging is the shared set (`LOKI_URL`, `CONSOLE_LOGGING_LEVEL`, ...) in
 `dev.env.example`.

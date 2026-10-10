@@ -30,6 +30,14 @@ export const buildOpenApiDocument = (
     .setOpenAPIVersion("3.1.1")
     .setContact("Neil Fritz", "https://ncfritz.net", "ncfritz@ncfritz.net")
     .addBearerAuth()
+    // The renewal listener's caller (ADR 0020): a certificate Harpocrates
+    // issued, presented in the TLS handshake on 9443.
+    // OpenAPI 3.1's mutualTLS, which @nestjs/swagger's 3.0 types lack.
+    .addSecurity("clientCertificate", {
+      type: "mutualTLS",
+      description:
+        "A current certificate Harpocrates issued, presented to the renewal listener (9443)",
+    } as unknown as Parameters<DocumentBuilder["addSecurity"]>[1])
     .build();
   const document = SwaggerModule.createDocument(app, config);
 

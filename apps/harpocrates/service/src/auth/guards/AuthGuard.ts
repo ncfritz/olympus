@@ -4,12 +4,14 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { bearerToken, ConsoleSession } from "@ncfritz/olympus-nest";
 import { Reflector } from "@nestjs/core";
 import type { Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
+import { CLIENT_CERTIFICATE_KEY, listenerOf } from "../clientCertificate";
 import type { AuthenticatedRequest, PkiRole, Principal } from "../principal";
 import { IS_PUBLIC_KEY } from "../public";
 import { RECENT_SIGN_IN_KEY, ROLES_KEY, SIGNED_IN_KEY } from "../roles";
@@ -23,6 +25,10 @@ import { AccessTokenService } from "../services/AccessTokenService";
  *
  * The token is a Bearer header, or, for the CA console, its cookie,
  * refreshed when it has expired (ADR 0029, 0032).
+ *
+ * The renewal listener serves only @ClientCertificate() routes, and they
+ * are served nowhere else: anything else is a 404 there, and they are one
+ * on the management listener.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -35,6 +41,17 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
+    const renewalRoute = Boolean(
+      this.reflector.getAllAndOverride<boolean>(
+        CLIENT_CERTIFICATE_KEY,
+        targets,
+      ),
+    );
+    const onRenewal =
+      listenerOf(context.switchToHttp().getRequest<AuthenticatedRequest>()) ===
+      "renewal";
+    if (renewalRoute !== onRenewal) throw new NotFoundException();
+    if (renewalRoute) return true;
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, targets)) {
       return true;
     }

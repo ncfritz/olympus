@@ -177,6 +177,7 @@ bootstrap() {
     olympus/apps/api/uploads olympus/apps/api/weather/archive \
     olympus/apps/site/olr \
     olympus/apps/harpocrates/signer olympus/apps/harpocrates/published \
+    olympus/apps/harpocrates/renewal-tls \
     olympus/agents/dionysus-asset olympus/agents/dionysus-metadata \
     olympus/agents/dionysus-search \
     olympus/agents/minerva-calendar-sync/credentials/google \

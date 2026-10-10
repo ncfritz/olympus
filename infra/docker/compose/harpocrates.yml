@@ -134,6 +134,14 @@ services:
       AUTH_BASE_URL: https://${CONTROL_HOST:?}/harpocrates/ca/api
       WEB_APP_URL: https://${CONTROL_HOST:?}/harpocrates/ca
       PKI_PUBLISHED_DIR: /srv/harpocrates/published
+      # Renewal over mutual TLS (ADR 0020): its own certificate, from the
+      # TLS CA, for RENEWAL_HOSTNAMES (harpocrates.env), kept here.
+      RENEWAL_LISTEN_PORT: "9443"
+      RENEWAL_TLS_DIR: /var/lib/harpocrates/renewal-tls
+    # On the LAN directly, like the API's 3443: a proxy would end the
+    # client certificate renewal needs (ADR 0020, Surfaces).
+    ports:
+      - "${LAN_BIND:-127.0.0.1}:9443:9443"
     secrets:
       - harpocrates_database_url
       - harpocrates_signer_token
@@ -143,6 +151,7 @@ services:
     volumes:
       - harpocrates-socket:/run/harpocrates-signer
       - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/renewal-tls:/var/lib/harpocrates/renewal-tls
     # Publication reads each list back through the distribution URL: the
     # host's nginx, whatever this container's DNS says of the name.
     extra_hosts:
