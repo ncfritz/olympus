@@ -83,6 +83,8 @@ nzbgeek_api_key nzbget_password tmdb_api_key google_oauth_client_secret
 google_web_oauth_client_secret microsoft_oauth_client_secret
 olympus_oidc_providers harpocrates_signer_unseal_key"
 
+
+
 is_optional() {
   case " $(printf '%s' "$OPTIONAL_SECRETS" | tr '\n' ' ') " in *" $1 "*) return 0 ;; esac
   return 1
@@ -188,8 +190,9 @@ bootstrap() {
   mkdir -p "${BACKUP_DIR:-$DATA_DIR/backups}"
   echo "backups  ${BACKUP_DIR:-$DATA_DIR/backups}"
 
-  mkdir -p "$SECRETS_DIR/rabbitmq"
-  chmod 700 "$SECRETS_DIR"
+  : "${HARPOCRATES_SECRETS_DIR:?set it in $ENV_FILE}"
+  mkdir -p "$SECRETS_DIR/rabbitmq" "$HARPOCRATES_SECRETS_DIR"
+  chmod 700 "$SECRETS_DIR" "$HARPOCRATES_SECRETS_DIR"
   # One per service that holds a certificate, named for the service: the
   # name the others call it by, and its certificates' CN (server.crt and
   # client.crt; stack.sh check reads them).
@@ -198,29 +201,42 @@ bootstrap() {
     minerva-mail-agent minerva-mail-agent-ml; do
     mkdir -p "$SECRETS_DIR/tls/$dir"
   done
-  local name
+  local name dir
   for name in $OPTIONAL_SECRETS; do
-    [ -e "$SECRETS_DIR/$name" ] || { : > "$SECRETS_DIR/$name"; chmod 600 "$SECRETS_DIR/$name"; }
+    dir=$(secrets_dir_of "$name")
+    [ -e "$dir/$name" ] || { : > "$dir/$name"; chmod 600 "$dir/$name"; }
   done
-  # Harpocrates's (compose/harpocrates.yml): random, made once. The
-  # database URL carries the password, so the two are made together.
+  # Harpocrates's (compose/harpocrates.yml), in a directory of their own:
+  # random, made once. The database URL carries the password, so the two
+  # are made together.
+  local h=$HARPOCRATES_SECRETS_DIR
   generate_secret harpocrates_signer_token
-  if [ ! -e "$SECRETS_DIR/harpocrates_postgres_password" ]; then
+  if [ ! -e "$h/harpocrates_postgres_password" ]; then
     generate_secret harpocrates_postgres_password
     printf 'postgresql://harpocrates:%s@harpocrates-postgres:5432/harpocrates\n' \
-      "$(cat "$SECRETS_DIR/harpocrates_postgres_password")" \
-      > "$SECRETS_DIR/harpocrates_database_url"
-    chmod 600 "$SECRETS_DIR/harpocrates_database_url"
+      "$(cat "$h/harpocrates_postgres_password")" \
+      > "$h/harpocrates_database_url"
+    chmod 600 "$h/harpocrates_database_url"
   fi
-  echo "secrets  $SECRETS_DIR (optional ones created empty)"
+  echo "secrets  $SECRETS_DIR, $h (optional ones created empty)"
   echo
   echo "Next: put the required secrets in $SECRETS_DIR (infra/docker/README.md,"
   echo "Secrets), run 'stack.sh rabbitmq-users', then 'stack.sh check'."
 }
 
 # A random secret (hex, so it needs no escaping in a URL), unless it exists.
+# Where a secret's file is: Harpocrates's own directory for its secrets,
+# SECRETS_DIR for the rest.
+secrets_dir_of() {
+  case "$1" in
+    harpocrates_*) echo "$HARPOCRATES_SECRETS_DIR" ;;
+    *) echo "$SECRETS_DIR" ;;
+  esac
+}
+
 generate_secret() {
-  local path="$SECRETS_DIR/$1"
+  local path
+  path="$(secrets_dir_of "$1")/$1"
   [ -e "$path" ] && return 0
   (umask 077 && openssl rand -hex 32 > "$path")
 }

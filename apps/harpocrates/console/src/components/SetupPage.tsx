@@ -36,7 +36,7 @@ const SECRET = "harpocrates_signer_unseal_key";
 
 const CHECKLIST = [
   "The unseal key is in the password manager, beside the recovery passphrase",
-  `It is in \${SECRETS_DIR}/${SECRET}, mode 600`,
+  `It is in \${HARPOCRATES_SECRETS_DIR}/${SECRET}, mode 600`,
   "It is not in the same backup as the signer's data directory",
 ];
 
@@ -51,7 +51,7 @@ const SECRETS = [
   {
     key: "unseal",
     secret: "Unseal key",
-    where: `\${SECRETS_DIR}/${SECRET}, and the password manager`,
+    where: `\${HARPOCRATES_SECRETS_DIR}/${SECRET}, and the password manager`,
     opens: "The signer, by itself, at every start",
   },
   {
@@ -182,7 +182,7 @@ export function SetupPage() {
             </div>
             <Typography.Text>On the host:</Typography.Text>
             <Typography.Paragraph code copyable>
-              {`install -m 600 ${SECRET} "$SECRETS_DIR/${SECRET}" && rm ${SECRET}`}
+              {`install -m 600 ${SECRET} "$HARPOCRATES_SECRETS_DIR/${SECRET}" && rm ${SECRET}`}
             </Typography.Paragraph>
             <Checkbox.Group
               value={checked}

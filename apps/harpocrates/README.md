@@ -39,12 +39,14 @@ installs the Python version itself); the rules are
 ```sh
 cd apps/harpocrates
 mkdir -p .run/published                       # before compose mounts it
-openssl rand -hex 32 > .run/postgres-password && chmod 600 .run/postgres-password
+S=/Users/ncfritz/Docker/secrets/harpocrates      # HARPOCRATES_SECRETS_DIR (.env.example)
+mkdir -p -m 700 $S && echo "HARPOCRATES_SECRETS_DIR=$S" > .env
+(umask 077 && openssl rand -hex 32 > $S/harpocrates_dev_postgres_password)
 docker compose up -d                          # harpocrates-postgres, the distribution host
 cp service/dev.env.example service/dev.env
 cp signer/dev.env.example signer/dev.env
-printf 'postgresql://harpocrates:%s@localhost:5433/harpocrates' \
-  "$(cat .run/postgres-password)" > .run/database-url  # the service's DATABASE_URL_FILE
+(umask 077 && printf 'postgresql://harpocrates:%s@localhost:5433/harpocrates' \
+  "$(cat $S/harpocrates_dev_postgres_password)" > $S/harpocrates_dev_database_url)
 pnpm --filter "@ncfritz/harpocrates-*" dev    # the signer, the service and the console
 curl --unix-socket .run/signer.sock http://signer/health
 pnpm --filter @ncfritz/harpocrates-signer signer initialise   # once: prints the unseal key

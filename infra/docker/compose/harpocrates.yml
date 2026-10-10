@@ -176,10 +176,10 @@ networks:
 
 secrets:
   harpocrates_postgres_password:
-    file: ${SECRETS_DIR:?}/harpocrates_postgres_password
+    file: ${HARPOCRATES_SECRETS_DIR:?}/harpocrates_postgres_password
   harpocrates_database_url:
-    file: ${SECRETS_DIR:?}/harpocrates_database_url
+    file: ${HARPOCRATES_SECRETS_DIR:?}/harpocrates_database_url
   harpocrates_signer_token:
-    file: ${SECRETS_DIR:?}/harpocrates_signer_token
+    file: ${HARPOCRATES_SECRETS_DIR:?}/harpocrates_signer_token
   harpocrates_signer_unseal_key:
-    file: ${SECRETS_DIR:?}/harpocrates_signer_unseal_key
+    file: ${HARPOCRATES_SECRETS_DIR:?}/harpocrates_signer_unseal_key

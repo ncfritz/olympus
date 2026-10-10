@@ -6,9 +6,11 @@
 # infra/docker/compose/harpocrates.yml (phase 4).
 #
 # Postgres's password is a secret file, as the stacks' are (ADR 0019):
-# .run/postgres-password, git-ignored (`openssl rand -hex 32`). Where it
-# listens comes from .env beside this file (.env.example): localhost by
-# default, or the LAN when the service runs on another machine. The
+# harpocrates_dev_postgres_password in HARPOCRATES_SECRETS_DIR, beside the
+# stack's own (/Users/ncfritz/Docker/secrets/harpocrates), or in .run/ when
+# that is unset. Both, and where it listens, come from .env beside this file
+# (.env.example): localhost by default, or the LAN when the service runs on
+# another machine. The
 # distribution host stays on localhost: it serves .run/published, which only
 # a service on the same machine writes.
 name: harpocrates-dev
@@ -45,7 +47,7 @@ services:
 
 secrets:
   harpocrates_dev_postgres_password:
-    file: ./.run/postgres-password
+    file: ${HARPOCRATES_SECRETS_DIR:-./.run}/harpocrates_dev_postgres_password
 
 volumes:
   harpocrates-postgres:

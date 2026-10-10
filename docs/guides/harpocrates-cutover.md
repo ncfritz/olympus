@@ -63,7 +63,7 @@ infra/docker/stack.sh compose harpocrates exec -it harpocrates-signer \
 It asks for a new recovery passphrase twice and prints the unseal key
 once. Then:
 
-1. The unseal key into `${SECRETS_DIR}/harpocrates_signer_unseal_key`
+1. The unseal key into `${HARPOCRATES_SECRETS_DIR}/harpocrates_signer_unseal_key`
    (`chmod 600`), and into the password manager beside the recovery
    passphrase. Never in the same backup as `${DATA_DIR}/olympus/apps/harpocrates/signer`.
 2. `infra/docker/stack.sh restart harpocrates`, then `hcli status`:
