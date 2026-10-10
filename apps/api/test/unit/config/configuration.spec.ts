@@ -328,4 +328,28 @@ describe("isCidr", () => {
     "refuses %s",
     (value) => expect(isCidr(value)).toBe(false),
   );
+
+  it("reads console base URLs by client, a bare one as the calendar console's", () => {
+    const config = readConfig({
+      ...REQUIRED,
+      AUTH_CONSOLE_BASE_URLS:
+        "http://localhost:4432, harpocrates-ca-console=https://control.example/harpocrates/ca/api, minerva-calendar-console=https://control.example/minerva/calendar/api",
+    });
+    expect(config.auth.users.consoleBaseUrls).toEqual({
+      "minerva-calendar-console": [
+        "http://localhost:4432",
+        "https://control.example/minerva/calendar/api",
+      ],
+      "harpocrates-ca-console": ["https://control.example/harpocrates/ca/api"],
+    });
+  });
+
+  it("refuses a console base URL entry with no URL", () => {
+    expect(() =>
+      readConfig({
+        ...REQUIRED,
+        AUTH_CONSOLE_BASE_URLS: "harpocrates-ca-console=",
+      }),
+    ).toThrow(ConfigValidationError);
+  });
 });

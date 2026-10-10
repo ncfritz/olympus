@@ -73,10 +73,11 @@ export type AuthConfig = {
     /** Where the site is served, for exact redirect-URI matching. */
     clientOrigins: string[];
     /**
-     * Where the Minerva calendar console's agent is published, for the same
-     * (ADR 0029). e.g. https://control.olympus.ncfritz.net/minerva/calendar/api
+     * Where each console's service is published, by client id, for the
+     * same (ADR 0029): `minerva-calendar-console` at
+     * https://control.olympus.ncfritz.net/minerva/calendar/api.
      */
-    consoleBaseUrls: string[];
+    consoleBaseUrls: Record<string, string[]>;
     /**
      * Where a browser reaches the API, for the redirect URI the providers
      * are registered with — one canonical origin, not whichever the person
@@ -263,6 +264,35 @@ const readServiceRoles = (read: EnvReader): Record<string, string[]> => {
   return roles;
 };
 
+/** The client a bare AUTH_CONSOLE_BASE_URLS entry is, from before it was keyed. */
+const UNKEYED_CONSOLE_CLIENT = "minerva-calendar-console";
+
+/**
+ * AUTH_CONSOLE_BASE_URLS: `<client id>=<url>` entries, comma-separated, a
+ * client named as often as it has URLs (ADR 0029, 0032). A bare URL is the
+ * Minerva calendar console's, as the variable was before it was keyed.
+ */
+export const readConsoleBaseUrls = (
+  read: EnvReader,
+): Record<string, string[]> => {
+  const urls: Record<string, string[]> = {};
+  for (const entry of read.list("AUTH_CONSOLE_BASE_URLS", [])) {
+    const separator = entry.indexOf("=");
+    const [client, url] =
+      separator === -1
+        ? [UNKEYED_CONSOLE_CLIENT, entry]
+        : [entry.slice(0, separator).trim(), entry.slice(separator + 1).trim()];
+    if (!client || !url) {
+      read.problems.push(
+        `AUTH_CONSOLE_BASE_URLS entries are "<client id>=<url>", got "${entry}"`,
+      );
+      continue;
+    }
+    urls[client] = [...(urls[client] ?? []), url];
+  }
+  return urls;
+};
+
 const readAuthConfig = (read: EnvReader): AuthConfig => {
   const modes = {
     users: read.oneOf<AuthMode>(
@@ -299,7 +329,7 @@ const readAuthConfig = (read: EnvReader): AuthConfig => {
     users: {
       signingKeys: read.optional("AUTH_SIGNING_KEYS"),
       clientOrigins: read.list("AUTH_CLIENT_ORIGINS", []),
-      consoleBaseUrls: read.list("AUTH_CONSOLE_BASE_URLS", []),
+      consoleBaseUrls: readConsoleBaseUrls(read),
       publicBaseUrl: read.optional("AUTH_PUBLIC_BASE_URL"),
       providers:
         providersRaw === undefined

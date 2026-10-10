@@ -146,11 +146,13 @@ on `3443`. Before phase 8 the gateway needs a service path for the agent
    created, last used, expires, revoked). Hasura permissions: admin only.
 2. **Clients** (configuration, not the database):
 
-   | Client id             | Kind   | Redirect URIs                                                                                     | Refresh token   |
-   | --------------------- | ------ | ------------------------------------------------------------------------------------------------- | --------------- |
-   | `olympus-site`        | public | `https://olympus.internal.ncfritz.net/auth/callback`, `https://olympus.ncfritz.net/auth/callback` | httpOnly cookie |
-   | `olympus-ios`         | public | `olympus://auth`                                                                                  | response body   |
-   | `olympus-auth-tester` | public | `http://127.0.0.1:*/callback` (loopback), `olympus-auth-tester://auth`                            | response body   |
+   | Client id                  | Kind   | Redirect URIs                                                                                     | Refresh token                      |
+   | -------------------------- | ------ | ------------------------------------------------------------------------------------------------- | ---------------------------------- |
+   | `olympus-site`             | public | `https://olympus.internal.ncfritz.net/auth/callback`, `https://olympus.ncfritz.net/auth/callback` | httpOnly cookie                    |
+   | `olympus-ios`              | public | `olympus://auth`                                                                                  | response body                      |
+   | `olympus-auth-tester`      | public | `http://127.0.0.1:*/callback` (loopback), `olympus-auth-tester://auth`                            | response body                      |
+   | `minerva-calendar-console` | public | `<its agent's URL>/auth/callback` (ADR 0029; `AUTH_CONSOLE_BASE_URLS`)                            | response body, kept by the agent   |
+   | `harpocrates-ca-console`   | public | `<its service's URL>/auth/callback` (ADR 0032; `AUTH_CONSOLE_BASE_URLS`)                          | response body, kept by the service |
 
 3. **Providers**: Google (OIDC), Synology SSO (OIDC), each
    an API OAuth application with the API's callback URLs. **GitHub is out

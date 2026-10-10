@@ -21,7 +21,7 @@ const config = (signingKeys?: string) =>
     users: {
       signingKeys,
       clientOrigins: [],
-      consoleBaseUrls: [],
+      consoleBaseUrls: {},
       providers: [],
     },
     services: {

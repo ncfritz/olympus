@@ -112,9 +112,10 @@ AUTH_OIDC_PROVIDERS_FILE=/Users/you/olympus-secrets/oidc-providers.json
 # Where the site is served, for exact redirect-URI matching. Only the site
 # needs it, so it can wait until there is one.
 # AUTH_CLIENT_ORIGINS=https://olympus.ncfritz.net,https://olympus.internal.ncfritz.net
-# Where the Minerva calendar console's agent is published (ADR 0029), for
-# its redirect URI, <url>/auth/callback.
-# AUTH_CONSOLE_BASE_URLS=http://localhost:4432
+# Where each console's service is published, by client id (ADR 0029, 0032),
+# for its redirect URI, <url>/auth/callback. A bare URL is the Minerva
+# calendar console's.
+# AUTH_CONSOLE_BASE_URLS=minerva-calendar-console=http://localhost:4432,harpocrates-ca-console=http://localhost:3200
 ```
 
 `AUTH_PUBLIC_BASE_URL` is one canonical base, including any path the API is

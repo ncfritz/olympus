@@ -6,10 +6,15 @@ const ORIGINS = [
   "https://olympus.ncfritz.net",
 ];
 
-const CONSOLE_BASE_URLS = [
-  "https://control.olympus.ncfritz.net/minerva/calendar/api",
-  "http://localhost:4432",
-];
+const CONSOLE_BASE_URLS = {
+  "minerva-calendar-console": [
+    "https://control.olympus.ncfritz.net/minerva/calendar/api",
+    "http://localhost:4432",
+  ],
+  "harpocrates-ca-console": [
+    "https://control.olympus.ncfritz.net/harpocrates/ca/api",
+  ],
+};
 
 const clients = resolveClients({ site: ORIGINS, console: CONSOLE_BASE_URLS });
 const site = clients.get("olympus-site")!;
@@ -18,8 +23,9 @@ const tester = clients.get("olympus-auth-tester")!;
 const minervaConsole = clients.get("minerva-calendar-console")!;
 
 describe("resolveClients", () => {
-  it("has the four clients, with their refresh delivery", () => {
+  it("has the five clients, with their refresh delivery", () => {
     expect([...clients.keys()].sort()).toEqual([
+      "harpocrates-ca-console",
       "minerva-calendar-console",
       "olympus-auth-tester",
       "olympus-ios",
@@ -33,7 +39,7 @@ describe("resolveClients", () => {
   it("tolerates a trailing slash on a configured origin", () => {
     const withSlash = resolveClients({
       site: ["https://olympus.ncfritz.net/"],
-      console: [],
+      console: {},
     });
     expect(
       withSlash
@@ -74,7 +80,7 @@ describe("the site's redirect URIs", () => {
 
 describe("the Minerva calendar console's redirect URIs", () => {
   it("accepts the agent's callback wherever the agent is published", () => {
-    for (const base of CONSOLE_BASE_URLS) {
+    for (const base of CONSOLE_BASE_URLS["minerva-calendar-console"]) {
       expect(minervaConsole.accepts(`${base}/auth/callback`)).toBe(true);
     }
   });
@@ -88,6 +94,10 @@ describe("the Minerva calendar console's redirect URIs", () => {
     [
       "another console's agent",
       "https://control.olympus.ncfritz.net/dionysus/asset/api/auth/callback",
+    ],
+    [
+      "Harpocrates's console's service, though it is a console too",
+      "https://control.olympus.ncfritz.net/harpocrates/ca/api/auth/callback",
     ],
     [
       "an added query",
@@ -157,6 +167,7 @@ describe("CLIENTS", () => {
       "olympus-site",
       "olympus-ios",
       "minerva-calendar-console",
+      "harpocrates-ca-console",
       "olympus-auth-tester",
     ]);
   });
@@ -164,5 +175,23 @@ describe("CLIENTS", () => {
   it("gives only the browser its refresh token in a cookie", () => {
     const cookie = CLIENTS.filter((c) => c.refreshToken === "cookie");
     expect(cookie.map((c) => c.id)).toEqual(["olympus-site"]);
+  });
+});
+
+describe("Harpocrates's console's redirect URIs", () => {
+  const harpocrates = clients.get("harpocrates-ca-console")!;
+
+  it("accepts its service's callback, and only its own", () => {
+    expect(harpocrates.refreshToken).toBe("body");
+    expect(
+      harpocrates.accepts(
+        "https://control.olympus.ncfritz.net/harpocrates/ca/api/auth/callback",
+      ),
+    ).toBe(true);
+    expect(
+      harpocrates.accepts(
+        "https://control.olympus.ncfritz.net/minerva/calendar/api/auth/callback",
+      ),
+    ).toBe(false);
   });
 });

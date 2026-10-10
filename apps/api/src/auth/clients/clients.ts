@@ -22,9 +22,10 @@ export type ClientDefinition = {
   /** Paths joined to each origin the site is served on, e.g. `/auth/callback`. */
   originPaths?: string[];
   /**
-   * Paths joined to each URL the Minerva calendar console's agent is
-   * published at (ADR 0029): the agent, not the browser, completes that
-   * console's sign-in, under its own published path.
+   * Paths joined to each URL this console's service is published at (ADR
+   * 0029): the service, not the browser, completes a console's sign-in,
+   * under its own published path. Only this client's URLs: one console's
+   * client never accepts another's callback.
    */
   consolePaths?: string[];
   /** Whole URIs that do not depend on an origin: a custom scheme. */
@@ -54,6 +55,13 @@ export const CLIENTS: ClientDefinition[] = [
     // keeps the refresh token in an httpOnly cookie of its own, on the
     // console's origin, which is why the API hands it over in the body.
     id: "minerva-calendar-console",
+    refreshToken: "body",
+    consolePaths: ["/auth/callback"],
+  },
+  {
+    // Harpocrates's CA console (ADR 0032), the same way: its service
+    // completes the sign-in and keeps the refresh token in a cookie.
+    id: "harpocrates-ca-console",
     refreshToken: "body",
     consolePaths: ["/auth/callback"],
   },
@@ -91,11 +99,12 @@ export type ClientOrigins = {
    */
   site: string[];
   /**
-   * Where the Minerva calendar console's agent is published, path and all:
+   * Where each console's service is published, path and all, by client id:
+   * `minerva-calendar-console` at
    * `https://control.olympus.ncfritz.net/minerva/calendar/api` in
    * production (AUTH_CONSOLE_BASE_URLS).
    */
-  console: string[];
+  console: Record<string, string[]>;
 };
 
 /**
@@ -116,7 +125,7 @@ export const resolveClients = (
         exact.add(join(origin, path));
       }
     }
-    for (const base of origins.console) {
+    for (const base of origins.console[definition.id] ?? []) {
       for (const path of definition.consolePaths ?? []) {
         exact.add(join(base, path));
       }
