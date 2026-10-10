@@ -24,3 +24,5 @@ export type AuditEvent = Schemas["AuditEvent"];
 export type RevocationList = Schemas["RevocationList"];
 export type CurrentUser = Schemas["CurrentUser"];
 export type PkiRole = CurrentUser["roles"][number];
+export type RevocationReason = Schemas["RevocationReason"];
+export type NameType = Schemas["NameType"];

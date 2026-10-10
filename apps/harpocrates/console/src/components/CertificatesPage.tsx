@@ -1,20 +1,23 @@
 "use client";
 
-import { DownloadOutlined } from "@ant-design/icons";
+import { DownloadOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   Button,
   Descriptions,
   Drawer,
   Flex,
   Input,
+  message,
+  Segmented,
   Select,
   Table,
   Tag,
   Typography,
 } from "antd";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
 import { useCertificates, useCurrentUser } from "@/lib/api/queries";
@@ -27,6 +30,8 @@ import { saveFile } from "@/lib/download";
 import { formatDate, formatDateTime } from "@/lib/labels";
 import { ErrorAlert } from "./ErrorAlert";
 import { KeyExportForm } from "./KeyExportForm";
+import { RenewForm } from "./RenewForm";
+import { RevokeForm } from "./RevokeForm";
 
 const PAGE_SIZE = 50;
 
@@ -62,7 +67,14 @@ export function CertificatesPage() {
 
   return (
     <Flex vertical gap="large">
-      <Typography.Title level={3}>Certificates</Typography.Title>
+      <Flex justify="space-between" align="center" wrap gap="middle">
+        <Typography.Title level={3}>Certificates</Typography.Title>
+        <Link href="/certificates/new">
+          <Button type="primary" icon={<PlusOutlined />}>
+            Issue
+          </Button>
+        </Link>
+      </Flex>
       <Flex gap="middle" wrap>
         <Input.Search
           allowClear
@@ -128,19 +140,33 @@ export function CertificatesPage() {
       />
       <CertificateDrawer
         certificateId={open}
+        onOpen={setOpen}
         onClose={() => setOpen(undefined)}
       />
     </Flex>
   );
 }
 
+type Action = "renew" | "revoke" | "export";
+
 function CertificateDrawer({
   certificateId,
+  onOpen,
   onClose,
 }: {
   certificateId?: string;
+  /** Another certificate in its place: the renewal just issued. */
+  onOpen: (certificateId: string) => void;
   onClose: () => void;
 }) {
+  const { mutate } = useSWRConfig();
+  const [messages, messageHolder] = message.useMessage();
+  const refresh = () =>
+    mutate(
+      (key) =>
+        typeof key === "string" &&
+        (key.startsWith("/certificates") || key.startsWith("/certificate/")),
+    );
   const { isAdmin } = useCurrentUser();
   const { data: certificate, error } = useSWR<FullCertificate>(
     certificateId ? `/certificate/${certificateId}` : null,
@@ -151,18 +177,27 @@ function CertificateDrawer({
         }),
       ).certificate,
   );
-  const [exporting, setExporting] = useState(false);
+  const [action, setAction] = useState<Action>();
+  const valid = certificate?.state === "valid";
+  const actions = [
+    ...(valid ? [{ value: "renew", label: "Renew" }] : []),
+    ...(valid ? [{ value: "revoke", label: "Revoke" }] : []),
+    ...(certificate?.keyLocation === "signer" && isAdmin
+      ? [{ value: "export", label: "Export the key" }]
+      : []),
+  ] as { value: Action; label: string }[];
 
   return (
     <Drawer
       open={Boolean(certificateId)}
       onClose={() => {
-        setExporting(false);
+        setAction(undefined);
         onClose();
       }}
       size="large"
       title={certificate?.subject ?? "Certificate"}
     >
+      {messageHolder}
       <ErrorAlert error={error} />
       {certificate && (
         <Flex vertical gap="large">
@@ -191,6 +226,38 @@ function CertificateDrawer({
             <Descriptions.Item label="Key">
               {certificate.keyAlgorithm}, held by {certificate.keyLocation}
             </Descriptions.Item>
+            {certificate.revocation && (
+              <Descriptions.Item label="Revoked">
+                {formatDateTime(certificate.revocation.revokedAt)} by{" "}
+                {certificate.revocation.principal}:{" "}
+                {certificate.revocation.reason}
+                {certificate.revocation.comment
+                  ? ` (${certificate.revocation.comment})`
+                  : ""}
+              </Descriptions.Item>
+            )}
+            {certificate.renewsId && (
+              <Descriptions.Item label="Renews">
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => onOpen(certificate.renewsId!)}
+                >
+                  {certificate.renewsId}
+                </Button>
+              </Descriptions.Item>
+            )}
+            {certificate.renewedById && (
+              <Descriptions.Item label="Renewed by">
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => onOpen(certificate.renewedById!)}
+                >
+                  {certificate.renewedById}
+                </Button>
+              </Descriptions.Item>
+            )}
           </Descriptions>
           <Flex gap="small" wrap>
             <Button
@@ -217,11 +284,44 @@ function CertificateDrawer({
             >
               With its chain
             </Button>
-            {certificate.keyLocation === "signer" && isAdmin && !exporting && (
-              <Button onClick={() => setExporting(true)}>Export the key</Button>
-            )}
           </Flex>
-          {exporting && <KeyExportForm certificateId={certificate.id} />}
+          {actions.length > 0 && (
+            <Segmented<Action | "none">
+              value={action ?? "none"}
+              onChange={(value) =>
+                setAction(value === "none" ? undefined : value)
+              }
+              options={[{ value: "none", label: "—" }, ...actions]}
+            />
+          )}
+          {action === "renew" && (
+            <RenewForm
+              certificate={certificate}
+              onRenewed={async (renewal) => {
+                await refresh();
+                setAction(undefined);
+                void messages.success("Renewed");
+                onOpen(renewal.id);
+              }}
+            />
+          )}
+          {action === "revoke" && (
+            <RevokeForm
+              certificate={certificate}
+              onRevoked={async (revoked) => {
+                await refresh();
+                setAction(undefined);
+                void messages.success(
+                  revoked.length > 1
+                    ? `Revoked, with ${revoked.length - 1} other certificates for its key`
+                    : "Revoked",
+                );
+              }}
+            />
+          )}
+          {action === "export" && (
+            <KeyExportForm certificateId={certificate.id} />
+          )}
         </Flex>
       )}
     </Drawer>
