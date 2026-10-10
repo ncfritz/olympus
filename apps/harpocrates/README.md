@@ -42,20 +42,23 @@ mkdir -p .run/published                       # before compose mounts it
 S=/Users/ncfritz/Docker/secrets/harpocrates      # HARPOCRATES_SECRETS_DIR (.env.example)
 mkdir -p -m 700 $S && echo "HARPOCRATES_SECRETS_DIR=$S" > .env
 (umask 077 && openssl rand -hex 32 > $S/harpocrates_dev_postgres_password)
+(umask 077 && openssl rand -hex 32 > $S/harpocrates_dev_signer_token)
 docker compose up -d                          # harpocrates-postgres, the distribution host
 cp service/dev.env.example service/dev.env
 cp signer/dev.env.example signer/dev.env
 (umask 077 && printf 'postgresql://harpocrates:%s@localhost:5433/harpocrates' \
   "$(cat $S/harpocrates_dev_postgres_password)" > $S/harpocrates_dev_database_url)
+pnpm --filter @ncfritz/harpocrates-service prisma:deploy      # the service's schema
 pnpm --filter "@ncfritz/harpocrates-*" dev    # the signer, the service and the console
 curl --unix-socket .run/signer.sock http://signer/health
-pnpm --filter @ncfritz/harpocrates-signer signer initialise   # once: prints the unseal key
-pnpm --filter @ncfritz/harpocrates-service prisma:deploy      # the service's schema
-../../scripts/dev-ca-import.sh                # once: adopt the dev CA and its lists
-curl -sI http://localhost:8480/crl/service-issuing-1-g1.crl
 ```
 
-The unseal key goes in `.run/unseal-key` (`SIGNER_UNSEAL_KEY_FILE`).
+Then set the signer up from the console's `/setup` (or
+`pnpm --filter @ncfritz/harpocrates-signer signer initialise`): the unseal
+key it shows once goes in `$S/harpocrates_dev_signer_unseal_key`
+(`SIGNER_UNSEAL_KEY_FILE`), and from then on the signer unseals itself.
+`../../scripts/dev-ca-import.sh` adopts the old dev CA and its lists, for
+work that needs them; ADR 0032 starts from new roots instead.
 Once the dev CA is adopted, the API can read its lists from
 `.run/published/crl/` (the commented `TLS_CRL_SERVICES` in
 `apps/api/dev.env.example`), and a revocation here reaches its services
