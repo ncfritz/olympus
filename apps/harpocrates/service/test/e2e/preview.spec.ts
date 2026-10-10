@@ -50,7 +50,11 @@ describe.skipIf(!E2E_DATABASE_URL)("previewing a CA", () => {
   });
 
   it("shows a root at its defaults, and records nothing", async () => {
-    const { preview: root, defaults, problems } = await preview({
+    const {
+      preview: root,
+      defaults,
+      problems,
+    } = await preview({
       tier: "root",
       number: 1,
       shape: "two_tier",
@@ -91,6 +95,28 @@ describe.skipIf(!E2E_DATABASE_URL)("previewing a CA", () => {
       organization: "ncfritz.net",
       validityDays: 7300,
     });
+  });
+
+  it("refuses a CA too short-lived to sign what it signs", async () => {
+    const { problems } = await preview({
+      tier: "root",
+      number: 4,
+      validityDays: 3650,
+    });
+    expect(problems).toEqual([
+      "3650 days leaves it no time to sign: what it signs lasts up to 3650 days, so it needs more than 3680",
+    ]);
+    const refused = await request(server())
+      .post("/v1/issuers/roots")
+      .set("Authorization", harness.admin)
+      .send({
+        number: 4,
+        generation: 1,
+        validityDays: 3650,
+        exportPassphrase: EXPORT_PASSPHRASE,
+      })
+      .expect(422);
+    expect(refused.body.message).toMatch(/no time to sign/);
   });
 
   describe("beneath a root", () => {

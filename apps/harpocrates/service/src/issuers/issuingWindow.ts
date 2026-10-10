@@ -116,3 +116,20 @@ export const signedInCeremony = (parent: {
 /** "intermediate CAs", "leaves": for messages. */
 export const describeSigned = (signed: SignedInCeremony): string =>
   signed === "leaf" ? "leaves" : `${signed} CAs`;
+
+/**
+ * Why a new CA could sign nothing, or undefined: its issuing window would
+ * be closed from the start, since what it signs (up to maxValidityDays,
+ * and the margin) would not fit in its life.
+ */
+export const noTimeToSign = (
+  notBefore: Date,
+  notAfter: Date,
+  maxValidityDays: number,
+): string | undefined => {
+  if (isIssuingWindowOpen(notAfter, maxValidityDays, notBefore)) {
+    return undefined;
+  }
+  const days = Math.round((notAfter.getTime() - notBefore.getTime()) / DAY);
+  return `${days} days leaves it no time to sign: what it signs lasts up to ${maxValidityDays} days, so it needs more than ${maxValidityDays + MARGIN_DAYS}`;
+};

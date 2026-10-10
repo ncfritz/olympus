@@ -14,6 +14,7 @@ import {
   childNotAfter,
   describeSigned,
   isIssuingWindowOpen,
+  noTimeToSign,
   offlineMaxValidityDays,
   SHAPE_PATH_LENGTH,
   signedInCeremony,
@@ -142,6 +143,10 @@ export class IssuerPreviewService {
         `${request.validityDays} days would outlive its parent, which expires ${parent.notAfter.toISOString()}`,
       );
     }
+    const idle =
+      preview.maxValidityDays > 0 &&
+      noTimeToSign(now, preview.notAfter.toDate(), preview.maxValidityDays);
+    if (idle) problems.push(idle);
     if (
       await this.prisma.issuer.findUnique({
         where: { subject: preview.subject },

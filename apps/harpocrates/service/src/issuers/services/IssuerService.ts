@@ -46,6 +46,7 @@ import {
 import {
   addDays,
   isIssuingWindowOpen,
+  noTimeToSign,
   offlineMaxValidityDays,
   SHAPE_PATH_LENGTH,
   shapeOfPathLength,
@@ -185,15 +186,22 @@ export class IssuerService {
     await this.assertNew(id);
     const subject = await this.newSubject(parts, request, request.organization);
     const notBefore = startNow();
+    const notAfter = addDays(
+      notBefore,
+      request.validityDays ?? TIER_VALIDITY_DAYS.root,
+    );
+    const idle = noTimeToSign(
+      notBefore,
+      notAfter,
+      offlineMaxValidityDays("root", shape),
+    );
+    if (idle) throw new UnprocessableEntityException(idle);
     const created = await this.signer.createRoot(
       {
         subject,
         serial: randomSerial(),
         notBefore: notBefore.toISOString(),
-        notAfter: addDays(
-          notBefore,
-          request.validityDays ?? TIER_VALIDITY_DAYS.root,
-        ).toISOString(),
+        notAfter: notAfter.toISOString(),
         keyUsage: ["key_cert_sign", "crl_sign"],
         ca: true,
         pathLength: SHAPE_PATH_LENGTH[shape],

@@ -17,6 +17,8 @@ import {
   childNotAfter,
   describeSigned,
   isIssuingWindowOpen,
+  noTimeToSign,
+  offlineMaxValidityDays,
   type SignedInCeremony,
   signedInCeremony,
   TIER_PATH_LENGTH,
@@ -196,18 +198,25 @@ export class CeremonyService {
       request.organization ?? parent.organization ?? undefined;
     const subject = await this.issuers.newSubject(parts, request, organization);
     const notBefore = startNow();
+    const notAfter = notAfterFor(
+      notBefore,
+      "intermediate",
+      parent.notAfter!,
+      request.validityDays,
+    );
+    const idle = noTimeToSign(
+      notBefore,
+      notAfter,
+      offlineMaxValidityDays("intermediate"),
+    );
+    if (idle) throw new UnprocessableEntityException(idle);
     const created = await this.signer.createIntermediate(
       ceremonyId,
       {
         subject,
         serial: randomSerial(),
         notBefore: notBefore.toISOString(),
-        notAfter: notAfterFor(
-          notBefore,
-          "intermediate",
-          parent.notAfter!,
-          request.validityDays,
-        ).toISOString(),
+        notAfter: notAfter.toISOString(),
         keyUsage: ["key_cert_sign", "crl_sign"],
         ca: true,
         pathLength: TIER_PATH_LENGTH.intermediate,
@@ -256,21 +265,24 @@ export class CeremonyService {
     const organization =
       request.organization ?? parent.organization ?? undefined;
     const subject = await this.issuers.newSubject(parts, request, organization);
+    const notBefore = startNow();
+    const notAfter = notAfterFor(
+      notBefore,
+      "issuing",
+      parent.notAfter!,
+      request.validityDays,
+    );
+    const idle = noTimeToSign(notBefore, notAfter, request.maxValidityDays);
+    if (idle) throw new UnprocessableEntityException(idle);
     const key = await this.signer.generateKey(
       "issuer",
       request.algorithm ?? "P-256",
     );
-    const notBefore = startNow();
     const certificate = await this.signer.signInCeremony(ceremonyId, {
       subject,
       serial: randomSerial(),
       notBefore: notBefore.toISOString(),
-      notAfter: notAfterFor(
-        notBefore,
-        "issuing",
-        parent.notAfter!,
-        request.validityDays,
-      ).toISOString(),
+      notAfter: notAfter.toISOString(),
       keyUsage: ["digital_signature", "key_cert_sign", "crl_sign"],
       extendedKeyUsages: request.extendedKeyUsages,
       keyId: key.id,
