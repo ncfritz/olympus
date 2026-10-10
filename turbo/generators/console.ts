@@ -24,6 +24,7 @@ type Answers = {
   name: string;
   label: string;
   description: string;
+  icon: string;
   placement: "agent" | "app";
   dir: string;
   packageName: string;
@@ -66,6 +67,15 @@ export const registerConsoleGenerator = (plop: PlopTypes.NodePlopAPI): void => {
   const composeFile = path.join(repo, "infra/docker/compose/olympus.yml");
   const nginxFile = path.join(repo, "infra/docker/nginx/control.conf");
 
+  // The registry's icon names: ConsoleIconName's members.
+  const consoleIcons = (): string[] => {
+    const union = /export type ConsoleIconName =([^;]*);/.exec(
+      read(registryFile),
+    );
+    if (!union) throw new Error("No ConsoleIconName in the registry");
+    return [...union[1].matchAll(/"([a-z-]+)"/g)].map((match) => match[1]);
+  };
+
   const properties = (): string[] =>
     [...read(registryFile).matchAll(/^    key: "([a-z0-9-]+)",$/gm)].map(
       (match) => match[1],
@@ -107,6 +117,12 @@ export const registerConsoleGenerator = (plop: PlopTypes.NodePlopAPI): void => {
         name: "description",
         message: "One line: the sider's tooltip and the index's card",
         validate: (v: string) => v.trim().length > 0 || "required",
+      },
+      {
+        type: "list",
+        name: "icon",
+        message: "Its icon, in the rail (packages/console/src/shell/icons.tsx)",
+        choices: () => consoleIcons(),
       },
       {
         type: "list",
@@ -212,6 +228,7 @@ export const registerConsoleGenerator = (plop: PlopTypes.NodePlopAPI): void => {
         key: "${a.name}",
         label: "${a.label}",
         description: "${a.description}",
+        icon: "${a.icon}",
       },\n`;
           if (properties().includes(a.property)) {
             const at = anchor(source, `    key: "${a.property}",`, "registry");

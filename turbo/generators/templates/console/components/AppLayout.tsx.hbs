@@ -1,23 +1,30 @@
 "use client";
 
+import { HomeOutlined } from "@ant-design/icons";
 import {
   ControlShell,
 {{#if hasAgent}}
   useConsoleAuth,
 {{/if}}
   type Registry,
+  type ShellPage,
 } from "@ncfritz/olympus-console";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 {{#if hasAgent}}
-import { API_URL, CONSOLE_KEY } from "@/lib/api/client";
+import { API_URL, BASE_PATH, CONSOLE_KEY } from "@/lib/api/client";
 {{else}}
-import { CONSOLE_KEY } from "@/lib/api/client";
+import { BASE_PATH, CONSOLE_KEY } from "@/lib/api/client";
 {{/if}}
 
-/** This console's own pages, in the shell's header strip. */
-const TABS = [{ key: "/", label: <Link href="/">Home</Link> }];
+/**
+ * This console's own pages, in the sider beside the rail. The key is the
+ * route, matched against the path; the href is the address, with the
+ * base path the console is published under.
+ */
+const PAGES: ShellPage[] = [
+  { key: "/", label: "Home", icon: <HomeOutlined />, href: "/" },
+].map((page) => ({ ...page, href: `${BASE_PATH}${page.href}` }));
 
 export interface AppLayoutProps {
   /** The suite, as this host runs it, from the root layout. */
@@ -27,7 +34,7 @@ export interface AppLayoutProps {
 }
 
 /**
- * This console inside the shared chrome (ADR 0021): the suite's sider{{#if hasAgent}} and
+ * This console inside the shared chrome (ADR 0021): the suite's rail{{#if hasAgent}} and
  * the session{{/if}} come from `@ncfritz/olympus-console`, the pages are this
  * console's own.
  */
@@ -36,6 +43,7 @@ export function AppLayout({ nav, origin, children }: AppLayoutProps) {
   const auth = useConsoleAuth({ apiUrl: API_URL });
 {{/if}}
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <ControlShell
@@ -46,8 +54,11 @@ export function AppLayout({ nav, origin, children }: AppLayoutProps) {
       auth={auth}
       signIn={[{ name: "google", label: "Sign in with Google" }]}
 {{/if}}
-      tabs={TABS}
-      activeTab={TABS.some((tab) => tab.key === pathname) ? pathname : "/"}
+      pages={PAGES}
+      activePage={PAGES.some((page) => page.key === pathname) ? pathname : "/"}
+      // The router takes the route, without the base path the anchor
+      // carries for a new tab.
+      onNavigate={(href) => router.push(href.slice(BASE_PATH.length) || "/")}
     >
       {children}
     </ControlShell>

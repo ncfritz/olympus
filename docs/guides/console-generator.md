@@ -12,7 +12,8 @@ itself.
 | Prompt             | What it decides                                                                |
 | ------------------ | ------------------------------------------------------------------------------ |
 | Property, name     | The key `<property>/<console>`, and everything derived from it                 |
-| Label, description | The sider's row and the index's card                                           |
+| Label, description | The rail's row and the index's card                                            |
+| Icon               | The rail's glyph, one of the registry's `ConsoleIconName`s                     |
 | Where it lives     | `agents/<agent>/console` beside its agent, or `apps/<name>-console` on its own |
 | Port               | What the console listens on inside its image                                   |
 | Its own agent?     | Whether nginx also publishes an agent under it, and on which port              |
@@ -22,7 +23,7 @@ give it.
 
 ## What it writes
 
-The package — a Next.js app on the shared shell, with one page, one tab and
+The package — a Next.js app on the shared shell, with one page in its sider and
 (with an agent) a session — and then:
 
 | File                               | What it adds                             |
