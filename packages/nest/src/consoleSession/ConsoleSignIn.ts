@@ -137,7 +137,13 @@ export class ConsoleSignIn {
       if (error instanceof AuthFlowError) {
         throw new BadRequestException(error.message);
       }
-      throw error;
+      // fetch's own "fetch failed" says nothing; its cause says why (a
+      // refused connection, a certificate the service does not trust).
+      const why = unreachable(error);
+      this.logger.warn(`completing a sign-in failed: ${why}`);
+      throw new ServiceUnavailableException(
+        `The Olympus API cannot be reached: ${why}`,
+      );
     }
   }
 
@@ -257,4 +263,13 @@ const readTransaction = (raw: string | undefined): SignInTransaction => {
     verifier: txn.verifier,
     returnTo: typeof txn.returnTo === "string" ? txn.returnTo : undefined,
   };
+};
+
+/** Why a request to the API failed, from the error fetch wraps it in. */
+const unreachable = (error: unknown): string => {
+  const cause = (error as { cause?: { code?: unknown; message?: unknown } })
+    ?.cause;
+  if (typeof cause?.code === "string") return cause.code;
+  if (typeof cause?.message === "string") return cause.message;
+  return error instanceof Error ? error.message : String(error);
 };
