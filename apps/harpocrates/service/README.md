@@ -106,6 +106,24 @@ from it.
 "Recent" is `AUTH_RECENT_SIGN_IN_SECONDS` since the token's `auth_time`.
 `/health` and `/metrics` are open.
 
+The CA console (`apps/harpocrates/console`) signs in through Olympus
+(ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
+service completes the sign-in and keeps the tokens in httpOnly cookies
+(`harpocrates_access_token`, `harpocrates_refresh_token`), which the
+guard takes as well as a Bearer header, refreshing an expired one. A
+change riding on the cookies must come from the console's origin. Its
+routes:
+
+| Route                       | Who                                                    |
+| --------------------------- | ------------------------------------------------------ |
+| `GET /auth/login/:provider` | open; a redirect to the API's sign-in (not in the doc) |
+| `GET /auth/callback`        | open; sets the cookies (not in the doc)                |
+| `GET /v1/auth/current-user` | anyone signed in: their email and pki roles            |
+| `POST /v1/auth/logout`      | open; ends the Olympus session, clears the cookies     |
+
+Without `OLYMPUS_API_URL` they answer 503 and only Bearer tokens are
+taken.
+
 ## Metrics and alerts
 
 | Metric                                                           | What                                                                |
@@ -206,6 +224,10 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:harpocrates@localhost:5433
 | `AUTH_JWKS_FILE`              | —                                 | the same as a file (exactly one of the two)                                            |
 | `AUTH_AUDIENCE`               | `olympus-api`                     | The tokens' audience                                                                   |
 | `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                             | How recent a sign-in ceremonies and escrow export need                                 |
+| `OLYMPUS_API_URL`             | —                                 | The API, server to server, for the console's sign-in; unset, there is none             |
+| `OLYMPUS_SIGN_IN_URL`         | `OLYMPUS_API_URL`                 | Where a browser reaches the API to sign in                                             |
+| `AUTH_BASE_URL`               | `http://localhost:<LISTEN_PORT>`  | Where a browser reaches this service; the sign-in completes at `/auth/callback` here   |
+| `WEB_APP_URL`                 | —                                 | The console: the cookies' path, CORS, and where a sign-in may return to                |
 | `PKI_REALM`                   | `ncfritz.net`                     | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                |
 | `PKI_ORGANIZATION`            | `ncfritz.net`                     | `O=` in the names it issues                                                            |
 | `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net` | Where lists and CA certificates are served, and read back from                         |

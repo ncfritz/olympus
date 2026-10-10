@@ -4,13 +4,15 @@ import {
   VersioningType,
 } from "@nestjs/common";
 import { operationsFromOpenApi } from "@ncfritz/olympus-metrics";
+import cookieParser from "cookie-parser";
 import { useHttpServerMetrics } from "@ncfritz/olympus-nest";
 import { serverConfig, type ServerConfigType } from "./config/configuration";
 import { API_NAME, buildOpenApiDocument } from "./openapi/documentBuilder";
 
 /**
  * Express-level setup shared by main.ts, the OpenAPI generator and the e2e
- * tests: request metrics, URI versioning (/v1/...) and request validation.
+ * tests: request metrics, URI versioning (/v1/...), cookies and request
+ * validation.
  */
 export const configureApp = (app: INestApplication): INestApplication => {
   const server = app.get<ServerConfigType>(serverConfig.KEY);
@@ -22,6 +24,8 @@ export const configureApp = (app: INestApplication): INestApplication => {
       operationsFromOpenApi(API_NAME, buildOpenApiDocument(app, false)),
   });
   app.enableVersioning({ type: VersioningType.URI });
+  // The CA console's session rides on cookies (ADR 0029, 0032).
+  app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

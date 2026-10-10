@@ -12,11 +12,12 @@ const ERROR_DESCRIPTIONS: { [K in HttpStatus]?: string } = {
 /** Answers only some operations give, added with `include`. */
 const OPTIONAL_ERROR_DESCRIPTIONS: { [K in HttpStatus]?: string } = {
   [HttpStatus.FORBIDDEN]:
-    "The caller's roles do not allow it, or it needs a more recent sign-in",
+    "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
   [HttpStatus.CONFLICT]: "The request conflicts with the current state",
   [HttpStatus.UNPROCESSABLE_ENTITY]:
     "Refused: a profile rule or one of the signer's invariants",
-  [HttpStatus.SERVICE_UNAVAILABLE]: "The signer is sealed or unreachable",
+  [HttpStatus.SERVICE_UNAVAILABLE]:
+    "The signer is sealed or unreachable, or the Olympus API cannot be asked",
 };
 
 export type ApiStandardErrorResponsesOptions = {

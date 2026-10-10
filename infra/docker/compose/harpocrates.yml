@@ -124,6 +124,15 @@ services:
       # Users' access tokens are the API's (ADR 0018), verified against
       # its keys over the edge network.
       AUTH_JWKS_URL: http://olympus-api:3100/.well-known/jwks.json
+      # The CA console signs in through the Olympus API (ADR 0029, 0032):
+      # the service reaches it over the edge network, and the browser where
+      # the site is. nginx publishes the console at /harpocrates/ca on the
+      # control host, and this service under it; those paths scope the
+      # session cookies and bound where a sign-in may return to.
+      OLYMPUS_API_URL: http://olympus-api:3100
+      OLYMPUS_SIGN_IN_URL: ${NEXT_PUBLIC_OLYMPUS_HOST:?}/api
+      AUTH_BASE_URL: https://${CONTROL_HOST:?}/harpocrates/ca/api
+      WEB_APP_URL: https://${CONTROL_HOST:?}/harpocrates/ca
       PKI_PUBLISHED_DIR: /srv/harpocrates/published
     secrets:
       - harpocrates_database_url

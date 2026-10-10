@@ -125,4 +125,51 @@ describe("readConfig", () => {
       );
     }
   });
+
+  it("has no console sign-in without OLYMPUS_API_URL", () => {
+    expect(readConfig(REQUIRED).auth.console).toBeUndefined();
+  });
+
+  it("reads the console's sign-in, defaulting to this service and the API", () => {
+    const config = readConfig({
+      ...REQUIRED,
+      OLYMPUS_API_URL: "http://olympus-api:3100/",
+    });
+    expect(config.auth.console).toEqual({
+      baseUrl: "http://localhost:3200",
+      webAppUrl: undefined,
+      olympus: {
+        apiUrl: "http://olympus-api:3100",
+        signInUrl: "http://olympus-api:3100",
+      },
+    });
+  });
+
+  it("reads where the console and its service are published", () => {
+    const config = readConfig({
+      ...REQUIRED,
+      OLYMPUS_API_URL: "http://olympus-api:3100",
+      OLYMPUS_SIGN_IN_URL: "https://olympus.ncfritz.net/api",
+      AUTH_BASE_URL: "https://control.example/harpocrates/ca/api/",
+      WEB_APP_URL: "https://control.example/harpocrates/ca",
+    });
+    expect(config.auth.console).toEqual({
+      baseUrl: "https://control.example/harpocrates/ca/api",
+      webAppUrl: "https://control.example/harpocrates/ca",
+      olympus: {
+        apiUrl: "http://olympus-api:3100",
+        signInUrl: "https://olympus.ncfritz.net/api",
+      },
+    });
+  });
+
+  it("refuses console URLs that are not URLs", () => {
+    expect(() =>
+      readConfig({
+        ...REQUIRED,
+        OLYMPUS_API_URL: "olympus-api",
+        WEB_APP_URL: "/harpocrates/ca",
+      }),
+    ).toThrow(/OLYMPUS_API_URL must be a URL[\s\S]*WEB_APP_URL must be a URL/);
+  });
 });

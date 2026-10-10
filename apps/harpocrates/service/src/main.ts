@@ -26,6 +26,11 @@ async function bootstrap(): Promise<void> {
     }),
   });
   app.enableShutdownHooks();
+  // The CA console, when it is served from another origin (in development).
+  const webAppUrl = config.auth.console?.webAppUrl;
+  if (webAppUrl) {
+    app.enableCors({ origin: new URL(webAppUrl).origin, credentials: true });
+  }
   configureApp(app);
 
   if (config.server.apiExplorer) {

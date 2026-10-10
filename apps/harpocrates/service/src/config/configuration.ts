@@ -40,6 +40,28 @@ export type AuthConfig = {
   audience: string;
   /** How recent a sign-in escrow export and ceremonies need, in seconds. */
   recentSignInSeconds: number;
+  /**
+   * The CA console's sign-in through Olympus (ADR 0029, 0032); unset
+   * without OLYMPUS_API_URL, when only Bearer tokens are taken.
+   */
+  console?: ConsoleSignInConfig;
+};
+
+export type ConsoleSignInConfig = {
+  /**
+   * Where the browser reaches this service (AUTH_BASE_URL); the sign-in
+   * completes at `<baseUrl>/auth/callback`, which the API's
+   * AUTH_CONSOLE_BASE_URLS names for harpocrates-ca-console.
+   */
+  baseUrl: string;
+  /** The console's own URL (WEB_APP_URL): the cookies' path, CORS, and the only allowed returnTo. */
+  webAppUrl?: string;
+  olympus: {
+    /** Where this service reaches the Olympus API (OLYMPUS_API_URL). */
+    apiUrl: string;
+    /** Where a browser reaches it to sign in (OLYMPUS_SIGN_IN_URL); the API's URL by default. */
+    signInUrl: string;
+  };
 };
 
 export type PkiConfig = {
@@ -96,6 +118,42 @@ const integer = (
   return value;
 };
 
+const withoutTrailingSlash = (url: string) => url.replace(/\/+$/, "");
+
+/** The console's sign-in: configured by OLYMPUS_API_URL, absent without it. */
+const readConsoleSignIn = (
+  read: EnvReader,
+  port: number,
+): ConsoleSignInConfig | undefined => {
+  const apiUrl = read.optional("OLYMPUS_API_URL");
+  if (apiUrl === undefined) return undefined;
+  for (const [name, value] of [
+    ["OLYMPUS_API_URL", apiUrl],
+    ["OLYMPUS_SIGN_IN_URL", read.optional("OLYMPUS_SIGN_IN_URL")],
+    ["AUTH_BASE_URL", read.optional("AUTH_BASE_URL")],
+    ["WEB_APP_URL", read.optional("WEB_APP_URL")],
+  ] as const) {
+    if (value === undefined) continue;
+    try {
+      new URL(value);
+    } catch {
+      read.problems.push(`${name} must be a URL, got "${value}"`);
+    }
+  }
+  return {
+    baseUrl: withoutTrailingSlash(
+      read.string("AUTH_BASE_URL", `http://localhost:${port}`),
+    ),
+    webAppUrl: read.optional("WEB_APP_URL"),
+    olympus: {
+      apiUrl: withoutTrailingSlash(apiUrl),
+      signInUrl: withoutTrailingSlash(
+        read.optional("OLYMPUS_SIGN_IN_URL") ?? apiUrl,
+      ),
+    },
+  };
+};
+
 /**
  * The service's configuration from environment variables (see
  * dev.env.example).
@@ -111,6 +169,7 @@ export const readConfig = (
     jwksFile: read.optional("AUTH_JWKS_FILE"),
     audience: read.string("AUTH_AUDIENCE", "olympus-api"),
     recentSignInSeconds: integer(read, "AUTH_RECENT_SIGN_IN_SECONDS", 300),
+    console: readConsoleSignIn(read, runtime.port),
   };
   if (!auth.jwksUrl === !auth.jwksFile) {
     read.problems.push("set exactly one of AUTH_JWKS_URL and AUTH_JWKS_FILE");

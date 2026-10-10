@@ -1,6 +1,90 @@
 {
   "openapi": "3.1.1",
   "paths": {
+    "/v1/auth/current-user": {
+      "get": {
+        "description": "Returns the signed-in Olympus user: their email, as the Olympus API describes them now, and their Harpocrates roles, from the access token. Anyone signed in may ask, whatever their roles, so the CA console can say what it offers them.",
+        "operationId": "DescribeCurrentUser",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The user is signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeCurrentUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes the current user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "description": "Signs the CA console's browser out: ends its Olympus session when its tokens still work, and clears the session cookies either way. Refused to a page that is not the console's. Bearer tokens simply stop being sent.",
+        "operationId": "EndSession",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "The session cookies were cleared."
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ends the session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/v1/audit/events": {
       "get": {
         "description": "The audit log, newest first, filtered by kind, principal or subject; page with `before`.",
@@ -93,7 +177,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -141,7 +225,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -189,7 +273,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -199,7 +283,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -240,7 +324,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -260,7 +344,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -322,7 +406,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -342,7 +426,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -411,7 +495,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -431,7 +515,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -479,7 +563,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -556,7 +640,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -586,7 +670,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -663,7 +747,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -693,7 +777,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -751,7 +835,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -829,7 +913,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -936,7 +1020,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -976,7 +1060,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -1034,7 +1118,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1093,7 +1177,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1113,7 +1197,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -1200,7 +1284,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1240,7 +1324,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -1327,7 +1411,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1367,7 +1451,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -1454,7 +1538,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1494,7 +1578,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -1552,7 +1636,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1647,7 +1731,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1743,7 +1827,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1783,7 +1867,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -1905,7 +1989,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1980,7 +2064,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2020,7 +2104,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -2088,7 +2172,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2192,7 +2276,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/x-pem-file": {
                 "schema": {
@@ -2299,7 +2383,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2339,7 +2423,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -2418,7 +2502,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2448,7 +2532,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -2527,7 +2611,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2567,7 +2651,7 @@
             }
           },
           "503": {
-            "description": "The signer is sealed or unreachable",
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -2636,7 +2720,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2694,7 +2778,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2752,7 +2836,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2839,7 +2923,7 @@
             }
           },
           "403": {
-            "description": "The caller's roles do not allow it, or it needs a more recent sign-in",
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
             "content": {
               "application/json": {
                 "schema": {
@@ -2886,6 +2970,9 @@
       "name": "Audit"
     },
     {
+      "name": "Auth"
+    },
+    {
       "name": "Ceremonies"
     },
     {
@@ -2914,6 +3001,67 @@
       }
     },
     "schemas": {
+      "PkiRole": {
+        "type": "string",
+        "enum": [
+          "pki-admin",
+          "pki-operator"
+        ],
+        "description": "The user's Harpocrates roles, from their access token; none means they may sign in but do nothing here"
+      },
+      "CurrentUser": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "The user's verified email address, from the Olympus API"
+          },
+          "roles": {
+            "type": "array",
+            "description": "The user's Harpocrates roles, from their access token; none means they may sign in but do nothing here",
+            "items": {
+              "$ref": "#/components/schemas/PkiRole"
+            }
+          }
+        },
+        "required": [
+          "email",
+          "roles"
+        ]
+      },
+      "DescribeCurrentUserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "description": "The signed-in user.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentUser"
+              }
+            ]
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "What went wrong"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "The HTTP status code"
+          }
+        },
+        "required": [
+          "message",
+          "statusCode"
+        ]
+      },
       "AuditAttribute": {
         "type": "object",
         "properties": {
@@ -3001,23 +3149,6 @@
         },
         "required": [
           "events"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "What went wrong"
-          },
-          "statusCode": {
-            "type": "number",
-            "description": "The HTTP status code"
-          }
-        },
-        "required": [
-          "message",
-          "statusCode"
         ]
       },
       "AuditVerification": {

@@ -22,7 +22,11 @@ export type Principal = {
   surface: "api" | "cli" | "system";
 };
 
-export type AuthenticatedRequest = Request & { principal?: Principal };
+export type AuthenticatedRequest = Request & {
+  principal?: Principal;
+  /** The access token the principal came from, for asking the API about them. */
+  accessToken?: string;
+};
 
 /** The principal for work Harpocrates does by itself. */
 export const SYSTEM: Principal = {
