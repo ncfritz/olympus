@@ -145,6 +145,26 @@ recorded exception.
 2. Skip, move one occurrence, pause and end-after-N behave as stated.
 3. Turning the scheduler off and on again catches up in one run without
    duplicates.
+4. Quota, 3 a week: marking twice leaves "2 of 3"; the week ending
+   closes it as Missed with 2; marking three times closes it done.
+5. Track only: a left-behind occurrence closes as Missed when the next
+   arrives and never shows overdue, red, in Keeps rolling or in a review
+   attention list.
+6. A reminder at 08:00 arrives once through the notification agent for
+   an open occurrence, and not at all for one already done.
+
+## T16 — Habits driven by repeats
+
+1. "Make a habit goal" on HOME-9 (every 2 weeks, track only) creates a
+   habit goal whose adherence and streak match the series' history.
+2. Ticking HOME-9 in Today counts on the goal page; logging on the goal
+   page closes the open occurrence. Neither writes a habit log.
+3. "Remind me with a task" on a logs-mode habit creates a repeating task
+   in the matching project with the same schedule; the goal's earlier
+   logs still count for the days before.
+4. Unlinking leaves the goal in logs mode with the schedule as a habit
+   rule, and the task series with its history.
+5. Deleting the series returns the goal to logs mode.
 
 ## T13 — Signals and reviews
 

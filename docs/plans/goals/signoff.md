@@ -162,3 +162,9 @@ recorded exception.
 1. A task linked to two goals counts toward both execution scores.
 2. A milestone ticks itself when its last linked task is done, and
    unticks when one is reopened.
+
+## G13 — Habits driven by repeats
+
+Tasks' sign-off T16, run from the goal page: a `repeat` habit's
+adherence, streak and check-in panel read the task series, and the
+execution score counts its done occurrences as it counts habit logs.

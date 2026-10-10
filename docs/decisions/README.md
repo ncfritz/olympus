@@ -34,7 +34,7 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0023](0023-service-certificates-are-checked-by-issuer.md)   | A service certificate is checked by its issuer, not only its chain               | Accepted                               |
 | [0024](0024-weather-providers.md)                            | Weather: OpenWeather forecasts, RainViewer radar, stations pushed locally        | Accepted                               |
 | [0025](0025-weather-data-in-dev.md)                          | Weather data reaches dev by replay for history and a relay for live pushes       | Accepted                               |
-| [0026](0026-minerva-goals.md)                                | Minerva goals: per-user, relational, progress computed on read                   | Accepted                               |
+| [0026](0026-minerva-goals.md)                                | Minerva goals: per-user, relational, progress computed on read                   | Accepted (amended by 0033)             |
 | [0027](0027-minerva-activity-reviews.md)                     | Minerva reviews: per-user, what is written stored, activity read live            | Accepted                               |
 | [0028](0028-minerva-calendar-ownership.md)                   | Minerva calendars per user; accounts linked by sign-in, consent or claim         | Accepted                               |
 | [0029](0029-minerva-availability.md)                         | Availability per user in Minerva; the console signs in through Olympus           | Accepted                               |

@@ -24,7 +24,11 @@ In short:
   waiting on another task (blocked, computed) and waiting on the world
   (the Waiting status, set by you).
 - A due date and a separate deadline, each with its own warning ladder.
-- Six repeat models, including mark-missed and aggregate.
+- Seven repeat models, including mark-missed, aggregate and a quota
+  ("3 a week, any days"), with a track-only setting for cadences where
+  a miss is fine and only the history matters, and reminders.
+- A repeating task can drive a habit goal, and a habit goal can be
+  reminded by a repeating task: one schedule, two views.
 - Tasks link to goals and to anything else in Olympus, and any page can
   show the tasks about it.
 - Project work spans personal and professional life, so focus modes keep
@@ -155,10 +159,21 @@ reason, recorded with the change.
 ### Repeats are a rule plus one row per occurrence
 
 - `task_repeats`: one per repeating series; model (`fixed`,
-  `after_completion`, `mark_missed`, `aggregate`, `stack`, `window`),
-  schedule columns (frequency, interval, weekday mask, month day or Nth
-  weekday, after-completion interval, active months for a window), lead
-  days, end (count or date), paused. No RRULE strings.
+  `after_completion`, `mark_missed`, `aggregate`, `stack`, `window`,
+  `quota`), schedule columns (frequency, interval, weekday mask, month
+  day or Nth weekday, after-completion interval, active months for a
+  window, quota count per period), lead days, end (count or date),
+  paused, `track_only`, and an optional reminder time. No RRULE strings.
+- **Quota** makes one occurrence per period (a week, a month) holding a
+  target count; each completion within it is a row in
+  `task_quota_marks` (occurrence, local day), and the occurrence closes
+  done when the count is met or as Missed, with its count, when the
+  period ends.
+- **Track only** (on by default for a series linked to a habit goal)
+  closes a left-behind occurrence quietly as Missed when the next
+  arrives: it is never overdue, never red, never in Keeps rolling or the
+  reviews' attention lists. The miss is recorded in the history and
+  nothing else.
 - Every occurrence is its own `tasks` row with `repeat_id` and
   `occurrence_on`, unique together, so links, notes and history stay
   with the occurrence.
@@ -169,6 +184,39 @@ reason, recorded with the change.
   which opens due occurrences and closes left-behind ones as Missed or
   folds them for aggregate. A sweep after an outage catches up in one
   run.
+- **Reminders.** A series may carry a reminder time; the same sweep
+  publishes a reminder for an open occurrence at that time, in the
+  caller's stored timezone, to the notification agent's queue
+  (`agents/olympus-notification`), once per occurrence
+  (`reminded_at` on the task). Reminders for ordinary tasks stay later.
+
+### Habits can be driven by a repeating task
+
+This changes ADR 0026: a habit goal gains a **source**.
+
+- `goals.habit_source`: `logs` (as today: `goal_habit_rules` and
+  `goal_habit_logs`) or `repeat`, with `goals.repeat_id` referencing
+  `task_repeats` (set null on delete, which turns the goal back to
+  `logs`). A `CHECK` keeps the repeat exactly when the source is
+  `repeat`, and a goal in `repeat` mode has no habit rule row.
+- In `repeat` mode the repeat rule owns the schedule. Adherence and
+  streaks are computed on read from the series' occurrences: done
+  counts, Missed counts against, skipped is left out; a quota
+  occurrence counts as its marks over its target. So any cadence a
+  repeat can express (every 2 weeks, 3 months after completion, a
+  window, a quota) is a habit cadence too, and no habit log is
+  written.
+- Logging the habit on the goal page closes (or marks, for a quota)
+  the open occurrence; ticking the task counts for the goal. One write,
+  one place.
+- **Make a habit goal** (from a repeating task) creates the goal in
+  `repeat` mode. **Remind me with a task** (from a habit goal) creates a
+  repeating task in the project whose category names the goal's life
+  area, else the Inbox, copies the habit's schedule into the repeat, and
+  switches the goal to `repeat` mode; the goal's existing logs stay and
+  still count for the days before the switch.
+- Unlinking keeps both histories: the goal keeps a snapshot of the
+  schedule as a habit rule and returns to `logs`.
 
 ### Links: typed where Olympus computes, generic otherwise
 
@@ -230,7 +278,10 @@ Projects, folders and tasks are soft-deleted (`deleted_at`) with Restore.
   millions; if a list grows slow, a SQL function in the pattern of the
   notes statistics comes next, not a cache.
 - Repeats bring Tasks' first background work: one scheduler, off by
-  default, enabled on one API per database.
+  default, enabled on one API per database. It also sends repeat
+  reminders, so Tasks becomes a producer for the notification agent.
+- Goals' progress engine gains a second habit source; ADR 0026's habit
+  rules and logs stay as they are for goals that don't link a task.
 - `task_links` gives Tasks a closed list of the things it can link to;
   every new kind is a migration, and other apps' deletes must clean up.
 - Goals' phase 9 is unblocked by Tasks' phase 5; the reviews' "Track as

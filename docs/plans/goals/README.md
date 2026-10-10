@@ -512,7 +512,13 @@ Built with Tasks.
    execution score.
 3. Goal chips on tasks; the goal page's linked tasks section goes live.
 
-**Sign-off:** G12.
+Tasks' phase 6 adds a second habit source (ADR 0033, amending 0026):
+`goals.habit_source` `repeat` with `goals.repeat_id`, adherence and
+streaks computed from the task series, logging on the goal page closing
+the open occurrence, and Make a habit goal / Remind me with a task /
+Unlink. It ships with Tasks' repeats; sign-off G13.
+
+**Sign-off:** G12; G13 with Tasks' phase 6.
 
 ## Later
 

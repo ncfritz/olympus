@@ -16,7 +16,7 @@ deployable state and a functional sign-off against
 | 3     | Calendar: time blocks, the tasks layer, deadlines, daily load                                                                  | 2              | T6             |
 | 4     | Workflows and types: presets, editors, gates, schemes, epics, convert and split, the board                                     | 1              | T7–T9          |
 | 5     | Links: goals, generic links, Linked tasks panel, note chips, mail-to-task, Track as task                                       | 1; Goals       | T10, T11       |
-| 6     | Repeats: the six models and the scheduler                                                                                      | 2              | T12            |
+| 6     | Repeats: seven models, track only, reminders, the scheduler, habit goals driven by repeats                                     | 2; Goals       | T12, T16       |
 | 7     | Signals and reviews: thresholds, review panels, project reviews                                                                | 2; the reviews | T13            |
 | 8     | Views and focus: the filter language, saved views, embedded lists, focus modes                                                 | 2              | T14, T15       |
 | Later | iOS; sharing and assignees; automation on transitions; OnAir for time blocks; reminders; templates; tasks opened by other apps |                |                |
@@ -46,7 +46,9 @@ names `createdTime` and `lastUpdatedTime`. Each migration test checks
 that an update moves `updated_at` and leaves `created_at`, and that the
 down migration leaves nothing behind.
 
-Configuration: one flag, `TASKS_SCHEDULER_ENABLED`, arrives in phase 6.
+Configuration: one flag, `TASKS_SCHEDULER_ENABLED`, arrives in phase 6;
+it also turns on repeat reminders, which use the notification agent's
+existing RabbitMQ connection settings.
 
 ## Phase 0 — Decision, design and scaffolding
 
@@ -251,23 +253,44 @@ Goals' phase 9 is built here.
 ## Phase 6 — Repeats
 
 1. **Migration** `1791440000000_minerva_tasks_repeats`: `task_repeats`
-   (model, frequency, interval, weekday mask, month day or Nth weekday,
-   after-completion days, active months mask, lead days, ends after or
-   on, paused) and on `tasks`: `repeat_id`, `occurrence_on`, unique
-   together; `behind_count` for aggregate.
-2. **Engine**: `repeats.ts` — next occurrence per model, lead-time
-   defer, skip, window, ends; pure and table-tested across month ends,
-   leap years and DST.
-3. **Scheduler**: `TaskRepeatScheduler`, every 15 minutes behind
+   (model incl. `quota`, frequency, interval, weekday mask, month day or
+   Nth weekday, after-completion days, active months mask, quota count,
+   lead days, ends after or on, paused, `track_only`, `remind_at`) and on
+   `tasks`: `repeat_id`, `occurrence_on`, unique together; `behind_count`
+   for aggregate; `reminded_at`. `task_quota_marks` (occurrence, local
+   day, audit columns).
+2. **Migration** `1791445000000_minerva_goals_habit_source` (ADR 0033,
+   amending 0026): `goals.habit_source` (`logs`, `repeat`; default
+   `logs`), `goals.repeat_id` (set null), the `CHECK`s; existing habit
+   goals stay `logs`.
+3. **Engine**: `repeats.ts` — next occurrence per model, lead-time
+   defer, skip, window, quota periods, ends; pure and table-tested across
+   month ends, leap years and DST. Goals' `progress/habits.ts` gains the
+   `repeat` source: adherence and streaks from occurrences (done, Missed,
+   skipped left out, quota marks over target), table-tested beside the
+   `logs` source.
+4. **Scheduler**: `TaskRepeatScheduler`, every 15 minutes behind
    `TASKS_SCHEDULER_ENABLED`, in the pattern of `WeatherRollupScheduler`:
-   opens due occurrences, closes left-behind mark-missed ones as Missed,
-   folds aggregate ones; idempotent on `(repeat_id, occurrence_on)`.
-4. **Operations**: set, change, pause, end a repeat on a task; skip or
-   move one occurrence; `DescribeTaskRepeat` with its history.
-5. **Site**: the repeat editor in the drawer; the series history as a
-   streak.
+   opens due occurrences, closes left-behind mark-missed and track-only
+   ones as Missed and finished quota periods with their count, folds
+   aggregate ones; publishes due reminders to the notification agent's
+   exchange once per occurrence; idempotent on
+   `(repeat_id, occurrence_on)`.
+5. **Operations**: set, change, pause, end a repeat on a task; skip or
+   move one occurrence; `MarkTaskQuota` (a completion inside a quota
+   period, and its undo); `DescribeTaskRepeat` with its history;
+   `CreateHabitGoalFromRepeat` and `RemindHabitWithTask`;
+   `UnlinkHabitRepeat`. `LogGoalHabit` on a `repeat` goal closes or marks
+   the open occurrence instead of writing a habit log.
+6. **Signals**: track-only occurrences are excluded from overdue, due
+   ladders, Keeps rolling and the reviews' attention lists.
+7. **Site**: the repeat editor in the drawer (seven models, Track only,
+   Reminder, the linked habit goal, Make a habit goal); the series
+   history as a streak; the goal page's habit panel reading the series,
+   with Remind me with a task and Unlink; quota occurrences as
+   "1 of 3 this week" with a mark button.
 
-**Sign-off:** T12.
+**Sign-off:** T12, T16 (and Goals' G13).
 
 ## Phase 7 — Signals and reviews
 
@@ -308,6 +331,7 @@ Goals' phase 9 is built here.
 - Sharing projects and assignees, with its own decision record.
 - Automation on transitions.
 - OnAir: busy during time-blocked focus work.
-- Reminders through the notification agent.
+- Reminders for ordinary tasks (due, deadline) through the notification
+  agent; repeat reminders arrive in phase 6.
 - Project templates.
 - Other Olympus apps opening linked tasks (Harpocrates: "Renew …").
