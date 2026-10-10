@@ -210,7 +210,7 @@ issuing CAs through ceremonies) in a fresh schema, with its own signer on
 a temporary store, and checks the results with `openssl`:
 
 ```sh
-HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:harpocrates@localhost:5433/harpocrates pnpm test:e2e
+HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/harpocrates pnpm test:e2e
 ```
 
 ## Environment

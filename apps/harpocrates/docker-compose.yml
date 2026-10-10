@@ -4,6 +4,11 @@
 # the Mac Mini's nginx serves pki.internal.ncfritz.net. The service and the
 # signer run from the workspace (`pnpm dev`). Production is
 # infra/docker/compose/harpocrates.yml (phase 4).
+#
+# Postgres's password and where it listens come from .env beside this file
+# (.env.example): localhost by default, or the LAN when it runs on another
+# machine than the service. The distribution host stays on localhost: it
+# serves .run/published, which only a service on the same machine writes.
 name: harpocrates-dev
 
 services:
@@ -11,10 +16,12 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: harpocrates
-      POSTGRES_PASSWORD: harpocrates
+      # Read when the volume is first initialised; after that, change it
+      # with ALTER USER (or recreate the volume, which loses the data).
+      POSTGRES_PASSWORD: ${HARPOCRATES_DEV_POSTGRES_PASSWORD:?set it in .env (see .env.example)}
       POSTGRES_DB: harpocrates
     ports:
-      - "127.0.0.1:5433:5432"
+      - "${HARPOCRATES_DEV_POSTGRES_BIND:-127.0.0.1}:5433:5432"
     volumes:
       - harpocrates-postgres:/var/lib/postgresql/data
     healthcheck:

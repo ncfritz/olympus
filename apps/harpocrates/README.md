@@ -39,6 +39,7 @@ installs the Python version itself); the rules are
 ```sh
 cd apps/harpocrates
 mkdir -p .run/published                       # before compose mounts it
+cp .env.example .env                          # Postgres's password (openssl rand -hex 32)
 docker compose up -d                          # harpocrates-postgres, the distribution host
 cp service/dev.env.example service/dev.env
 cp signer/dev.env.example signer/dev.env
