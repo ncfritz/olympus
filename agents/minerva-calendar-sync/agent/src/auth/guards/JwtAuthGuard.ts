@@ -1,26 +1,24 @@
-import { identifyPeerCertificate } from "@ncfritz/olympus-nest";
+import {
+  bearerToken,
+  identifyPeerCertificate,
+  sessionFromCookies,
+  tokenRefusal,
+} from "@ncfritz/olympus-nest";
 import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,
-  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
-import {
-  ACCESS_TOKEN_COOKIE,
-  REFRESH_TOKEN_COOKIE,
-  REQUIRED_ROLE,
-} from "../authConstants";
+import { COOKIE_PREFIX, REQUIRED_ROLE } from "../authConstants";
 import { AuthenticatedRequest } from "../authUser";
 import { IS_PUBLIC_KEY } from "../public";
-import { mayChangeWithCookies } from "../sameOrigin";
 import { SERVICES_ONLY_KEY } from "../servicesOnly";
-import { clearSessionCookies, setSessionCookies } from "../sessionCookie";
 import {
   type OlympusClaims,
   OlympusTokenVerifier,
@@ -65,7 +63,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const bearer = extractBearerToken(req);
+    const bearer = bearerToken(req);
     const { accessToken, claims } =
       bearer !== undefined
         ? await this.verifyBearer(bearer)
@@ -100,54 +98,24 @@ export class JwtAuthGuard implements CanActivate {
     token: string,
   ): Promise<{ accessToken: string; claims: OlympusClaims }> {
     const verified = await this.verifier.verify(token);
-    if ("reason" in verified) throw refusal(verified);
+    if ("reason" in verified) throw tokenRefusal(verified);
     return { accessToken: token, claims: verified.claims };
   }
 
   /**
    * The console's access token cookie, or, when it is gone or no longer
-   * good, new tokens for its refresh token cookie. The cookies are cleared
-   * only when Olympus says the session has ended; when it cannot be asked,
-   * they are left as they are and the request is refused for now.
+   * good, new tokens for its refresh token cookie (`@ncfritz/olympus-nest`'s
+   * sessionFromCookies, ADR 0029).
    */
-  private async verifyCookies(
+  private verifyCookies(
     req: AuthenticatedRequest,
     res: Response,
   ): Promise<{ accessToken: string; claims: OlympusClaims }> {
-    if (!mayChangeWithCookies(req, this.auth)) {
-      throw new ForbiddenException(
-        "A change riding on the console's cookies must come from the console",
-      );
-    }
-    const cookies = req.cookies as
-      Record<string, string | undefined> | undefined;
-    const access = cookies?.[ACCESS_TOKEN_COOKIE];
-    if (access) {
-      const verified = await this.verifier.verify(access);
-      if ("claims" in verified) {
-        return { accessToken: access, claims: verified.claims };
-      }
-      if (verified.transient) throw refusal(verified);
-    }
-
-    const refresh = cookies?.[REFRESH_TOKEN_COOKIE];
-    if (!refresh) {
-      throw new UnauthorizedException("Missing access token");
-    }
-    let tokens;
-    try {
-      tokens = await this.signIn.refresh(refresh);
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        clearSessionCookies(res, this.auth);
-      }
-      throw error;
-    }
-    // Kept whatever happens next: the old refresh token is spent.
-    setSessionCookies(res, this.auth, tokens);
-    const verified = await this.verifier.verify(tokens.accessToken);
-    if ("reason" in verified) throw refusal(verified);
-    return { accessToken: tokens.accessToken, claims: verified.claims };
+    return sessionFromCookies(req, res, {
+      config: { ...this.auth, cookiePrefix: COOKIE_PREFIX },
+      refresh: (token) => this.signIn.refresh(token),
+      verify: (token) => this.verifier.verify(token),
+    });
   }
 
   private authenticateService(req: AuthenticatedRequest): void {
@@ -161,19 +129,4 @@ export class JwtAuthGuard implements CanActivate {
     }
     req.user = { kind: "service", name: peer.name };
   }
-}
-
-/** Why a token was not accepted: for now, or for good. */
-function refusal(verified: { reason: string; transient: boolean }): Error {
-  return verified.transient
-    ? new ServiceUnavailableException(
-        `Olympus's keys cannot be had just now: ${verified.reason}`,
-      )
-    : new UnauthorizedException(`Invalid access token: ${verified.reason}`);
-}
-
-function extractBearerToken(req: AuthenticatedRequest): string | undefined {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) return undefined;
-  return header.slice("Bearer ".length);
 }
