@@ -92,6 +92,11 @@ class Vault:
                 reason=self._reason,
             )
 
+    @property
+    def unseal_key_file_name(self) -> str | None:
+        """Where it reads its unseal key from, by name only."""
+        return None if self._unseal_key_file is None else self._unseal_key_file.name
+
     def master_key(self) -> bytes:
         with self._lock:
             if self._master is None:

@@ -58,6 +58,14 @@ class StatusResponse(Wire):
     reason: SealReason | None = Field(description="Why it is sealed, if it is.")
     ceremony: CeremonyResponse | None = Field(description="The open ceremony.")
     keys: int = Field(description="Keys held, not counting destroyed ones.")
+    unseal_key_file: str | None = Field(
+        default=None,
+        description=(
+            "The name of the file it reads its unseal key from at start"
+            " (SIGNER_UNSEAL_KEY_FILE), without its directory: inside a"
+            " container the directory is the secrets mount, not the host's."
+        ),
+    )
 
 
 class PassphraseRequest(Wire):

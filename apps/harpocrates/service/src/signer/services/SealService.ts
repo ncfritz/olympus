@@ -20,6 +20,7 @@ export class SealService {
       sealed: status.sealed,
       reason: status.reason ?? undefined,
       ceremonyId: status.ceremony?.id,
+      unsealKeyFile: status.unsealKeyFile ?? undefined,
     };
   }
 

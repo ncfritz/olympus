@@ -704,6 +704,8 @@ export interface components {
       reason?: components["schemas"]["SealReason"];
       /** @description The signer's open ceremony, if any */
       ceremonyId?: string;
+      /** @description The name of the file the signer reads its unseal key from at start, in HARPOCRATES_SECRETS_DIR: harpocrates_signer_unseal_key in the stack; absent when it has none */
+      unsealKeyFile?: string;
     };
     DescribeSignerStatusResponse: {
       /** @description The signer's seal */

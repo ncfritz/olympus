@@ -25,6 +25,7 @@ def test_status_before_and_after_initialising(client: TestClient):
         "reason": "uninitialised",
         "ceremony": None,
         "keys": 0,
+        "unsealKeyFile": "unseal-key",
     }
     key = ok(client.post("/v1/initialise", json={"passphrase": PASSPHRASE}))
     assert len(key["unsealKey"]) == 44

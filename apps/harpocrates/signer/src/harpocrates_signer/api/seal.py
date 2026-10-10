@@ -29,6 +29,7 @@ def describe_status(signer: SignerDep) -> StatusResponse:
         initialised=vault.initialised,
         sealed=vault.sealed,
         reason=vault.reason,
+        unseal_key_file=signer.vault.unseal_key_file_name,
         ceremony=None
         if ceremony is None
         else CeremonyResponse(

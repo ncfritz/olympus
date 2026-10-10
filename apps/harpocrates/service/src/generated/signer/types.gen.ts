@@ -551,6 +551,12 @@ export type StatusResponse = {
    * Keys held, not counting destroyed ones.
    */
   keys: number;
+  /**
+   * Unsealkeyfile
+   *
+   * The name of the file it reads its unseal key from at start (SIGNER_UNSEAL_KEY_FILE), without its directory: inside a container the directory is the secrets mount, not the host's.
+   */
+  unsealKeyFile?: string | null;
 };
 
 /**

@@ -32,16 +32,17 @@ const STEPS = [
   { title: "First root" },
 ];
 
-const SECRET = "harpocrates_signer_unseal_key";
+/** The stack's name for it; the signer says which file it actually reads. */
+const STACK_SECRET = "harpocrates_signer_unseal_key";
 
-const CHECKLIST = [
+const checklistFor = (file: string) => [
   "The unseal key is in the password manager, beside the recovery passphrase",
-  `It is in \${HARPOCRATES_SECRETS_DIR}/${SECRET}, mode 600`,
+  `It is in \${HARPOCRATES_SECRETS_DIR}/${file}, mode 600`,
   "It is not in the same backup as the signer's data directory",
 ];
 
 /** Who holds what, once the signer is set up (ADR 0020, Key protection). */
-const SECRETS = [
+const secretsFor = (file: string) => [
   {
     key: "passphrase",
     secret: "Recovery passphrase",
@@ -51,7 +52,7 @@ const SECRETS = [
   {
     key: "unseal",
     secret: "Unseal key",
-    where: `\${HARPOCRATES_SECRETS_DIR}/${SECRET}, and the password manager`,
+    where: `\${HARPOCRATES_SECRETS_DIR}/${file}, and the password manager`,
     opens: "The signer, by itself, at every start",
   },
   {
@@ -117,6 +118,10 @@ export function SetupPage() {
     }
   };
 
+  // The file the signer reads at start: its name for it, so a development
+  // signer's harpocrates_dev_signer_unseal_key is not mistaken for the stack's.
+  const keyFile = status.unsealKeyFile ?? STACK_SECRET;
+  const checklist = checklistFor(keyFile);
   const restarted =
     wentAway && !unreachable && status.initialised && !status.sealed;
 
@@ -175,21 +180,21 @@ export function SetupPage() {
             <div>
               <Button
                 icon={<DownloadOutlined />}
-                onClick={() => saveFile(SECRET, unsealKey, "text/plain")}
+                onClick={() => saveFile(keyFile, unsealKey, "text/plain")}
               >
-                Save as {SECRET}
+                Save as {keyFile}
               </Button>
             </div>
             <Typography.Text>On the host:</Typography.Text>
             <Typography.Paragraph code copyable>
-              {`install -m 600 ${SECRET} "$HARPOCRATES_SECRETS_DIR/${SECRET}" && rm ${SECRET}`}
+              {`install -m 600 ${keyFile} "$HARPOCRATES_SECRETS_DIR/${keyFile}" && rm ${keyFile}`}
             </Typography.Paragraph>
             <Checkbox.Group
               value={checked}
               onChange={(values) => setChecked(values as string[])}
             >
               <Flex vertical gap="small">
-                {CHECKLIST.map((item) => (
+                {checklist.map((item) => (
                   <Checkbox key={item} value={item}>
                     {item}
                   </Checkbox>
@@ -199,7 +204,7 @@ export function SetupPage() {
             <div>
               <Button
                 type="primary"
-                disabled={checked.length < CHECKLIST.length}
+                disabled={checked.length < checklist.length}
                 onClick={() => {
                   setUnsealKey(undefined);
                   setStep(2);
@@ -261,7 +266,7 @@ export function SetupPage() {
             <Table
               size="small"
               pagination={false}
-              dataSource={SECRETS}
+              dataSource={secretsFor(keyFile)}
               columns={[
                 { title: "Secret", dataIndex: "secret" },
                 { title: "Where", dataIndex: "where" },

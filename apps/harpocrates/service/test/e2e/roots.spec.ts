@@ -355,7 +355,8 @@ describe.skipIf(!E2E_DATABASE_URL)("an empty signer", () => {
       .set("Authorization", harness.operator)
       .expect(200);
     expect(before.body).toMatchObject({
-      status: { initialised: false, sealed: true },
+      // Which file it reads its unseal key from, so the console names it.
+      status: { initialised: false, sealed: true, unsealKeyFile: "unseal-key" },
     });
     await request(server())
       .post("/v1/signer/initialise")
