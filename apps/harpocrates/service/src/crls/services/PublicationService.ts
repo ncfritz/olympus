@@ -10,6 +10,7 @@ import { crlPublicationFailures } from "../../metrics/pkiMetrics";
 import { crlSignedBy } from "../../pki/crl";
 import { certificatePem } from "../../pki/x509";
 import { PrismaService } from "../../store/PrismaService";
+import { fetchFailure } from "../../utils/fetchFailure";
 
 /** The first retry after 30 seconds, doubling, at most every 15 minutes. */
 const FIRST_RETRY_MS = 30_000;
@@ -164,13 +165,9 @@ export class PublicationService {
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
     } catch (error: unknown) {
-      const cause =
-        error instanceof Error && error.cause instanceof Error
-          ? error.cause.message
-          : error instanceof Error
-            ? error.message
-            : String(error);
-      throw new Error(`${url} is unreachable: ${cause}`, { cause: error });
+      throw new Error(`${url} is unreachable: ${fetchFailure(error)}`, {
+        cause: error,
+      });
     }
     if (response.status !== 200) {
       throw new Error(`${url} answered ${response.status}`);
