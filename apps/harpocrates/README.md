@@ -4,11 +4,11 @@ The internal certificate authority ([ADR 0020](../../docs/decisions/0020-interna
 [plan](../../docs/plans/internal-ca/README.md)). Two processes and a
 console, built, versioned and deployed together:
 
-| Package                                   | Language         | Does                                                                               |
-| ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `service/` `@ncfritz/harpocrates-service` | NestJS, Prisma   | Management API, issuance policy, revocation lists, renewal and ACME                |
-| `signer/` `@ncfritz/harpocrates-signer`   | Python (FastAPI) | Holds the private keys; generates keys, signs certificates and lists; nothing else |
-| `console/` `@ncfritz/harpocrates-console` | Next.js          | The operator's console on Olympus Control, `/harpocrates/ca` (phase 7)             |
+| Package                                      | Language         | Does                                                                               |
+| -------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
+| `service/` `@ncfritz/harpocrates-service`    | NestJS, Prisma   | Management API, issuance policy, revocation lists, renewal and ACME                |
+| `signer/` `@ncfritz/harpocrates-signer`      | Python (FastAPI) | Holds the private keys; generates keys, signs certificates and lists; nothing else |
+| `console/` `@ncfritz/harpocrates-ca-console` | Next.js          | The operator's console on Olympus Control, `/harpocrates/ca` (ADR 0032, phase 5)   |
 
 In production they run as the `harpocrates` stack
 (`infra/docker/compose/harpocrates.yml`, [infra/docker](../../infra/docker/README.md#harpocrates)),
@@ -42,7 +42,7 @@ mkdir -p .run/published                       # before compose mounts it
 docker compose up -d                          # harpocrates-postgres, the distribution host
 cp service/dev.env.example service/dev.env
 cp signer/dev.env.example signer/dev.env
-pnpm --filter "@ncfritz/harpocrates-*" dev    # both, from the workspace
+pnpm --filter "@ncfritz/harpocrates-*" dev    # the signer, the service and the console
 curl --unix-socket .run/signer.sock http://signer/health
 pnpm --filter @ncfritz/harpocrates-signer signer initialise   # once: prints the unseal key
 pnpm --filter @ncfritz/harpocrates-service prisma:deploy      # the service's schema
