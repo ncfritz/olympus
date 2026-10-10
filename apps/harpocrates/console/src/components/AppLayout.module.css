@@ -1,0 +1,4 @@
+/* Every page's margin inside the shell's content area. */
+.page {
+  padding: 24px;
+}

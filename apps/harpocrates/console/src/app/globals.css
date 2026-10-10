@@ -1,0 +1,20 @@
+html,
+body {
+  height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  /* Matches antd's colorBgContainer (Table/Card background) — see the
+     shell's Content — rather than its colorBgLayout default. */
+  background: #ffffff;
+}
+
+/* Set by the shell's theme provider on <html> — covers the sliver of body
+   background visible outside the antd Layout (e.g. before it mounts) so
+   there's no light flash around a dark page. */
+html[data-theme="dark"] body {
+  background: #141414;
+}

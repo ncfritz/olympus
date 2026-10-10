@@ -78,10 +78,26 @@ group "services" {
     "api", "notification-agent", "asset-agent", "metadata-agent", "search-agent",
     "minerva-calendar-agent", "minerva-calendar-console", "minerva-mail-agent",
     "minerva-mail-ml", "control", "site",
+    "harpocrates-ca-console",
   ]
 }
 
 # The Node services share one Dockerfile.
+target "harpocrates-ca-console" {
+  context    = "."
+  dockerfile = "infra/docker/next/Dockerfile"
+  platforms  = ["linux/arm64"]
+  args = {
+    APP          = "@ncfritz/harpocrates-ca-console"
+    APP_DIR      = "apps/harpocrates/console"
+    PORT         = "4394"
+    GIT_REVISION = GIT_REVISION
+    # Where the control host publishes this console (ADR 0021).
+    NEXT_PUBLIC_BASE_PATH = "/harpocrates/ca"
+  }
+  tags = image("harpocrates-ca-console")
+}
+
 target "_node" {
   context    = "."
   dockerfile = "infra/docker/node/Dockerfile"

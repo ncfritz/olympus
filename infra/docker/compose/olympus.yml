@@ -395,6 +395,14 @@ services:
     networks:
       - edge
 
+  harpocrates-ca-console:
+    <<: *service
+    image: ${IMAGE_PREFIX:?}/harpocrates-ca-console:${OLYMPUS_TAG:?}
+    environment:
+      CONTROL_CONSOLES: ${CONTROL_CONSOLES:?}
+    networks:
+      - edge
+
 networks:
   graphql:
     name: olympus-graphql

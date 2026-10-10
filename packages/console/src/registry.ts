@@ -145,4 +145,16 @@ export const PROPERTIES: Registry = [
       },
     ],
   },
+  {
+    key: "harpocrates",
+    label: "Harpocrates",
+    consoles: [
+      {
+        key: "ca",
+        label: "CA",
+        description: "Roots, ceremonies, certificates and the signer",
+        icon: "certificate",
+      },
+    ],
+  },
 ];
