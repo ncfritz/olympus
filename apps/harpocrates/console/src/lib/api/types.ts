@@ -41,3 +41,11 @@ export type EndpointResult = Schemas["EndpointResult"];
 export type AcmeCredential = Schemas["AcmeCredential"];
 export type CreateAcmeCredentialResponse =
   Schemas["CreateAcmeCredentialResponse"];
+export type ProfileSettings = Schemas["ProfileSettings"];
+export type ProfileVersion = Schemas["ProfileVersion"];
+export type ProfilePreview = Schemas["ProfilePreview"];
+export type ProfilePreviewSample = Schemas["ProfilePreviewSample"];
+export type ProfileSubjectAttribute = Schemas["ProfileSubjectAttribute"];
+export type CertificateNames = Schemas["CertificateNames"];
+export type CertificateSubject = Schemas["CertificateSubject"];
+export type ContactNames = Schemas["ContactNames"];

@@ -16,6 +16,7 @@ import type {
   Issuer,
   PkiRole,
   Profile,
+  ProfileVersion,
   RevocationList,
   SignerStatus,
 } from "./types";
@@ -34,6 +35,7 @@ export const KEYS = {
   issued: (issuerId: string) => `/issuer/${issuerId}/issued`,
   issuerCeremonies: (issuerId: string) => `/issuer/${issuerId}/ceremonies`,
   profiles: "/profiles",
+  profileVersions: (id: string) => `/profile/${id}/versions`,
   certificates: (filter: CertificateFilter) =>
     `/certificates?${new URLSearchParams(
       Object.entries(filter).flatMap(([key, value]) =>
@@ -145,6 +147,18 @@ export const useProfiles = () =>
   useSWR<Profile[]>(
     KEYS.profiles,
     async () => unwrap(await apiClient.GET("/v1/profiles")).profiles,
+  );
+
+/** A profile's versions, newest first. */
+export const useProfileVersions = (profileId: string | undefined) =>
+  useSWR<ProfileVersion[]>(
+    profileId ? KEYS.profileVersions(profileId) : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/profile/{profileId}/versions", {
+          params: { path: { profileId: profileId! } },
+        }),
+      ).versions,
   );
 
 export const useCertificates = (filter: CertificateFilter) =>

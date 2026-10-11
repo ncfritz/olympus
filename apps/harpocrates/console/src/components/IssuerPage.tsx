@@ -57,6 +57,7 @@ import {
 import { CeremonyList } from "./CeremonyList";
 import { ErrorAlert } from "./ErrorAlert";
 import { IssuedChart } from "./IssuedChart";
+import { IssuerAltNamesModal } from "./IssuerAltNamesModal";
 import { OpenCeremonyAlert } from "./OpenCeremonyAlert";
 import { OpenCeremonyModal } from "./OpenCeremonyModal";
 import styles from "./IssuerPage.module.css";
@@ -139,6 +140,7 @@ export function IssuerPage() {
   const { isAdmin } = useCurrentUser();
   const { mutate } = useSWRConfig();
   const [error, setError] = useState<unknown>();
+  const [editingNames, setEditingNames] = useState(false);
 
   if (!issuerId) return <Alert type="error" title="Which CA?" />;
   if (notFound) return <ErrorAlert error={notFound} />;
@@ -255,6 +257,30 @@ export function IssuerPage() {
           <Flex vertical>
             <Mono>{issuer.caIssuersUrl}</Mono>
             <Mono>{issuer.crlUrl}</Mono>
+          </Flex>
+        ),
+      },
+      // Only a CA that signs leaves gives them its alternative names.
+      (issuer.tier === "issuing" || issuer.shape === "direct") && {
+        key: "alternativeNames",
+        label: "Alternative names",
+        children: (
+          <Flex gap="small" align="baseline" wrap>
+            <span>
+              {[
+                ...(issuer.alternativeNames.email ?? []),
+                ...(issuer.alternativeNames.uri ?? []),
+              ].join(", ") || "None"}
+            </span>
+            {isAdmin && (
+              <Button
+                type="link"
+                size="small"
+                onClick={() => setEditingNames(true)}
+              >
+                Edit
+              </Button>
+            )}
           </Flex>
         ),
       },
@@ -470,6 +496,11 @@ export function IssuerPage() {
           ]}
         />
       </Flex>
+      <IssuerAltNamesModal
+        issuer={issuer}
+        open={editingNames}
+        onClose={() => setEditingNames(false)}
+      />
     </SideTabPanel>
   );
 }

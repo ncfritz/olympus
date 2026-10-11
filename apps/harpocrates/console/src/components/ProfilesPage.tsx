@@ -1,33 +1,77 @@
 "use client";
 
-import { Flex, Table, Tag, Typography } from "antd";
-import { useProfiles } from "@/lib/api/queries";
+import { PlusOutlined } from "@ant-design/icons";
+import { Button, Flex, Segmented, Table, Tag, Typography } from "antd";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useCurrentUser, useProfiles } from "@/lib/api/queries";
 import type { Profile } from "@/lib/api/types";
 import { describeDays, ekuName } from "@/lib/labels";
 import { ErrorAlert } from "./ErrorAlert";
+import { ProfilePage } from "./profiles/ProfilePage";
 
-/** What a certificate may be (ADR 0020, Profiles), and how its key is kept. */
+type Shown = "active" | "all";
+
+/**
+ * Profiles (ADR 0020, Profiles; ADR 0034): what a certificate may be,
+ * each read as its latest version. One opens from `?id=`.
+ */
 export function ProfilesPage() {
+  const params = useSearchParams();
+  const open = params.get("id");
+  const [shown, setShown] = useState<Shown>("active");
   const { data: profiles, error, isLoading } = useProfiles();
+  const { isAdmin } = useCurrentUser();
+
+  if (open) return <ProfilePage profileId={open} />;
+
+  const listed = (profiles ?? []).filter((p) => shown === "all" || p.active);
   return (
     <Flex vertical gap="large">
-      <Typography.Title level={3}>Profiles</Typography.Title>
+      <Flex justify="space-between" align="center" wrap gap="middle">
+        <Typography.Title level={3}>Profiles</Typography.Title>
+        <Flex gap="small" align="center">
+          <Segmented<Shown>
+            value={shown}
+            onChange={setShown}
+            options={[
+              { value: "active", label: "Active" },
+              {
+                value: "all",
+                label: `All (${profiles?.length ?? "…"})`,
+              },
+            ]}
+          />
+          {isAdmin && (
+            <Link href="/profiles/new">
+              <Button type="primary" icon={<PlusOutlined />}>
+                New profile
+              </Button>
+            </Link>
+          )}
+        </Flex>
+      </Flex>
       <ErrorAlert error={error} />
       <Table<Profile>
         rowKey="id"
         size="small"
         loading={isLoading}
         pagination={false}
-        dataSource={profiles ?? []}
-        expandable={{
-          expandedRowRender: (profile) => (
-            <Typography.Text type="secondary">
-              {profile.description}
-            </Typography.Text>
-          ),
-        }}
+        dataSource={listed}
         columns={[
-          { title: "Profile", dataIndex: "id" },
+          {
+            title: "Profile",
+            dataIndex: "id",
+            render: (id: string, p) => (
+              <Flex vertical>
+                <Link href={`/profiles?id=${id}`}>{id}</Link>
+                <Typography.Text type="secondary">
+                  {p.description}
+                </Typography.Text>
+              </Flex>
+            ),
+          },
           { title: "Issued by", dataIndex: "issuerPurpose" },
           { title: "Key", dataIndex: "keyAlgorithm" },
           {
@@ -38,7 +82,7 @@ export function ProfilesPage() {
           {
             title: "Usages",
             dataIndex: "extendedKeyUsages",
-            render: (usages: { oid: string; state: string }[]) =>
+            render: (usages: Profile["extendedKeyUsages"]) =>
               usages
                 .filter((u) => u.state === "forced" || u.state === "default")
                 .map((u) => ekuName(u.oid))
@@ -53,18 +97,6 @@ export function ProfilesPage() {
                 .join(", "),
           },
           {
-            title: "Escrow",
-            key: "escrow",
-            render: (_, p) => (
-              <Flex gap={4} wrap>
-                <Tag color={p.escrow ? "blue" : "default"}>
-                  {p.escrow ? "kept" : "exported once"}
-                </Tag>
-                {p.escrowOverridable && <Tag>per certificate</Tag>}
-              </Flex>
-            ),
-          },
-          {
             title: "",
             key: "flags",
             render: (_, p) => (
@@ -73,7 +105,7 @@ export function ProfilesPage() {
                 {!p.active && <Tag color="red">inactive</Tag>}
                 {p.directOnly && <Tag color="purple">root signs directly</Tag>}
                 {p.extensions === "minimal" && <Tag>key identifiers only</Tag>}
-                {p.legacyExport && <Tag>legacy export</Tag>}
+                {p.escrow && <Tag color="blue">escrow</Tag>}
               </Flex>
             ),
           },

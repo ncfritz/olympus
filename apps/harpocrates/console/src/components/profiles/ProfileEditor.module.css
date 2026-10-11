@@ -1,0 +1,54 @@
+/* The page fills the shell's content area, as a CA's page does. */
+.page {
+  margin: -24px;
+  height: calc(100vh - 92px);
+}
+
+.section {
+  margin-top: 16px;
+}
+
+/*
+ * Widths are tripled classes: inside a form item antd stretches its
+ * inputs to the row, and these outrank that.
+ */
+
+/* The description takes the rest of its row. */
+.grow {
+  flex: 1 1 320px;
+}
+
+.number.number.number {
+  width: 160px;
+}
+
+.count.count.count {
+  width: 140px;
+}
+
+.select.select.select {
+  width: 140px;
+}
+
+.choice.choice.choice {
+  width: 260px;
+}
+
+.text.text.text {
+  width: 200px;
+}
+
+.attribute.attribute.attribute {
+  width: 220px;
+}
+
+.wide.wide.wide {
+  flex: 1 1 260px;
+  min-width: 260px;
+}
+
+/* A name type's or key usage's label, in a column of its own. */
+.nameType {
+  display: inline-block;
+  width: 170px;
+}

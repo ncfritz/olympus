@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Col,
   Flex,
   Form,
@@ -35,6 +36,7 @@ import {
   type KeyFamily,
 } from "@/lib/keyTypes";
 import { describeDays, ekuName, windowClosed } from "@/lib/labels";
+import { attributeLabel, keyUsageName } from "@/lib/profileSettings";
 import { commonName } from "@/lib/tree";
 import { ErrorAlert } from "./ErrorAlert";
 import { ImportKeyInput } from "./ImportKeyInput";
@@ -69,9 +71,11 @@ type Mode = "generated" | "imported" | "csr";
 interface Values {
   profileId: string;
   issuerId?: string;
-  commonName: string;
-  organizationalUnit?: string;
-  organization?: string;
+  /** The subject's attributes, by name, as the version lists them. */
+  subject?: Record<string, string | string[] | undefined>;
+  /** The usages chosen, where the version leaves a choice. */
+  keyUsages?: string[];
+  extendedKeyUsages?: string[];
   dns?: string[];
   ip?: string[];
   email?: string[];
@@ -102,7 +106,50 @@ const keyDefaults = (profile: Profile | undefined) => ({
   keyFamily: profile ? familyOf(profile.keyAlgorithm) : undefined,
   keyAlgorithm: profile?.keyAlgorithm,
   escrow: profile?.escrow,
+  ...usageDefaults(profile),
+  subject: Object.fromEntries(
+    (profile?.subjectAttributes ?? [])
+      .filter((a) => a.presence !== "excluded" && a.defaultValue)
+      .map((a) => [
+        a.attribute,
+        a.maxCount > 1 ? [a.defaultValue!] : a.defaultValue!,
+      ]),
+  ),
 });
+
+/** The usages a version gives unless asked otherwise: forced and default. */
+const usageDefaults = (profile: Profile | undefined) => {
+  const on = (state: string) => state === "forced" || state === "default";
+  return {
+    keyUsages: (profile?.keyUsages ?? [])
+      .filter((u) => on(u.state))
+      .map((u) => u.usage as string),
+    extendedKeyUsages: (profile?.extendedKeyUsages ?? [])
+      .filter((u) => on(u.state))
+      .map((u) => u.oid),
+  };
+};
+
+/** The subject as the service takes it: CN, and every other attribute. */
+const subjectOf = (
+  profile: Profile,
+  values: Values["subject"],
+): { commonName?: string; attributes: { type: string; value: string }[] } => {
+  const entries = profile.subjectAttributes
+    .filter((a) => a.presence !== "excluded" && !a.locked)
+    .flatMap((a) => {
+      const given = values?.[a.attribute];
+      const list = (Array.isArray(given) ? given : [given])
+        .map((v) => v?.trim())
+        .filter((v): v is string => Boolean(v));
+      return list.map((value) => ({ type: a.attribute, value }));
+    });
+  const commonName = entries.find((e) => e.type === "CN")?.value;
+  return {
+    commonName,
+    attributes: entries.filter((e) => e.type !== "CN"),
+  };
+};
 
 /**
  * Issuing a certificate (ADR 0020, Profiles, amended): the profile decides
@@ -163,11 +210,15 @@ export function IssueCertificatePage() {
           body: {
             profileId: profile.id,
             issuerId: values.issuerId || undefined,
-            subject: {
-              commonName: values.commonName,
-              organizationalUnit: values.organizationalUnit || undefined,
-              organization: values.organization || undefined,
-            },
+            subject: subjectOf(profile, values.subject),
+            // Sent only when chosen: otherwise a CSR's own usages, or the
+            // version's defaults, apply.
+            ...(form.isFieldTouched("keyUsages")
+              ? { keyUsages: values.keyUsages }
+              : {}),
+            ...(form.isFieldTouched("extendedKeyUsages")
+              ? { extendedKeyUsages: values.extendedKeyUsages }
+              : {}),
             names: Object.keys(names).length ? names : undefined,
             csr: values.mode === "csr" ? values.csr : undefined,
             keyAlgorithm:
@@ -321,30 +372,7 @@ export function IssueCertificatePage() {
             {profile && (
               <>
                 <Typography.Title level={5}>Subject</Typography.Title>
-                <Row gutter={16}>
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      name="commonName"
-                      label="Common name"
-                      rules={[{ required: true, message: "Required" }]}
-                    >
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      name="organizationalUnit"
-                      label="Organisational unit"
-                    >
-                      <Input allowClear />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} md={8}>
-                    <Form.Item name="organization" label="Organisation">
-                      <Input allowClear placeholder="The configured one" />
-                    </Form.Item>
-                  </Col>
-                </Row>
+                <SubjectFields profile={profile} />
                 {nameTypes(profile).length > 0 && (
                   <>
                     <Typography.Title level={5}>Names</Typography.Title>
@@ -354,6 +382,19 @@ export function IssueCertificatePage() {
                           <Form.Item
                             name={type}
                             label={NAME_LABELS[type].label}
+                            rules={
+                              profile.names.some(
+                                (n) =>
+                                  n.type === type && n.presence === "required",
+                              )
+                                ? [
+                                    {
+                                      required: true,
+                                      message: "The profile needs one",
+                                    },
+                                  ]
+                                : []
+                            }
                           >
                             <Select
                               mode="tags"
@@ -367,6 +408,7 @@ export function IssueCertificatePage() {
                     </Row>
                   </>
                 )}
+                <UsageFields profile={profile} csr={mode === "csr"} />
                 <Typography.Title level={5}>Key</Typography.Title>
                 <Form.Item name="mode" hidden>
                   <Input />
@@ -384,6 +426,7 @@ export function IssueCertificatePage() {
                         <GenerateKeyFields
                           family={keyFamily}
                           algorithm={keyAlgorithm}
+                          allowed={profile.keyAlgorithms}
                         />
                       ),
                     },
@@ -456,11 +499,20 @@ export function IssueCertificatePage() {
 function GenerateKeyFields({
   family,
   algorithm,
+  allowed,
 }: {
   family?: KeyFamily;
   algorithm?: KeyAlgorithm;
+  /** The version's key types; none, any. */
+  allowed: KeyAlgorithm[];
 }) {
-  const chosen = KEY_FAMILIES.find((f) => f.family === family);
+  const families = KEY_FAMILIES.map((f) => ({
+    ...f,
+    algorithms: f.algorithms.filter(
+      (a) => !allowed.length || allowed.includes(a.value),
+    ),
+  })).filter((f) => f.algorithms.length);
+  const chosen = families.find((f) => f.family === family);
   return (
     <>
       <Row gutter={16}>
@@ -473,7 +525,7 @@ function GenerateKeyFields({
             <Radio.Group
               optionType="button"
               buttonStyle="solid"
-              options={KEY_FAMILIES.map((f) => ({
+              options={families.map((f) => ({
                 value: f.family,
                 label: f.label,
               }))}
@@ -559,6 +611,110 @@ function ImportKeyFields({ format }: { format: KeyImportFormat }) {
             rules={[{ required: true, message: "Required" }]}
           >
             <Input.Password autoComplete="off" />
+          </Form.Item>
+        </Col>
+      </Row>
+    </>
+  );
+}
+
+/**
+ * The subject's fields, as the version rules on them (ADR 0034): each
+ * attribute it lists, required ones marked, a locked one shown at its
+ * value, a default filled in, several values where it takes several.
+ */
+function SubjectFields({ profile }: { profile: Profile }) {
+  // The common name first: it is what the operator gives every time.
+  const attributes = profile.subjectAttributes
+    .filter((a) => a.presence !== "excluded")
+    .sort(
+      (a, b) => Number(b.attribute === "CN") - Number(a.attribute === "CN"),
+    );
+  return (
+    <Row gutter={16}>
+      {attributes.map((a) => (
+        <Col key={a.attribute} xs={24} md={8}>
+          <Form.Item
+            name={["subject", a.attribute]}
+            label={attributeLabel(a.attribute)}
+            tooltip={
+              a.locked
+                ? "The profile fixes it"
+                : a.pattern
+                  ? `Must match ${a.pattern}`
+                  : undefined
+            }
+            rules={
+              a.presence === "required" && !a.defaultValue && !a.locked
+                ? [{ required: true, message: "Required" }]
+                : []
+            }
+          >
+            {a.maxCount > 1 ? (
+              <Select
+                mode="tags"
+                open={false}
+                disabled={a.locked}
+                maxCount={a.maxCount}
+                tokenSeparators={[","]}
+              />
+            ) : (
+              <Input
+                allowClear
+                disabled={a.locked}
+                placeholder={
+                  a.attribute === "O" && !a.defaultValue
+                    ? "The configured one"
+                    : undefined
+                }
+              />
+            )}
+          </Form.Item>
+        </Col>
+      ))}
+    </Row>
+  );
+}
+
+/**
+ * The usages the version leaves to the request: forced ones shown on and
+ * fixed, defaults on, optional ones off. Untouched, none is sent, so a
+ * CSR's own usages apply.
+ */
+function UsageFields({ profile, csr }: { profile: Profile; csr: boolean }) {
+  const choosable =
+    profile.keyUsages.some((u) => u.state !== "forced") ||
+    profile.extendedKeyUsages.some((u) => u.state !== "forced");
+  if (!choosable || profile.extensions === "minimal") return null;
+  return (
+    <>
+      <Typography.Title level={5}>Usages</Typography.Title>
+      {csr && (
+        <Typography.Paragraph type="secondary">
+          Unchanged, the CSR&apos;s own usages apply, within the profile.
+        </Typography.Paragraph>
+      )}
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item name="keyUsages" label="Key usages">
+            <Checkbox.Group
+              options={profile.keyUsages.map((u) => ({
+                value: u.usage,
+                label: keyUsageName(u.usage),
+                disabled: u.state === "forced",
+              }))}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item name="extendedKeyUsages" label="Extended key usages">
+            <Checkbox.Group
+              options={profile.extendedKeyUsages.map((u) => ({
+                value: u.oid,
+                label: ekuName(u.oid),
+                disabled: u.state === "forced",
+              }))}
+            />
           </Form.Item>
         </Col>
       </Row>
