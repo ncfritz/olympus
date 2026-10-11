@@ -29,6 +29,7 @@
     "clean": "rm -rf dist",
     "start": "node --env-file=dev.env dist/main.js",
     "start:prod": "node --env-file=production.env dist/main.js",
+    "predev": "prisma generate",
     "dev": "nest start --env-file dev.env --watch",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "node scripts/prisma-dev.mjs migrate dev",
