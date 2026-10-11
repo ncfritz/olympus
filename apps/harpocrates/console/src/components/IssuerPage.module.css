@@ -5,10 +5,18 @@
 
 /*
  * The details' labels, right-aligned in a column of their own, wide
- * enough that the longest ("Extended key usages") never wraps.
+ * enough that the longest never wraps: "Extended key usages" on the
+ * left, "Key backup" on the right.
  */
 .label {
-  flex: 0 0 180px;
+  flex: 0 0 160px;
+  justify-content: flex-end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rightLabel {
+  flex: 0 0 100px;
   justify-content: flex-end;
   text-align: right;
   white-space: nowrap;
@@ -18,4 +26,18 @@
 .tag {
   width: 125px;
   text-align: center;
+}
+
+/*
+ * The details' two columns, side by side, each running on by itself:
+ * the right one as wide as its values, the left one, with the long values
+ * (the published URLs), the rest. Narrower, they stack.
+ */
+.left {
+  flex: 1 1 0;
+  min-width: 560px;
+}
+
+.right {
+  flex: 0 0 auto;
 }

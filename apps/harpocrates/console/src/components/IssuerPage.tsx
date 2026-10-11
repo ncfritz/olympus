@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Descriptions,
-  type DescriptionsProps,
   Flex,
   Popconfirm,
   Table,
@@ -51,55 +50,28 @@ const constraintLines = (constraints: NameConstraints): string[] =>
       .map(([type, names]) => `${kind} ${type}: ${names!.join(", ")}`),
   );
 
-/**
- * The details' fields, two to a row, a wide one on a row of its own: the
- * single field before a wide one fills the rest of its row. A right-hand
- * one (the tags) always lands in the second column, after an empty cell
- * when it starts a row, so the tags stack in one column.
- */
-type Field = {
-  key: string;
-  label: string;
-  children: ReactNode;
-  /** A row of its own. */
-  wide?: true;
-  /** Always in the right-hand column. */
-  right?: true;
-};
+/** One of the details' fields. */
+type Field = { key: string; label: string; children: ReactNode };
 
-const toRows = (
-  fields: (Field | false | undefined)[],
-): DescriptionsProps["items"] => {
-  const present = fields.filter((f): f is Field => Boolean(f));
-  const items: NonNullable<DescriptionsProps["items"]> = [];
-  let column = 0;
-  present.forEach((field, index) => {
-    if (field.wide) {
-      column = 0;
-      items.push({
-        key: field.key,
-        label: field.label,
-        children: field.children,
-        span: 2,
-      });
-      return;
-    }
-    // A right-hand field on a new row: an empty cell to its left.
-    if (field.right && column === 0) {
-      items.push({ key: `${field.key}-blank`, children: null });
-      column = 1;
-    }
-    const next = present[index + 1];
-    const fills = column === 0 && (!next || next.wide);
-    column = fills ? 0 : (column + 1) % 2;
-    items.push({
-      key: field.key,
-      label: field.label,
-      children: field.children,
-      ...(fills ? { span: "filled" as const } : {}),
-    });
-  });
-  return items;
+type Fields = (Field | false | undefined)[];
+
+/**
+ * The details as two columns that run independently: the fields alternate
+ * between them, then the tags continue the right-hand one and the rest
+ * (name constraints, the published URLs) the left-hand one, so neither
+ * waits for the other.
+ */
+const columnsOf = (
+  fields: Fields,
+  right: Fields,
+  left: Fields,
+): [Field[], Field[]] => {
+  const present = (list: Fields) => list.filter((f): f is Field => Boolean(f));
+  const singles = present(fields);
+  return [
+    [...singles.filter((_, i) => i % 2 === 0), ...present(left)],
+    [...singles.filter((_, i) => i % 2 === 1), ...present(right)],
+  ];
 };
 
 /** A value in the theme's code font, without code formatting. */
@@ -141,6 +113,113 @@ export function IssuerPage() {
     !(issuers ?? []).some((other) => other.parentId === issuer.id) &&
     (crls ?? []).length === 0;
   const constraints = constraintLines(issuer.nameConstraints);
+
+  const [leftFields, rightFields] = columnsOf(
+    [
+      { key: "id", label: "ID", children: <Mono>{issuer.id}</Mono> },
+      Boolean(issuer.parentId) && {
+        key: "parent",
+        label: "Parent",
+        children: (
+          <Link href={`/ca?id=${issuer.parentId}`}>
+            <Mono>{issuer.parentId}</Mono>
+          </Link>
+        ),
+      },
+      {
+        key: "valid",
+        label: "Valid",
+        children: `${formatDate(issuer.notBefore)} – ${formatDate(issuer.notAfter)}`,
+      },
+      {
+        key: "issuesUntil",
+        label: "Issues until",
+        children: formatDate(issuer.issuingWindowClosesAt),
+      },
+      issuer.offline && {
+        key: "signs",
+        label: "Signs",
+        children: SIGNS_LABEL[signsOf(issuer)],
+      },
+      {
+        key: "longest",
+        label: "Longest certificate",
+        children: describeDays(issuer.maxValidityDays),
+      },
+      {
+        key: "pathLength",
+        label: "Path length",
+        children: issuer.pathLength ?? "—",
+      },
+      {
+        key: "ekus",
+        label: "Extended key usages",
+        children: issuer.extendedKeyUsages.length
+          ? issuer.extendedKeyUsages.map(ekuName).join(", ")
+          : "Not restricted",
+      },
+      issuer.offline && {
+        key: "backup",
+        label: "Key backup",
+        children: issuer.provedAt
+          ? `Proved ${formatDateTime(issuer.provedAt)}`
+          : "Not proved",
+      },
+    ],
+    [
+      {
+        key: "tier",
+        label: "Tier",
+        children: <DetailTag>{TIERS[issuer.tier]}</DetailTag>,
+      },
+      issuer.shape && {
+        key: "shape",
+        label: "Shape",
+        children: (
+          <DetailTag color="blue">{SHAPES[issuer.shape].label}</DetailTag>
+        ),
+      },
+      {
+        key: "status",
+        label: "Status",
+        children: (
+          <DetailTag color={STATUS_COLORS[issuer.status]}>
+            {discarded ? "discarded" : issuer.status}
+          </DetailTag>
+        ),
+      },
+      {
+        key: "key",
+        label: "Key",
+        children: (
+          <DetailTag>{issuer.offline ? "offline" : "online"}</DetailTag>
+        ),
+      },
+      !discarded &&
+        windowClosed(issuer) && {
+          key: "signing",
+          label: "Signing",
+          children: <DetailTag color="orange">no longer signs</DetailTag>,
+        },
+    ],
+    [
+      {
+        key: "constraints",
+        label: "Name constraints",
+        children: constraints.length ? constraints.join("; ") : "None",
+      },
+      {
+        key: "published",
+        label: "Published",
+        children: (
+          <Flex vertical>
+            <Mono>{issuer.caIssuersUrl}</Mono>
+            <Mono>{issuer.crlUrl}</Mono>
+          </Flex>
+        ),
+      },
+    ],
+  );
 
   const discard = async () => {
     try {
@@ -203,124 +282,34 @@ export function IssuerPage() {
       </Flex>
       <ErrorAlert error={error} />
       <Card variant="borderless">
-        <Descriptions
-          column={{ xs: 1, lg: 2 }}
-          size="small"
-          classNames={{ label: styles.label }}
-          items={toRows([
-            {
-              key: "subject",
-              label: "Subject",
-              children: <Mono>{issuer.subject}</Mono>,
-              wide: true,
-            },
-            { key: "id", label: "ID", children: <Mono>{issuer.id}</Mono> },
-            Boolean(issuer.parentId) && {
-              key: "parent",
-              label: "Parent",
-              children: (
-                <Link href={`/ca?id=${issuer.parentId}`}>
-                  <Mono>{issuer.parentId}</Mono>
-                </Link>
-              ),
-            },
-            {
-              key: "valid",
-              label: "Valid",
-              children: `${formatDate(issuer.notBefore)} – ${formatDate(issuer.notAfter)}`,
-            },
-            {
-              key: "issuesUntil",
-              label: "Issues until",
-              children: formatDate(issuer.issuingWindowClosesAt),
-            },
-            issuer.offline && {
-              key: "signs",
-              label: "Signs",
-              children: SIGNS_LABEL[signsOf(issuer)],
-            },
-            {
-              key: "longest",
-              label: "Longest certificate",
-              children: describeDays(issuer.maxValidityDays),
-            },
-            {
-              key: "pathLength",
-              label: "Path length",
-              children: issuer.pathLength ?? "—",
-            },
-            {
-              key: "ekus",
-              label: "Extended key usages",
-              children: issuer.extendedKeyUsages.length
-                ? issuer.extendedKeyUsages.map(ekuName).join(", ")
-                : "Not restricted",
-            },
-            issuer.offline && {
-              key: "backup",
-              label: "Key backup",
-              children: issuer.provedAt
-                ? `Proved ${formatDateTime(issuer.provedAt)}`
-                : "Not proved",
-            },
-            {
-              key: "tier",
-              right: true,
-              label: "Tier",
-              children: <DetailTag>{TIERS[issuer.tier]}</DetailTag>,
-            },
-            issuer.shape && {
-              key: "shape",
-              right: true,
-              label: "Shape",
-              children: (
-                <DetailTag color="blue">{SHAPES[issuer.shape].label}</DetailTag>
-              ),
-            },
-            {
-              key: "status",
-              right: true,
-              label: "Status",
-              children: (
-                <DetailTag color={STATUS_COLORS[issuer.status]}>
-                  {discarded ? "discarded" : issuer.status}
-                </DetailTag>
-              ),
-            },
-            {
-              key: "key",
-              right: true,
-              label: "Key",
-              children: (
-                <DetailTag>{issuer.offline ? "offline" : "online"}</DetailTag>
-              ),
-            },
-            !discarded &&
-              windowClosed(issuer) && {
-                key: "signing",
-                right: true,
-                label: "Signing",
-                children: <DetailTag color="orange">no longer signs</DetailTag>,
+        <Flex vertical gap="small">
+          <Descriptions
+            column={1}
+            size="small"
+            classNames={{ label: styles.label }}
+            items={[
+              {
+                key: "subject",
+                label: "Subject",
+                children: <Mono>{issuer.subject}</Mono>,
               },
-            {
-              key: "constraints",
-              label: "Name constraints",
-              children: constraints.length ? constraints.join("; ") : "None",
-              wide: true,
-            },
-            {
-              key: "published",
-              label: "Published",
-              children: (
-                <Flex vertical>
-                  <Mono>{issuer.caIssuersUrl}</Mono>
-                  <Mono>{issuer.crlUrl}</Mono>
-                </Flex>
-              ),
-              wide: true,
-            },
-          ])}
-        />
+            ]}
+          />
+          <Flex wrap>
+            {[leftFields, rightFields].map((fields, index) => (
+              <Descriptions
+                key={index}
+                className={index === 0 ? styles.left : styles.right}
+                column={1}
+                size="small"
+                classNames={{
+                  label: index === 0 ? styles.label : styles.rightLabel,
+                }}
+                items={fields}
+              />
+            ))}
+          </Flex>
+        </Flex>
       </Card>
       {issuer.tier !== "issuing" && (
         <Card title="Beneath it" variant="borderless">
