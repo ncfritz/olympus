@@ -26,7 +26,7 @@ import {
 import { overridesGiven, signerConstraints } from "../../issuers/overrides";
 import { CrlService } from "../../crls/services/CrlService";
 import { IssuerService, startNow } from "../../issuers/services/IssuerService";
-import type { Ceremony } from "../../model/ceremonies";
+import type { Ceremony, CeremonySummary } from "../../model/ceremonies";
 import type {
   CreateIntermediateIssuerRequest,
   CreateIssuingIssuerRequest,
@@ -143,6 +143,20 @@ export class CeremonyService {
       await this.crls.signInCeremony(principal, opened.id);
     }
     return toDomainObject(row);
+  }
+
+  /** A CA's ceremonies, newest first, with how many lists each signed. */
+  async listForIssuer(issuerId: string): Promise<CeremonySummary[]> {
+    await this.issuers.row(issuerId);
+    const rows = await this.prisma.ceremony.findMany({
+      where: { issuerId },
+      include: { _count: { select: { crls: true } } },
+      orderBy: { openedAt: "desc" },
+    });
+    return rows.map((row) => ({
+      ...toDomainObject(row),
+      crlsSigned: row._count.crls,
+    }));
   }
 
   async describe(ceremonyId: string): Promise<Ceremony> {

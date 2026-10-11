@@ -1355,6 +1355,74 @@
         ]
       }
     },
+    "/v1/issuer/{issuerId}/ceremonies": {
+      "get": {
+        "description": "An offline CA's ceremonies, newest first: who opened each, when it opened and closed, and how many revocation lists it signed.",
+        "operationId": "ListIssuerCeremonies",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The ceremonies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListIssuerCeremoniesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists a CA's ceremonies",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
+    },
     "/v1/ceremony/{ceremonyId}/intermediates": {
       "post": {
         "description": "Creates an offline intermediate below the ceremony's root, when the root has three tiers: the signer generates its key, the root signs it, and the key is returned encrypted, once. Settings left out take their defaults; a validity past the root's is refused.",
@@ -5185,6 +5253,57 @@
         },
         "required": [
           "ceremony"
+        ]
+      },
+      "CeremonySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The ceremony's ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The offline CA whose key is held"
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who opened it"
+          },
+          "openedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it opened"
+          },
+          "closedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it closed (or timed out, as far as the service saw)"
+          },
+          "crlsSigned": {
+            "type": "number",
+            "description": "How many revocation lists it signed"
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "principal",
+          "openedAt",
+          "crlsSigned"
+        ]
+      },
+      "ListIssuerCeremoniesResponse": {
+        "type": "object",
+        "properties": {
+          "ceremonies": {
+            "description": "The CA's ceremonies, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CeremonySummary"
+            }
+          }
+        },
+        "required": [
+          "ceremonies"
         ]
       },
       "CreateIntermediateIssuerRequest": {

@@ -222,6 +222,36 @@ describe.skipIf(!E2E_DATABASE_URL)("the hierarchy", () => {
     ]);
   });
 
+  it("lists a CA's ceremonies, newest first, with the lists each signed", async () => {
+    const response = await request(server())
+      .get(`/v1/issuer/${hierarchy.root.id}/ceremonies`)
+      .set("Authorization", harness.admin)
+      .expect(200);
+    const { ceremonies } = response.body as {
+      ceremonies: {
+        issuerId: string;
+        principal: string;
+        closedAt?: string;
+        crlsSigned: number;
+      }[];
+    };
+    // The one that built the intermediate, which signed the root's first list.
+    expect(ceremonies).toHaveLength(1);
+    expect(ceremonies[0]).toMatchObject({
+      issuerId: hierarchy.root.id,
+      crlsSigned: 1,
+    });
+    expect(ceremonies[0].closedAt).toBeDefined();
+    await request(server())
+      .get(`/v1/issuer/${hierarchy.root.id}/ceremonies`)
+      .set("Authorization", harness.operator)
+      .expect(403);
+    await request(server())
+      .get("/v1/issuer/nobody/ceremonies")
+      .set("Authorization", harness.admin)
+      .expect(404);
+  });
+
   it("refuses a second root with the same number and generation", async () => {
     await request(server())
       .post("/v1/issuers/roots")

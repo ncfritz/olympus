@@ -7,6 +7,7 @@ import { CloseCeremonyController } from "./controllers/CloseCeremonyController";
 import { CreateIntermediateIssuerController } from "./controllers/CreateIntermediateIssuerController";
 import { CreateIssuingIssuerController } from "./controllers/CreateIssuingIssuerController";
 import { DescribeCeremonyController } from "./controllers/DescribeCeremonyController";
+import { ListIssuerCeremoniesController } from "./controllers/ListIssuerCeremoniesController";
 import { OpenCeremonyController } from "./controllers/OpenCeremonyController";
 import { CeremonyService } from "./services/CeremonyService";
 
@@ -15,6 +16,7 @@ import { CeremonyService } from "./services/CeremonyService";
   controllers: [
     OpenCeremonyController,
     DescribeCeremonyController,
+    ListIssuerCeremoniesController,
     CloseCeremonyController,
     CreateIntermediateIssuerController,
     CreateIssuingIssuerController,

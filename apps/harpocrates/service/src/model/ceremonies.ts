@@ -45,6 +45,16 @@ export class Ceremony {
   closedAt?: Moment;
 }
 
+/** A ceremony in a CA's history, with what it signed. */
+export class CeremonySummary extends Ceremony {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How many revocation lists it signed",
+  })
+  crlsSigned: number;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -89,6 +99,16 @@ export class OpenCeremonyResponse {
     description: "The open ceremony",
   })
   ceremony: Ceremony;
+}
+
+export class ListIssuerCeremoniesResponse {
+  @ApiProperty({
+    type: () => CeremonySummary,
+    isArray: true,
+    required: true,
+    description: "The CA's ceremonies, newest first",
+  })
+  ceremonies: CeremonySummary[];
 }
 
 export class DescribeCeremonyResponse {
