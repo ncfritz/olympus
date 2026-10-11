@@ -1,4 +1,6 @@
 import type {
+  Certificate,
+  CertificateState,
   Deployment,
   EndpointObservation,
   IssuedTier,
@@ -72,6 +74,20 @@ export const issuedTypeName = ({
     : type === "general"
       ? "General"
       : type;
+
+/** A certificate's state, as a tag's colour. */
+export const STATE_COLORS: Record<CertificateState, string> = {
+  valid: "green",
+  revoked: "red",
+  expired: "default",
+};
+
+/** A certificate's names, every type, in one line. */
+export const namesOf = (certificate: Certificate): string =>
+  Object.values(certificate.names ?? {})
+    .flat()
+    .filter(Boolean)
+    .join(", ");
 
 export const STATUS_COLORS: Record<IssuerStatus, string> = {
   pending: "default",

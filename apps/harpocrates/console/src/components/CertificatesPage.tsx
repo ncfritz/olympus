@@ -27,7 +27,12 @@ import type {
   FullCertificate,
 } from "@/lib/api/types";
 import { saveFile } from "@/lib/download";
-import { formatDate, formatDateTime } from "@/lib/labels";
+import {
+  formatDate,
+  formatDateTime,
+  namesOf,
+  STATE_COLORS,
+} from "@/lib/labels";
 import { DeployTargetForm } from "./DeployTargetForm";
 import { ErrorAlert } from "./ErrorAlert";
 import { KeyExportForm } from "./KeyExportForm";
@@ -35,18 +40,6 @@ import { RenewForm } from "./RenewForm";
 import { RevokeForm } from "./RevokeForm";
 
 const PAGE_SIZE = 50;
-
-const STATE_COLORS: Record<CertificateState, string> = {
-  valid: "green",
-  revoked: "red",
-  expired: "default",
-};
-
-const namesOf = (certificate: Certificate) =>
-  Object.values(certificate.names ?? {})
-    .flat()
-    .filter(Boolean)
-    .join(", ");
 
 /** Every certificate Harpocrates issued, searchable; one at a time in a drawer. */
 export function CertificatesPage() {
