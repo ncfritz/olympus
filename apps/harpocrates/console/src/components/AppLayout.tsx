@@ -2,6 +2,7 @@
 
 import {
   AuditOutlined,
+  CloudUploadOutlined,
   DashboardOutlined,
   FileProtectOutlined,
   GoogleOutlined,
@@ -56,6 +57,12 @@ const PAGES: ShellPage[] = [
     href: "/certificates",
   },
   {
+    key: "/deploy-targets",
+    label: "Deploy targets",
+    icon: <CloudUploadOutlined />,
+    href: "/deploy-targets",
+  },
+  {
     key: "/profiles",
     label: "Profiles",
     icon: <ProfileOutlined />,
@@ -78,7 +85,12 @@ const activePageOf = (pathname: string): string => {
     return "/roots";
   }
   if (pathname.startsWith("/ceremon")) return "/ceremonies";
-  for (const page of ["/certificates", "/profiles", "/audit"]) {
+  for (const page of [
+    "/certificates",
+    "/deploy-targets",
+    "/profiles",
+    "/audit",
+  ]) {
     if (pathname.startsWith(page)) return page;
   }
   return "/";

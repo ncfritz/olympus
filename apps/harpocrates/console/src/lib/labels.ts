@@ -1,4 +1,9 @@
-import type { IssuerShape, IssuerStatus, IssuerTier } from "./api/types";
+import type {
+  Deployment,
+  IssuerShape,
+  IssuerStatus,
+  IssuerTier,
+} from "./api/types";
 
 /** A root's shape (ADR 0032, Three shapes), as the console explains it. */
 export const SHAPES: Record<
@@ -72,3 +77,23 @@ export const formatDateTime = (iso: string | undefined): string =>
 export const windowClosed = (issuer: { issuingWindowClosesAt?: string }) =>
   issuer.issuingWindowClosesAt !== undefined &&
   Date.parse(issuer.issuingWindowClosesAt) <= Date.now();
+
+/**
+ * A deployment as the console shows it: a pending one that has failed is
+ * failing, and retried by the service until it succeeds.
+ */
+export const deploymentState = (
+  deployment: Deployment | undefined,
+): { label: string; color: string } => {
+  if (!deployment) return { label: "Never deployed", color: "default" };
+  switch (deployment.status) {
+    case "deployed":
+      return { label: "Deployed", color: "green" };
+    case "superseded":
+      return { label: "Superseded", color: "default" };
+    default:
+      return deployment.lastError
+        ? { label: "Failing", color: "red" }
+        : { label: "Pending", color: "blue" };
+  }
+};

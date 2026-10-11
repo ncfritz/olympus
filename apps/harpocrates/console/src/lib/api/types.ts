@@ -26,3 +26,7 @@ export type CurrentUser = Schemas["CurrentUser"];
 export type PkiRole = CurrentUser["roles"][number];
 export type RevocationReason = Schemas["RevocationReason"];
 export type NameType = Schemas["NameType"];
+export type DeployTarget = Schemas["DeployTarget"];
+export type FullDeployTarget = Schemas["FullDeployTarget"];
+export type Deployment = Schemas["Deployment"];
+export type DeploymentStatus = Schemas["DeploymentStatus"];

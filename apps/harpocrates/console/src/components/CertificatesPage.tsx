@@ -28,6 +28,7 @@ import type {
 } from "@/lib/api/types";
 import { saveFile } from "@/lib/download";
 import { formatDate, formatDateTime } from "@/lib/labels";
+import { DeployTargetForm } from "./DeployTargetForm";
 import { ErrorAlert } from "./ErrorAlert";
 import { KeyExportForm } from "./KeyExportForm";
 import { RenewForm } from "./RenewForm";
@@ -55,7 +56,10 @@ export function CertificatesPage() {
   const [state, setState] = useState<CertificateState>();
   const [search, setSearch] = useState<string>();
   const [page, setPage] = useState(1);
-  const [open, setOpen] = useState<string>();
+  // A link opens one certificate: ?certificateId=, from a deploy target.
+  const [open, setOpen] = useState<string | undefined>(
+    params.get("certificateId") ?? undefined,
+  );
   const { data, error, isLoading } = useCertificates({
     issuerId,
     state,
@@ -147,7 +151,7 @@ export function CertificatesPage() {
   );
 }
 
-type Action = "renew" | "revoke" | "export";
+type Action = "renew" | "revoke" | "export" | "deploy";
 
 function CertificateDrawer({
   certificateId,
@@ -168,6 +172,7 @@ function CertificateDrawer({
         (key.startsWith("/certificates") || key.startsWith("/certificate/")),
     );
   const { isAdmin } = useCurrentUser();
+  const router = useRouter();
   const { data: certificate, error } = useSWR<FullCertificate>(
     certificateId ? `/certificate/${certificateId}` : null,
     async () =>
@@ -184,6 +189,9 @@ function CertificateDrawer({
     ...(valid ? [{ value: "revoke", label: "Revoke" }] : []),
     ...(certificate?.keyLocation === "signer" && isAdmin
       ? [{ value: "export", label: "Export the key" }]
+      : []),
+    ...(valid && certificate?.keyLocation === "signer" && isAdmin
+      ? [{ value: "deploy", label: "Deploy" }]
       : []),
   ] as { value: Action; label: string }[];
 
@@ -321,6 +329,14 @@ function CertificateDrawer({
           )}
           {action === "export" && (
             <KeyExportForm certificateId={certificate.id} />
+          )}
+          {action === "deploy" && (
+            <DeployTargetForm
+              certificate={certificate}
+              onCreated={(target) =>
+                router.push(`/deploy-targets?id=${target.id}`)
+              }
+            />
           )}
         </Flex>
       )}

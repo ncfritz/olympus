@@ -7,6 +7,8 @@ import type {
   Certificate,
   CertificateState,
   CurrentUser,
+  DeployTarget,
+  FullDeployTarget,
   FullIssuer,
   Issuer,
   PkiRole,
@@ -34,6 +36,8 @@ export const KEYS = {
       ),
     ).toString()}`,
   audit: "/audit/events",
+  deployTargets: "/deploy-targets",
+  deployTarget: (id: string) => `/deploy-target/${id}`,
 } as const;
 
 export type CertificateFilter = {
@@ -131,4 +135,27 @@ export const useAuditEvents = (pageSize = 200) =>
           params: { query: { pageSize } },
         }),
       ).events,
+  );
+
+/** Every deploy target, by name, polled: the service deploys unasked. */
+export const useDeployTargets = (refreshInterval = 30_000) =>
+  useSWR<DeployTarget[]>(
+    KEYS.deployTargets,
+    async () => unwrap(await apiClient.GET("/v1/deploy-targets")).deployTargets,
+    { refreshInterval },
+  );
+
+export const useDeployTarget = (
+  targetId: string | undefined,
+  refreshInterval = 30_000,
+) =>
+  useSWR<FullDeployTarget>(
+    targetId ? KEYS.deployTarget(targetId) : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/deploy-target/{targetId}", {
+          params: { path: { targetId: targetId! } },
+        }),
+      ).deployTarget,
+    { refreshInterval },
   );
