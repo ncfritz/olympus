@@ -111,8 +111,10 @@ and the only place the suite's glyphs are chosen.
 
 ## Styles
 
-The components use inline style objects, which the shared React ESLint
-config warns about. They are a faithful move of the Minerva console's
-chrome, and they stay that way until the styles mechanism is decided
-(`antd-style` vs. CSS modules, roadmap 7 and ADR 0012); converting them
-twice would be the waste.
+The frame's Olympus look (the rail's selection, the collapsed sider's
+slate, the pill, the breadcrumb bar's chevrons and the header image) is
+in a CSS module, `src/shell/shell.module.css`, as `docs/conventions/ux.md`
+allows; its colours are the main site's (`apps/site/styles/globals.css`
+and `breadcrumbs.css`). The older components still use inline style
+objects, which the shared React ESLint config warns about: they move to
+the module as they are next touched, not all at once.

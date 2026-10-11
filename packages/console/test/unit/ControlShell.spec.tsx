@@ -9,6 +9,7 @@ import {
 import type { ShellPage } from "../../src/shell/types";
 import { ThemeModeProvider } from "../../src/theme/ThemeModeProvider";
 import { testRegistry } from "../support/registry";
+import styles from "../../src/shell/shell.module.css";
 
 const authenticated: ConsoleAuth = {
   status: "authenticated",
@@ -201,34 +202,63 @@ describe("ControlShell", () => {
     });
   });
 
-  describe("the header", () => {
-    const header = (container: HTMLElement) =>
-      part(container, ".ant-layout-header");
+  describe("the breadcrumbs", () => {
+    const crumbs = (container: HTMLElement) =>
+      part(container, ".ant-breadcrumb");
 
-    it("says where you are, down to the page", () => {
+    it("say where you are, down to the page", () => {
       const { container } = renderShell({ pages, activePage: "/sync" });
 
-      expect(header(container).textContent).toContain("Control");
-      expect(header(container).textContent).toContain("Minerva");
-      expect(header(container).textContent).toContain("Calendar");
-      expect(header(container).textContent).toContain("Settings");
-      expect(header(container).textContent).toContain("Sync");
+      expect(crumbs(container).textContent).toContain("Control");
+      expect(crumbs(container).textContent).toContain("Minerva");
+      expect(crumbs(container).textContent).toContain("Calendar");
+      expect(crumbs(container).textContent).toContain("Settings");
+      expect(crumbs(container).textContent).toContain("Sync");
     });
 
-    it("links the suite and the console, but not the property", () => {
+    it("are below the header, not in it", () => {
+      const { container } = renderShell({ pages, activePage: "/sync" });
+
+      expect(
+        part(container, ".ant-layout-header").querySelector(".ant-breadcrumb"),
+      ).toBeNull();
+    });
+
+    it("link the suite and the console, but not the property", () => {
       const { container } = renderShell();
 
-      expect(hrefs(header(container))).toEqual(["/", "/minerva/calendar"]);
+      expect(hrefs(crumbs(container))).toEqual(["/", "/minerva/calendar"]);
     });
 
-    it("still names a console the host's list leaves out of the rail", () => {
+    it("step their colour down from the root to the page", () => {
+      const { container } = renderShell({ pages, activePage: "/sync" });
+
+      // Control, Minerva, Calendar, Settings, Sync: the root is level 5,
+      // the page level 1, each a step from the slate toward the navy.
+      const items = Array.from(
+        crumbs(container).querySelectorAll(`.${styles.level}`),
+      );
+      expect(
+        items.map((item) =>
+          [1, 2, 3, 4, 5].find((k) => item.classList.contains(styles[`k${k}`])),
+        ),
+      ).toEqual([5, 4, 3, 2, 1]);
+      expect(crumbs(container).classList.contains(styles.n5)).toBe(true);
+    });
+
+    it("still name a console the host's list leaves out of the rail", () => {
       const { container } = renderShell({
         nav: testRegistry.filter((property) => property.key === "olympus"),
       });
 
-      expect(header(container).textContent).toContain("Calendar");
+      expect(crumbs(container).textContent).toContain("Calendar");
       expect(rail(container).textContent).not.toContain("Calendar");
     });
+  });
+
+  describe("the header", () => {
+    const header = (container: HTMLElement) =>
+      part(container, ".ant-layout-header");
 
     it("holds no navigation of its own", () => {
       const { container } = renderShell({ pages });
@@ -247,7 +277,15 @@ describe("ControlShell", () => {
       expect(header(container).textContent).toContain("Settings");
     });
 
-    it("shows the suite's wordmark when it is given one", () => {
+    it("shows the suite's own wordmark", () => {
+      const { container } = renderShell();
+
+      expect(
+        part(container, ".ant-layout-header img").getAttribute("alt"),
+      ).toBe("Olympus Control");
+    });
+
+    it("shows another wordmark when it is given one", () => {
       const { container } = renderShell({
         logo: <img src="/header.png" alt="Olympus" height={64} />,
       });
@@ -307,9 +345,9 @@ describe("ControlShell", () => {
     it("is the whole of the trail", () => {
       const { container } = renderIndex();
 
-      expect(
-        part(container, ".ant-layout-header").textContent?.trim(),
-      ).toContain("Control");
+      expect(part(container, ".ant-breadcrumb").textContent?.trim()).toBe(
+        "Control",
+      );
     });
 
     it("offers no session menu", () => {

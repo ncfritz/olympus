@@ -11,6 +11,8 @@ import {
 } from "../registry";
 import { breadcrumbItems } from "./breadcrumbs";
 import { ConsoleRail } from "./ConsoleRail";
+import { ControlBreadcrumbs } from "./ControlBreadcrumbs";
+import controlHeader from "./control-header.png";
 import { ControlHeader } from "./ControlHeader";
 import { loadPagesCollapsed, savePagesCollapsed } from "./pagesCollapsed";
 import { PagesSider } from "./PagesSider";
@@ -38,7 +40,7 @@ export interface ControlShellProps {
   onNavigate?: (href: string) => void;
   /** Console-specific header controls, to the left of the session menu. */
   actions?: ReactNode;
-  /** The suite's wordmark for the header, served by the application. */
+  /** The suite's wordmark for the header; the shell's own by default. */
   logo?: ReactNode;
   signIn?: SignInProvider[];
   children: ReactNode;
@@ -104,41 +106,69 @@ export const ControlShell = ({
     );
   }
 
+  const crumbs = breadcrumbItems({ nav, current, origin, pages, activePage });
+
   return (
     <Layout style={{ height: "100vh", overflow: "hidden" }}>
       <ControlHeader
-        logo={logo}
-        crumbs={breadcrumbItems({ nav, current, origin, pages, activePage })}
+        logo={logo ?? <ControlLogo />}
         actions={actions}
         email={auth?.email}
         onLogout={() => void auth?.logout()}
       />
       <Layout>
         <ConsoleRail nav={nav} current={current} origin={origin} />
-        {pages.length > 0 ? (
-          <PagesSider
-            pages={pages}
-            activePage={activePage}
-            collapsed={collapsed}
-            onCollapse={collapsePages}
-            onNavigate={onNavigate}
-          />
-        ) : null}
-        <Content
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflow: "auto",
-            display: "flex",
-            flexDirection: "column",
-            // Matches Card/Table's own background rather than Layout's
-            // default, so panels don't sit on a subtly different shade.
-            background: token.colorBgContainer,
-          }}
-        >
-          {children}
-        </Content>
+        {/* Where you are spans the pages sider and the page, below the
+            header, as the site's breadcrumbs do. */}
+        <Layout style={{ minWidth: 0 }}>
+          {crumbs && crumbs.length > 0 ? (
+            <ControlBreadcrumbs items={crumbs} />
+          ) : null}
+          <Layout style={{ minHeight: 0 }}>
+            {pages.length > 0 ? (
+              <PagesSider
+                pages={pages}
+                activePage={activePage}
+                collapsed={collapsed}
+                onCollapse={collapsePages}
+                onNavigate={onNavigate}
+              />
+            ) : null}
+            <Content
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                // Matches Card/Table's own background rather than Layout's
+                // default, so panels don't sit on a subtly different shade.
+                background: token.colorBgContainer,
+              }}
+            >
+              {children}
+            </Content>
+          </Layout>
+        </Layout>
       </Layout>
     </Layout>
+  );
+};
+
+/**
+ * The suite's wordmark, from the shell itself so every console wears the
+ * same one: Next hands an imported image over as its URL under the
+ * console's base path, vitest as a plain URL.
+ */
+const ControlLogo = () => {
+  const src =
+    typeof controlHeader === "string" ? controlHeader : controlHeader.src;
+  return (
+    <img
+      src={src}
+      alt="Olympus Control"
+      height={64}
+      style={{ display: "block" }}
+    />
   );
 };

@@ -9,6 +9,7 @@ import { consoleKey, type ConsoleKey, type Registry } from "../registry";
 import { consoleIcon } from "./icons";
 import { PageLink } from "./pageLink";
 import { MENU_INSET } from "./PagesSider";
+import styles from "./shell.module.css";
 
 const { Sider } = Layout;
 
@@ -64,6 +65,7 @@ export const ConsoleRail = ({ nav, current, origin }: ConsoleRailProps) => {
 
   return (
     <Sider
+      className={styles.rail}
       width={RAIL_WIDTH}
       collapsedWidth={RAIL_WIDTH}
       collapsed

@@ -8,7 +8,6 @@ import {
   SunOutlined,
 } from "@ant-design/icons";
 import {
-  Breadcrumb,
   Button,
   ConfigProvider,
   Dropdown,
@@ -16,7 +15,6 @@ import {
   Segmented,
   Space,
 } from "antd";
-import type { BreadcrumbProps } from "antd";
 import type { ReactNode } from "react";
 import { useThemeMode } from "../theme/ThemeModeProvider";
 import type { ThemeMode } from "../theme/themeMode";
@@ -31,14 +29,6 @@ const THEME_MODE_OPTIONS: { value: ThemeMode; icon: ReactNode }[] = [
 
 /** The bar is dark whatever the theme resolves to, so its text is not. */
 const ON_DARK = {
-  Breadcrumb: {
-    itemColor: "rgba(255, 255, 255, 0.65)",
-    lastItemColor: "#fff",
-    linkColor: "rgba(255, 255, 255, 0.65)",
-    linkHoverColor: "#fff",
-    separatorColor: "rgba(255, 255, 255, 0.45)",
-    iconFontSize: 14,
-  },
   Segmented: {
     trackBg: "rgba(255, 255, 255, 0.08)",
     itemColor: "rgba(255, 255, 255, 0.65)",
@@ -57,8 +47,6 @@ export interface ControlHeaderProps {
    * file; the shell has no public directory of its own.
    */
   logo?: ReactNode;
-  /** Where you are, from `breadcrumbItems`. */
-  crumbs?: BreadcrumbProps["items"];
   /** Console-specific controls, to the left of the session menu. */
   actions?: ReactNode;
   email?: string;
@@ -66,14 +54,13 @@ export interface ControlHeaderProps {
 }
 
 /**
- * The bar across the top: the suite's mark, where you are, and who you
- * are. Navigation is not here — the rail holds the consoles and the
- * sider beside it holds this console's pages, which is how the main
- * Olympus site is arranged.
+ * The bar across the top: the suite's mark and who you are. Navigation is
+ * not here — the rail holds the consoles, the sider beside it this
+ * console's pages, and where you are is the bar below — which is how the
+ * main Olympus site is arranged.
  */
 export const ControlHeader = ({
   logo,
-  crumbs,
   actions,
   email,
   onLogout,
@@ -87,7 +74,7 @@ export const ControlHeader = ({
         flexShrink: 0,
         // The wordmark bleeds to the edge, as the main site's does;
         // without one the bar is padded like any other.
-        paddingInline: logo ? "0 16px" : 16,
+        paddingInline: logo ? "0 32px" : "16px 32px",
       }}
     >
       {logo ? (
@@ -95,11 +82,7 @@ export const ControlHeader = ({
           {logo}
         </div>
       ) : null}
-      {crumbs && crumbs.length > 0 ? (
-        <Breadcrumb items={crumbs} style={{ flex: 1, minWidth: 0 }} />
-      ) : (
-        <div style={{ flex: 1 }} />
-      )}
+      <div style={{ flex: 1 }} />
       <Space>
         {actions}
         <ThemeModeControl />

@@ -1,0 +1,193 @@
+/*
+ * The chrome, matched to the main Olympus site's (apps/site, styles/
+ * globals.css and styles/breadcrumbs.css). Its colours are fixed whatever
+ * the theme algorithm resolves to: the chrome is dark in both.
+ *
+ * Selectors reach into antd's markup with :global and are more specific
+ * than antd's own (which wraps its in :where), so they win whatever order
+ * the stylesheets load in.
+ */
+
+/* ---- Menus: rows the full width of the rail, square, as the site's. */
+
+.rail :global(.ant-menu .ant-menu-item),
+.pages :global(.ant-menu .ant-menu-item),
+.pages :global(.ant-menu .ant-menu-submenu-title) {
+  border-radius: 0;
+  margin-inline: 0;
+  width: 100%;
+}
+
+/* The selected console is the second nav's colour, not the primary's. */
+.rail :global(.ant-menu .ant-menu-item.ant-menu-item-selected) {
+  background-color: #324354;
+}
+
+/* ---- The pages sider, collapsed to a rail: the site's slate. */
+
+.collapsed :global(.ant-menu .ant-menu-item),
+.collapsed :global(.ant-menu .ant-menu-submenu-title) {
+  color: #d1d1d1;
+}
+
+.collapsed :global(.ant-menu .ant-menu-item:hover),
+.collapsed :global(.ant-menu .ant-menu-submenu-title:hover) {
+  color: #fff;
+}
+
+.collapsed :global(.ant-menu .ant-menu-item.ant-menu-item-selected) {
+  background-color: #8598aa;
+  color: #fff;
+}
+
+/* ---- The pill on the sider's edge, the colour of the sider it is on.
+   :not(:disabled) matches the weight of antd's own hover rule, so these
+   win over it rather than tying. */
+
+.pill:global(.ant-btn.ant-btn):not(:disabled),
+.pill:global(.ant-btn.ant-btn):not(:disabled):hover,
+.pill:global(.ant-btn.ant-btn):not(:disabled):active {
+  border: none;
+  box-shadow: none;
+}
+
+.pillCollapsed:global(.ant-btn.ant-btn):not(:disabled) {
+  background: #324354;
+  color: #fff;
+}
+
+.pillCollapsed:global(.ant-btn.ant-btn):not(:disabled):hover {
+  background: #517093;
+  color: #fff;
+}
+
+.pillExpanded:global(.ant-btn.ant-btn):not(:disabled) {
+  background: #fff;
+  color: #243344;
+  box-shadow: 0 0 0 1px #e5e5e5;
+}
+
+.pillExpanded:global(.ant-btn.ant-btn):not(:disabled):hover {
+  background: #efefef;
+  color: #243344;
+  box-shadow: 0 0 0 1px #e5e5e5;
+}
+
+/* ---- Breadcrumbs: a bar below the header, chevrons stepping from the
+   root's slate (#324354) down to the bar's navy (#001529). --n is how
+   many there are, --k how far a crumb is from the last (1 is the last),
+   so any depth gets the site's colours. */
+
+.crumbs {
+  flex-shrink: 0;
+  height: 28px;
+  background: #001529;
+  overflow: hidden;
+}
+
+.crumbs :global(.ant-breadcrumb),
+.crumbs :global(.ant-breadcrumb ol) {
+  height: 28px;
+  flex-wrap: nowrap;
+}
+
+.crumbs :global(.ant-breadcrumb .ant-breadcrumb-separator) {
+  display: none;
+}
+
+/* A crumb: antd puts the item's class on its link (or its span, when it
+   is not one), so the bar and the doubled class outrank antd's own link
+   styling (.ant-breadcrumb a). */
+.crumbs .level.level {
+  --colour: color-mix(
+    in srgb,
+    #324354 calc(var(--k) / var(--n) * 100%),
+    #001529
+  );
+  --behind: color-mix(
+    in srgb,
+    #324354 calc((var(--k) - 1) / var(--n) * 100%),
+    #001529
+  );
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-inline: 14px 0;
+  padding-inline: 8px 4px;
+  border-radius: 0;
+  background-color: var(--colour);
+  color: #999;
+  white-space: nowrap;
+}
+
+.crumbs .root.root {
+  margin-inline-start: 0;
+}
+
+.crumbs .level.level:hover {
+  color: #fff;
+  background-color: var(--colour);
+}
+
+/* The chevron: a triangle of the crumb's colour over the next one's. */
+.level::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -14px;
+  top: 0;
+  border-top: 14px solid var(--behind);
+  border-bottom: 14px solid var(--behind);
+  border-left: 14px solid var(--colour);
+  z-index: 1;
+}
+
+.n1 {
+  --n: 1;
+}
+.n2 {
+  --n: 2;
+}
+.n3 {
+  --n: 3;
+}
+.n4 {
+  --n: 4;
+}
+.n5 {
+  --n: 5;
+}
+.n6 {
+  --n: 6;
+}
+.n7 {
+  --n: 7;
+}
+.n8 {
+  --n: 8;
+}
+
+.k1 {
+  --k: 1;
+}
+.k2 {
+  --k: 2;
+}
+.k3 {
+  --k: 3;
+}
+.k4 {
+  --k: 4;
+}
+.k5 {
+  --k: 5;
+}
+.k6 {
+  --k: 6;
+}
+.k7 {
+  --k: 7;
+}
+.k8 {
+  --k: 8;
+}

@@ -4,6 +4,7 @@ import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { Button, Layout, Menu, theme } from "antd";
 import type { MenuProps } from "antd";
 import { PageLink } from "./pageLink";
+import styles from "./shell.module.css";
 import type { ShellPage } from "./types";
 
 const { Sider } = Layout;
@@ -52,12 +53,22 @@ export const PagesSider = ({
 }: PagesSiderProps) => {
   const { token } = theme.useToken();
 
-  const toItem = (page: ShellPage): NonNullable<MenuProps["items"]>[number] => {
-    const children = page.children?.map(toItem);
+  const toItem = (
+    page: ShellPage,
+    nested = false,
+  ): NonNullable<MenuProps["items"]>[number] => {
+    const children = page.children?.map((child) => toItem(child, true));
 
     // A section is not a destination; only a leaf has somewhere to go.
+    // Its menu is light, as the site's are, even off the dark rail.
     if (children?.length) {
-      return { key: page.key, icon: page.icon, label: page.label, children };
+      return {
+        key: page.key,
+        icon: page.icon,
+        label: page.label,
+        children,
+        theme: "light",
+      };
     }
 
     if (!page.href) {
@@ -65,8 +76,9 @@ export const PagesSider = ({
     }
 
     // Collapsed, the glyph is the whole row and antd hides the label, so
-    // the link moves into the glyph's place and is stretched over it.
-    return collapsed
+    // the link moves into the glyph's place and is stretched over it. A
+    // section's own pages are in its flyout, which has room for labels.
+    return collapsed && !nested
       ? {
           key: page.key,
           title: page.title ?? undefined,
@@ -95,6 +107,7 @@ export const PagesSider = ({
 
   return (
     <Sider
+      className={`${styles.pages} ${collapsed ? styles.collapsed : ""}`}
       width={PAGES_WIDTH}
       collapsedWidth={PAGES_RAIL}
       collapsed={collapsed}
@@ -115,7 +128,7 @@ export const PagesSider = ({
         theme={collapsed ? "dark" : "light"}
         mode="inline"
         selectedKeys={activePage ? [activePage] : []}
-        items={pages.map(toItem)}
+        items={pages.map((page) => toItem(page))}
         style={{
           background: "transparent",
           // The sider draws the edge; a second one down the same line
@@ -126,9 +139,9 @@ export const PagesSider = ({
       />
       {/* The site's trigger: a pill on the edge at the height the eye is
           already at, rather than a bar at the foot of a full-height
-          sider. antd's own is positioned by stylesheet and this package
-          has none (README, Styles), so this is a plain button. */}
+          sider, coloured as the sider it is on. */}
       <Button
+        className={`${styles.pill} ${collapsed ? styles.pillCollapsed : styles.pillExpanded}`}
         shape="circle"
         size="small"
         icon={collapsed ? <RightOutlined /> : <LeftOutlined />}
