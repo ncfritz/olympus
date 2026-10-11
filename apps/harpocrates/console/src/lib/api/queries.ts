@@ -11,6 +11,7 @@ import type {
   DeployTarget,
   FullDeployTarget,
   FullIssuer,
+  IssuedCount,
   Issuer,
   PkiRole,
   Profile,
@@ -29,6 +30,7 @@ export const KEYS = {
   issuer: (id: string) => `/issuer/${id}`,
   ceremony: (id: string) => `/ceremony/${id}`,
   crls: (issuerId: string) => `/issuer/${issuerId}/crls`,
+  issued: (issuerId: string) => `/issuer/${issuerId}/issued`,
   profiles: "/profiles",
   certificates: (filter: CertificateFilter) =>
     `/certificates?${new URLSearchParams(
@@ -89,6 +91,18 @@ export const useIssuer = (issuerId: string | undefined) =>
           params: { path: { issuerId: issuerId! } },
         }),
       ).issuer,
+  );
+
+/** What is beneath a CA, by tier and type. */
+export const useIssued = (issuerId: string | undefined) =>
+  useSWR<IssuedCount[]>(
+    issuerId ? KEYS.issued(issuerId) : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/issuer/{issuerId}/issued", {
+          params: { path: { issuerId: issuerId! } },
+        }),
+      ).counts,
   );
 
 export const useIssuerCrls = (issuerId: string | undefined) =>

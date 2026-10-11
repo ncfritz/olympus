@@ -1,0 +1,69 @@
+/*
+ * The tiers' colours: the first three categorical slots of the data-viz
+ * palette, validated as a set against each surface (light: aqua is under
+ * 3:1, so every segment is named and counted in the legend beside it).
+ * Types are their tier's colour mixed a step at a time toward the light:
+ * the surface itself in the light theme, white in the dark, where mixing
+ * toward the surface would sink them into it.
+ */
+.chart {
+  --surface: var(--ant-color-bg-container);
+  --tint-toward: var(--surface);
+  --tier-intermediate: #2a78d6;
+  --tier-issuing: #eb6834;
+  --tier-leaf: #1baf7a;
+}
+
+.dark {
+  --tint-toward: #ffffff;
+  --tier-intermediate: #3987e5;
+  --tier-issuing: #d95926;
+  --tier-leaf: #199e70;
+}
+
+/* A 2px gap of surface between segments and between the rings' slices. */
+.segment {
+  stroke: var(--surface);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  transition: opacity 120ms;
+  cursor: default;
+}
+
+.dimmed {
+  opacity: 0.35;
+}
+
+.track {
+  fill: var(--ant-color-fill-tertiary);
+}
+
+.legend {
+  min-width: 200px;
+}
+
+.row {
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.row.active {
+  background: var(--ant-color-fill-tertiary);
+}
+
+.typeRow {
+  padding-inline-start: 22px;
+}
+
+.swatch {
+  flex: none;
+}
+
+.label {
+  flex: 1;
+}
+
+/* Counts line up down the legend. */
+.count {
+  font-variant-numeric: tabular-nums;
+}

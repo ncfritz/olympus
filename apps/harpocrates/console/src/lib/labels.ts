@@ -1,6 +1,7 @@
 import type {
   Deployment,
   EndpointObservation,
+  IssuedTier,
   IssuerShape,
   IssuerStatus,
   IssuerTier,
@@ -36,6 +37,41 @@ export const TIERS: Record<IssuerTier, string> = {
   intermediate: "Intermediate",
   issuing: "Issuing CA",
 };
+
+/** Where in a CA's hierarchy a certificate is, as the chart names it. */
+export const ISSUED_TIERS: Record<IssuedTier, string> = {
+  intermediate: "Intermediate CAs",
+  issuing: "Issuing CAs",
+  leaf: "Leaf certificates",
+};
+
+/** The seeded profiles, as kinds of leaf. */
+const LEAF_TYPES: Record<string, string> = {
+  "internal-tls": "TLS",
+  "api-server": "API server",
+  service: "Service",
+  device: "Device",
+  "legacy-device": "Legacy device",
+  "code-signing": "Code signing",
+  email: "Email",
+  document: "Document signing",
+  "direct-minimal": "Direct",
+  other: "Other",
+};
+
+/** A count's type, named: a CA's purpose, or a leaf's profile. */
+export const issuedTypeName = ({
+  tier,
+  type,
+}: {
+  tier: IssuedTier;
+  type: string;
+}): string =>
+  tier === "leaf"
+    ? (LEAF_TYPES[type] ?? type)
+    : type === "general"
+      ? "General"
+      : type;
 
 export const STATUS_COLORS: Record<IssuerStatus, string> = {
   pending: "default",

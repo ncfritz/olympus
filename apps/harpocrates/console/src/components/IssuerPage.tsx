@@ -29,6 +29,7 @@ import { unwrap } from "@/lib/api/errors";
 import {
   KEYS,
   useCurrentUser,
+  useIssued,
   useIssuer,
   useIssuerCrls,
   useIssuers,
@@ -53,6 +54,7 @@ import {
   PemBlock,
 } from "./CertificateDetails";
 import { ErrorAlert } from "./ErrorAlert";
+import { IssuedChart } from "./IssuedChart";
 import styles from "./IssuerPage.module.css";
 import { IssuerTree } from "./IssuerTree";
 
@@ -124,6 +126,7 @@ export function IssuerPage() {
   const { data: issuer, error: notFound } = useIssuer(issuerId);
   const { data: issuers } = useIssuers();
   const { data: crls } = useIssuerCrls(issuerId);
+  const { data: issued } = useIssued(issuerId);
   const { isAdmin } = useCurrentUser();
   const { mutate } = useSWRConfig();
   const [error, setError] = useState<unknown>();
@@ -381,6 +384,7 @@ export function IssuerPage() {
                 items={fields}
               />
             ))}
+            {issued && <IssuedChart counts={issued} />}
           </Flex>
         </Flex>
         <Tabs
