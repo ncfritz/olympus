@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Descriptions,
+  type DescriptionsProps,
   Flex,
   Popconfirm,
   Table,
@@ -14,7 +15,7 @@ import {
 } from "antd";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
@@ -40,6 +41,7 @@ import {
 import { SIGNS_LABEL, signsOf } from "@/lib/signs";
 import { commonName } from "@/lib/tree";
 import { ErrorAlert } from "./ErrorAlert";
+import styles from "./IssuerPage.module.css";
 import { IssuerTree } from "./IssuerTree";
 
 const constraintLines = (constraints: NameConstraints): string[] =>
@@ -48,6 +50,57 @@ const constraintLines = (constraints: NameConstraints): string[] =>
       .filter(([, names]) => names?.length)
       .map(([type, names]) => `${kind} ${type}: ${names!.join(", ")}`),
   );
+
+/**
+ * The details' fields, two to a row, a wide one on a row of its own: the
+ * single field before a wide one fills the rest of its row.
+ */
+type Field = { key: string; label: string; children: ReactNode; wide?: true };
+
+const toRows = (
+  fields: (Field | false | undefined)[],
+): DescriptionsProps["items"] => {
+  const present = fields.filter((f): f is Field => Boolean(f));
+  let column = 0;
+  return present.map((field, index) => {
+    if (field.wide) {
+      column = 0;
+      return {
+        key: field.key,
+        label: field.label,
+        children: field.children,
+        span: 2,
+      };
+    }
+    const next = present[index + 1];
+    const fills = column === 0 && (!next || next.wide);
+    column = fills ? 0 : (column + 1) % 2;
+    return {
+      key: field.key,
+      label: field.label,
+      children: field.children,
+      ...(fills ? { span: "filled" as const } : {}),
+    };
+  });
+};
+
+/** A value in the theme's code font, without code formatting. */
+const Mono = ({ children }: { children: ReactNode }) => (
+  <span className={styles.mono}>{children}</span>
+);
+
+/** A tag in the details' third column: all the same width. */
+const DetailTag = ({
+  color,
+  children,
+}: {
+  color?: string;
+  children: ReactNode;
+}) => (
+  <Tag color={color} className={styles.tag}>
+    {children}
+  </Tag>
+);
 
 /** One CA: its certificate, its rules, what is beneath it and its lists. */
 export function IssuerPage() {
@@ -92,19 +145,6 @@ export function IssuerPage() {
           <Typography.Title level={3}>
             {commonName(issuer.subject)}
           </Typography.Title>
-          <Flex gap="small">
-            <Tag>{TIERS[issuer.tier]}</Tag>
-            {issuer.shape && (
-              <Tag color="blue">{SHAPES[issuer.shape].label}</Tag>
-            )}
-            <Tag color={STATUS_COLORS[issuer.status]}>
-              {discarded ? "discarded" : issuer.status}
-            </Tag>
-            {issuer.offline && <Tag>offline</Tag>}
-            {!discarded && windowClosed(issuer) && (
-              <Tag color="orange">no longer signs</Tag>
-            )}
-          </Flex>
         </div>
         <Flex gap="small" wrap>
           {issuer.certificate && (
@@ -144,61 +184,120 @@ export function IssuerPage() {
         </Flex>
       </Flex>
       <ErrorAlert error={error} />
-      <Card>
-        <Descriptions column={{ xs: 1, lg: 2 }} size="small">
-          <Descriptions.Item label="Subject" span={2}>
-            <Typography.Text code>{issuer.subject}</Typography.Text>
-          </Descriptions.Item>
-          <Descriptions.Item label="ID">{issuer.id}</Descriptions.Item>
-          <Descriptions.Item label="Parent">
-            {issuer.parentId ? (
-              <Link href={`/ca?id=${issuer.parentId}`}>{issuer.parentId}</Link>
-            ) : (
-              "—"
+      <Card variant="borderless">
+        <Flex gap="large" wrap>
+          <Descriptions
+            column={{ xs: 1, lg: 2 }}
+            size="small"
+            classNames={{ label: styles.label }}
+            className={styles.fields}
+            items={toRows([
+              {
+                key: "subject",
+                label: "Subject",
+                children: <Mono>{issuer.subject}</Mono>,
+                wide: true,
+              },
+              { key: "id", label: "ID", children: <Mono>{issuer.id}</Mono> },
+              Boolean(issuer.parentId) && {
+                key: "parent",
+                label: "Parent",
+                children: (
+                  <Link href={`/ca?id=${issuer.parentId}`}>
+                    <Mono>{issuer.parentId}</Mono>
+                  </Link>
+                ),
+              },
+              {
+                key: "valid",
+                label: "Valid",
+                children: `${formatDate(issuer.notBefore)} – ${formatDate(issuer.notAfter)}`,
+              },
+              {
+                key: "issuesUntil",
+                label: "Issues until",
+                children: formatDate(issuer.issuingWindowClosesAt),
+              },
+              issuer.offline && {
+                key: "signs",
+                label: "Signs",
+                children: SIGNS_LABEL[signsOf(issuer)],
+              },
+              {
+                key: "longest",
+                label: "Longest certificate",
+                children: describeDays(issuer.maxValidityDays),
+              },
+              {
+                key: "pathLength",
+                label: "Path length",
+                children: issuer.pathLength ?? "—",
+              },
+              {
+                key: "ekus",
+                label: "Extended key usages",
+                children: issuer.extendedKeyUsages.length
+                  ? issuer.extendedKeyUsages.map(ekuName).join(", ")
+                  : "Not restricted",
+              },
+              issuer.offline && {
+                key: "backup",
+                label: "Key backup",
+                children: issuer.provedAt
+                  ? `Proved ${formatDateTime(issuer.provedAt)}`
+                  : "Not proved",
+              },
+              {
+                key: "constraints",
+                label: "Name constraints",
+                children: constraints.length ? constraints.join("; ") : "None",
+                wide: true,
+              },
+              {
+                key: "published",
+                label: "Published",
+                children: (
+                  <Flex vertical>
+                    <Mono>{issuer.caIssuersUrl}</Mono>
+                    <Mono>{issuer.crlUrl}</Mono>
+                  </Flex>
+                ),
+                wide: true,
+              },
+            ])}
+          />
+          <Descriptions
+            column={1}
+            size="small"
+            classNames={{ label: styles.tagLabel }}
+            className={styles.tags}
+          >
+            <Descriptions.Item label="Tier">
+              <DetailTag>{TIERS[issuer.tier]}</DetailTag>
+            </Descriptions.Item>
+            {issuer.shape && (
+              <Descriptions.Item label="Shape">
+                <DetailTag color="blue">{SHAPES[issuer.shape].label}</DetailTag>
+              </Descriptions.Item>
             )}
-          </Descriptions.Item>
-          <Descriptions.Item label="Valid">
-            {formatDate(issuer.notBefore)} – {formatDate(issuer.notAfter)}
-          </Descriptions.Item>
-          <Descriptions.Item label="Issues until">
-            {formatDate(issuer.issuingWindowClosesAt)}
-          </Descriptions.Item>
-          {issuer.offline && (
-            <Descriptions.Item label="Signs">
-              {SIGNS_LABEL[signsOf(issuer)]}
+            <Descriptions.Item label="Status">
+              <DetailTag color={STATUS_COLORS[issuer.status]}>
+                {discarded ? "discarded" : issuer.status}
+              </DetailTag>
             </Descriptions.Item>
-          )}
-          <Descriptions.Item label="Longest certificate">
-            {describeDays(issuer.maxValidityDays)}
-          </Descriptions.Item>
-          <Descriptions.Item label="Path length">
-            {issuer.pathLength ?? "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Extended key usages">
-            {issuer.extendedKeyUsages.length
-              ? issuer.extendedKeyUsages.map(ekuName).join(", ")
-              : "Not restricted"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Name constraints" span={2}>
-            {constraints.length ? constraints.join("; ") : "None"}
-          </Descriptions.Item>
-          {issuer.offline && (
-            <Descriptions.Item label="Key backup">
-              {issuer.provedAt
-                ? `Proved ${formatDateTime(issuer.provedAt)}`
-                : "Not proved"}
+            <Descriptions.Item label="Key">
+              <DetailTag>{issuer.offline ? "offline" : "online"}</DetailTag>
             </Descriptions.Item>
-          )}
-          <Descriptions.Item label="Published" span={2}>
-            <Flex vertical>
-              <Typography.Text code>{issuer.caIssuersUrl}</Typography.Text>
-              <Typography.Text code>{issuer.crlUrl}</Typography.Text>
-            </Flex>
-          </Descriptions.Item>
-        </Descriptions>
+            {!discarded && windowClosed(issuer) && (
+              <Descriptions.Item label="Signing">
+                <DetailTag color="orange">no longer signs</DetailTag>
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+        </Flex>
       </Card>
       {issuer.tier !== "issuing" && (
-        <Card title="Beneath it">
+        <Card title="Beneath it" variant="borderless">
           <IssuerTree issuers={issuers ?? []} rootId={issuer.id} />
         </Card>
       )}
@@ -207,7 +306,7 @@ export function IssuerPage() {
           Certificates it issued
         </Link>
       )}
-      <Card title="Revocation lists">
+      <Card title="Revocation lists" variant="borderless">
         <Table<RevocationList>
           rowKey="number"
           size="small"
