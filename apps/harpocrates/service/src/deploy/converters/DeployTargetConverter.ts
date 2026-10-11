@@ -3,7 +3,7 @@ import type {
   Deployment as DeploymentRow,
   DeployTarget as DeployTargetRow,
   Profile,
-} from "@prisma/client";
+} from "../../store/prisma";
 import moment from "moment";
 import type {
   Deployment,

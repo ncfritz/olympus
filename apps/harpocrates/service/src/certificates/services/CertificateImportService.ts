@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Issuer as IssuerRow } from "@prisma/client";
+import type { Issuer as IssuerRow } from "../../store/prisma";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";

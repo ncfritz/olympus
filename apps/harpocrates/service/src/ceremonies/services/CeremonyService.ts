@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { Ceremony as CeremonyRow } from "@prisma/client";
+import type { Ceremony as CeremonyRow } from "../../store/prisma";
 import moment from "moment";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";

@@ -6,7 +6,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { Issuer as IssuerRow, Prisma, Profile } from "@prisma/client";
+import type { Issuer as IssuerRow, Prisma, Profile } from "../../store/prisma";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";

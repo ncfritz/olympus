@@ -3,7 +3,7 @@ import type {
   ProfileExtendedKeyUsage,
   ProfileKeyUsage,
   ProfileNameType,
-} from "@prisma/client";
+} from "../../store/prisma";
 import type { KeyAlgorithmName } from "../../model/common";
 import type { Profile } from "../../model/profiles";
 

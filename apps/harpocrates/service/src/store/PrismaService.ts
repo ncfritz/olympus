@@ -1,5 +1,5 @@
 import { Inject, Injectable, OnApplicationShutdown } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./prisma";
 import {
   databaseConfig,
   type DatabaseConfigType,

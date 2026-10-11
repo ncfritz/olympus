@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as http from "http";
 import * as os from "os";
 import * as path from "path";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../src/store/prisma";
 import request from "supertest";
 import { createApp } from "./app";
 import { bearer } from "./tokens";

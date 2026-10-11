@@ -2,7 +2,7 @@ import type {
   Issuer as IssuerRow,
   IssuerExtendedKeyUsage,
   IssuerNameConstraint,
-} from "@prisma/client";
+} from "../../store/prisma";
 import moment from "moment";
 import type { NameConstraints, Names, NameTypeName } from "../../model/common";
 import type { FullIssuer, Issuer } from "../../model/issuers";

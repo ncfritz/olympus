@@ -3,6 +3,11 @@
 // foreign keys and constraints; no JSON documents in rows (ADR 0007).
 generator client {
   provider = "prisma-client-js"
+  // Its own, not @prisma/client's default (node_modules/.prisma/client):
+  // in the workspace every package on this Prisma version shares that
+  // one, and the Minerva calendar agent's SQLite client would overwrite
+  // this one. Imported through src/store/prisma.ts.
+  output   = "../generated/prisma"
 }
 
 datasource db {

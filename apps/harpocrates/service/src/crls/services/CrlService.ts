@@ -10,7 +10,7 @@ import type {
   Crl as CrlRow,
   CrlSource,
   Issuer as IssuerRow,
-} from "@prisma/client";
+} from "../../store/prisma";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import { SYSTEM, type Principal } from "../../auth/principal";

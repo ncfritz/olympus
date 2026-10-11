@@ -3,7 +3,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { Key, KeyLocation, KeyPurpose, Prisma } from "@prisma/client";
+import type { Key, KeyLocation, KeyPurpose, Prisma } from "../../store/prisma";
 import { bytes, keyAlgorithm, rsaModulus, spkiSha256 } from "../../pki/x509";
 import { PrismaService } from "../../store/PrismaService";
 import { weakness } from "../weakKeys";

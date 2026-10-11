@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { Crl as CrlRow, Issuer as IssuerRow } from "@prisma/client";
+import type { Crl as CrlRow, Issuer as IssuerRow } from "../../store/prisma";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { AuditKind } from "../../audit/auditKinds";

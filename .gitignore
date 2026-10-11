@@ -59,3 +59,6 @@ Claude outputs/
 
 # The API's raw weather archive when run from the workspace
 weather-archive/
+
+# Harpocrates generates its Prisma client here (prisma/schema.prisma).
+apps/harpocrates/service/generated/

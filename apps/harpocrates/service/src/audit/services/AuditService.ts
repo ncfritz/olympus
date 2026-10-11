@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../../store/prisma";
 import type { Principal } from "../../auth/principal";
 import moment from "moment";
 import type { AuditEvent, ListAuditEventsQuery } from "../../model/audit";

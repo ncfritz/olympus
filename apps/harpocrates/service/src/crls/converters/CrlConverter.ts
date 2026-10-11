@@ -1,4 +1,4 @@
-import type { Crl as CrlRow } from "@prisma/client";
+import type { Crl as CrlRow } from "../../store/prisma";
 import moment from "moment";
 import type { RevocationList } from "../../model/crls";
 

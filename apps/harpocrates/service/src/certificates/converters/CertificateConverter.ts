@@ -4,7 +4,7 @@ import type {
   EnrollmentName,
   Key,
   Revocation,
-} from "@prisma/client";
+} from "../../store/prisma";
 import moment from "moment";
 import type {
   Certificate,

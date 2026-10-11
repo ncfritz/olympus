@@ -7,7 +7,12 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { Enrollment, Key, Prisma, RevocationReason } from "@prisma/client";
+import type {
+  Enrollment,
+  Key,
+  Prisma,
+  RevocationReason,
+} from "../../store/prisma";
 import { createPrivateKey, randomBytes } from "crypto";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
