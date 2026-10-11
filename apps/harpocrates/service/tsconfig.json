@@ -8,8 +8,11 @@
     "isolatedModules": false,
     "strict": true,
     "strictPropertyInitialization": false,
-    // Tests are type-checked with the sources.
-    "rootDir": "${configDir}",
+    // Tests are type-checked with the sources, and the renewal e2e reads
+    // the client package's source (a dependency would be a cycle: the
+    // client's SDK is generated from this service). Only the build, from
+    // tsconfig.build.json, emits.
+    "rootDir": "${configDir}/../../..",
     "types": ["node"],
     // The generated signer client names fetch's types (BodyInit), as the
     // SDK's does; DOM supplies them, as for the SDK and the API.
