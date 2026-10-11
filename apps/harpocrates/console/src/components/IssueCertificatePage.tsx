@@ -12,6 +12,7 @@ import {
   Row,
   Select,
   Switch,
+  Tabs,
   Typography,
 } from "antd";
 import Link from "next/link";
@@ -20,11 +21,24 @@ import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
 import { useIssuers, useProfiles } from "@/lib/api/queries";
-import type { FullCertificate, NameType, Profile } from "@/lib/api/types";
+import type {
+  FullCertificate,
+  KeyAlgorithm,
+  KeyImportFormat,
+  NameType,
+  Profile,
+} from "@/lib/api/types";
+import {
+  defaultAlgorithm,
+  familyOf,
+  KEY_FAMILIES,
+  type KeyFamily,
+} from "@/lib/keyTypes";
 import { describeDays, ekuName, windowClosed } from "@/lib/labels";
 import { commonName } from "@/lib/tree";
 import { ErrorAlert } from "./ErrorAlert";
-import { IssuedCertificate } from "./IssuedCertificate";
+import { ImportKeyInput } from "./ImportKeyInput";
+import { IssuedCertificate, type KeyOrigin } from "./IssuedCertificate";
 
 const NAME_LABELS: Record<NameType, { label: string; placeholder: string }> = {
   dns: { label: "DNS names", placeholder: "host.internal.ncfritz.net" },
@@ -33,7 +47,8 @@ const NAME_LABELS: Record<NameType, { label: string; placeholder: string }> = {
   uri: { label: "URIs", placeholder: "spiffe://ncfritz.net/service" },
 };
 
-type Mode = "generated" | "csr";
+/** Where the key comes from: the key section's tabs. */
+type Mode = "generated" | "imported" | "csr";
 
 interface Values {
   profileId: string;
@@ -46,6 +61,11 @@ interface Values {
   email?: string[];
   uri?: string[];
   mode: Mode;
+  keyFamily?: KeyFamily;
+  keyAlgorithm?: KeyAlgorithm;
+  importFormat?: KeyImportFormat;
+  keyData?: string;
+  passphrase?: string;
   csr?: string;
   escrow?: boolean;
 }
@@ -53,17 +73,26 @@ interface Values {
 const modesOf = (profile: Profile | undefined): Mode[] =>
   profile
     ? [
-        ...(profile.allowGenerated ? (["generated"] as const) : []),
+        // A key brought in is kept as a generated one is.
+        ...(profile.allowGenerated ? (["generated", "imported"] as const) : []),
         ...(profile.allowCsr ? (["csr"] as const) : []),
       ]
     : [];
 
+/** The fields that start a profile's key section. */
+const keyDefaults = (profile: Profile | undefined) => ({
+  keyFamily: profile ? familyOf(profile.keyAlgorithm) : undefined,
+  keyAlgorithm: profile?.keyAlgorithm,
+  escrow: profile?.escrow,
+});
+
 /**
- * Issuing a certificate (ADR 0020, Profiles): the profile decides the key,
- * the usages, the validity and which names it takes; the operator gives
- * the subject, the names, and either a CSR or a key for the signer to
- * generate. The service applies the profile's rules and the signer its
- * invariants; a refusal says which.
+ * Issuing a certificate (ADR 0020, Profiles, amended): the profile decides
+ * the usages, the validity, which names it takes and the default key type;
+ * the operator gives the subject, the names, and the key: generated in
+ * the signer (of any type), brought in, or the subscriber's CSR. The
+ * service applies the profile's rules and the signer its invariants; a
+ * refusal says which.
  */
 export function IssueCertificatePage() {
   const { data: profiles } = useProfiles();
@@ -72,6 +101,9 @@ export function IssueCertificatePage() {
   const [form] = Form.useForm<Values>();
   const profileId = Form.useWatch("profileId", form);
   const mode = Form.useWatch("mode", form);
+  const keyFamily = Form.useWatch("keyFamily", form);
+  const keyAlgorithm = Form.useWatch("keyAlgorithm", form);
+  const importFormat = Form.useWatch("importFormat", form);
   const issuable = useMemo(
     () => (profiles ?? []).filter((profile) => !profile.directOnly),
     [profiles],
@@ -87,7 +119,7 @@ export function IssueCertificatePage() {
   );
   const [issued, setIssued] = useState<{
     certificate: FullCertificate;
-    generated: boolean;
+    keyOrigin: KeyOrigin;
     escrowed: boolean;
   }>();
   const [error, setError] = useState<unknown>();
@@ -97,8 +129,8 @@ export function IssueCertificatePage() {
     if (!profile) return;
     setBusy(true);
     try {
-      const generated = values.mode === "generated";
-      const escrow = generated ? (values.escrow ?? profile.escrow) : undefined;
+      const kept = values.mode !== "csr";
+      const escrow = kept ? (values.escrow ?? profile.escrow) : undefined;
       const names = Object.fromEntries(
         profile.nameTypes
           .map((type) => [type, values[type]] as const)
@@ -115,12 +147,26 @@ export function IssueCertificatePage() {
               organization: values.organization || undefined,
             },
             names: Object.keys(names).length ? names : undefined,
-            csr: generated ? undefined : values.csr,
+            csr: values.mode === "csr" ? values.csr : undefined,
+            keyAlgorithm:
+              values.mode === "generated" ? values.keyAlgorithm : undefined,
+            key:
+              values.mode === "imported"
+                ? {
+                    format: values.importFormat ?? "pem",
+                    data: values.keyData ?? "",
+                    passphrase: values.passphrase ?? "",
+                  }
+                : undefined,
             escrow,
           },
         }),
       );
-      setIssued({ certificate, generated, escrowed: escrow ?? false });
+      setIssued({
+        certificate,
+        keyOrigin: values.mode === "csr" ? "subscriber" : values.mode,
+        escrowed: escrow ?? false,
+      });
       setError(undefined);
       await mutate(
         (key) => typeof key === "string" && key.startsWith("/certificates"),
@@ -162,15 +208,27 @@ export function IssueCertificatePage() {
             form={form}
             layout="vertical"
             onFinish={issue}
-            initialValues={{ mode: "generated" }}
-            // A profile brings its own enrollment modes and escrow setting.
+            initialValues={{ mode: "generated", importFormat: "pem" }}
             onValuesChange={(changed: Partial<Values>) => {
+              // A family starts at its default size or curve.
+              if (changed.keyFamily) {
+                form.setFieldValue(
+                  "keyAlgorithm",
+                  defaultAlgorithm(changed.keyFamily, profile?.keyAlgorithm),
+                );
+              }
+              // A PEM is not a PKCS#12 file.
+              if (changed.importFormat) {
+                form.setFieldValue("keyData", undefined);
+              }
+              // A profile brings its own enrollment modes, key type and
+              // escrow setting.
               if (!changed.profileId) return;
               const chosen = issuable.find((p) => p.id === changed.profileId);
               const allowed = modesOf(chosen);
               form.setFieldsValue({
                 issuerId: undefined,
-                escrow: chosen?.escrow,
+                ...keyDefaults(chosen),
                 mode: allowed.includes(form.getFieldValue("mode") as Mode)
                   ? (form.getFieldValue("mode") as Mode)
                   : allowed[0],
@@ -218,7 +276,7 @@ export function IssueCertificatePage() {
                 showIcon
                 title={profile.description}
                 description={[
-                  `${profile.keyAlgorithm}, valid ${describeDays(profile.validityDays)}, renewed at ${describeDays(profile.renewAtDays)}`,
+                  `${profile.keyAlgorithm} keys by default, valid ${describeDays(profile.validityDays)}, renewed at ${describeDays(profile.renewAtDays)}`,
                   profile.extendedKeyUsages.length
                     ? `for ${profile.extendedKeyUsages.map(ekuName).join(", ")}`
                     : undefined,
@@ -286,43 +344,67 @@ export function IssueCertificatePage() {
                   </>
                 )}
                 <Typography.Title level={5}>Key</Typography.Title>
-                <Form.Item name="mode">
-                  <Radio.Group>
-                    <Radio
-                      value="generated"
-                      disabled={!modes.includes("generated")}
-                    >
-                      Generate it in the signer
-                    </Radio>
-                    <Radio value="csr" disabled={!modes.includes("csr")}>
-                      From the subscriber&apos;s CSR
-                    </Radio>
-                  </Radio.Group>
+                <Form.Item name="mode" hidden>
+                  <Input />
                 </Form.Item>
-                {mode === "csr" && (
-                  <Form.Item
-                    name="csr"
-                    label="CSR (PEM)"
-                    rules={[
-                      { required: true, message: "Paste the CSR" },
-                      {
-                        pattern: /-----BEGIN CERTIFICATE REQUEST-----/,
-                        message: "A PEM certificate request",
-                      },
-                    ]}
-                  >
-                    <Input.TextArea rows={8} spellCheck={false} />
-                  </Form.Item>
-                )}
-                {mode === "generated" && (
+                <Tabs
+                  activeKey={mode}
+                  onChange={(key) => form.setFieldValue("mode", key as Mode)}
+                  destroyOnHidden
+                  items={[
+                    {
+                      key: "generated",
+                      label: "Generate a new key",
+                      disabled: !modes.includes("generated"),
+                      children: (
+                        <GenerateKeyFields
+                          family={keyFamily}
+                          algorithm={keyAlgorithm}
+                        />
+                      ),
+                    },
+                    {
+                      key: "imported",
+                      label: "Import a key",
+                      disabled: !modes.includes("imported"),
+                      children: (
+                        <ImportKeyFields format={importFormat ?? "pem"} />
+                      ),
+                    },
+                    {
+                      key: "csr",
+                      label: "From subscriber's CSR",
+                      disabled: !modes.includes("csr"),
+                      children: (
+                        <Form.Item
+                          name="csr"
+                          label="CSR (PEM)"
+                          extra="Any key type Harpocrates certifies: RSA or DSA of at least 2048 bits, P-256, P-384, P-521 or Ed25519"
+                          rules={[
+                            { required: true, message: "Paste the CSR" },
+                            {
+                              pattern: /-----BEGIN CERTIFICATE REQUEST-----/,
+                              message: "A PEM certificate request",
+                            },
+                          ]}
+                        >
+                          <Input.TextArea rows={8} spellCheck={false} />
+                        </Form.Item>
+                      ),
+                    },
+                  ]}
+                />
+                {mode !== "csr" && (
                   <Form.Item
                     name="escrow"
                     label="Escrow the key"
                     valuePropName="checked"
                     extra={
-                      profile.escrowOverridable
-                        ? "Off: it is exported once, then destroyed in the signer"
-                        : "The profile decides"
+                      !profile.escrowOverridable
+                        ? "The profile decides"
+                        : mode === "imported"
+                          ? "Off: the signer forgets it once it is certified"
+                          : "Off: it is exported once, then destroyed in the signer"
                     }
                   >
                     <Switch disabled={!profile.escrowOverridable} />
@@ -343,5 +425,119 @@ export function IssueCertificatePage() {
       )}
       <ErrorAlert error={error} />
     </Flex>
+  );
+}
+
+/** The generate tab: the key's type, then its size or curve. */
+function GenerateKeyFields({
+  family,
+  algorithm,
+}: {
+  family?: KeyFamily;
+  algorithm?: KeyAlgorithm;
+}) {
+  const chosen = KEY_FAMILIES.find((f) => f.family === family);
+  return (
+    <>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item
+            name="keyFamily"
+            label="Key type"
+            rules={[{ required: true, message: "Choose a key type" }]}
+          >
+            <Radio.Group
+              optionType="button"
+              buttonStyle="solid"
+              options={KEY_FAMILIES.map((f) => ({
+                value: f.family,
+                label: f.label,
+              }))}
+            />
+          </Form.Item>
+        </Col>
+        {chosen?.choice && (
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="keyAlgorithm"
+              label={chosen.choice}
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Select options={chosen.algorithms} />
+            </Form.Item>
+          </Col>
+        )}
+      </Row>
+      {family === "DSA" && (
+        <Form.Item>
+          <Alert
+            type="warning"
+            showIcon
+            title="Few clients still take DSA"
+            description="TLS 1.3 has no DSA, and browsers and current OpenSSL refuse DSA certificates: use it only for a client that needs it."
+          />
+        </Form.Item>
+      )}
+      {algorithm === "RSA-8192" && (
+        <Form.Item>
+          <Alert
+            type="info"
+            showIcon
+            title="An 8192-bit key takes a while"
+            description="The signer may take up to a minute to generate it."
+          />
+        </Form.Item>
+      )}
+    </>
+  );
+}
+
+/** The import tab: the key's file and its passphrase. */
+function ImportKeyFields({ format }: { format: KeyImportFormat }) {
+  return (
+    <>
+      <Form.Item name="importFormat" label="Format">
+        <Radio.Group
+          options={[
+            { value: "pem", label: "Encrypted PKCS#8 (PEM)" },
+            { value: "pkcs12", label: "PKCS#12 (.p12, .pfx)" },
+          ]}
+        />
+      </Form.Item>
+      <Form.Item
+        name="keyData"
+        label={format === "pkcs12" ? "File" : "Key"}
+        extra={
+          format === "pkcs12"
+            ? "Only its key is used: the certificates in it are not kept"
+            : undefined
+        }
+        rules={[
+          { required: true, message: "Bring the key" },
+          ...(format === "pem"
+            ? [
+                {
+                  pattern: /-----BEGIN ENCRYPTED PRIVATE KEY-----/,
+                  message: "An encrypted PKCS#8 key",
+                },
+              ]
+            : []),
+        ]}
+      >
+        <ImportKeyInput format={format} />
+      </Form.Item>
+      <Row>
+        <Col xs={24} md={12}>
+          <Form.Item
+            name="passphrase"
+            label="Passphrase"
+            extra="Used once to read it, never kept"
+            rules={[{ required: true, message: "Required" }]}
+          >
+            <Input.Password autoComplete="off" />
+          </Form.Item>
+        </Col>
+      </Row>
+    </>
   );
 }

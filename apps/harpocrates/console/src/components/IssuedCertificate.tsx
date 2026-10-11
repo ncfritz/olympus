@@ -9,22 +9,43 @@ import { useCurrentUser } from "@/lib/api/queries";
 import { formatDate } from "@/lib/labels";
 import { KeyExportForm } from "./KeyExportForm";
 
+/** Where a certificate's key came from. */
+export type KeyOrigin = "generated" | "imported" | "subscriber";
+
+const KEY_DESCRIPTIONS: Record<KeyOrigin, [escrowed: string, once: string]> = {
+  generated: [
+    "Generated and escrowed: export it now or later",
+    "Generated, not escrowed: export it now, once",
+  ],
+  imported: [
+    "Brought in and escrowed: export it again any time",
+    "Brought in, then forgotten by the signer: only the subscriber has it",
+  ],
+  subscriber: [
+    "The subscriber's: Harpocrates never had it",
+    "The subscriber's: Harpocrates never had it",
+  ],
+};
+
 /**
  * A certificate just issued or renewed: its files, and, for a key the
- * signer generated, its export. A key that is not escrowed exports once,
- * so the page says so until it has.
+ * signer holds, its export. A generated key that is not escrowed exports
+ * once, so the page says so until it has.
  */
 export function IssuedCertificate({
   certificate,
-  generated,
+  keyOrigin,
   escrowed,
   actions,
 }: {
   certificate: FullCertificate;
-  generated: boolean;
+  keyOrigin: KeyOrigin;
   escrowed: boolean;
   actions?: React.ReactNode[];
 }) {
+  const generated = keyOrigin === "generated";
+  // The signer still holds it: generated, or brought in and escrowed.
+  const exportable = generated || (keyOrigin === "imported" && escrowed);
   const [exported, setExported] = useState(false);
   // An escrowed key can be exported any time: the form waits to be asked.
   const [exporting, setExporting] = useState(!escrowed);
@@ -73,16 +94,12 @@ export function IssuedCertificate({
           {formatDate(certificate.notAfter)}
         </Descriptions.Item>
         <Descriptions.Item label="Key">
-          {!generated
-            ? "The subscriber's: Harpocrates never had it"
-            : escrowed
-              ? "Generated and escrowed: export it now or later"
-              : exported
-                ? "Exported, and destroyed in the signer"
-                : "Generated, not escrowed: export it now, once"}
+          {generated && !escrowed && exported
+            ? "Exported, and destroyed in the signer"
+            : KEY_DESCRIPTIONS[keyOrigin][escrowed ? 0 : 1]}
         </Descriptions.Item>
       </Descriptions>
-      {generated && !exported && (
+      {exportable && !exported && (
         <>
           {!escrowed && (
             <Alert
