@@ -213,6 +213,19 @@ suggests the profile's renewal age to half-way to expiry, and a window
 already past once a certificate is revoked. ACME certificates are
 `renewal="automatic"` in `certificate_expiry_days`.
 
+`test/e2e/acmeClients.spec.ts` runs the clients ADR 0020 names against
+it: certbot (http-01), lego and acme.sh (http-01 and tls-alpn-01; lego
+asks renewal-info before renewing), each registering with a credential,
+issuing, renewing and revoking, and Caddy obtaining and serving a
+certificate by itself. It is opt-in: `ACME_INTEROP_BIN` names a
+directory with `certbot`, `lego`, `acme.sh` and `caddy` (a missing one
+is skipped; acme.sh's standalone mode needs `socat`), alongside
+`HARPOCRATES_E2E_DATABASE_URL`:
+
+```sh
+ACME_INTEROP_BIN=~/acme-clients pnpm test:e2e test/e2e/acmeClients.spec.ts
+```
+
 The CA console (`apps/harpocrates/console`) signs in through Olympus
 (ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
 service completes the sign-in and keeps the tokens in httpOnly cookies
