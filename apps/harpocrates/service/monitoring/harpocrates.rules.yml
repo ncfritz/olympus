@@ -113,7 +113,8 @@ groups:
       # The profile's threshold: its validity less the age it renews at.
       # Only certificates nothing renews by itself (renewal="manual"): not
       # one already renewed ("renewed"), which stays valid, and listed,
-      # until it expires.
+      # until it expires; nor a deploy target's ("automatic"), which
+      # Harpocrates renews, and which the deploy alerts below cover.
       - alert: HarpocratesCertificateNeedsRenewal
         expr: >-
           certificate_expiry_days{renewal="manual"}
@@ -139,3 +140,60 @@ groups:
             certificate from {{ $labels.issuer }}, serial
             {{ $labels.serial }}), whether or not something should have
             renewed it.
+
+      # Deploy targets (phase 6): a certificate Harpocrates renews and
+      # installs itself, then checks is served.
+      - alert: HarpocratesDeploymentFailing
+        expr: harpocrates_deployment_pending_seconds > 3600
+        labels:
+          severity: warning
+        annotations:
+          summary: "A certificate has not been deployed to {{ $labels.target }} for an hour"
+          description: >-
+            Its deployment has waited {{ $value | humanizeDuration }} and
+            is retried every 15 minutes. The target's page in the console
+            shows the error: usually DEPLOY_DIR not mounted or not
+            writable, or the signer sealed.
+
+      - alert: HarpocratesTargetRenewalFailing
+        expr: increase(harpocrates_target_renewal_failures_total{reason!="sealed"}[10m]) > 0
+        for: 20m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.target }}'s certificate cannot be renewed"
+          description: >-
+            Its renewal has failed for half an hour ({{ $labels.reason }});
+            the service's log has the message. A refusal usually means its
+            profile's issuing CA no longer issues (create its successor) or
+            the certificate was revoked (point the target at a reissue).
+            Sealed signers alert on their own.
+
+      # Checked every 5 minutes while it is wrong: three checks in a row.
+      - alert: HarpocratesEndpointNotServingCurrent
+        expr: harpocrates_deploy_target_serving{result="current"} == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.target }}'s endpoint does not serve its certificate"
+          description: >-
+            For 15 minutes its endpoint has served an older certificate
+            (nginx not reloaded: is the watcher running?), another
+            certificate (its configuration names other files), or nothing.
+            The target's page in the console shows which, and Check now
+            checks again.
+
+      - alert: HarpocratesServedCertificateExpiring
+        expr: >-
+          harpocrates_deploy_target_served_expiry_timestamp_seconds - time()
+          < 7 * 86400
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.target }} serves a certificate that expires within a week"
+          description: >-
+            What its endpoint served at its last check expires in
+            {{ $value | humanizeDuration }}, whatever Harpocrates has
+            issued since: clients will refuse it then. Renewal, deployment
+            or the reload has been failing for weeks.

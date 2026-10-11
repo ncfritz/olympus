@@ -44,6 +44,7 @@ export class PkiGaugeService implements OnModuleInit {
       "harpocrates_crl_next_update_timestamp_seconds",
       "harpocrates_crl_publication_pending_seconds",
       "harpocrates_deploy_target_serving",
+      "harpocrates_deployment_pending_seconds",
       "harpocrates_deploy_target_checked_timestamp_seconds",
       "harpocrates_deploy_target_served_expiry_timestamp_seconds",
     ]) {
@@ -71,6 +72,7 @@ export class PkiGaugeService implements OnModuleInit {
               serial: true,
               notAfter: true,
               renewedBy: { select: { id: true } },
+              deployTargets: { select: { id: true } },
             },
           }),
         );
@@ -82,8 +84,13 @@ export class PkiGaugeService implements OnModuleInit {
               subject: row.subject,
               serial: row.serial,
               // Whether it still needs renewing, and by whom: renewed (its
-              // successor exists, so it needs nothing), or manual.
-              renewal: row.renewedBy ? "renewed" : "manual",
+              // successor exists, so it needs nothing), automatic (a deploy
+              // target's: Harpocrates renews it), or manual.
+              renewal: row.renewedBy
+                ? "renewed"
+                : row.deployTargets.length > 0
+                  ? "automatic"
+                  : "manual",
             },
             days(row.notAfter),
           );
@@ -229,6 +236,36 @@ export class PkiGaugeService implements OnModuleInit {
               last.result === result ? 1 : 0,
             );
           }
+        }
+      },
+    });
+
+    new Gauge({
+      name: "harpocrates_deployment_pending_seconds",
+      help: "How long each deploy target's pending deployment has waited, failing or not yet tried; 0 when it has none",
+      labelNames: ["target"],
+      async collect() {
+        this.reset();
+        const rows = await quietly(() =>
+          prisma.deployTarget.findMany({
+            select: {
+              name: true,
+              deployments: {
+                where: { status: "pending" },
+                orderBy: { createdAt: "asc" },
+                take: 1,
+              },
+            },
+          }),
+        );
+        for (const row of rows) {
+          const oldest = row.deployments[0];
+          this.set(
+            { target: row.name },
+            oldest
+              ? Math.round((Date.now() - oldest.createdAt.getTime()) / 1000)
+              : 0,
+          );
         }
       },
     });

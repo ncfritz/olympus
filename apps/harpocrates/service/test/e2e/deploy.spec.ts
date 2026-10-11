@@ -346,6 +346,10 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
         where: { subjectId: target.id, kind: "deployment.failed" },
       });
       expect(failures).toBe(1);
+      const metrics = await request(server()).get("/metrics").expect(200);
+      expect(metrics.text).toMatch(
+        /harpocrates_deployment_pending_seconds\{target="printer"[^}]*\} \d+\n/,
+      );
     });
 
     it("is retried until it succeeds", async () => {
@@ -360,6 +364,10 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
         attempts: 3,
       });
       expect(installed("printer").files).toContain("privkey.pem");
+      const metrics = await request(server()).get("/metrics").expect(200);
+      expect(metrics.text).toMatch(
+        /harpocrates_deployment_pending_seconds\{target="printer"[^}]*\} 0\n/,
+      );
     });
   });
 
@@ -419,6 +427,17 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
       expect(metrics.text).toMatch(
         new RegExp(
           `certificate_expiry_days\\{[^}]*serial="${first.serial}",renewal="renewed"`,
+        ),
+      );
+      const renewalSerial = (
+        await harness.prisma.certificate.findUniqueOrThrow({
+          where: { id: renewal!.certificateId },
+        })
+      ).serial;
+      // Its renewal, the target's now, is Harpocrates's to renew.
+      expect(metrics.text).toMatch(
+        new RegExp(
+          `certificate_expiry_days\\{[^}]*serial="${renewalSerial}",renewal="automatic"`,
         ),
       );
     });

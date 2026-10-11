@@ -192,26 +192,27 @@ taken.
 
 ## Metrics and alerts
 
-| Metric                                                              | What                                                                                |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `harpocrates_certificates_issued_total{issuer,profile}`             | Issued, renewals included                                                           |
-| `harpocrates_revocations_total{issuer,reason}`                      | Revoked                                                                             |
-| `harpocrates_refusals_total{invariant}`                             | Requests refused by a profile rule or the signer                                    |
-| `harpocrates_crls_signed_total{issuer,source}`                      | Lists signed or imported                                                            |
-| `harpocrates_crl_signing_failures_total{issuer,reason}`             | Scheduled signings that failed: `sealed`, `refused`, `error`                        |
-| `harpocrates_crl_publication_failures_total{issuer}`                | Publication attempts that failed                                                    |
-| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`        | When each CA's newest published list lapses (Unix time)                             |
-| `harpocrates_crl_publication_pending_seconds{issuer,tier}`          | How long its newest list has waited to be published; 0 once out                     |
-| `harpocrates_deployments_total{target}`                             | Certificates deployed to a deploy target                                            |
-| `harpocrates_deployment_failures_total{target}`                     | Deployment attempts that failed                                                     |
-| `harpocrates_deploy_target_serving{target,result}`                  | 1 for what each target's endpoint served at its last check, 0 for the other results |
-| `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                            |
-| `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                             |
-| `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`        |
-| `harpocrates_issuing_window_days{issuer}`                           | Days until each active CA stops issuing                                             |
-| `harpocrates_profile_renewal_due_days{profile}`                     | Days before expiry a profile's certificates are due for renewal                     |
-| `harpocrates_signer_sealed`                                         | 1 when the signer is sealed or unreachable                                          |
-| `certificate_expiry_days{issuer,profile,subject,serial,renewal}`    | Days left on every valid certificate; `renewal` is `manual` for now                 |
+| Metric                                                              | What                                                                                                    |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `harpocrates_certificates_issued_total{issuer,profile}`             | Issued, renewals included                                                                               |
+| `harpocrates_revocations_total{issuer,reason}`                      | Revoked                                                                                                 |
+| `harpocrates_refusals_total{invariant}`                             | Requests refused by a profile rule or the signer                                                        |
+| `harpocrates_crls_signed_total{issuer,source}`                      | Lists signed or imported                                                                                |
+| `harpocrates_crl_signing_failures_total{issuer,reason}`             | Scheduled signings that failed: `sealed`, `refused`, `error`                                            |
+| `harpocrates_crl_publication_failures_total{issuer}`                | Publication attempts that failed                                                                        |
+| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`        | When each CA's newest published list lapses (Unix time)                                                 |
+| `harpocrates_crl_publication_pending_seconds{issuer,tier}`          | How long its newest list has waited to be published; 0 once out                                         |
+| `harpocrates_deployments_total{target}`                             | Certificates deployed to a deploy target                                                                |
+| `harpocrates_deployment_failures_total{target}`                     | Deployment attempts that failed                                                                         |
+| `harpocrates_deploy_target_serving{target,result}`                  | 1 for what each target's endpoint served at its last check, 0 for the other results                     |
+| `harpocrates_deployment_pending_seconds{target}`                    | How long a target's pending deployment has waited; 0 when none                                          |
+| `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                                                |
+| `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                                                 |
+| `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`                            |
+| `harpocrates_issuing_window_days{issuer}`                           | Days until each active CA stops issuing                                                                 |
+| `harpocrates_profile_renewal_due_days{profile}`                     | Days before expiry a profile's certificates are due for renewal                                         |
+| `harpocrates_signer_sealed`                                         | 1 when the signer is sealed or unreachable                                                              |
+| `certificate_expiry_days{issuer,profile,subject,serial,renewal}`    | Days left on every valid certificate; `renewal`: `manual`, `automatic` (a deploy target's) or `renewed` |
 
 The gauges are read at scrape time; a scrape never fails because the
 database or the signer is down. A list's lapse is a timestamp, not days
@@ -225,7 +226,10 @@ minutes, the service down, a list unpublished for 5 minutes or failing
 to sign, an online CA's list within 2 days of lapsing and an offline
 CA's within 60, an active CA with no list, an issuing window under a
 year, certificates past their profile's renewal point that nothing
-renews, and anything within a week of expiry. `pnpm check:alerts` (in
+renews, and anything within a week of expiry; and for deploy targets, a
+deployment waiting an hour, a renewal failing for half an hour, an
+endpoint not serving its certificate for 15 minutes, and an endpoint
+serving one within a week of expiry. `pnpm check:alerts` (in
 `check:conventions`) runs their tests with `promtool`, and says so when
 `promtool` is missing (`brew install prometheus`).
 
