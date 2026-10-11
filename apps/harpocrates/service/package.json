@@ -46,7 +46,7 @@
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "^11.1.23",
     "@nestjs/swagger": "catalog:",
-    "@peculiar/x509": "^2.1.0",
+    "@peculiar/x509": "catalog:",
     "@prisma/client": "^6.19.3",
     "axios": "catalog:",
     "class-transformer": "catalog:",

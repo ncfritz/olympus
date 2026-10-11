@@ -39,7 +39,7 @@
   "dependencies": {
     "@ncfritz/olympus-metrics": "workspace:*",
     "@ncfritz/olympus-sdk": "workspace:*",
-    "@peculiar/x509": "^2.1.0",
+    "@peculiar/x509": "catalog:",
     "reflect-metadata": "catalog:"
   },
   "peerDependencies": {
