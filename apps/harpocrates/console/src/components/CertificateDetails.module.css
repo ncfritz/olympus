@@ -45,13 +45,30 @@
 
 .hexCard .hexActions.hexActions > li {
   margin: 0;
-  padding: 4px;
+  padding: 0;
 }
 
-.hexCard .hexCopy:global(.ant-btn) {
-  font-size: 12px;
-  height: auto;
-  padding: 0 4px;
+/* The action row is the copy control: antd wraps each action in a span
+   it styles as clickable (pointer, hover colour); that span and the
+   control in it fill the row, so all of it copies, 4px in, small. */
+.hexCard .hexActions.hexActions > li > span {
+  display: block;
+}
+
+.hexCard .hexActions.hexActions .hexCopy {
+  display: block;
+  padding: 4px;
+  font-size: var(--ant-font-size-sm, 12px);
+  line-height: 1.5;
+}
+
+/* A copy's outcome, in the control that did it, for a moment. */
+.copied.copied {
+  color: var(--ant-color-success);
+}
+
+.failed.failed {
+  color: var(--ant-color-error);
 }
 
 .identifiers {

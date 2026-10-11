@@ -1,6 +1,11 @@
 "use client";
 
-import { CopyOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  CloseOutlined,
+  CopyOutlined,
+  DownloadOutlined,
+} from "@ant-design/icons";
 import {
   Alert,
   Button,
@@ -8,10 +13,10 @@ import {
   Descriptions,
   Divider,
   Flex,
-  message,
   Tag,
   Typography,
 } from "antd";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import {
   type ExtensionDetail,
@@ -32,37 +37,72 @@ const KEY_IDENTIFIERS = new Set([
   "2.5.29.35", // authority key identifier
 ]);
 
-type Copy = (text: string, what: string) => void;
+type CopyStatus = "idle" | "copied" | "failed";
+
+/** How long a copy's outcome shows before the action reads Copy again. */
+const COPY_STATUS_MS = 2000;
+
+/**
+ * Copying to the clipboard, its outcome held for a moment so the control
+ * that did it can show it (rather than a message announcing it).
+ */
+const useCopy = (text: string) => {
+  const [status, setStatus] = useState<CopyStatus>("idle");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const copy = async () => {
+    clearTimeout(timer.current);
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("copied");
+    } catch {
+      setStatus("failed");
+    }
+    timer.current = setTimeout(() => setStatus("idle"), COPY_STATUS_MS);
+  };
+  return { status, copy };
+};
+
+/** A copy control's icon and words for its status. */
+const COPY_LABELS: Record<CopyStatus, { icon: React.ReactNode; text: string }> =
+  {
+    idle: { icon: <CopyOutlined />, text: "Copy" },
+    copied: { icon: <CheckOutlined />, text: "Copied" },
+    failed: { icon: <CloseOutlined />, text: "Couldn't copy" },
+  };
 
 /**
  * A long hex value (a serial, a fingerprint, a key identifier) in a card
- * of its own, small enough to read whole, with a copy action.
+ * of its own, small enough to read whole. The card's action row is the
+ * copy control, as antd's card actions are: the whole row is clickable,
+ * and it says Copied (or that it couldn't) for a moment after.
  */
-function HexCard({
-  value,
-  label,
-  copy,
-}: {
-  value: string;
-  label: string;
-  copy: Copy;
-}) {
+function HexCard({ value, label }: { value: string; label: string }) {
+  const { status, copy } = useCopy(value);
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      void copy();
+    }
+  };
   return (
     <Card
       size="small"
       className={styles.hexCard}
       classNames={{ body: styles.hexBody, actions: styles.hexActions }}
       actions={[
-        <Button
+        <span
           key="copy"
-          type="text"
-          size="small"
-          icon={<CopyOutlined />}
-          className={styles.hexCopy}
-          onClick={() => copy(value, label)}
+          role="button"
+          tabIndex={0}
+          aria-label={`Copy the ${label}`}
+          aria-live="polite"
+          className={`${styles.hexCopy} ${styles[status] ?? ""}`}
+          onClick={() => void copy()}
+          onKeyDown={onKeyDown}
         >
-          Copy
-        </Button>,
+          {COPY_LABELS[status].icon} {COPY_LABELS[status].text}
+        </span>,
       ]}
     >
       <span className={styles.hex}>{value}</span>
@@ -71,19 +111,11 @@ function HexCard({
 }
 
 /** A labelled hex value: its label above its card, left-aligned. */
-function HexField({
-  label,
-  value,
-  copy,
-}: {
-  label: string;
-  value: string;
-  copy: Copy;
-}) {
+function HexField({ label, value }: { label: string; value: string }) {
   return (
     <Flex vertical gap={4}>
       <Typography.Text type="secondary">{label}</Typography.Text>
-      <HexCard value={value} label={label} copy={copy} />
+      <HexCard value={value} label={label} />
     </Flex>
   );
 }
@@ -92,11 +124,9 @@ function HexField({
 function ExtensionSection({
   extension,
   nameConstraints,
-  copy,
 }: {
   extension: ExtensionDetail;
   nameConstraints: string[];
-  copy: Copy;
 }) {
   const values =
     extension.oid === NAME_CONSTRAINTS_OID && nameConstraints.length
@@ -118,12 +148,7 @@ function ExtensionSection({
       {KEY_IDENTIFIERS.has(extension.oid) ? (
         <Flex vertical gap={4} className={styles.identifiers}>
           {values.map((value) => (
-            <HexCard
-              key={value}
-              value={value}
-              label={extension.name}
-              copy={copy}
-            />
+            <HexCard key={value} value={value} label={extension.name} />
           ))}
         </Flex>
       ) : (
@@ -154,15 +179,6 @@ export function CertificateDetails({
   const { data: certificate, error } = useSWR(["certificate", pem], () =>
     readCertificate(pem),
   );
-  const [messages, messageHolder] = message.useMessage();
-  const copy: Copy = async (text, what) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      void messages.success(`Copied the ${what}`);
-    } catch {
-      void messages.error("The browser did not allow copying");
-    }
-  };
   if (error) {
     return (
       <Alert
@@ -177,19 +193,10 @@ export function CertificateDetails({
 
   return (
     <Flex vertical>
-      {messageHolder}
       <Flex vertical gap="middle" className={styles.hexFields}>
-        <HexField label="Serial" value={certificate.serial} copy={copy} />
-        <HexField
-          label="SHA-256 fingerprint"
-          value={certificate.sha256}
-          copy={copy}
-        />
-        <HexField
-          label="SHA-1 fingerprint"
-          value={certificate.sha1}
-          copy={copy}
-        />
+        <HexField label="Serial" value={certificate.serial} />
+        <HexField label="SHA-256 fingerprint" value={certificate.sha256} />
+        <HexField label="SHA-1 fingerprint" value={certificate.sha1} />
       </Flex>
       <Descriptions
         column={1}
@@ -215,7 +222,6 @@ export function CertificateDetails({
             key={extension.oid}
             extension={extension}
             nameConstraints={nameConstraints}
-            copy={copy}
           />
         ))}
       </Flex>
@@ -237,11 +243,10 @@ export function CertificatePem({
   /** The files' name, without its extension. */
   fileName: string;
 }) {
-  const [messages, messageHolder] = message.useMessage();
+  const { status, copy } = useCopy(pem);
   const der = () => fromBase64(pem.replace(/-----[^-]+-----|\s/g, "").trim());
   return (
     <Flex vertical gap="middle">
-      {messageHolder}
       <Flex gap="small" wrap>
         <Button
           icon={<DownloadOutlined />}
@@ -260,17 +265,12 @@ export function CertificatePem({
           DER
         </Button>
         <Button
-          icon={<CopyOutlined />}
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(pem);
-              void messages.success("Copied the certificate");
-            } catch {
-              void messages.error("The browser did not allow copying");
-            }
-          }}
+          icon={COPY_LABELS[status].icon}
+          className={styles[status] ?? ""}
+          aria-live="polite"
+          onClick={() => void copy()}
         >
-          Copy
+          {COPY_LABELS[status].text}
         </Button>
       </Flex>
       <PemBlock pem={pem} />
