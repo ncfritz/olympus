@@ -638,11 +638,11 @@ export class ProfileService {
   }
 
   /**
-   * What a version's settings must be, together: a way to enrol, renewal
-   * before expiry, a pinned issuer that exists and is of its purpose, and
-   * names to require if it requires one.
+   * Why a version's settings would not be saved: no way to enrol, renewal
+   * not before expiry, a pinned issuer missing or of another purpose, and
+   * its rules not holding together. None, they would be.
    */
-  private async checkSettings(settings: ProfileSettings): Promise<void> {
+  async settingsProblems(settings: ProfileSettings): Promise<string[]> {
     const problems: string[] = [];
     if (!settings.allowCsr && !settings.allowGenerated) {
       problems.push("it allows neither a CSR nor a generated key");
@@ -658,16 +658,29 @@ export class ProfileService {
         where: { id: settings.issuerId },
       });
       if (!issuer) {
-        throw new NotFoundException(
-          `Issuer with id ${settings.issuerId} not found`,
-        );
-      }
-      if (issuer.purpose !== settings.issuerPurpose) {
+        problems.push(`there is no CA ${settings.issuerId}`);
+      } else if (issuer.purpose !== settings.issuerPurpose) {
         problems.push(
           `its issuer ${issuer.id} is a ${issuer.purpose ?? "purposeless"} CA, not ${settings.issuerPurpose}`,
         );
       }
     }
+    return problems;
+  }
+
+  /** The settings as `settingsProblems` reads them, or why not (422). */
+  private async checkSettings(settings: ProfileSettings): Promise<void> {
+    if (
+      settings.issuerId &&
+      !(await this.prisma.issuer.findUnique({
+        where: { id: settings.issuerId },
+      }))
+    ) {
+      throw new NotFoundException(
+        `Issuer with id ${settings.issuerId} not found`,
+      );
+    }
+    const problems = await this.settingsProblems(settings);
     if (problems.length) {
       throw new UnprocessableEntityException(
         `The profile cannot be saved: ${problems.join("; ")}`,

@@ -24,6 +24,7 @@ import type { Moment } from "moment";
 import {
   KEY_ALGORITHM_ENUM,
   KEY_ALGORITHM_VALUES,
+  CertificateNames,
   type KeyAlgorithmName,
   NAME_TYPE_ENUM,
   NAME_TYPE_VALUES,
@@ -33,6 +34,7 @@ import {
   SUBTREE_NAME_TYPE_VALUES,
   type SubtreeNameTypeName,
 } from "./common";
+import { CertificateSubject } from "./certificates";
 
 export const KEY_USAGE_VALUES = [
   "digital_signature",
@@ -869,6 +871,174 @@ export class DescribeProfileResponse {
     description: "The profile",
   })
   profile: Profile;
+}
+
+/** The request a preview issues under a version: any part left out is made up. */
+export class ProfilePreviewSample {
+  @ApiProperty({
+    type: () => CertificateSubject,
+    required: false,
+    description:
+      "Its subject; by default a CN of preview, and each other required attribute's default or a placeholder",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CertificateSubject)
+  subject?: CertificateSubject;
+
+  @ApiProperty({
+    type: () => CertificateNames,
+    required: false,
+    description:
+      "Its alternative names; by default one of each required type, inside the name policy, and enough for minNames",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CertificateNames)
+  names?: CertificateNames;
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    required: false,
+    description: "Its key type; by default the version's",
+  })
+  @IsOptional()
+  @IsIn([...KEY_ALGORITHM_VALUES])
+  keyAlgorithm?: KeyAlgorithmName;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description: "The key usages it asks for; by default the version's",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  keyUsages?: string[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description:
+      "The extended key usages it asks for; by default the version's",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  extendedKeyUsages?: string[];
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The CA to preview it under; by default the one it would get",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(PROFILE_SLUG)
+  issuerId?: string;
+}
+
+export class PreviewProfileRequest {
+  @ApiProperty({
+    type: () => ProfileSettings,
+    required: true,
+    description: "The version's settings, saved or not",
+  })
+  @ValidateNested()
+  @Type(() => ProfileSettings)
+  profile: ProfileSettings;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Whether it is issued only in a ceremony with a root that signs directly: previewed under that root",
+  })
+  @IsOptional()
+  @IsBoolean()
+  directOnly?: boolean;
+
+  @ApiProperty({
+    type: () => ProfilePreviewSample,
+    required: false,
+    description: "The request to preview; made up where left out",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ProfilePreviewSample)
+  sample?: ProfilePreviewSample;
+}
+
+/**
+ * The certificate a version would produce, before it is saved (ADR 0034):
+ * built by the signer from the same spec issuance sends, after the same
+ * invariants, and signed by a throwaway key, so it reads as the real one
+ * and never verifies.
+ */
+export class ProfilePreview {
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Why the version would not be saved; none, it would",
+  })
+  problems: string[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "Why the sample request would be refused, by the version's rules or the signer's invariants",
+  })
+  refusals: string[];
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The CA it would be issued by",
+  })
+  issuerId?: string;
+
+  @ApiProperty({
+    type: () => CertificateSubject,
+    required: true,
+    description: "The sample's subject, as asked or made up",
+  })
+  sampleSubject: CertificateSubject;
+
+  @ApiProperty({
+    type: () => CertificateNames,
+    required: true,
+    description: "The sample's alternative names, as asked or made up",
+  })
+  sampleNames: CertificateNames;
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    required: true,
+    description: "The sample key's type",
+  })
+  keyAlgorithm: KeyAlgorithmName;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The certificate, PEM, signed by a throwaway key: none when it would be refused",
+  })
+  certificate?: string;
+}
+
+export class PreviewProfileResponse {
+  @ApiProperty({
+    type: () => ProfilePreview,
+    required: true,
+    description: "The preview",
+  })
+  preview: ProfilePreview;
 }
 
 export class CreateProfileResponse {

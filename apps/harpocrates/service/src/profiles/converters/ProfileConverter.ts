@@ -10,8 +10,14 @@ import type {
   ProfilePolicy as ProfilePolicyRow,
   ProfileCustomExtension as ProfileCustomExtensionRow,
   ProfileVersion as ProfileVersionRow,
+  NamePresence,
+  UsageState,
 } from "../../store/prisma";
-import { attributeName, attributeRank } from "../subjectAttributes";
+import {
+  attributeName,
+  attributeOid,
+  attributeRank,
+} from "../subjectAttributes";
 import type { KeyAlgorithmName, SubtreeNameTypeName } from "../../model/common";
 import moment from "moment";
 import type {
@@ -243,3 +249,106 @@ export const toProfileVersion = (
 export const KEY_ALGORITHM_ROWS = Object.fromEntries(
   Object.entries(ALGORITHMS).map(([row, name]) => [name, row]),
 ) as Record<KeyAlgorithmName, ProfileVersionRow["keyAlgorithm"]>;
+
+/** Where an unsaved version stands in for a stored one's ids. */
+const UNSAVED = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Settings not yet saved, read as a stored version would read them (ADR
+ * 0034, preview): stored as `writeVersion` stores them, excluded usages
+ * and names unlisted, so a preview is what the saved version issues.
+ */
+export const unsavedVersion = (
+  settings: ProfileSettings,
+  profile: { id: string; description: string; directOnly: boolean },
+): ProfileWithRules => {
+  const now = new Date();
+  const pv = { profileVersionId: UNSAVED };
+  return {
+    id: profile.id,
+    description: profile.description,
+    directOnly: profile.directOnly,
+    deactivatedAt: null,
+    versionId: UNSAVED,
+    version: 0,
+    createdAt: now,
+    updatedAt: now,
+    issuerId: settings.issuerId ?? null,
+    issuerPurpose: settings.issuerPurpose,
+    keyAlgorithm: KEY_ALGORITHM_ROWS[settings.keyAlgorithm],
+    validityDays: settings.validityDays,
+    renewAtDays: settings.renewAtDays,
+    maxKeyAgeDays: settings.maxKeyAgeDays,
+    allowCsr: settings.allowCsr,
+    allowGenerated: settings.allowGenerated,
+    legacyExport: settings.legacyExport,
+    minNames: settings.minNames,
+    escrow: settings.escrow,
+    escrowOverridable: settings.escrowOverridable,
+    extensions: settings.extensions,
+    signatureHash: settings.signatureHash,
+    rsaPadding: settings.rsaPadding,
+    subjectKeyIdentifier: settings.subjectKeyIdentifier,
+    authorityKeyIdentifier: settings.authorityKeyIdentifier,
+    basicConstraints: settings.basicConstraints,
+    includeCrlDistribution: settings.includeCrlDistribution,
+    includeCaIssuers: settings.includeCaIssuers,
+    includeIssuerAltName: settings.includeIssuerAltName,
+    keyUsages: settings.keyUsages
+      .filter((u) => u.state !== "excluded")
+      .map((u) => ({ ...pv, usage: u.usage, state: u.state as UsageState })),
+    extendedKeyUsages: settings.extendedKeyUsages
+      .filter((u) => u.state !== "excluded")
+      .map((u) => ({ ...pv, oid: u.oid, state: u.state as UsageState })),
+    nameTypes: settings.names
+      .filter((n) => n.presence !== "excluded")
+      .map((n) => ({
+        ...pv,
+        type: n.type,
+        presence: n.presence as NamePresence,
+      })),
+    namePolicies: settings.namePolicy.map((p, i) => ({
+      ...pv,
+      id: i,
+      type: p.type,
+      kind: p.kind,
+      value: p.value.trim(),
+    })),
+    subjectAttributes: settings.subjectAttributes.flatMap((a) => {
+      const oid = attributeOid(a.attribute);
+      return oid
+        ? [
+            {
+              ...pv,
+              oid,
+              presence: a.presence,
+              defaultValue: a.defaultValue || null,
+              locked: a.locked,
+              pattern: a.pattern || null,
+              maxCount: a.maxCount,
+            },
+          ]
+        : [];
+    }),
+    keyAlgorithms: settings.keyAlgorithms.map((algorithm) => ({
+      ...pv,
+      algorithm: KEY_ALGORITHM_ROWS[algorithm],
+    })),
+    csrHashes: settings.csrSignatureHashes.map((hash) => ({ ...pv, hash })),
+    policies: settings.policies.map((p, position) => ({
+      ...pv,
+      id: position,
+      position,
+      oid: p.oid,
+      cpsUri: p.cpsUri || null,
+      userNotice: p.userNotice || null,
+    })),
+    customExtensions: settings.customExtensions.map((e, i) => ({
+      ...pv,
+      id: i,
+      oid: e.oid,
+      critical: e.critical,
+      value: new Uint8Array(Buffer.from(e.value, "base64")),
+    })),
+  };
+};

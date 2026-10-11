@@ -8,6 +8,7 @@ import { DownloadCertificateController } from "./controllers/DownloadCertificate
 import { ExportCertificateKeyController } from "./controllers/ExportCertificateKeyController";
 import { ImportCertificatesController } from "./controllers/ImportCertificatesController";
 import { ListCertificatesController } from "./controllers/ListCertificatesController";
+import { PreviewProfileController } from "./controllers/PreviewProfileController";
 import { RenewCertificateController } from "./controllers/RenewCertificateController";
 import { RevokeCertificateController } from "./controllers/RevokeCertificateController";
 import { CertificateImportService } from "./services/CertificateImportService";
@@ -24,6 +25,7 @@ import { CertificateService } from "./services/CertificateService";
     RevokeCertificateController,
     ExportCertificateKeyController,
     ImportCertificatesController,
+    PreviewProfileController,
   ],
   providers: [CertificateService, CertificateImportService],
   exports: [CertificateService, CertificateImportService],

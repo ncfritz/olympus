@@ -142,6 +142,7 @@ from it.
 | `GET /ceremony/{id}`, `DELETE /ceremony/{id}`                                                                                    | admin                 |
 | `GET /profiles`, `GET /profile/{id}`                                                                                             | either role           |
 | `GET /profile/{id}/versions`                                                                                                     | either role           |
+| `POST /profiles/preview` (the certificate a version would produce, signed by a throwaway key)                                    | admin                 |
 | `POST /profiles`, `PUT /profile/{id}` (a new version), `POST /profile/{id}/copy`, `.../deactivate`, `.../reactivate`, `.../move` | admin, recent sign-in |
 | `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`                                                               | either role           |
 | `GET /certificate/{id}/download` (`pem`, `der`, `chain`)                                                                         | either role           |

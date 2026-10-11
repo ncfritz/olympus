@@ -32,6 +32,7 @@ import type {
   KeyPurpose,
   KeyResponse,
   OfflineCaResponse,
+  PreviewCertificateRequest,
   RevocationReason,
   StatusResponse,
 } from "../../generated/signer/types.gen";
@@ -185,6 +186,17 @@ export class SignerService {
       }),
     );
     return signed.certificate;
+  }
+
+  /**
+   * The leaf an issuer would sign, signed by a throwaway key (ADR 0034,
+   * preview); the issuer is given, so a direct root previews as well.
+   */
+  async previewCertificate(body: PreviewCertificateRequest): Promise<string> {
+    const previewed = await this.call(() =>
+      signer.preview({ client: this.client, body }),
+    );
+    return previewed.certificate;
   }
 
   async signCrl(issuerId: string, spec: CrlSpec): Promise<string> {

@@ -3053,6 +3053,75 @@
         ]
       }
     },
+    "/v1/profiles/preview": {
+      "post": {
+        "description": "Returns the certificate a version's settings would produce, saved or not (ADR 0034): a sample request, as given or made up, taken through the version's rules and the signer's invariants as issuance takes one, and built by the signer with a throwaway key, so it reads as the real one and never verifies. Nothing is written. Why the version would not save, and why the request would be refused, come back with it.",
+        "operationId": "PreviewProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The version's settings, and the request to preview.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The certificate it would produce, or why not.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Previews a profile version",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
     "/v1/profiles": {
       "get": {
         "description": "Every profile: what its certificates may be, how they are enrolled and which issuer they come from.",
@@ -7290,6 +7359,371 @@
           "oid",
           "critical",
           "value"
+        ]
+      },
+      "ProfileSettings": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
+          },
+          "issuerPurpose": {
+            "type": "string",
+            "description": "The purpose of the issuing CA it issues from"
+          },
+          "keyAlgorithm": {
+            "description": "The key type generated for its certificates unless the request chooses another",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "How long its certificates are valid, in days"
+          },
+          "renewAtDays": {
+            "type": "number",
+            "description": "How many days into a certificate's life it is renewed: less than its validity"
+          },
+          "maxKeyAgeDays": {
+            "type": "number",
+            "description": "How old a key may be and still be renewed, in days"
+          },
+          "allowCsr": {
+            "type": "boolean",
+            "description": "Whether a subscriber may submit a CSR"
+          },
+          "allowGenerated": {
+            "type": "boolean",
+            "description": "Whether the signer may generate (and escrow) the key, or be brought one"
+          },
+          "legacyExport": {
+            "type": "boolean",
+            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
+          },
+          "minNames": {
+            "type": "number",
+            "description": "How many alternative names a certificate needs, at least"
+          },
+          "escrow": {
+            "type": "boolean",
+            "description": "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed"
+          },
+          "escrowOverridable": {
+            "type": "boolean",
+            "description": "Whether one request may choose escrow otherwise"
+          },
+          "extensions": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "minimal"
+            ],
+            "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
+          },
+          "keyUsages": {
+            "description": "Its key usages' states; one not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileKeyUsage"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "Its extended key usages' states; one not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileExtendedKeyUsage"
+            }
+          },
+          "names": {
+            "description": "The alternative name types it allows or requires; one not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileName"
+            }
+          },
+          "namePolicy": {
+            "description": "Its name policy: subtrees names must lie in or outside",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileNamePolicy"
+            }
+          },
+          "subjectAttributes": {
+            "description": "Its subject DN rules; an attribute not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSubjectAttribute"
+            }
+          },
+          "keyAlgorithms": {
+            "type": "array",
+            "description": "The key types a request may choose; none, any the signer generates",
+            "items": {
+              "$ref": "#/components/schemas/KeyAlgorithm"
+            }
+          },
+          "csrSignatureHashes": {
+            "type": "array",
+            "description": "The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes)",
+            "items": {
+              "$ref": "#/components/schemas/SignatureHash"
+            }
+          },
+          "signatureHash": {
+            "type": "string",
+            "enum": [
+              "sha256",
+              "sha384",
+              "sha512"
+            ],
+            "description": "The hash the issuer signs its certificates with; an Ed25519 issuer has none"
+          },
+          "rsaPadding": {
+            "type": "string",
+            "enum": [
+              "pkcs1v15",
+              "pss"
+            ],
+            "description": "Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it"
+          },
+          "subjectKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "sha1",
+              "sha256",
+              "none"
+            ],
+            "description": "The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none"
+          },
+          "authorityKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "key_id",
+              "key_id_and_issuer",
+              "none"
+            ],
+            "description": "The authority key identifier: the issuer's key identifier, with its issuer and serial, or none"
+          },
+          "basicConstraints": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "non_critical",
+              "omitted"
+            ],
+            "description": "Basic constraints (CA:FALSE): critical, not, or left out"
+          },
+          "includeCrlDistribution": {
+            "type": "boolean",
+            "description": "Whether certificates name the issuer's CRL"
+          },
+          "includeCaIssuers": {
+            "type": "boolean",
+            "description": "Whether certificates say where the issuer's certificate is (AIA caIssuers)"
+          },
+          "includeIssuerAltName": {
+            "type": "boolean",
+            "description": "Whether certificates carry the issuer's alternative names, where it has any"
+          },
+          "policies": {
+            "description": "The certificate policies its certificates assert, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfilePolicy"
+            }
+          },
+          "customExtensions": {
+            "description": "Extensions the signer does not build itself",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileCustomExtension"
+            }
+          }
+        },
+        "required": [
+          "issuerPurpose",
+          "keyAlgorithm",
+          "validityDays",
+          "renewAtDays",
+          "maxKeyAgeDays",
+          "allowCsr",
+          "allowGenerated",
+          "legacyExport",
+          "minNames",
+          "escrow",
+          "escrowOverridable",
+          "extensions",
+          "keyUsages",
+          "extendedKeyUsages",
+          "names",
+          "namePolicy",
+          "subjectAttributes",
+          "keyAlgorithms",
+          "csrSignatureHashes",
+          "signatureHash",
+          "rsaPadding",
+          "subjectKeyIdentifier",
+          "authorityKeyIdentifier",
+          "basicConstraints",
+          "includeCrlDistribution",
+          "includeCaIssuers",
+          "includeIssuerAltName",
+          "policies",
+          "customExtensions"
+        ]
+      },
+      "ProfilePreviewSample": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "description": "Its subject; by default a CN of preview, and each other required attribute's default or a placeholder",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateSubject"
+              }
+            ]
+          },
+          "names": {
+            "description": "Its alternative names; by default one of each required type, inside the name policy, and enough for minNames",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateNames"
+              }
+            ]
+          },
+          "keyAlgorithm": {
+            "description": "Its key type; by default the version's",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "keyUsages": {
+            "description": "The key usages it asks for; by default the version's",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages it asks for; by default the version's",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA to preview it under; by default the one it would get"
+          }
+        }
+      },
+      "PreviewProfileRequest": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The version's settings, saved or not",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileSettings"
+              }
+            ]
+          },
+          "directOnly": {
+            "type": "boolean",
+            "description": "Whether it is issued only in a ceremony with a root that signs directly: previewed under that root"
+          },
+          "sample": {
+            "description": "The request to preview; made up where left out",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfilePreviewSample"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "ProfilePreview": {
+        "type": "object",
+        "properties": {
+          "problems": {
+            "description": "Why the version would not be saved; none, it would",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "refusals": {
+            "description": "Why the sample request would be refused, by the version's rules or the signer's invariants",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA it would be issued by"
+          },
+          "sampleSubject": {
+            "description": "The sample's subject, as asked or made up",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateSubject"
+              }
+            ]
+          },
+          "sampleNames": {
+            "description": "The sample's alternative names, as asked or made up",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateNames"
+              }
+            ]
+          },
+          "keyAlgorithm": {
+            "description": "The sample key's type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "certificate": {
+            "type": "string",
+            "description": "The certificate, PEM, signed by a throwaway key: none when it would be refused"
+          }
+        },
+        "required": [
+          "problems",
+          "refusals",
+          "sampleSubject",
+          "sampleNames",
+          "keyAlgorithm"
+        ]
+      },
+      "PreviewProfileResponse": {
+        "type": "object",
+        "properties": {
+          "preview": {
+            "description": "The preview",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfilePreview"
+              }
+            ]
+          }
+        },
+        "required": [
+          "preview"
         ]
       },
       "Profile": {

@@ -781,4 +781,106 @@ describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
       }).expect(400);
     });
   });
+
+  describe("preview", () => {
+    type Preview = {
+      problems: string[];
+      refusals: string[];
+      issuerId?: string;
+      certificate?: string;
+    };
+    const preview = async (body: object, token = harness.admin) =>
+      (
+        (
+          await request(server())
+            .post("/v1/profiles/preview")
+            .set("Authorization", token)
+            .send(body)
+            .expect(200)
+        ).body as { preview: Preview }
+      ).preview;
+
+    it("shows what a version would issue, signed by no CA, and writes nothing", async () => {
+      const before = await Promise.all([
+        harness.prisma.profileVersion.count(),
+        harness.prisma.certificate.count(),
+        harness.prisma.key.count(),
+      ]);
+      const result = await preview({
+        profile: {
+          ...settings,
+          signatureHash: "sha384",
+          names: [{ type: "dns", presence: "required" }],
+          minNames: 2,
+        },
+      });
+      expect(result.problems).toEqual([]);
+      expect(result.refusals).toEqual([]);
+      expect(result.issuerId).toBe(hierarchy.issuing.Service.id);
+      const certificate = new x509.X509Certificate(result.certificate!);
+      expect(certificate.subjectName.getField("CN")).toEqual(["preview"]);
+      expect(certificate.signatureAlgorithm).toMatchObject({
+        hash: { name: "SHA-384" },
+      });
+      expect(
+        certificate
+          .getExtension(x509.SubjectAlternativeNameExtension)
+          ?.names.items.map((n) => n.value),
+      ).toEqual(["preview.example.com", "preview2.example.com"]);
+      const issuing = new x509.X509Certificate(
+        hierarchy.issuing.Service.certificate,
+      );
+      expect(certificate.issuer).toBe(issuing.subject);
+      expect(await certificate.verify({ publicKey: issuing.publicKey })).toBe(
+        false,
+      );
+      expect(
+        await Promise.all([
+          harness.prisma.profileVersion.count(),
+          harness.prisma.certificate.count(),
+          harness.prisma.key.count(),
+        ]),
+      ).toEqual(before);
+    });
+
+    it("says why the version would not save and why the request is refused", async () => {
+      const unsaveable = await preview({
+        profile: { ...settings, renewAtDays: 200 },
+      });
+      expect(unsaveable.problems).toEqual([
+        "it renews at 200 days, not before its 120-day validity ends",
+      ]);
+      expect(unsaveable.certificate).toBeDefined();
+      const refused = await preview({
+        profile: {
+          ...settings,
+          namePolicy: [
+            { type: "dns", kind: "permitted", value: "internal.ncfritz.net" },
+          ],
+        },
+        sample: {
+          subject: { commonName: "x" },
+          names: { dns: ["host.example.com"] },
+        },
+      });
+      expect(refused.refusals.join()).toMatch(/outside the permitted dns/);
+      expect(refused.certificate).toBeUndefined();
+      const noIssuer = await preview({
+        profile: {
+          ...settings,
+          extendedKeyUsages: [{ oid: OID.codeSigning, state: "forced" }],
+        },
+      });
+      expect(noIssuer.refusals.length).toBeGreaterThan(0);
+      expect(noIssuer.certificate).toBeUndefined();
+    });
+
+    it("is an admin's", async () => {
+      await request(server())
+        .post("/v1/profiles/preview")
+        .set("Authorization", harness.operator)
+        .send({ profile: settings })
+        .expect(403);
+    });
+  });
 });

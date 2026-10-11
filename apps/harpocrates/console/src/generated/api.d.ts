@@ -620,6 +620,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/profiles/preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Previews a profile version
+     * @description Returns the certificate a version's settings would produce, saved or not (ADR 0034): a sample request, as given or made up, taken through the version's rules and the signer's invariants as issuance takes one, and built by the signer with a throwaway key, so it reads as the real one and never verifies. Nothing is written. Why the version would not save, and why the request would be refused, come back with it.
+     */
+    post: operations["PreviewProfile"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/profiles": {
     parameters: {
       query?: never;
@@ -1842,6 +1862,128 @@ export interface components {
       critical: boolean;
       /** @description Its value: one DER element, base64 */
       value: string;
+    };
+    ProfileSettings: {
+      /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
+      issuerId?: string | null;
+      /** @description The purpose of the issuing CA it issues from */
+      issuerPurpose: string;
+      /** @description The key type generated for its certificates unless the request chooses another */
+      keyAlgorithm: components["schemas"]["KeyAlgorithm"];
+      /** @description How long its certificates are valid, in days */
+      validityDays: number;
+      /** @description How many days into a certificate's life it is renewed: less than its validity */
+      renewAtDays: number;
+      /** @description How old a key may be and still be renewed, in days */
+      maxKeyAgeDays: number;
+      /** @description Whether a subscriber may submit a CSR */
+      allowCsr: boolean;
+      /** @description Whether the signer may generate (and escrow) the key, or be brought one */
+      allowGenerated: boolean;
+      /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
+      legacyExport: boolean;
+      /** @description How many alternative names a certificate needs, at least */
+      minNames: number;
+      /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
+      escrow: boolean;
+      /** @description Whether one request may choose escrow otherwise */
+      escrowOverridable: boolean;
+      /**
+       * @description standard: the extensions its rules make; minimal: the key identifiers and nothing else
+       * @enum {string}
+       */
+      extensions: "standard" | "minimal";
+      /** @description Its key usages' states; one not listed is excluded */
+      keyUsages: components["schemas"]["ProfileKeyUsage"][];
+      /** @description Its extended key usages' states; one not listed is excluded */
+      extendedKeyUsages: components["schemas"]["ProfileExtendedKeyUsage"][];
+      /** @description The alternative name types it allows or requires; one not listed is excluded */
+      names: components["schemas"]["ProfileName"][];
+      /** @description Its name policy: subtrees names must lie in or outside */
+      namePolicy: components["schemas"]["ProfileNamePolicy"][];
+      /** @description Its subject DN rules; an attribute not listed is excluded */
+      subjectAttributes: components["schemas"]["ProfileSubjectAttribute"][];
+      /** @description The key types a request may choose; none, any the signer generates */
+      keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
+      /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
+      csrSignatureHashes: components["schemas"]["SignatureHash"][];
+      /**
+       * @description The hash the issuer signs its certificates with; an Ed25519 issuer has none
+       * @enum {string}
+       */
+      signatureHash: "sha256" | "sha384" | "sha512";
+      /**
+       * @description Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it
+       * @enum {string}
+       */
+      rsaPadding: "pkcs1v15" | "pss";
+      /**
+       * @description The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none
+       * @enum {string}
+       */
+      subjectKeyIdentifier: "sha1" | "sha256" | "none";
+      /**
+       * @description The authority key identifier: the issuer's key identifier, with its issuer and serial, or none
+       * @enum {string}
+       */
+      authorityKeyIdentifier: "key_id" | "key_id_and_issuer" | "none";
+      /**
+       * @description Basic constraints (CA:FALSE): critical, not, or left out
+       * @enum {string}
+       */
+      basicConstraints: "critical" | "non_critical" | "omitted";
+      /** @description Whether certificates name the issuer's CRL */
+      includeCrlDistribution: boolean;
+      /** @description Whether certificates say where the issuer's certificate is (AIA caIssuers) */
+      includeCaIssuers: boolean;
+      /** @description Whether certificates carry the issuer's alternative names, where it has any */
+      includeIssuerAltName: boolean;
+      /** @description The certificate policies its certificates assert, in order */
+      policies: components["schemas"]["ProfilePolicy"][];
+      /** @description Extensions the signer does not build itself */
+      customExtensions: components["schemas"]["ProfileCustomExtension"][];
+    };
+    ProfilePreviewSample: {
+      /** @description Its subject; by default a CN of preview, and each other required attribute's default or a placeholder */
+      subject?: components["schemas"]["CertificateSubject"];
+      /** @description Its alternative names; by default one of each required type, inside the name policy, and enough for minNames */
+      names?: components["schemas"]["CertificateNames"];
+      /** @description Its key type; by default the version's */
+      keyAlgorithm?: components["schemas"]["KeyAlgorithm"];
+      /** @description The key usages it asks for; by default the version's */
+      keyUsages?: string[];
+      /** @description The extended key usages it asks for; by default the version's */
+      extendedKeyUsages?: string[];
+      /** @description The CA to preview it under; by default the one it would get */
+      issuerId?: string;
+    };
+    PreviewProfileRequest: {
+      /** @description The version's settings, saved or not */
+      profile: components["schemas"]["ProfileSettings"];
+      /** @description Whether it is issued only in a ceremony with a root that signs directly: previewed under that root */
+      directOnly?: boolean;
+      /** @description The request to preview; made up where left out */
+      sample?: components["schemas"]["ProfilePreviewSample"];
+    };
+    ProfilePreview: {
+      /** @description Why the version would not be saved; none, it would */
+      problems: string[];
+      /** @description Why the sample request would be refused, by the version's rules or the signer's invariants */
+      refusals: string[];
+      /** @description The CA it would be issued by */
+      issuerId?: string;
+      /** @description The sample's subject, as asked or made up */
+      sampleSubject: components["schemas"]["CertificateSubject"];
+      /** @description The sample's alternative names, as asked or made up */
+      sampleNames: components["schemas"]["CertificateNames"];
+      /** @description The sample key's type */
+      keyAlgorithm: components["schemas"]["KeyAlgorithm"];
+      /** @description The certificate, PEM, signed by a throwaway key: none when it would be refused */
+      certificate?: string;
+    };
+    PreviewProfileResponse: {
+      /** @description The preview */
+      preview: components["schemas"]["ProfilePreview"];
     };
     Profile: {
       /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
@@ -4764,6 +4906,58 @@ export interface operations {
       };
       /** @description The entity with the specified identifiers was not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  PreviewProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The version's settings, and the request to preview. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PreviewProfileRequest"];
+      };
+    };
+    responses: {
+      /** @description The certificate it would produce, or why not. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PreviewProfileResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
         headers: {
           [name: string]: unknown;
         };

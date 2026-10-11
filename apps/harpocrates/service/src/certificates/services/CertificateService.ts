@@ -13,7 +13,7 @@ import type {
   Prisma,
   RevocationReason,
 } from "../../store/prisma";
-import { createPrivateKey, randomBytes } from "crypto";
+import { createPrivateKey, generateKeyPairSync, randomBytes } from "crypto";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import { type Principal, SYSTEM } from "../../auth/principal";
@@ -21,11 +21,14 @@ import { pkiConfig, type PkiConfigType } from "../../config/configuration";
 import { CrlScheduler } from "../../crls/services/CrlScheduler";
 import {
   buildContactNames,
+  ISSUER_RULES,
   type IssuerWithRules,
 } from "../../issuers/converters/IssuerConverter";
 import type {
   AuthorityKeyIdentifierName,
   BasicConstraintsName,
+  PreviewProfileRequest,
+  ProfilePreview,
 } from "../../model/profiles";
 import { addDays } from "../../issuers/issuingWindow";
 import { IssuerService, startNow } from "../../issuers/services/IssuerService";
@@ -58,7 +61,9 @@ import {
 import {
   keyAlgorithmName,
   type ProfileWithRules,
+  unsavedVersion,
 } from "../../profiles/converters/ProfileConverter";
+import { sampleNames, sampleSubject } from "../../profiles/samples";
 import {
   checkNames,
   csrHashProblem,
@@ -155,6 +160,32 @@ const toSans = (rows: NameRow[]): CertificateNames => {
   for (const row of rows)
     names[row.type] = [...(names[row.type] ?? []), row.value];
   return names;
+};
+
+/**
+ * A public key of a type, for a preview's sample request: made once per
+ * type and kept, since an RSA-8192 or DSA-3072 key takes seconds.
+ */
+const SAMPLE_KEYS = new Map<KeyAlgorithmName, Buffer>();
+const sampleKey = (algorithm: KeyAlgorithmName): Buffer => {
+  let spki = SAMPLE_KEYS.get(algorithm);
+  if (!spki) {
+    const [family, size] = algorithm.split("-");
+    const { publicKey } =
+      algorithm === "Ed25519"
+        ? generateKeyPairSync("ed25519")
+        : family === "RSA"
+          ? generateKeyPairSync("rsa", { modulusLength: Number(size) })
+          : family === "DSA"
+            ? generateKeyPairSync("dsa", {
+                modulusLength: Number(size),
+                divisorLength: 256,
+              })
+            : generateKeyPairSync("ec", { namedCurve: algorithm });
+    spki = publicKey.export({ type: "spki", format: "der" });
+    SAMPLE_KEYS.set(algorithm, spki);
+  }
+  return spki;
 };
 
 /** The signer's spelling of a version's choices. */
@@ -938,6 +969,211 @@ export class CertificateService {
   }
 
   /**
+   * The certificate a version would produce, saved or not (ADR 0034): a
+   * sample request, as given or made up, taken through the version's
+   * rules and the signer's invariants as issuance takes one, and built by
+   * the signer with a throwaway key. Nothing is written; why the version
+   * would not save and why the request would be refused come back with it.
+   */
+  async previewProfile(
+    request: PreviewProfileRequest,
+  ): Promise<ProfilePreview> {
+    const settings = request.profile;
+    const sample = request.sample ?? {};
+    const problems = await this.profiles.settingsProblems(settings);
+    const profile = unsavedVersion(settings, {
+      id: "preview",
+      description: "",
+      directOnly: request.directOnly ?? false,
+    });
+    const made = sampleSubject(
+      profile.subjectAttributes.map((a) => ({ ...a })),
+    );
+    const sampleSubjectGiven = sample.subject ?? made;
+    const names =
+      sample.names ??
+      sampleNames(
+        profile.nameTypes.map((t) => ({ type: t.type, presence: t.presence })),
+        profile.minNames,
+        profile.namePolicies.map((p) => ({
+          type: p.type,
+          kind: p.kind,
+          value: p.value,
+        })),
+      );
+    const algorithm = sample.keyAlgorithm ?? settings.keyAlgorithm;
+    const preview: ProfilePreview = {
+      problems,
+      refusals: [],
+      sampleSubject: sampleSubjectGiven,
+      sampleNames: names,
+      keyAlgorithm: algorithm,
+    };
+    /** A step's refusal recorded rather than thrown. */
+    const step = async <T>(
+      run: () => T | Promise<T>,
+    ): Promise<T | undefined> => {
+      try {
+        return await run();
+      } catch (error: unknown) {
+        if (!(error instanceof HttpException) || error.getStatus() >= 500) {
+          throw error;
+        }
+        preview.refusals.push(error.message);
+        return undefined;
+      }
+    };
+    const rows = nameRows(names);
+    const subject = await step(() =>
+      this.subjectFor(profile, sampleSubjectGiven, this.pki.organization),
+    );
+    await step(() => this.checkNames(profile, rows));
+    const usages = await step(() =>
+      this.usagesFor(
+        profile,
+        {
+          keyUsages: sample.keyUsages,
+          extendedKeyUsages: sample.extendedKeyUsages,
+        },
+        undefined,
+      ),
+    );
+    const keyProblem = keyAlgorithmProblem(settings.keyAlgorithms, algorithm);
+    if (keyProblem) preview.refusals.push(keyProblem);
+    const issuer = await step(() =>
+      this.previewIssuer(profile, sample.issuerId),
+    );
+    if (issuer) {
+      preview.issuerId = issuer.id;
+      await step(() => this.checkValidity(profile, issuer));
+    }
+    // A request issuance would refuse gets no certificate here either.
+    if (
+      preview.refusals.length ||
+      !subject ||
+      !usages ||
+      !issuer?.certificate
+    ) {
+      return preview;
+    }
+    const spec = await this.specFor({
+      profile,
+      issuer,
+      subject,
+      names: rows,
+      usages,
+      subjectKey: { kind: "publicKey", spki: sampleKey(algorithm) },
+    });
+    preview.certificate = await step(async () =>
+      this.signer.previewCertificate({
+        certificate: spec,
+        issuer: certificatePem(issuer.certificate!),
+        chain: await this.issuers.chainPems(issuer),
+        maxValidityDays: issuer.maxValidityDays,
+        extendedKeyUsages: issuer.extendedKeyUsages.map((u) => u.oid),
+      }),
+    );
+    return preview;
+  }
+
+  /**
+   * The CA a preview is issued under: the one asked for or that issuance
+   * would choose; for a direct-only version, a root that signs directly.
+   */
+  private async previewIssuer(
+    profile: ProfileWithRules,
+    issuerId: string | undefined,
+  ): Promise<IssuerWithRules> {
+    if (!profile.directOnly) {
+      return this.issuers.forIssuance(profile, issuerId);
+    }
+    const root = issuerId
+      ? await this.issuers.row(issuerId)
+      : await this.prisma.issuer.findFirst({
+          where: { tier: "root", shape: "direct", status: "active" },
+          include: ISSUER_RULES,
+          orderBy: [{ number: "asc" }, { generation: "desc" }],
+        });
+    if (!root || root.tier !== "root" || root.shape !== "direct") {
+      throw new UnprocessableEntityException(
+        "No root signs directly: a direct-only version previews under one",
+      );
+    }
+    return root;
+  }
+
+  /**
+   * What the signer is asked to build (ADR 0034): the subject, validity,
+   * usages and names already resolved, and the version's choices of how
+   * it is built and what it carries.
+   */
+  private async specFor({
+    profile,
+    issuer,
+    subject,
+    names,
+    usages,
+    subjectKey,
+    validityDays,
+  }: {
+    profile: ProfileWithRules;
+    issuer: IssuerWithRules;
+    subject: string;
+    names: NameRow[];
+    usages: Usages;
+    subjectKey: SubjectKey;
+    validityDays?: number;
+  }): Promise<CertificateSpec> {
+    const notBefore = startNow();
+    const minimal = profile.extensions === "minimal";
+    const settings = await this.certificateSettings(profile, issuer);
+    return {
+      subject,
+      serial: randomSerial(),
+      notBefore: notBefore.toISOString(),
+      notAfter: addDays(
+        notBefore,
+        validityDays ?? profile.validityDays,
+      ).toISOString(),
+      ...(minimal
+        ? { keyUsage: [], extensions: "minimal" }
+        : {
+            keyUsage: usages.keyUsages as CertificateSpec["keyUsage"],
+            extendedKeyUsages: usages.extendedKeyUsages,
+            sans: toSans(names),
+            crlDistributionPoints: profile.includeCrlDistribution
+              ? [issuer.crlUrl]
+              : [],
+            issuerUrls: profile.includeCaIssuers ? [issuer.caIssuersUrl] : [],
+            basicConstraints: BASIC_CONSTRAINTS[profile.basicConstraints],
+            issuerAlternativeNames: profile.includeIssuerAltName
+              ? buildContactNames(issuer.alternativeNames)
+              : {},
+            certificatePolicies: [...profile.policies]
+              .sort((a, b) => a.position - b.position)
+              .map((p) => ({
+                oid: p.oid,
+                cpsUri: p.cpsUri ?? undefined,
+                userNotice: p.userNotice ?? undefined,
+              })),
+            customExtensions: profile.customExtensions.map((e) => ({
+              oid: e.oid,
+              critical: e.critical,
+              value: Buffer.from(e.value).toString("base64"),
+            })),
+          }),
+      ...settings,
+      ...(subjectKey.kind === "csr" ? { csr: subjectKey.csr } : {}),
+      ...(subjectKey.kind === "publicKey"
+        ? { publicKey: spkiPem(subjectKey.spki) }
+        : {}),
+      ...(subjectKey.kind === "signer"
+        ? { keyId: subjectKey.signerKeyId }
+        : {}),
+    };
+  }
+
+  /**
    * How a version's certificate is signed and identified (ADR 0034): its
    * hash, unless the issuer's key is Ed25519, which has none; PSS only
    * under an RSA issuer, another ignoring it; its key identifier methods.
@@ -1270,53 +1506,15 @@ export class CertificateService {
         ? subjectKey.asked
         : undefined) ?? issuance.asked,
     );
-    const notBefore = startNow();
-    const minimal = profile.extensions === "minimal";
-    const settings = await this.certificateSettings(profile, issuer);
-    const spec: CertificateSpec = {
+    const spec = await this.specFor({
+      profile,
+      issuer,
       subject: issuance.subject,
-      serial: randomSerial(),
-      notBefore: notBefore.toISOString(),
-      notAfter: addDays(
-        notBefore,
-        issuance.validityDays ?? profile.validityDays,
-      ).toISOString(),
-      ...(minimal
-        ? { keyUsage: [], extensions: "minimal" }
-        : {
-            keyUsage: usages.keyUsages as CertificateSpec["keyUsage"],
-            extendedKeyUsages: usages.extendedKeyUsages,
-            sans: toSans(issuance.names),
-            crlDistributionPoints: profile.includeCrlDistribution
-              ? [issuer.crlUrl]
-              : [],
-            issuerUrls: profile.includeCaIssuers ? [issuer.caIssuersUrl] : [],
-            basicConstraints: BASIC_CONSTRAINTS[profile.basicConstraints],
-            issuerAlternativeNames: profile.includeIssuerAltName
-              ? buildContactNames(issuer.alternativeNames)
-              : {},
-            certificatePolicies: [...profile.policies]
-              .sort((a, b) => a.position - b.position)
-              .map((p) => ({
-                oid: p.oid,
-                cpsUri: p.cpsUri ?? undefined,
-                userNotice: p.userNotice ?? undefined,
-              })),
-            customExtensions: profile.customExtensions.map((e) => ({
-              oid: e.oid,
-              critical: e.critical,
-              value: Buffer.from(e.value).toString("base64"),
-            })),
-          }),
-      ...settings,
-      ...(subjectKey.kind === "csr" ? { csr: subjectKey.csr } : {}),
-      ...(subjectKey.kind === "publicKey"
-        ? { publicKey: spkiPem(subjectKey.spki) }
-        : {}),
-      ...(subjectKey.kind === "signer"
-        ? { keyId: subjectKey.signerKeyId }
-        : {}),
-    };
+      names: issuance.names,
+      usages,
+      subjectKey,
+      validityDays: issuance.validityDays,
+    });
     const pem = issuance.sign
       ? await issuance.sign(spec)
       : await this.signer.signCertificate(issuer.id, spec);
