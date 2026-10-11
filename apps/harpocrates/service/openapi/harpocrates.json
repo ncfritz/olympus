@@ -5995,12 +5995,29 @@
           "issuer"
         ]
       },
+      "SubjectAttributeValue": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID"
+          },
+          "value": {
+            "type": "string",
+            "description": "Its value"
+          }
+        },
+        "required": [
+          "type",
+          "value"
+        ]
+      },
       "CertificateSubject": {
         "type": "object",
         "properties": {
           "commonName": {
             "type": "string",
-            "description": "The common name: an app name, a person-device, a host"
+            "description": "The common name: an app name, a person-device, a host (required unless the profile says otherwise)"
           },
           "organizationalUnit": {
             "type": "string",
@@ -6009,11 +6026,15 @@
           "organization": {
             "type": "string",
             "description": "The organization (the configured one by default)"
+          },
+          "attributes": {
+            "description": "Any other attributes the profile allows (ADR 0034), each value its own; the fields above are shorthand for CN, OU and O",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubjectAttributeValue"
+            }
           }
-        },
-        "required": [
-          "commonName"
-        ]
+        }
       },
       "CreateCeremonyCertificateRequest": {
         "type": "object",
@@ -6573,6 +6594,20 @@
               }
             ]
           },
+          "keyUsages": {
+            "description": "The key usages it should have, of those its profile does not exclude; the forced ones are added. By default its CSR's, else the profile's defaults",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "The extended key usages (dotted OIDs) it should have, as keyUsages",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "escrow": {
             "type": "boolean",
             "description": "For a generated or imported key: whether it stays escrowed, exportable again; off, a generated key is exported once and destroyed, an imported one destroyed after issuing. By default the profile's setting; another only where the profile allows"
@@ -6809,7 +6844,7 @@
       },
       "KeyUsage": {
         "type": "string",
-        "description": "A key usage (RFC 5280, 4.2.1.3)",
+        "description": "The usage",
         "enum": [
           "digital_signature",
           "content_commitment",
@@ -6820,6 +6855,62 @@
           "crl_sign"
         ]
       },
+      "UsageState": {
+        "type": "string",
+        "description": "forced: always; default: unless the request removes it; optional: only if the request (or its CSR) adds it; excluded: never",
+        "enum": [
+          "forced",
+          "default",
+          "optional",
+          "excluded"
+        ]
+      },
+      "ProfileKeyUsage": {
+        "type": "object",
+        "properties": {
+          "usage": {
+            "description": "The usage",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyUsage"
+              }
+            ]
+          },
+          "state": {
+            "description": "Its state",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsageState"
+              }
+            ]
+          }
+        },
+        "required": [
+          "usage",
+          "state"
+        ]
+      },
+      "ProfileExtendedKeyUsage": {
+        "type": "object",
+        "properties": {
+          "oid": {
+            "type": "string",
+            "description": "The usage, a dotted OID"
+          },
+          "state": {
+            "description": "Its state",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UsageState"
+              }
+            ]
+          }
+        },
+        "required": [
+          "oid",
+          "state"
+        ]
+      },
       "NameType": {
         "type": "string",
         "description": "A kind of name: DNS, IP address, email or URI",
@@ -6828,6 +6919,113 @@
           "ip",
           "email",
           "uri"
+        ]
+      },
+      "ProfileName": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameType"
+              }
+            ]
+          },
+          "presence": {
+            "type": "string",
+            "enum": [
+              "required",
+              "allowed",
+              "excluded"
+            ],
+            "description": "required: at least one; allowed: any number; excluded: none"
+          }
+        },
+        "required": [
+          "type",
+          "presence"
+        ]
+      },
+      "ProfileNamePolicy": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NameType"
+              }
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "permitted",
+              "excluded"
+            ],
+            "description": "permitted: names of the type must lie in one of these (when any is given); excluded: in none"
+          },
+          "value": {
+            "type": "string",
+            "description": "The subtree, as RFC 5280 reads one: example.com (it and below), .example.com (below only), 10.0.0.0/8, a mail host or mailbox"
+          }
+        },
+        "required": [
+          "type",
+          "kind",
+          "value"
+        ]
+      },
+      "ProfileSubjectAttribute": {
+        "type": "object",
+        "properties": {
+          "attribute": {
+            "type": "string",
+            "description": "The attribute: a name (C, ST, L, O, OU, CN, emailAddress, serialNumber, title, givenName, surname, initials, pseudonym, generationQualifier, dnQualifier, description, businessCategory, postalCode, street, UID, DC, jurisdictionCountryName, jurisdictionStateOrProvinceName, jurisdictionLocalityName) or a dotted OID"
+          },
+          "presence": {
+            "type": "string",
+            "enum": [
+              "required",
+              "optional",
+              "excluded"
+            ],
+            "description": "Whether a subject must hold it, may, or may not"
+          },
+          "defaultValue": {
+            "type": "string",
+            "description": "Its value when the request gives none"
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Whether the default is the only value it may take"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "A regular expression each value must match, whole"
+          },
+          "maxCount": {
+            "type": "number",
+            "description": "How many values it may take"
+          }
+        },
+        "required": [
+          "attribute",
+          "presence",
+          "locked",
+          "maxCount"
+        ]
+      },
+      "SignatureHash": {
+        "type": "string",
+        "description": "A signature's hash",
+        "enum": [
+          "sha1",
+          "sha224",
+          "sha256",
+          "sha384",
+          "sha512"
         ]
       },
       "Profile": {
@@ -6874,9 +7072,9 @@
             "type": "boolean",
             "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
           },
-          "requireSan": {
-            "type": "boolean",
-            "description": "Whether a certificate needs at least one alternative name"
+          "minNames": {
+            "type": "number",
+            "description": "How many alternative names a certificate needs, at least"
           },
           "escrow": {
             "type": "boolean",
@@ -6895,24 +7093,52 @@
             "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
           },
           "keyUsages": {
+            "description": "Its key usages' states; one not listed is excluded",
             "type": "array",
-            "description": "Its key usages",
             "items": {
-              "$ref": "#/components/schemas/KeyUsage"
+              "$ref": "#/components/schemas/ProfileKeyUsage"
             }
           },
           "extendedKeyUsages": {
-            "description": "Its extended key usages, dotted OIDs",
+            "description": "Its extended key usages' states; one not listed is excluded",
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ProfileExtendedKeyUsage"
             }
           },
-          "nameTypes": {
+          "names": {
+            "description": "The alternative name types it allows or requires; one not listed is excluded",
             "type": "array",
-            "description": "The alternative name types it allows",
             "items": {
-              "$ref": "#/components/schemas/NameType"
+              "$ref": "#/components/schemas/ProfileName"
+            }
+          },
+          "namePolicy": {
+            "description": "Its name policy: subtrees names must lie in or outside",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileNamePolicy"
+            }
+          },
+          "subjectAttributes": {
+            "description": "Its subject DN rules; an attribute not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSubjectAttribute"
+            }
+          },
+          "keyAlgorithms": {
+            "type": "array",
+            "description": "The key types a request may choose; none, any the signer generates",
+            "items": {
+              "$ref": "#/components/schemas/KeyAlgorithm"
+            }
+          },
+          "csrSignatureHashes": {
+            "type": "array",
+            "description": "The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes)",
+            "items": {
+              "$ref": "#/components/schemas/SignatureHash"
             }
           },
           "id": {
@@ -6957,13 +7183,17 @@
           "allowCsr",
           "allowGenerated",
           "legacyExport",
-          "requireSan",
+          "minNames",
           "escrow",
           "escrowOverridable",
           "extensions",
           "keyUsages",
           "extendedKeyUsages",
-          "nameTypes",
+          "names",
+          "namePolicy",
+          "subjectAttributes",
+          "keyAlgorithms",
+          "csrSignatureHashes",
           "id",
           "version",
           "description",
@@ -7032,9 +7262,9 @@
             "type": "boolean",
             "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
           },
-          "requireSan": {
-            "type": "boolean",
-            "description": "Whether a certificate needs at least one alternative name"
+          "minNames": {
+            "type": "number",
+            "description": "How many alternative names a certificate needs, at least"
           },
           "escrow": {
             "type": "boolean",
@@ -7053,24 +7283,52 @@
             "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
           },
           "keyUsages": {
+            "description": "Its key usages' states; one not listed is excluded",
             "type": "array",
-            "description": "Its key usages",
             "items": {
-              "$ref": "#/components/schemas/KeyUsage"
+              "$ref": "#/components/schemas/ProfileKeyUsage"
             }
           },
           "extendedKeyUsages": {
-            "description": "Its extended key usages, dotted OIDs",
+            "description": "Its extended key usages' states; one not listed is excluded",
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ProfileExtendedKeyUsage"
             }
           },
-          "nameTypes": {
+          "names": {
+            "description": "The alternative name types it allows or requires; one not listed is excluded",
             "type": "array",
-            "description": "The alternative name types it allows",
             "items": {
-              "$ref": "#/components/schemas/NameType"
+              "$ref": "#/components/schemas/ProfileName"
+            }
+          },
+          "namePolicy": {
+            "description": "Its name policy: subtrees names must lie in or outside",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileNamePolicy"
+            }
+          },
+          "subjectAttributes": {
+            "description": "Its subject DN rules; an attribute not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSubjectAttribute"
+            }
+          },
+          "keyAlgorithms": {
+            "type": "array",
+            "description": "The key types a request may choose; none, any the signer generates",
+            "items": {
+              "$ref": "#/components/schemas/KeyAlgorithm"
+            }
+          },
+          "csrSignatureHashes": {
+            "type": "array",
+            "description": "The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes)",
+            "items": {
+              "$ref": "#/components/schemas/SignatureHash"
             }
           },
           "id": {
@@ -7091,13 +7349,17 @@
           "allowCsr",
           "allowGenerated",
           "legacyExport",
-          "requireSan",
+          "minNames",
           "escrow",
           "escrowOverridable",
           "extensions",
           "keyUsages",
           "extendedKeyUsages",
-          "nameTypes",
+          "names",
+          "namePolicy",
+          "subjectAttributes",
+          "keyAlgorithms",
+          "csrSignatureHashes",
           "id",
           "description"
         ]
@@ -7194,9 +7456,9 @@
             "type": "boolean",
             "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
           },
-          "requireSan": {
-            "type": "boolean",
-            "description": "Whether a certificate needs at least one alternative name"
+          "minNames": {
+            "type": "number",
+            "description": "How many alternative names a certificate needs, at least"
           },
           "escrow": {
             "type": "boolean",
@@ -7215,24 +7477,52 @@
             "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
           },
           "keyUsages": {
+            "description": "Its key usages' states; one not listed is excluded",
             "type": "array",
-            "description": "Its key usages",
             "items": {
-              "$ref": "#/components/schemas/KeyUsage"
+              "$ref": "#/components/schemas/ProfileKeyUsage"
             }
           },
           "extendedKeyUsages": {
-            "description": "Its extended key usages, dotted OIDs",
+            "description": "Its extended key usages' states; one not listed is excluded",
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ProfileExtendedKeyUsage"
             }
           },
-          "nameTypes": {
+          "names": {
+            "description": "The alternative name types it allows or requires; one not listed is excluded",
             "type": "array",
-            "description": "The alternative name types it allows",
             "items": {
-              "$ref": "#/components/schemas/NameType"
+              "$ref": "#/components/schemas/ProfileName"
+            }
+          },
+          "namePolicy": {
+            "description": "Its name policy: subtrees names must lie in or outside",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileNamePolicy"
+            }
+          },
+          "subjectAttributes": {
+            "description": "Its subject DN rules; an attribute not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSubjectAttribute"
+            }
+          },
+          "keyAlgorithms": {
+            "type": "array",
+            "description": "The key types a request may choose; none, any the signer generates",
+            "items": {
+              "$ref": "#/components/schemas/KeyAlgorithm"
+            }
+          },
+          "csrSignatureHashes": {
+            "type": "array",
+            "description": "The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes)",
+            "items": {
+              "$ref": "#/components/schemas/SignatureHash"
             }
           },
           "description": {
@@ -7317,9 +7607,9 @@
             "type": "boolean",
             "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
           },
-          "requireSan": {
-            "type": "boolean",
-            "description": "Whether a certificate needs at least one alternative name"
+          "minNames": {
+            "type": "number",
+            "description": "How many alternative names a certificate needs, at least"
           },
           "escrow": {
             "type": "boolean",
@@ -7338,24 +7628,52 @@
             "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
           },
           "keyUsages": {
+            "description": "Its key usages' states; one not listed is excluded",
             "type": "array",
-            "description": "Its key usages",
             "items": {
-              "$ref": "#/components/schemas/KeyUsage"
+              "$ref": "#/components/schemas/ProfileKeyUsage"
             }
           },
           "extendedKeyUsages": {
-            "description": "Its extended key usages, dotted OIDs",
+            "description": "Its extended key usages' states; one not listed is excluded",
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ProfileExtendedKeyUsage"
             }
           },
-          "nameTypes": {
+          "names": {
+            "description": "The alternative name types it allows or requires; one not listed is excluded",
             "type": "array",
-            "description": "The alternative name types it allows",
             "items": {
-              "$ref": "#/components/schemas/NameType"
+              "$ref": "#/components/schemas/ProfileName"
+            }
+          },
+          "namePolicy": {
+            "description": "Its name policy: subtrees names must lie in or outside",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileNamePolicy"
+            }
+          },
+          "subjectAttributes": {
+            "description": "Its subject DN rules; an attribute not listed is excluded",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSubjectAttribute"
+            }
+          },
+          "keyAlgorithms": {
+            "type": "array",
+            "description": "The key types a request may choose; none, any the signer generates",
+            "items": {
+              "$ref": "#/components/schemas/KeyAlgorithm"
+            }
+          },
+          "csrSignatureHashes": {
+            "type": "array",
+            "description": "The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes)",
+            "items": {
+              "$ref": "#/components/schemas/SignatureHash"
             }
           },
           "version": {
@@ -7384,13 +7702,17 @@
           "allowCsr",
           "allowGenerated",
           "legacyExport",
-          "requireSan",
+          "minNames",
           "escrow",
           "escrowOverridable",
           "extensions",
           "keyUsages",
           "extendedKeyUsages",
-          "nameTypes",
+          "names",
+          "namePolicy",
+          "subjectAttributes",
+          "keyAlgorithms",
+          "csrSignatureHashes",
           "version",
           "createdBy",
           "createdAt",

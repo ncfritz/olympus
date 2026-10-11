@@ -822,13 +822,19 @@ describe.skipIf(!E2E_DATABASE_URL)("certificates", () => {
       // A second version, shorter: as editing will make one (ADR 0034).
       const v1 = await harness.prisma.profileVersion.findFirstOrThrow({
         where: { profileId: "service", version: 1 },
-        include: { keyUsages: true, extendedKeyUsages: true, nameTypes: true },
+        include: {
+          keyUsages: true,
+          extendedKeyUsages: true,
+          nameTypes: true,
+          subjectAttributes: true,
+        },
       });
       const {
         id: _id,
         keyUsages,
         extendedKeyUsages,
         nameTypes,
+        subjectAttributes,
         createdAt: _createdAt,
         updatedAt: _updatedAt,
         ...settings
@@ -840,11 +846,18 @@ describe.skipIf(!E2E_DATABASE_URL)("certificates", () => {
           validityDays: 30,
           renewAtDays: 20,
           createdBy: "test",
-          keyUsages: { create: keyUsages.map(({ usage }) => ({ usage })) },
+          keyUsages: {
+            create: keyUsages.map(({ usage, state }) => ({ usage, state })),
+          },
           extendedKeyUsages: {
-            create: extendedKeyUsages.map(({ oid }) => ({ oid })),
+            create: extendedKeyUsages.map(({ oid, state }) => ({ oid, state })),
           },
           nameTypes: { create: nameTypes.map(({ type }) => ({ type })) },
+          subjectAttributes: {
+            create: subjectAttributes.map(
+              ({ profileVersionId: _version, ...rule }) => rule,
+            ),
+          },
         },
       });
 

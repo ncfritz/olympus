@@ -212,7 +212,8 @@ model ProfileVersion {
   allowGenerated    Boolean      @map("allow_generated")
   /// PKCS#12 without the chain, SHA-1 and 3DES: the printer.
   legacyExport      Boolean      @default(false) @map("legacy_export")
-  requireSan        Boolean      @map("require_san")
+  /// How many alternative names a certificate needs, at least.
+  minNames          Int          @default(0) @map("min_names")
   /// A generated key is kept, exportable again (ADR 0032, escrow). Off, it
   /// can be exported once, then it is destroyed.
   escrow            Boolean      @default(true)
@@ -227,6 +228,10 @@ model ProfileVersion {
   keyUsages         ProfileKeyUsage[]
   extendedKeyUsages ProfileExtendedKeyUsage[]
   nameTypes         ProfileNameType[]
+  subjectAttributes ProfileSubjectAttribute[]
+  namePolicies      ProfileNamePolicy[]
+  keyAlgorithms     ProfileKeyAlgorithm[]
+  csrHashes         ProfileCsrHash[]
   enrollments       Enrollment[]
   certificates      Certificate[]
 
@@ -234,10 +239,21 @@ model ProfileVersion {
   @@map("profile_versions")
 }
 
+/// A usage's state in a version (ADR 0034); one not listed is excluded.
+enum UsageState {
+  /// Always in the certificate.
+  forced
+  /// In it unless the request removes it.
+  default
+  /// Out of it unless the request (or its CSR) adds it.
+  optional
+}
+
 model ProfileKeyUsage {
   profileVersionId String         @map("profile_version_id") @db.Uuid
   profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
   usage            String
+  state            UsageState     @default(forced)
 
   @@id([profileVersionId, usage])
   @@map("profile_key_usages")
@@ -247,9 +263,17 @@ model ProfileExtendedKeyUsage {
   profileVersionId String         @map("profile_version_id") @db.Uuid
   profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
   oid              String
+  state            UsageState     @default(forced)
 
   @@id([profileVersionId, oid])
   @@map("profile_extended_key_usages")
+}
+
+/// Whether a version allows, or requires, a name type; one not listed is
+/// excluded.
+enum NamePresence {
+  allowed
+  required
 }
 
 /// The subject alternative name types a profile version allows.
@@ -257,9 +281,73 @@ model ProfileNameType {
   profileVersionId String         @map("profile_version_id") @db.Uuid
   profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
   type             NameType
+  presence         NamePresence   @default(allowed)
 
   @@id([profileVersionId, type])
   @@map("profile_name_types")
+}
+
+/// Whether a subject attribute is required, optional or excluded.
+enum AttributePresence {
+  required
+  optional
+  excluded
+}
+
+/// A version's rule for one subject DN attribute (ADR 0034); an attribute
+/// not listed is excluded.
+model ProfileSubjectAttribute {
+  profileVersionId String            @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion    @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  /// Its OID, dotted.
+  oid              String
+  presence         AttributePresence
+  /// What it is when the request gives none.
+  defaultValue     String?           @map("default_value")
+  /// Whether the default is the only value it may take.
+  locked           Boolean           @default(false)
+  /// A regular expression each value must match, whole.
+  pattern          String?
+  /// How many values it may take.
+  maxCount         Int               @default(1) @map("max_count")
+
+  @@id([profileVersionId, oid])
+  @@map("profile_subject_attributes")
+}
+
+/// A version's name policy: subtrees a request's names must lie in
+/// (permitted, if any are) and outside (excluded), per type (ADR 0034).
+model ProfileNamePolicy {
+  id               Int                @id @default(autoincrement())
+  profileVersionId String             @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion     @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  type             NameType
+  kind             NameConstraintKind
+  value            String
+
+  @@unique([profileVersionId, type, kind, value])
+  @@map("profile_name_policies")
+}
+
+/// The key types a version allows a request; none listed, any.
+model ProfileKeyAlgorithm {
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  algorithm        KeyAlgorithm
+
+  @@id([profileVersionId, algorithm])
+  @@map("profile_key_algorithms")
+}
+
+/// The hashes a CSR's signature may use; none listed, any.
+model ProfileCsrHash {
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  /// sha1, sha224, sha256, sha384 or sha512.
+  hash             String
+
+  @@id([profileVersionId, hash])
+  @@map("profile_csr_hashes")
 }
 
 // ---- Keys, enrollments, certificates

@@ -49,6 +49,55 @@ export const KEY_USAGE_ENUM = {
 export const EXTENSION_SET_VALUES = ["standard", "minimal"] as const;
 export type ExtensionSetName = (typeof EXTENSION_SET_VALUES)[number];
 
+export const USAGE_STATE_VALUES = [
+  "forced",
+  "default",
+  "optional",
+  "excluded",
+] as const;
+export type UsageStateName = (typeof USAGE_STATE_VALUES)[number];
+
+export const USAGE_STATE_ENUM = {
+  enum: [...USAGE_STATE_VALUES],
+  enumName: "UsageState",
+  enumSchema: {
+    description:
+      "forced: always; default: unless the request removes it; optional: only if the request (or its CSR) adds it; excluded: never",
+  },
+};
+
+export const ATTRIBUTE_PRESENCE_VALUES = [
+  "required",
+  "optional",
+  "excluded",
+] as const;
+export type AttributePresenceName = (typeof ATTRIBUTE_PRESENCE_VALUES)[number];
+
+export const NAME_PRESENCE_VALUES = [
+  "required",
+  "allowed",
+  "excluded",
+] as const;
+export type NamePresenceName = (typeof NAME_PRESENCE_VALUES)[number];
+
+export const NAME_POLICY_KIND_VALUES = ["permitted", "excluded"] as const;
+export type NamePolicyKindName = (typeof NAME_POLICY_KIND_VALUES)[number];
+
+export const HASH_VALUES = [
+  "sha1",
+  "sha224",
+  "sha256",
+  "sha384",
+  "sha512",
+] as const;
+export type HashName = (typeof HASH_VALUES)[number];
+
+export const HASH_ENUM = {
+  enum: [...HASH_VALUES],
+  enumName: "SignatureHash",
+  enumSchema: { description: "A signature's hash" },
+};
+
 /** A profile's slug: lower case, digits and hyphens. */
 export const PROFILE_SLUG = /^[a-z][a-z0-9-]{0,62}$/;
 
@@ -58,6 +107,147 @@ const OID = /^[0-2](\.(0|[1-9][0-9]*))+$/;
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
+
+/** A key usage's state in a version. */
+export class ProfileKeyUsage {
+  @ApiProperty({ ...KEY_USAGE_ENUM, required: true, description: "The usage" })
+  @IsIn([...KEY_USAGE_VALUES])
+  usage: KeyUsageName;
+
+  @ApiProperty({
+    ...USAGE_STATE_ENUM,
+    required: true,
+    description: "Its state",
+  })
+  @IsIn([...USAGE_STATE_VALUES])
+  state: UsageStateName;
+}
+
+/** An extended key usage's state in a version. */
+export class ProfileExtendedKeyUsage {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The usage, a dotted OID",
+  })
+  @Matches(OID)
+  oid: string;
+
+  @ApiProperty({
+    ...USAGE_STATE_ENUM,
+    required: true,
+    description: "Its state",
+  })
+  @IsIn([...USAGE_STATE_VALUES])
+  state: UsageStateName;
+}
+
+/** A version's rule for one subject DN attribute. */
+export class ProfileSubjectAttribute {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The attribute: a name (C, ST, L, O, OU, CN, emailAddress, serialNumber, title, givenName, surname, initials, pseudonym, generationQualifier, dnQualifier, description, businessCategory, postalCode, street, UID, DC, jurisdictionCountryName, jurisdictionStateOrProvinceName, jurisdictionLocalityName) or a dotted OID",
+  })
+  @IsString()
+  @IsNotEmpty()
+  attribute: string;
+
+  @ApiProperty({
+    type: String,
+    enum: [...ATTRIBUTE_PRESENCE_VALUES],
+    enumName: "AttributePresence",
+    required: true,
+    description: "Whether a subject must hold it, may, or may not",
+  })
+  @IsIn([...ATTRIBUTE_PRESENCE_VALUES])
+  presence: AttributePresenceName;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Its value when the request gives none",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  defaultValue?: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether the default is the only value it may take",
+  })
+  @IsBoolean()
+  locked: boolean;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "A regular expression each value must match, whole",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  pattern?: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How many values it may take",
+  })
+  @IsInt()
+  @Min(1)
+  @Max(16)
+  maxCount: number;
+}
+
+/** Whether a version allows or requires an alternative name type. */
+export class ProfileName {
+  @ApiProperty({ ...NAME_TYPE_ENUM, required: true, description: "The type" })
+  @IsIn([...NAME_TYPE_VALUES])
+  type: NameTypeName;
+
+  @ApiProperty({
+    type: String,
+    enum: [...NAME_PRESENCE_VALUES],
+    enumName: "NamePresence",
+    required: true,
+    description: "required: at least one; allowed: any number; excluded: none",
+  })
+  @IsIn([...NAME_PRESENCE_VALUES])
+  presence: NamePresenceName;
+}
+
+/** A subtree a version's names must lie in, or outside. */
+export class ProfileNamePolicy {
+  @ApiProperty({ ...NAME_TYPE_ENUM, required: true, description: "The type" })
+  @IsIn([...NAME_TYPE_VALUES])
+  type: NameTypeName;
+
+  @ApiProperty({
+    type: String,
+    enum: [...NAME_POLICY_KIND_VALUES],
+    enumName: "NamePolicyKind",
+    required: true,
+    description:
+      "permitted: names of the type must lie in one of these (when any is given); excluded: in none",
+  })
+  @IsIn([...NAME_POLICY_KIND_VALUES])
+  kind: NamePolicyKindName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The subtree, as RFC 5280 reads one: example.com (it and below), .example.com (below only), 10.0.0.0/8, a mail host or mailbox",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(253)
+  value: string;
+}
 
 /**
  * What one version of a profile says a certificate may be (ADR 0020,
@@ -152,12 +342,14 @@ export class ProfileSettings {
   legacyExport: boolean;
 
   @ApiProperty({
-    type: Boolean,
+    type: Number,
     required: true,
-    description: "Whether a certificate needs at least one alternative name",
+    description: "How many alternative names a certificate needs, at least",
   })
-  @IsBoolean()
-  requireSan: boolean;
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  minNames: number;
 
   @ApiProperty({
     type: Boolean,
@@ -188,37 +380,84 @@ export class ProfileSettings {
   extensions: ExtensionSetName;
 
   @ApiProperty({
-    ...KEY_USAGE_ENUM,
+    type: () => ProfileKeyUsage,
     isArray: true,
     required: true,
-    description: "Its key usages",
+    description: "Its key usages' states; one not listed is excluded",
   })
   @IsArray()
-  @ArrayUnique()
-  @IsIn([...KEY_USAGE_VALUES], { each: true })
-  keyUsages: KeyUsageName[];
+  @ValidateNested({ each: true })
+  @Type(() => ProfileKeyUsage)
+  keyUsages: ProfileKeyUsage[];
 
   @ApiProperty({
-    type: String,
+    type: () => ProfileExtendedKeyUsage,
     isArray: true,
     required: true,
-    description: "Its extended key usages, dotted OIDs",
+    description: "Its extended key usages' states; one not listed is excluded",
   })
   @IsArray()
-  @ArrayUnique()
-  @Matches(OID, { each: true })
-  extendedKeyUsages: string[];
+  @ValidateNested({ each: true })
+  @Type(() => ProfileExtendedKeyUsage)
+  extendedKeyUsages: ProfileExtendedKeyUsage[];
 
   @ApiProperty({
-    ...NAME_TYPE_ENUM,
+    type: () => ProfileName,
     isArray: true,
     required: true,
-    description: "The alternative name types it allows",
+    description:
+      "The alternative name types it allows or requires; one not listed is excluded",
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfileName)
+  names: ProfileName[];
+
+  @ApiProperty({
+    type: () => ProfileNamePolicy,
+    isArray: true,
+    required: true,
+    description: "Its name policy: subtrees names must lie in or outside",
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfileNamePolicy)
+  namePolicy: ProfileNamePolicy[];
+
+  @ApiProperty({
+    type: () => ProfileSubjectAttribute,
+    isArray: true,
+    required: true,
+    description: "Its subject DN rules; an attribute not listed is excluded",
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfileSubjectAttribute)
+  subjectAttributes: ProfileSubjectAttribute[];
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    isArray: true,
+    required: true,
+    description:
+      "The key types a request may choose; none, any the signer generates",
   })
   @IsArray()
   @ArrayUnique()
-  @IsIn([...NAME_TYPE_VALUES], { each: true })
-  nameTypes: NameTypeName[];
+  @IsIn([...KEY_ALGORITHM_VALUES], { each: true })
+  keyAlgorithms: KeyAlgorithmName[];
+
+  @ApiProperty({
+    ...HASH_ENUM,
+    isArray: true,
+    required: true,
+    description:
+      "The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes)",
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsIn([...HASH_VALUES], { each: true })
+  csrSignatureHashes: HashName[];
 }
 
 /** One version of a profile, frozen once made (ADR 0034). */

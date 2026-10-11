@@ -12,6 +12,7 @@ import {
   IsString,
   IsUUID,
   Max,
+  MaxLength,
   Min,
   MinLength,
   ValidateNested,
@@ -217,15 +218,36 @@ export class FullCertificate extends Certificate {
   chain: string[];
 }
 
-export class CertificateSubject {
+/** One subject DN attribute's value. */
+export class SubjectAttributeValue {
   @ApiProperty({
     type: String,
     required: true,
-    description: "The common name: an app name, a person-device, a host",
+    description:
+      "The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID",
   })
   @IsString()
   @IsNotEmpty()
-  commonName: string;
+  type: string;
+
+  @ApiProperty({ type: String, required: true, description: "Its value" })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(256)
+  value: string;
+}
+
+export class CertificateSubject {
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The common name: an app name, a person-device, a host (required unless the profile says otherwise)",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  commonName?: string;
 
   @ApiProperty({
     type: String,
@@ -245,6 +267,19 @@ export class CertificateSubject {
   @IsOptional()
   @IsString()
   organization?: string;
+
+  @ApiProperty({
+    type: () => SubjectAttributeValue,
+    isArray: true,
+    required: false,
+    description:
+      "Any other attributes the profile allows (ADR 0034), each value its own; the fields above are shorthand for CN, OU and O",
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubjectAttributeValue)
+  attributes?: SubjectAttributeValue[];
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -359,6 +394,30 @@ export class CreateCertificateRequest {
   @IsOptional()
   @IsIn([...KEY_ALGORITHM_VALUES])
   keyAlgorithm?: KeyAlgorithmName;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description:
+      "The key usages it should have, of those its profile does not exclude; the forced ones are added. By default its CSR's, else the profile's defaults",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  keyUsages?: string[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description:
+      "The extended key usages (dotted OIDs) it should have, as keyUsages",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  extendedKeyUsages?: string[];
 
   @ApiProperty({
     type: Boolean,

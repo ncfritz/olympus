@@ -1,4 +1,5 @@
-import { X509Certificate } from "crypto";
+import * as x509 from "@peculiar/x509";
+import { webcrypto, X509Certificate } from "crypto";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { OID } from "../../src/pki/x509";
@@ -17,7 +18,7 @@ type Profile = {
   active: boolean;
   validityDays: number;
   renewAtDays: number;
-  keyUsages: string[];
+  keyUsages: { usage: string; state: string }[];
 };
 
 /** A profile's settings, as a new one is made. */
@@ -30,13 +31,21 @@ const settings = {
   allowCsr: true,
   allowGenerated: true,
   legacyExport: false,
-  requireSan: false,
+  minNames: 0,
   escrow: true,
   escrowOverridable: false,
   extensions: "standard",
-  keyUsages: ["digital_signature"],
-  extendedKeyUsages: [OID.clientAuth],
-  nameTypes: ["dns"],
+  keyUsages: [{ usage: "digital_signature", state: "forced" }],
+  extendedKeyUsages: [{ oid: OID.clientAuth, state: "forced" }],
+  names: [{ type: "dns", presence: "allowed" }],
+  namePolicy: [],
+  subjectAttributes: [
+    { attribute: "CN", presence: "required", locked: false, maxCount: 1 },
+    { attribute: "OU", presence: "optional", locked: false, maxCount: 1 },
+    { attribute: "O", presence: "optional", locked: false, maxCount: 1 },
+  ],
+  keyAlgorithms: [],
+  csrSignatureHashes: [],
 };
 
 const days = (pem: string) => {
@@ -171,13 +180,19 @@ describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
         await edit("web-client", {
           validityDays: 60,
           renewAtDays: 40,
-          keyUsages: ["digital_signature", "key_agreement"],
+          keyUsages: [
+            { usage: "digital_signature", state: "forced" },
+            { usage: "key_agreement", state: "default" },
+          ],
         }).expect(200),
       ),
     ).toMatchObject({
       version: 2,
       validityDays: 60,
-      keyUsages: ["digital_signature", "key_agreement"],
+      keyUsages: [
+        { usage: "digital_signature", state: "forced" },
+        { usage: "key_agreement", state: "default" },
+      ],
     });
     await edit("web-client", { renewAtDays: 90 }).expect(422);
     await edit("web-client", { validityDays: 30 }, harness.operator).expect(
@@ -269,7 +284,10 @@ describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
       version: 1,
       description: "Web clients, mTLS",
       validityDays: 60,
-      keyUsages: ["digital_signature", "key_agreement"],
+      keyUsages: [
+        { usage: "digital_signature", state: "forced" },
+        { usage: "key_agreement", state: "default" },
+      ],
     });
     await request(server())
       .post("/v1/profile/web-client/copy")
@@ -307,5 +325,251 @@ describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
         "profile.enrollments-moved",
       ]),
     );
+  });
+  describe("rules at issuance", () => {
+    const rules = {
+      ...settings,
+      issuerPurpose: "Service",
+      extendedKeyUsages: [
+        { oid: OID.clientAuth, state: "forced" },
+        { oid: OID.serverAuth, state: "optional" },
+      ],
+      keyUsages: [
+        { usage: "digital_signature", state: "forced" },
+        { usage: "content_commitment", state: "default" },
+        { usage: "key_agreement", state: "optional" },
+      ],
+      minNames: 1,
+      names: [
+        { type: "dns", presence: "required" },
+        { type: "ip", presence: "allowed" },
+      ],
+      namePolicy: [
+        { type: "dns", kind: "permitted", value: "internal.ncfritz.net" },
+        { type: "dns", kind: "excluded", value: "secret.internal.ncfritz.net" },
+        { type: "ip", kind: "permitted", value: "192.168.15.0/24" },
+      ],
+      subjectAttributes: [
+        {
+          attribute: "C",
+          presence: "required",
+          defaultValue: "US",
+          locked: true,
+          maxCount: 1,
+        },
+        { attribute: "ST", presence: "required", locked: false, maxCount: 1 },
+        { attribute: "O", presence: "excluded", locked: false, maxCount: 1 },
+        {
+          attribute: "title",
+          presence: "optional",
+          locked: false,
+          pattern: "[a-z]+",
+          maxCount: 1,
+        },
+        { attribute: "CN", presence: "required", locked: false, maxCount: 1 },
+      ],
+      keyAlgorithms: ["P-256", "P-384"],
+      csrSignatureHashes: ["sha384"],
+    };
+    const ask = (body: object) =>
+      request(server())
+        .post("/v1/certificates")
+        .set("Authorization", harness.operator)
+        .send({ profileId: "ruled", ...body });
+    const parsed = (response: request.Response) =>
+      new x509.X509Certificate(
+        (response.body as { certificate: { certificate: string } }).certificate
+          .certificate,
+      );
+    const usages = (certificate: x509.X509Certificate) => ({
+      ku: certificate.getExtension(x509.KeyUsagesExtension)?.usages,
+      eku: certificate
+        .getExtension(x509.ExtendedKeyUsageExtension)
+        ?.usages.map(String),
+    });
+    const base = {
+      subject: {
+        commonName: "ruled",
+        attributes: [{ type: "ST", value: "Oregon" }],
+      },
+      names: { dns: ["ruled.internal.ncfritz.net"] },
+    };
+
+    beforeAll(async () => {
+      x509.cryptoProvider.set(webcrypto as unknown as Crypto);
+      await create({ id: "ruled", description: "Ruled", ...rules }).expect(201);
+    });
+
+    it("builds the subject from its rules and gives the default usages", async () => {
+      const certificate = parsed(
+        await ask({
+          ...base,
+          subject: {
+            ...base.subject,
+            attributes: [
+              ...base.subject.attributes,
+              { type: "title", value: "ops" },
+            ],
+          },
+        }).expect(201),
+      );
+      const subject = certificate.subjectName;
+      expect(subject.getField("C")).toEqual(["US"]);
+      expect(subject.getField("ST")).toEqual(["Oregon"]);
+      expect(subject.getField("2.5.4.12")).toEqual(["ops"]);
+      expect(subject.getField("CN")).toEqual(["ruled"]);
+      expect(subject.getField("O")).toEqual([]);
+      expect(usages(certificate)).toEqual({
+        ku:
+          x509.KeyUsageFlags.digitalSignature |
+          x509.KeyUsageFlags.nonRepudiation,
+        eku: [OID.clientAuth],
+      });
+    });
+
+    it("lets a request drop a default and add an optional usage", async () => {
+      const certificate = parsed(
+        await ask({
+          ...base,
+          subject: { ...base.subject, commonName: "chosen" },
+          keyUsages: ["key_agreement"],
+          extendedKeyUsages: [OID.serverAuth],
+        }).expect(201),
+      );
+      expect(usages(certificate)).toEqual({
+        ku:
+          x509.KeyUsageFlags.digitalSignature | x509.KeyUsageFlags.keyAgreement,
+        eku: [OID.clientAuth, OID.serverAuth],
+      });
+    });
+
+    it("refuses what the rules refuse", async () => {
+      const refused = async (body: object, message: RegExp) =>
+        expect(
+          (await ask({ ...base, ...body }).expect(422)).body.message,
+        ).toMatch(message);
+      await refused({ subject: { commonName: "x" } }, /the subject needs ST/);
+      await refused(
+        { subject: { ...base.subject, organization: "elsewhere" } },
+        /may not hold O/,
+      );
+      await refused(
+        {
+          subject: {
+            ...base.subject,
+            attributes: [
+              ...base.subject.attributes,
+              { type: "C", value: "GB" },
+            ],
+          },
+        },
+        /C is fixed at US/,
+      );
+      await refused(
+        {
+          subject: {
+            ...base.subject,
+            attributes: [
+              ...base.subject.attributes,
+              { type: "title", value: "Ops!" },
+            ],
+          },
+        },
+        /does not match/,
+      );
+      await refused(
+        { names: { dns: ["host.example.com"] } },
+        /outside the permitted dns subtrees/,
+      );
+      await refused(
+        { names: { dns: ["a.secret.internal.ncfritz.net"] } },
+        /excluded subtree/,
+      );
+      await refused(
+        { names: { ip: ["192.168.15.4"] } },
+        /needs at least one dns name/,
+      );
+      await refused({ keyUsages: ["crl_sign"] }, /excludes the key usage/);
+      await refused({ keyAlgorithm: "RSA-2048" }, /allows P-256, P-384 keys/);
+    });
+
+    it("takes a CSR only signed with an allowed hash, and its asked-for usages", async () => {
+      const csrOf = async (hash: string, curve: string) => {
+        const algorithm = { name: "ECDSA", namedCurve: curve, hash };
+        const keys = (await webcrypto.subtle.generateKey(algorithm, true, [
+          "sign",
+          "verify",
+        ])) as CryptoKeyPair;
+        return (
+          await x509.Pkcs10CertificateRequestGenerator.create({
+            name: "CN=ignored",
+            keys,
+            signingAlgorithm: algorithm,
+            extensions: [
+              new x509.KeyUsagesExtension(
+                x509.KeyUsageFlags.digitalSignature |
+                  x509.KeyUsageFlags.keyAgreement |
+                  x509.KeyUsageFlags.cRLSign,
+              ),
+            ],
+          })
+        ).toString("pem");
+      };
+      const sha256 = await ask({
+        ...base,
+        csr: await csrOf("SHA-256", "P-256"),
+      }).expect(422);
+      expect(sha256.body.message).toMatch(/signed with sha384, not sha256/);
+      const certificate = parsed(
+        await ask({
+          ...base,
+          subject: { ...base.subject, commonName: "from-csr" },
+          csr: await csrOf("SHA-384", "P-384"),
+        }).expect(201),
+      );
+      // The CSR's crlSign is excluded, so passed over; keyAgreement is optional.
+      expect(usages(certificate).ku).toBe(
+        x509.KeyUsageFlags.digitalSignature | x509.KeyUsageFlags.keyAgreement,
+      );
+    });
+
+    it("refuses a version whose rules do not hold together", async () => {
+      const refused = await create({
+        id: "unruly",
+        description: "x",
+        ...rules,
+        keyAlgorithm: "RSA-2048",
+        minNames: 2,
+        names: [],
+        namePolicy: [{ type: "ip", kind: "permitted", value: "10.0.0.1" }],
+        subjectAttributes: [
+          { attribute: "C", presence: "required", locked: true, maxCount: 1 },
+          {
+            attribute: "ST",
+            presence: "optional",
+            locked: false,
+            defaultValue: "oregon",
+            pattern: "[A-Z][a-z]+",
+            maxCount: 1,
+          },
+          {
+            attribute: "nonsense",
+            presence: "optional",
+            locked: false,
+            maxCount: 1,
+          },
+        ],
+      }).expect(422);
+      for (const problem of [
+        /C is locked with no value/,
+        /ST's default "oregon" does not match/,
+        /nonsense is not a subject attribute/,
+        /needs 2 names but allows no name type/,
+        /10.0.0.1 is not an IP network/,
+        /default key type RSA-2048 is not among/,
+      ]) {
+        expect(refused.body.message).toMatch(problem);
+      }
+    });
   });
 });

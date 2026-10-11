@@ -4,7 +4,9 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { Prisma } from "../../store/prisma";
+import type { NamePresence, Prisma, UsageState } from "../../store/prisma";
+import { subtreeProblem } from "../rules";
+import { attributeOid } from "../subjectAttributes";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";
@@ -40,20 +42,124 @@ const SETTINGS: (keyof ProfileSettings)[] = [
   "allowCsr",
   "allowGenerated",
   "legacyExport",
-  "requireSan",
+  "minNames",
   "escrow",
   "escrowOverridable",
   "extensions",
   "keyUsages",
   "extendedKeyUsages",
-  "nameTypes",
+  "names",
+  "namePolicy",
+  "subjectAttributes",
+  "keyAlgorithms",
+  "csrSignatureHashes",
 ];
 
-/** Two settings' values the same: lists compared as sets. */
-const same = (a: unknown, b: unknown): boolean =>
-  Array.isArray(a) && Array.isArray(b)
-    ? a.length === b.length && [...a].sort().join() === [...b].sort().join()
-    : (a ?? null) === (b ?? null);
+/** A value as compared: lists as sets, objects without empty fields. */
+const canonical = (value: unknown): string =>
+  JSON.stringify(
+    Array.isArray(value)
+      ? value.map((v) => canonical(v)).sort()
+      : value && typeof value === "object"
+        ? Object.fromEntries(
+            Object.entries(value)
+              .filter(([, v]) => v !== undefined && v !== null && v !== "")
+              .sort(([a], [b]) => a.localeCompare(b)),
+          )
+        : (value ?? null),
+  );
+
+/** Two settings' values the same. */
+const same = (a: unknown, b: unknown): boolean => canonical(a) === canonical(b);
+
+/** A version's settings as it keeps them: excluded usages and names unlisted. */
+const stored = (settings: ProfileSettings): ProfileSettings => ({
+  ...settings,
+  keyUsages: settings.keyUsages.filter((u) => u.state !== "excluded"),
+  extendedKeyUsages: settings.extendedKeyUsages.filter(
+    (u) => u.state !== "excluded",
+  ),
+  names: settings.names.filter((n) => n.presence !== "excluded"),
+});
+
+/**
+ * What a version's rules must be, together (ADR 0034): every attribute
+ * known and ruled on once, its default fitting its own pattern, a locked
+ * one defaulted; names to give if it needs some; well-formed subtrees;
+ * each usage listed once; its default key type among those it allows; and
+ * key encipherment forced only where an RSA key may be had.
+ */
+const ruleProblems = (settings: ProfileSettings): string[] => {
+  const problems: string[] = [];
+  const oids = new Set<string>();
+  for (const a of settings.subjectAttributes) {
+    const oid = attributeOid(a.attribute);
+    if (!oid) {
+      problems.push(`${a.attribute} is not a subject attribute`);
+      continue;
+    }
+    if (oids.has(oid)) problems.push(`${a.attribute} is ruled on twice`);
+    oids.add(oid);
+    if (a.locked && !a.defaultValue) {
+      problems.push(`${a.attribute} is locked with no value to hold`);
+    }
+    if (a.pattern) {
+      try {
+        const pattern = new RegExp(`^(?:${a.pattern})$`);
+        if (a.defaultValue && !pattern.test(a.defaultValue)) {
+          problems.push(
+            `${a.attribute}'s default "${a.defaultValue}" does not match its own pattern`,
+          );
+        }
+      } catch {
+        problems.push(`${a.attribute}'s pattern is not a regular expression`);
+      }
+    }
+  }
+  const named = settings.names.filter((n) => n.presence !== "excluded");
+  if (
+    new Set(settings.names.map((n) => n.type)).size !== settings.names.length
+  ) {
+    problems.push("a name type is listed twice");
+  }
+  if (settings.minNames > 0 && named.length === 0) {
+    problems.push(
+      `it needs ${settings.minNames} name${settings.minNames === 1 ? "" : "s"} but allows no name type`,
+    );
+  }
+  for (const p of settings.namePolicy) {
+    const problem = subtreeProblem(p.type, p.value.trim());
+    if (problem) problems.push(problem);
+  }
+  const listedTwice = (values: string[]) =>
+    values.filter((v, i) => values.indexOf(v) !== i);
+  for (const twice of [
+    ...listedTwice(settings.keyUsages.map((u) => u.usage)),
+    ...listedTwice(settings.extendedKeyUsages.map((u) => u.oid)),
+  ]) {
+    problems.push(`${twice} is listed twice`);
+  }
+  if (
+    settings.keyAlgorithms.length &&
+    !settings.keyAlgorithms.includes(settings.keyAlgorithm)
+  ) {
+    problems.push(
+      `its default key type ${settings.keyAlgorithm} is not among those it allows`,
+    );
+  }
+  const forced = (usage: string) =>
+    settings.keyUsages.some((u) => u.usage === usage && u.state === "forced");
+  if (
+    forced("key_encipherment") &&
+    settings.keyAlgorithms.length &&
+    !settings.keyAlgorithms.some((k) => k.startsWith("RSA-"))
+  ) {
+    problems.push(
+      "it forces key encipherment, which only an RSA key can do, but allows no RSA key",
+    );
+  }
+  return problems;
+};
 
 /**
  * Profiles (ADR 0020, 0034): each read as its latest version, which new
@@ -178,12 +284,14 @@ export class ProfileService {
     const latest = await this.row(profileId);
     const { description, ...given } = changes;
     const current = toSettings(latest);
-    const next = { ...current } as ProfileSettings;
+    const merged = { ...current } as ProfileSettings;
     for (const key of SETTINGS) {
       if (given[key] !== undefined) {
-        (next as unknown as Record<string, unknown>)[key] = given[key];
+        (merged as unknown as Record<string, unknown>)[key] = given[key];
       }
     }
+    // Compared as it would be kept: excluded usages and names unlisted.
+    const next = stored(merged);
     const changed = SETTINGS.filter((key) => !same(current[key], next[key]));
     const describes =
       description !== undefined && description !== latest.description;
@@ -386,6 +494,7 @@ export class ProfileService {
     version: number,
     settings: ProfileSettings,
   ): Promise<void> {
+    const kept = stored(settings);
     await tx.profileVersion.create({
       data: {
         profileId,
@@ -399,16 +508,54 @@ export class ProfileService {
         allowCsr: settings.allowCsr,
         allowGenerated: settings.allowGenerated,
         legacyExport: settings.legacyExport,
-        requireSan: settings.requireSan,
+        minNames: settings.minNames,
         escrow: settings.escrow,
         escrowOverridable: settings.escrowOverridable,
         extensions: settings.extensions,
         createdBy: principal.id,
-        keyUsages: { create: settings.keyUsages.map((usage) => ({ usage })) },
-        extendedKeyUsages: {
-          create: settings.extendedKeyUsages.map((oid) => ({ oid })),
+        keyUsages: {
+          create: kept.keyUsages.map(({ usage, state }) => ({
+            usage,
+            state: state as UsageState,
+          })),
         },
-        nameTypes: { create: settings.nameTypes.map((type) => ({ type })) },
+        extendedKeyUsages: {
+          create: kept.extendedKeyUsages.map(({ oid, state }) => ({
+            oid,
+            state: state as UsageState,
+          })),
+        },
+        nameTypes: {
+          create: kept.names.map(({ type, presence }) => ({
+            type,
+            presence: presence as NamePresence,
+          })),
+        },
+        namePolicies: {
+          create: kept.namePolicy.map(({ type, kind, value }) => ({
+            type,
+            kind,
+            value: value.trim(),
+          })),
+        },
+        subjectAttributes: {
+          create: kept.subjectAttributes.map((a) => ({
+            oid: attributeOid(a.attribute)!,
+            presence: a.presence,
+            defaultValue: a.defaultValue || null,
+            locked: a.locked,
+            pattern: a.pattern || null,
+            maxCount: a.maxCount,
+          })),
+        },
+        keyAlgorithms: {
+          create: kept.keyAlgorithms.map((algorithm) => ({
+            algorithm: KEY_ALGORITHM_ROWS[algorithm],
+          })),
+        },
+        csrHashes: {
+          create: kept.csrSignatureHashes.map((hash) => ({ hash })),
+        },
       },
     });
   }
@@ -428,9 +575,7 @@ export class ProfileService {
         `it renews at ${settings.renewAtDays} days, not before its ${settings.validityDays}-day validity ends`,
       );
     }
-    if (settings.requireSan && settings.nameTypes.length === 0) {
-      problems.push("it requires a name but allows no name type");
-    }
+    problems.push(...ruleProblems(settings));
     if (settings.issuerId) {
       const issuer = await this.prisma.issuer.findUnique({
         where: { id: settings.issuerId },

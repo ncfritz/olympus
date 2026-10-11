@@ -30,6 +30,7 @@ import {
 } from "../../metrics/pkiMetrics";
 import type {
   Certificate,
+  CertificateSubject,
   CreateCeremonyCertificateRequest,
   CreateCertificateRequest,
   DownloadFormatName,
@@ -51,19 +52,28 @@ import {
   keyAlgorithmName,
   type ProfileWithRules,
 } from "../../profiles/converters/ProfileConverter";
+import {
+  checkNames,
+  csrHashProblem,
+  keyAlgorithmProblem,
+  resolveSubject,
+  resolveUsages,
+  subjectString,
+} from "../../profiles/rules";
 import { ProfileService } from "../../profiles/services/ProfileService";
 import {
   bytes,
   certifiable,
   certificatePem,
+  certificateUsages,
   generatable,
+  keyAlgorithm,
   parseCertificate,
   parseCsr,
   randomSerial,
   spkiFromPem,
   spkiPem,
   spkiSha256,
-  subjectName,
 } from "../../pki/x509";
 import {
   type CertificateSpec,
@@ -93,7 +103,13 @@ type NameRow = { type: NameTypeName; value: string };
 
 /** What to certify: a subscriber's key, or one in the signer. */
 type SubjectKey =
-  | { kind: "csr"; csr: string; spki: Buffer }
+  | {
+      kind: "csr";
+      csr: string;
+      spki: Buffer;
+      /** The usages the CSR asks for, if it asks. */
+      asked: Usages;
+    }
   | { kind: "publicKey"; spki: Buffer }
   | {
       kind: "signer";
@@ -102,6 +118,9 @@ type SubjectKey =
       /** Generated in the signer, or brought by the operator. */
       origin: "generated" | "imported";
     };
+
+/** Key usages and extended key usages, as asked for or resolved. */
+type Usages = { keyUsages?: string[]; extendedKeyUsages?: string[] };
 
 type Lineage = { enrollment: Enrollment; key: Key; created: boolean };
 
@@ -269,11 +288,17 @@ export class CertificateService {
       const escrow = this.escrowFor(profile, request);
       const names = nameRows(request.names);
       this.checkNames(profile, names);
-      const subject = subjectName({
-        commonName: request.subject.commonName,
-        organizationalUnit: request.subject.organizationalUnit,
-        organization: request.subject.organization ?? this.pki.organization,
-      });
+      const subject = this.subjectFor(
+        profile,
+        request.subject,
+        this.pki.organization,
+      );
+      const requested: Usages = {
+        keyUsages: request.keyUsages,
+        extendedKeyUsages: request.extendedKeyUsages,
+      };
+      // Refused before any key is made, as the rest of the request is.
+      this.usagesFor(profile, requested, undefined);
       const issuer = await this.issuers.forIssuance(profile, request.issuerId);
       this.checkValidity(profile, issuer);
 
@@ -298,6 +323,7 @@ export class CertificateService {
           subjectKey,
           lineage,
           escrow,
+          requested,
           kind: AuditKind.CertificateIssued,
         });
       } catch (error: unknown) {
@@ -368,14 +394,11 @@ export class CertificateService {
         const escrow = this.escrowFor(profile, request);
         const names = nameRows(request.names);
         this.checkNames(profile, names);
-        const subject = subjectName({
-          commonName: request.subject.commonName,
-          organizationalUnit: request.subject.organizationalUnit,
-          organization:
-            request.subject.organization ??
-            issuer.organization ??
-            this.pki.organization,
-        });
+        const subject = this.subjectFor(
+          profile,
+          request.subject,
+          issuer.organization ?? this.pki.organization,
+        );
         const subjectKey = await this.generatedKey(profile);
         try {
           const lineage = await this.lineageFor(
@@ -510,6 +533,8 @@ export class CertificateService {
           subjectKey,
           lineage,
           renews: current.id,
+          // What it had carries over, within its version's rules.
+          asked: certificateUsages(certificatePem(current.der)),
           kind: AuditKind.CertificateRenewed,
         });
       },
@@ -793,19 +818,97 @@ export class CertificateService {
     });
   }
 
+  /**
+   * A request's alternative names against its version's rules: the types
+   * it allows or requires, how many, and its name policy (ADR 0034).
+   */
   private checkNames(profile: ProfileWithRules, names: NameRow[]): void {
-    const allowed = new Set(profile.nameTypes.map((t) => t.type));
-    const refused = names.filter((name) => !allowed.has(name.type));
-    if (refused.length) {
+    const problems = checkNames(
+      profile.nameTypes.map((t) => ({ type: t.type, presence: t.presence })),
+      profile.minNames,
+      profile.namePolicies.map((p) => ({
+        type: p.type,
+        kind: p.kind,
+        value: p.value,
+      })),
+      names,
+    );
+    if (problems.length) {
       throw new UnprocessableEntityException(
-        `The ${profile.id} profile does not allow ${[...new Set(refused.map((n) => n.type))].join(", ")} names`,
+        `The ${profile.id} profile refuses the names: ${problems.join("; ")}`,
       );
     }
-    if (profile.requireSan && names.length === 0) {
+  }
+
+  /**
+   * The subject a request gets under its version's rules (ADR 0034): CN,
+   * OU and O as given, and any other attribute, checked and defaulted.
+   */
+  private subjectFor(
+    profile: ProfileWithRules,
+    given: CertificateSubject,
+    organization: string,
+  ): string {
+    const values = [
+      ...(given.commonName ? [{ type: "CN", value: given.commonName }] : []),
+      ...(given.organizationalUnit
+        ? [{ type: "OU", value: given.organizationalUnit }]
+        : []),
+      ...(given.organization ? [{ type: "O", value: given.organization }] : []),
+      ...(given.attributes ?? []),
+    ];
+    const resolved = resolveSubject(
+      profile.subjectAttributes.map((a) => ({
+        oid: a.oid,
+        presence: a.presence,
+        defaultValue: a.defaultValue,
+        locked: a.locked,
+        pattern: a.pattern,
+        maxCount: a.maxCount,
+      })),
+      values,
+      organization,
+    );
+    if (!("value" in resolved)) {
       throw new UnprocessableEntityException(
-        `The ${profile.id} profile needs at least one alternative name`,
+        `The ${profile.id} profile refuses the subject: ${resolved.problems.join("; ")}`,
       );
     }
+    return subjectString(resolved.value);
+  }
+
+  /**
+   * The usages a certificate gets under its version's four states: the
+   * request's choice, else what was asked (its CSR, or the certificate it
+   * renews), else the defaults; the forced ones always (ADR 0034).
+   */
+  private usagesFor(
+    profile: ProfileWithRules,
+    requested: Usages,
+    asked: Usages | undefined,
+  ): { keyUsages: string[]; extendedKeyUsages: string[] } {
+    const keyUsages = resolveUsages(
+      profile.keyUsages.map((u) => ({ name: u.usage, state: u.state })),
+      requested.keyUsages,
+      asked?.keyUsages,
+      "key usage",
+    );
+    const extendedKeyUsages = resolveUsages(
+      profile.extendedKeyUsages.map((u) => ({ name: u.oid, state: u.state })),
+      requested.extendedKeyUsages,
+      asked?.extendedKeyUsages,
+      "extended key usage",
+    );
+    const problems = [...keyUsages.problems, ...extendedKeyUsages.problems];
+    if (!("value" in keyUsages) || !("value" in extendedKeyUsages)) {
+      throw new UnprocessableEntityException(
+        `The ${profile.id} profile refuses the usages: ${problems.join("; ")}`,
+      );
+    }
+    return {
+      keyUsages: keyUsages.value,
+      extendedKeyUsages: extendedKeyUsages.value,
+    };
   }
 
   private checkValidity(
@@ -875,8 +978,32 @@ export class CertificateService {
         `${csr.algorithm} keys are not certified: RSA or DSA of at least 2048 bits, P-256, P-384, P-521 or Ed25519`,
       );
     }
+    const problem =
+      keyAlgorithmProblem(
+        profile.keyAlgorithms.map((k) =>
+          keyAlgorithmName({ keyAlgorithm: k.algorithm }),
+        ),
+        csr.algorithm,
+      ) ??
+      csrHashProblem(
+        profile.csrHashes.map((h) => h.hash),
+        csr.signatureHash,
+      );
+    if (problem) {
+      throw new UnprocessableEntityException(
+        `The ${profile.id} ${problem.replace(/^the /, "")}`,
+      );
+    }
     this.keys.checkNotWeak(csr.spki);
-    return { kind: "csr", csr: pem, spki: csr.spki };
+    return {
+      kind: "csr",
+      csr: pem,
+      spki: csr.spki,
+      asked: {
+        keyUsages: csr.keyUsages,
+        extendedKeyUsages: csr.extendedKeyUsages,
+      },
+    };
   }
 
   /** A key generated in the signer: of the type asked for, or the profile's. */
@@ -889,10 +1016,19 @@ export class CertificateService {
         `The ${profile.id} profile takes a CSR: its keys are the subscriber's`,
       );
     }
-    const key = await this.signer.generateKey(
-      "subject",
-      algorithm ?? keyAlgorithmName(profile),
+    const chosen = algorithm ?? keyAlgorithmName(profile);
+    const problem = keyAlgorithmProblem(
+      profile.keyAlgorithms.map((k) =>
+        keyAlgorithmName({ keyAlgorithm: k.algorithm }),
+      ),
+      chosen,
     );
+    if (problem) {
+      throw new UnprocessableEntityException(
+        `The ${profile.id} ${problem.replace(/^the /, "")}`,
+      );
+    }
+    const key = await this.signer.generateKey("subject", chosen);
     return {
       kind: "signer",
       signerKeyId: key.id,
@@ -927,6 +1063,17 @@ export class CertificateService {
       });
     const spki = spkiFromPem(key.publicKey);
     try {
+      const problem = keyAlgorithmProblem(
+        profile.keyAlgorithms.map((k) =>
+          keyAlgorithmName({ keyAlgorithm: k.algorithm }),
+        ),
+        keyAlgorithm(spki),
+      );
+      if (problem) {
+        throw new UnprocessableEntityException(
+          `The ${profile.id} ${problem.replace(/^the /, "")}`,
+        );
+      }
       this.keys.checkNotWeak(spki);
     } catch (error: unknown) {
       await this.signer.destroyKey(key.id).catch(() => undefined);
@@ -1040,6 +1187,10 @@ export class CertificateService {
       renews?: string;
       /** Whether a generated key stays escrowed; off, it is exported once. */
       escrow?: boolean;
+      /** The usages the request chose, if it chose. */
+      requested?: Usages;
+      /** What else asked for usages: the certificate it renews. */
+      asked?: Usages;
       /** Instead of the profile's (a ceremony's leaf may be shorter). */
       validityDays?: number;
       /** How it is signed: by the issuing CA, unless a ceremony signs it. */
@@ -1050,6 +1201,14 @@ export class CertificateService {
     },
   ): Promise<FullCertificate> {
     const { profile, issuer, subjectKey } = issuance;
+    const usages = this.usagesFor(
+      profile,
+      issuance.requested ?? {},
+      (subjectKey.kind === "csr" &&
+      (subjectKey.asked.keyUsages || subjectKey.asked.extendedKeyUsages)
+        ? subjectKey.asked
+        : undefined) ?? issuance.asked,
+    );
     const notBefore = startNow();
     const minimal = profile.extensions === "minimal";
     const spec: CertificateSpec = {
@@ -1063,10 +1222,8 @@ export class CertificateService {
       ...(minimal
         ? { keyUsage: [], extensions: "minimal" }
         : {
-            keyUsage: profile.keyUsages.map(
-              (u) => u.usage,
-            ) as CertificateSpec["keyUsage"],
-            extendedKeyUsages: profile.extendedKeyUsages.map((u) => u.oid),
+            keyUsage: usages.keyUsages as CertificateSpec["keyUsage"],
+            extendedKeyUsages: usages.extendedKeyUsages,
             sans: toSans(issuance.names),
             crlDistributionPoints: [issuer.crlUrl],
             issuerUrls: [issuer.caIssuersUrl],

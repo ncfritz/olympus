@@ -3,11 +3,17 @@ import type {
   ProfileExtendedKeyUsage,
   ProfileKeyUsage,
   ProfileNameType,
+  ProfileCsrHash as ProfileCsrHashRow,
+  ProfileKeyAlgorithm as ProfileKeyAlgorithmRow,
+  ProfileNamePolicy as ProfileNamePolicyRow,
+  ProfileSubjectAttribute as ProfileSubjectAttributeRow,
   ProfileVersion as ProfileVersionRow,
 } from "../../store/prisma";
+import { attributeName, attributeRank } from "../subjectAttributes";
 import type { KeyAlgorithmName } from "../../model/common";
 import moment from "moment";
 import type {
+  HashName,
   KeyUsageName,
   Profile,
   ProfileSettings,
@@ -15,10 +21,17 @@ import type {
 } from "../../model/profiles";
 
 /** A profile version with its rules. */
-export type ProfileVersionWithRules = ProfileVersionRow & {
+export type ProfileVersionWithRules = ProfileVersionRow & VersionRules;
+
+/** A version's rules, as the store keeps them. */
+type VersionRules = {
   keyUsages: ProfileKeyUsage[];
   extendedKeyUsages: ProfileExtendedKeyUsage[];
   nameTypes: ProfileNameType[];
+  subjectAttributes: ProfileSubjectAttributeRow[];
+  namePolicies: ProfileNamePolicyRow[];
+  keyAlgorithms: ProfileKeyAlgorithmRow[];
+  csrHashes: ProfileCsrHashRow[];
 };
 
 /** A version's rules, to include with it. */
@@ -26,6 +39,10 @@ export const VERSION_RULES = {
   keyUsages: true,
   extendedKeyUsages: true,
   nameTypes: true,
+  subjectAttributes: true,
+  namePolicies: true,
+  keyAlgorithms: true,
+  csrHashes: true,
 } as const;
 
 /** A profile with a version's rules: its latest, or another's to renew. */
@@ -98,24 +115,25 @@ export const keyAlgorithmName = (row: {
 }): KeyAlgorithmName => ALGORITHMS[row.keyAlgorithm];
 
 /** A version's settings, as the API gives them. */
-export const toSettings = (row: {
-  issuerId: string | null;
-  issuerPurpose: string;
-  keyAlgorithm: ProfileVersionRow["keyAlgorithm"];
-  validityDays: number;
-  renewAtDays: number;
-  maxKeyAgeDays: number;
-  allowCsr: boolean;
-  allowGenerated: boolean;
-  legacyExport: boolean;
-  requireSan: boolean;
-  escrow: boolean;
-  escrowOverridable: boolean;
-  extensions: ProfileVersionRow["extensions"];
-  keyUsages: ProfileKeyUsage[];
-  extendedKeyUsages: ProfileExtendedKeyUsage[];
-  nameTypes: ProfileNameType[];
-}): ProfileSettings => ({
+export const toSettings = (
+  row: Pick<
+    ProfileVersionRow,
+    | "issuerId"
+    | "issuerPurpose"
+    | "keyAlgorithm"
+    | "validityDays"
+    | "renewAtDays"
+    | "maxKeyAgeDays"
+    | "allowCsr"
+    | "allowGenerated"
+    | "legacyExport"
+    | "minNames"
+    | "escrow"
+    | "escrowOverridable"
+    | "extensions"
+  > &
+    VersionRules,
+): ProfileSettings => ({
   issuerId: row.issuerId ?? undefined,
   issuerPurpose: row.issuerPurpose,
   keyAlgorithm: keyAlgorithmName(row),
@@ -125,13 +143,38 @@ export const toSettings = (row: {
   allowCsr: row.allowCsr,
   allowGenerated: row.allowGenerated,
   legacyExport: row.legacyExport,
-  requireSan: row.requireSan,
+  minNames: row.minNames,
   escrow: row.escrow,
   escrowOverridable: row.escrowOverridable,
   extensions: row.extensions,
-  keyUsages: row.keyUsages.map((u) => u.usage as KeyUsageName).sort(),
-  extendedKeyUsages: row.extendedKeyUsages.map((u) => u.oid).sort(),
-  nameTypes: row.nameTypes.map((t) => t.type).sort(),
+  keyUsages: row.keyUsages
+    .map((u) => ({ usage: u.usage as KeyUsageName, state: u.state }))
+    .sort((a, b) => a.usage.localeCompare(b.usage)),
+  extendedKeyUsages: row.extendedKeyUsages
+    .map((u) => ({ oid: u.oid, state: u.state }))
+    .sort((a, b) => a.oid.localeCompare(b.oid)),
+  names: row.nameTypes
+    .map((t) => ({ type: t.type, presence: t.presence }))
+    .sort((a, b) => a.type.localeCompare(b.type)),
+  namePolicy: row.namePolicies
+    .map((p) => ({ type: p.type, kind: p.kind, value: p.value }))
+    .sort((a, b) =>
+      `${a.type}${a.kind}${a.value}`.localeCompare(
+        `${b.type}${b.kind}${b.value}`,
+      ),
+    ),
+  subjectAttributes: [...row.subjectAttributes]
+    .sort((a, b) => attributeRank(a.oid) - attributeRank(b.oid))
+    .map((a) => ({
+      attribute: attributeName(a.oid),
+      presence: a.presence,
+      defaultValue: a.defaultValue ?? undefined,
+      locked: a.locked,
+      pattern: a.pattern ?? undefined,
+      maxCount: a.maxCount,
+    })),
+  keyAlgorithms: row.keyAlgorithms.map((k) => ALGORITHMS[k.algorithm]).sort(),
+  csrSignatureHashes: row.csrHashes.map((h) => h.hash as HashName).sort(),
 });
 
 export const toDomainObject = (row: ProfileWithRules): Profile => ({

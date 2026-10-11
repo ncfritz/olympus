@@ -133,7 +133,74 @@ export type ParsedCsr = {
   names: SubjectNames;
   signatureValid: boolean;
   algorithm: string;
+  /** The hash its signature uses; none for Ed25519. */
+  signatureHash?: string;
+  /** The key usages it asks for, if it asks (as the API names them). */
+  keyUsages?: string[];
+  /** The extended key usages it asks for, if it asks. */
+  extendedKeyUsages?: string[];
 };
+
+/** Signature algorithms by OID, to the hash each uses. */
+const SIGNATURE_HASHES: Record<string, string> = {
+  "1.2.840.113549.1.1.5": "sha1",
+  "1.2.840.113549.1.1.14": "sha224",
+  "1.2.840.113549.1.1.11": "sha256",
+  "1.2.840.113549.1.1.12": "sha384",
+  "1.2.840.113549.1.1.13": "sha512",
+  "1.2.840.10045.4.1": "sha1",
+  "1.2.840.10045.4.3.1": "sha224",
+  "1.2.840.10045.4.3.2": "sha256",
+  "1.2.840.10045.4.3.3": "sha384",
+  "1.2.840.10045.4.3.4": "sha512",
+  "1.2.840.10040.4.3": "sha1",
+  "2.16.840.1.101.3.4.3.1": "sha224",
+  "2.16.840.1.101.3.4.3.2": "sha256",
+  "2.16.840.1.101.3.4.3.3": "sha384",
+  "2.16.840.1.101.3.4.3.4": "sha512",
+};
+
+/** A signature's hash, from Web Crypto's description or its OID. */
+const signatureHashOf = (algorithm: {
+  name: string;
+  hash?: { name: string };
+}): string | undefined =>
+  algorithm.hash
+    ? algorithm.hash.name.toLowerCase().replace("-", "")
+    : SIGNATURE_HASHES[algorithm.name];
+
+const KEY_USAGE_FLAGS: [x509.KeyUsageFlags, string][] = [
+  [x509.KeyUsageFlags.digitalSignature, "digital_signature"],
+  [x509.KeyUsageFlags.nonRepudiation, "content_commitment"],
+  [x509.KeyUsageFlags.keyEncipherment, "key_encipherment"],
+  [x509.KeyUsageFlags.dataEncipherment, "data_encipherment"],
+  [x509.KeyUsageFlags.keyAgreement, "key_agreement"],
+  [x509.KeyUsageFlags.keyCertSign, "key_cert_sign"],
+  [x509.KeyUsageFlags.cRLSign, "crl_sign"],
+];
+
+/** The usages a CSR or certificate's extensions name, if they name any. */
+export const usagesOf = (
+  extensions: readonly x509.Extension[],
+): { keyUsages?: string[]; extendedKeyUsages?: string[] } => {
+  const ku = extensions.find(
+    (e): e is x509.KeyUsagesExtension => e instanceof x509.KeyUsagesExtension,
+  );
+  const eku = extensions.find(
+    (e): e is x509.ExtendedKeyUsageExtension =>
+      e instanceof x509.ExtendedKeyUsageExtension,
+  );
+  return {
+    keyUsages: ku
+      ? KEY_USAGE_FLAGS.filter(([flag]) => ku.usages & flag).map(([, n]) => n)
+      : undefined,
+    extendedKeyUsages: eku ? eku.usages.map((u) => String(u)) : undefined,
+  };
+};
+
+/** A certificate's usages, as a renewal carries them over. */
+export const certificateUsages = (pem: string) =>
+  usagesOf(new x509.X509Certificate(pem).extensions);
 
 /** The alternative names in a SubjectAlternativeName extension. */
 const sanNames = (extensions: readonly x509.Extension[]): SubjectNames => {
@@ -217,6 +284,10 @@ export const parseCsr = async (pem: string): Promise<ParsedCsr> => {
     names,
     signatureValid: await verifyCsr(csr, spki),
     algorithm: keyAlgorithm(spki),
+    signatureHash: signatureHashOf(
+      csr.signatureAlgorithm as { name: string; hash?: { name: string } },
+    ),
+    ...usagesOf(csr.extensions),
   };
 };
 

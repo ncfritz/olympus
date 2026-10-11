@@ -52,7 +52,26 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
   PKCS#8 PEM or PKCS#12, with its passphrase) where the profile allows a
   generated key, and forgotten by the signer once certified unless
   escrowed; or the subscriber's CSR, of any of those types (RSA and DSA
-  from 2048 bits).
+  from 2048 bits). A version listing key types (`keyAlgorithms`) takes
+  only those; one listing CSR signature hashes (`csrSignatureHashes`)
+  takes CSRs signed with only those.
+- **The version's rules** (ADR 0034), at issuance and at renewal alike,
+  from the version the enrollment holds:
+  - _Subject_: `subject.attributes` (`{type, value}`, by name or OID) and
+    the older `commonName`, `organizationalUnit`, `organization` fields,
+    against each attribute's presence (required, optional, excluded),
+    default, lock, pattern and count. With no default, the organization
+    is the configured one. CN is required and OU and O optional unless a
+    version says otherwise.
+  - _Names_: each type allowed or required, at least `minNames` of them,
+    inside the permitted subtrees of their type and outside the excluded
+    ones (RFC 5280: `example.com` is it and below, `.example.com` below
+    only; IP networks as address/prefix).
+  - _Usages_, each forced, default or optional (any other is excluded):
+    the forced ones always; then the request's `keyUsages` and
+    `extendedKeyUsages` (refused if it names an excluded one), else what
+    the CSR or the renewed certificate carried (excluded ones dropped),
+    else the defaults.
 - **One key, one request**: a key already seen is reissued only for the
   same profile, subject and names, and refused (`409`) for anything else.
   A CA's key is never a subject's. Weak RSA keys (ROCA, close primes) are
