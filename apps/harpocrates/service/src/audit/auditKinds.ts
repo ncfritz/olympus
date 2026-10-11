@@ -30,6 +30,11 @@ export const AuditKind = {
   DeployTargetDeleted: "deploy-target.deleted",
   CertificateDeployed: "deployment.deployed",
   DeploymentFailed: "deployment.failed",
+  AcmeCredentialCreated: "acme-credential.created",
+  AcmeCredentialRevoked: "acme-credential.revoked",
+  AcmeAccountCreated: "acme-account.created",
+  AcmeAccountUpdated: "acme-account.updated",
+  AcmeAccountDeactivated: "acme-account.deactivated",
 } as const;
 
 export type AuditKindName = (typeof AuditKind)[keyof typeof AuditKind];

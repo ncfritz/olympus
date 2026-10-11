@@ -11,6 +11,7 @@ import { bearerToken, ConsoleSession } from "@ncfritz/olympus-nest";
 import { Reflector } from "@nestjs/core";
 import type { Response } from "express";
 import { authConfig, type AuthConfigType } from "../../config/configuration";
+import { ACME_ROUTE_KEY } from "../../acme/acmeRoute";
 import { CLIENT_CERTIFICATE_KEY, listenerOf } from "../clientCertificate";
 import type { AuthenticatedRequest, PkiRole, Principal } from "../principal";
 import { IS_PUBLIC_KEY } from "../public";
@@ -26,9 +27,9 @@ import { AccessTokenService } from "../services/AccessTokenService";
  * The token is a Bearer header, or, for the CA console, its cookie,
  * refreshed when it has expired (ADR 0029, 0032).
  *
- * The renewal listener serves only @ClientCertificate() routes, and they
- * are served nowhere else: anything else is a 404 there, and they are one
- * on the management listener.
+ * The renewal listener serves only @ClientCertificate() and @AcmeRoute()
+ * routes, and they are served nowhere else: anything else is a 404 there,
+ * and they are one on the management listener.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -41,11 +42,13 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
+    // The renewal listener's routes: renewal by client certificate, and
+    // ACME, whose requests authenticate themselves (a JWS).
     const renewalRoute = Boolean(
       this.reflector.getAllAndOverride<boolean>(
         CLIENT_CERTIFICATE_KEY,
         targets,
-      ),
+      ) || this.reflector.getAllAndOverride<boolean>(ACME_ROUTE_KEY, targets),
     );
     const onRenewal =
       listenerOf(context.switchToHttp().getRequest<AuthenticatedRequest>()) ===

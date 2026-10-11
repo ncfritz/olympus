@@ -123,6 +123,15 @@ export type DeployConfig = {
   checkSeconds: number;
 };
 
+export type AcmeConfig = {
+  /**
+   * Where ACME clients reach the renewal listener: every URL in the
+   * directory starts with it. By default the listener's first hostname
+   * and port.
+   */
+  baseUrl: string;
+};
+
 export type HarpocratesConfig = {
   server: ServerConfig;
   logging: LoggingConfig;
@@ -133,6 +142,7 @@ export type HarpocratesConfig = {
   crl: CrlConfig;
   renewal: RenewalConfig;
   deploy: DeployConfig;
+  acme: AcmeConfig;
 };
 
 const integer = (
@@ -252,7 +262,17 @@ export const readConfig = (
       scheduleSeconds: integer(read, "DEPLOY_SCHEDULE_SECONDS", 60, 0),
       checkSeconds: integer(read, "ENDPOINT_CHECK_SECONDS", 3600, 0),
     },
+    acme: { baseUrl: "" },
   };
+  config.acme.baseUrl = withoutTrailingSlash(
+    read.string(
+      "ACME_BASE_URL",
+      `https://${config.renewal.hostnames[0] ?? "localhost"}:${config.renewal.port}`,
+    ),
+  );
+  if (!config.acme.baseUrl.startsWith("https://")) {
+    read.problems.push("ACME_BASE_URL must be an https URL");
+  }
   if (config.renewal.port > 65535) {
     read.problems.push("RENEWAL_LISTEN_PORT must be a port number");
   }
@@ -304,6 +324,11 @@ export const deployConfig = registerAs(
   () => readConfig(process.env).deploy,
 );
 
+export const acmeConfig = registerAs(
+  "acme",
+  () => readConfig(process.env).acme,
+);
+
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type LoggingConfigType = ConfigType<typeof loggingConfig>;
 export type DatabaseConfigType = ConfigType<typeof databaseConfig>;
@@ -313,6 +338,7 @@ export type PkiConfigType = ConfigType<typeof pkiConfig>;
 export type CrlConfigType = ConfigType<typeof crlConfig>;
 export type RenewalConfigType = ConfigType<typeof renewalConfig>;
 export type DeployConfigType = ConfigType<typeof deployConfig>;
+export type AcmeConfigType = ConfigType<typeof acmeConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
@@ -324,4 +350,5 @@ export const ALL_CONFIG = [
   crlConfig,
   renewalConfig,
   deployConfig,
+  acmeConfig,
 ];

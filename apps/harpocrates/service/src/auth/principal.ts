@@ -13,13 +13,16 @@ export enum PkiRole {
  * Harpocrates itself (the scheduler).
  */
 export type Principal = {
-  /** `user:<sub>`, `cli:<name>` or `system`: what the audit log records. */
+  /**
+   * `user:<sub>`, `cli:<name>`, `certificate:<serial>`, `acme:<account>`
+   * or `system`: what the audit log records.
+   */
   id: string;
   roles: PkiRole[];
   /** When the session's sign-in completed, in seconds; 0 for the CLI. */
   authTime: number;
   /** Where it came from (ADR 0020, Audit). */
-  surface: "api" | "cli" | "system" | "renewal";
+  surface: "api" | "cli" | "system" | "renewal" | "acme";
 };
 
 export type AuthenticatedRequest = Request & {
@@ -35,3 +38,11 @@ export const SYSTEM: Principal = {
   authTime: 0,
   surface: "system",
 };
+
+/** An ACME account, acting through ACME (ADR 0020, ACME): no roles. */
+export const acmePrincipal = (accountId: string): Principal => ({
+  id: `acme:${accountId}`,
+  roles: [],
+  authTime: 0,
+  surface: "acme",
+});

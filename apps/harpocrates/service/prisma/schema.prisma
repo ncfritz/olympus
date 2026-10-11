@@ -539,6 +539,101 @@ model EndpointObservation {
   @@map("endpoint_observations")
 }
 
+// ---- ACME (ADR 0020, ACME): RFC 8555 on the renewal listener, for the
+// TLS CA, with External Account Binding required.
+
+/// An External Account Binding credential, made in the console: what lets
+/// an ACME client register, and which names its account may request.
+/// Single use: binding it to an account erases its key.
+model AcmeEabCredential {
+  /// The EAB key id an ACME client is given (`--eab-kid`).
+  id        String    @id
+  /// What it is for: the host or the client that holds it.
+  label     String
+  /// The HMAC key, base64url, until an account binds it.
+  hmacKey   String?   @map("hmac_key")
+  /// Who made it.
+  principal String
+  boundAt   DateTime? @map("bound_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  names   AcmeNamePolicy[]
+  account AcmeAccount?
+
+  @@map("acme_eab_credentials")
+}
+
+/// exact: that DNS name only. subtree: the name and every name below it.
+enum AcmeNameKind {
+  exact
+  subtree
+}
+
+/// A name, or a subtree of names, a credential's account may request.
+model AcmeNamePolicy {
+  id           Int               @id @default(autoincrement())
+  credentialId String            @map("credential_id")
+  credential   AcmeEabCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  kind         AcmeNameKind
+  /// A DNS name, lower case, without a trailing dot.
+  value        String
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  @@unique([credentialId, kind, value])
+  @@map("acme_name_policies")
+}
+
+enum AcmeAccountStatus {
+  valid
+  deactivated
+  revoked
+}
+
+/// An ACME account: its key, and the credential it was bound with.
+model AcmeAccount {
+  id            String            @id @default(uuid()) @db.Uuid
+  credentialId  String            @unique @map("credential_id")
+  credential    AcmeEabCredential @relation(fields: [credentialId], references: [id])
+  /// RFC 7638 SHA-256 thumbprint of its key, base64url: one account a key.
+  keyThumbprint String            @unique @map("key_thumbprint")
+  /// Its key, SubjectPublicKeyInfo DER.
+  publicKey     Bytes             @map("public_key")
+  status        AcmeAccountStatus @default(valid)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  contacts AcmeAccountContact[]
+
+  @@map("acme_accounts")
+}
+
+/// A contact URI an account gave (mailto:).
+model AcmeAccountContact {
+  id        Int         @id @default(autoincrement())
+  accountId String      @map("account_id") @db.Uuid
+  account   AcmeAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  uri       String
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@unique([accountId, uri])
+  @@map("acme_account_contacts")
+}
+
+/// A Replay-Nonce handed out and not yet used: each is good once, briefly.
+model AcmeNonce {
+  value     String   @id
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([expiresAt])
+  @@map("acme_nonces")
+}
+
 // ---- Audit
 
 /// Append-only and hash-chained: each event's hash covers the previous

@@ -1,7 +1,6 @@
 import { createPrivateKey, X509Certificate } from "crypto";
 import * as fs from "fs";
 import * as https from "https";
-import * as net from "net";
 import * as path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -15,6 +14,7 @@ import { RenewalListener } from "../../src/renewal/services/RenewalListener";
 import {
   buildHierarchy,
   E2E_DATABASE_URL,
+  freePort,
   type Hierarchy,
   makeCsr,
   startHarness,
@@ -32,16 +32,6 @@ type Certificate = {
 };
 
 const DAY = 24 * 60 * 60 * 1000;
-
-const freePort = (): Promise<number> =>
-  new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.listen(0, () => {
-      const { port } = server.address() as net.AddressInfo;
-      server.close(() => resolve(port));
-    });
-    server.on("error", reject);
-  });
 
 /** PKCS#8 PEM of a WebCrypto key pair's private half. */
 const keyPem = async (keys: CryptoKeyPair): Promise<string> =>

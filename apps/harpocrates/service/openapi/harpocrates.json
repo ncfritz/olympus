@@ -3654,6 +3654,209 @@
           "Deploy Targets"
         ]
       }
+    },
+    "/v1/acme/credentials": {
+      "get": {
+        "description": "Every External Account Binding credential, newest first, with the names its account may request and the account it was bound to. Never their keys.",
+        "operationId": "ListAcmeCredentials",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The credentials.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAcmeCredentialsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists ACME credentials",
+        "tags": [
+          "ACME Credentials"
+        ]
+      },
+      "post": {
+        "description": "Makes an External Account Binding credential for one ACME client: its key id and HMAC key, which the answer shows once, and the names or subtrees its account may request from the TLS CA. A credential registers one account; binding erases its key.",
+        "operationId": "CreateAcmeCredential",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "What it is for, and its names.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAcmeCredentialRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The credential, with its HMAC key this once.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAcmeCredentialResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates an ACME credential",
+        "tags": [
+          "ACME Credentials"
+        ]
+      }
+    },
+    "/v1/acme/credential/{credentialId}/revoke": {
+      "post": {
+        "description": "Revokes an External Account Binding credential: unused, it can no longer register an account; bound, its account is revoked and can order nothing more. Certificates it was issued stay valid until revoked themselves.",
+        "operationId": "RevokeAcmeCredential",
+        "parameters": [
+          {
+            "name": "credentialId",
+            "required": true,
+            "in": "path",
+            "description": "The credential's key id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The credential, revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeAcmeCredentialResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revokes an ACME credential",
+        "tags": [
+          "ACME Credentials"
+        ]
+      }
     }
   },
   "info": {
@@ -3667,6 +3870,9 @@
     }
   },
   "tags": [
+    {
+      "name": "ACME Credentials"
+    },
     {
       "name": "Audit"
     },
@@ -6416,6 +6622,220 @@
         },
         "required": [
           "deployTarget"
+        ]
+      },
+      "AcmeNames": {
+        "type": "object",
+        "properties": {
+          "exact": {
+            "description": "Names it may request exactly",
+            "example": [
+              "nas.internal.ncfritz.net"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subtrees": {
+            "description": "Names it may request with every name below them",
+            "example": [
+              "lab.internal.ncfritz.net"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AcmeAccountStatus": {
+        "type": "string",
+        "enum": [
+          "valid",
+          "deactivated",
+          "revoked"
+        ],
+        "description": "valid, deactivated (by its client) or revoked (here)"
+      },
+      "AcmeAccountSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "status": {
+            "description": "valid, deactivated (by its client) or revoked (here)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeAccountStatus"
+              }
+            ]
+          },
+          "contacts": {
+            "description": "The contact URIs its client gave",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "keyThumbprint": {
+            "type": "string",
+            "description": "Its key's RFC 7638 thumbprint, base64url"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it registered"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "contacts",
+          "keyThumbprint",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AcmeCredential": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its key id, which the ACME client is given (--eab-kid)"
+          },
+          "label": {
+            "type": "string",
+            "description": "What it is for: the host or the client that holds it"
+          },
+          "names": {
+            "description": "The names its account may request",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeNames"
+              }
+            ]
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who made it"
+          },
+          "boundAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when an account bound it, which erased its key"
+          },
+          "revokedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was revoked"
+          },
+          "account": {
+            "description": "The account it was bound to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeAccountSummary"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was made"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "names",
+          "principal",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ListAcmeCredentialsResponse": {
+        "type": "object",
+        "properties": {
+          "credentials": {
+            "description": "Every credential, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcmeCredential"
+            }
+          }
+        },
+        "required": [
+          "credentials"
+        ]
+      },
+      "CreateAcmeCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "What it is for: the host or the client that will hold it",
+            "example": "Caddy on furball"
+          },
+          "names": {
+            "description": "The names its account may request: at least one",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeNames"
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "names"
+        ]
+      },
+      "CreateAcmeCredentialResponse": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "description": "The credential",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeCredential"
+              }
+            ]
+          },
+          "hmacKey": {
+            "type": "string",
+            "description": "Its HMAC key, base64url (--eab-hmac-key): shown this once, and erased when an account binds it"
+          },
+          "directoryUrl": {
+            "type": "string",
+            "description": "The ACME directory the client registers at"
+          }
+        },
+        "required": [
+          "credential",
+          "hmacKey",
+          "directoryUrl"
+        ]
+      },
+      "RevokeAcmeCredentialResponse": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "description": "The credential, revoked, with its account",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeCredential"
+              }
+            ]
+          }
+        },
+        "required": [
+          "credential"
         ]
       }
     }

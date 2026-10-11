@@ -75,6 +75,7 @@
     "@types/node": "catalog:",
     "@types/supertest": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "acme-client": "5.4.0",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "rimraf": "^6.0.1",

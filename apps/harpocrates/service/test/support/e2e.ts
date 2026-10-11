@@ -3,6 +3,7 @@ import * as x509 from "@peculiar/x509";
 import { spawn, execFileSync, type ChildProcess } from "child_process";
 import { randomBytes, webcrypto } from "crypto";
 import * as fs from "fs";
+import * as net from "net";
 import * as http from "http";
 import * as os from "os";
 import * as path from "path";
@@ -410,3 +411,14 @@ export const opensslVerify = (
   ];
   return execFileSync("openssl", args, { encoding: "utf8" });
 };
+
+/** A port nothing listens on, for a listener a test starts. */
+export const freePort = (): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, () => {
+      const { port } = server.address() as net.AddressInfo;
+      server.close(() => resolve(port));
+    });
+    server.on("error", reject);
+  });

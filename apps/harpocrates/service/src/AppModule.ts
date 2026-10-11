@@ -10,6 +10,7 @@ import { IssuersModule } from "./issuers/IssuersModule";
 import { KeysModule } from "./keys/KeysModule";
 import { MetricsModule } from "./metrics/MetricsModule";
 import { ProfilesModule } from "./profiles/ProfilesModule";
+import { AcmeModule } from "./acme/AcmeModule";
 import { DeployModule } from "./deploy/DeployModule";
 import { RenewalModule } from "./renewal/RenewalModule";
 import { SignerModule } from "./signer/SignerModule";
@@ -37,6 +38,7 @@ import { StoreModule } from "./store/StoreModule";
     CrlsModule,
     RenewalModule,
     DeployModule,
+    AcmeModule,
   ],
 })
 export class AppModule {}

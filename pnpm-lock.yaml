@@ -220,7 +220,7 @@ importers:
         version: 6.1.3(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)
       axios:
         specifier: ^1.16.1
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       cli-progress:
         specifier: ^3.12.0
         version: 3.12.0
@@ -380,7 +380,7 @@ importers:
         version: 11.2.5(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)
       axios:
         specifier: ^1.16.1
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.11.1
@@ -510,7 +510,7 @@ importers:
         version: 11.2.5(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)
       axios:
         specifier: ^1.16.1
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       moment:
         specifier: 'catalog:'
         version: 2.31.0
@@ -740,7 +740,7 @@ importers:
         version: 6.0.3
       unplugin-swc:
         specifier: 'catalog:'
-        version: 1.6.0(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2)(rolldown@1.2.9)(rollup@2.80.0)(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(webpack@5.106.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2))
+        version: 1.6.0(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2)(rolldown@1.2.9)(rollup@4.63.4)(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(webpack@5.106.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2))
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.7)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.1.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -861,7 +861,7 @@ importers:
         version: 11.2.5(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)
       axios:
         specifier: 'catalog:'
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       google-auth-library:
         specifier: ^11.1.0
         version: 11.1.0
@@ -967,7 +967,7 @@ importers:
         version: 11.2.5(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)
       axios:
         specifier: ^1.16.1
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       class-transformer:
         specifier: 'catalog:'
         version: 0.5.1
@@ -1218,7 +1218,7 @@ importers:
         version: 11.2.5(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.5)(@nestjs/platform-socket.io@11.2.5)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       axios:
         specifier: 'catalog:'
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       body-parser:
         specifier: ^2.3.0
         version: 2.3.0
@@ -1533,7 +1533,7 @@ importers:
         version: 6.19.3(prisma@6.19.3(typescript@6.0.3))(typescript@6.0.3)
       axios:
         specifier: 'catalog:'
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       class-transformer:
         specifier: 'catalog:'
         version: 0.5.1
@@ -1607,6 +1607,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.11(vitest@4.1.11)
+      acme-client:
+        specifier: 5.4.0
+        version: 5.4.0
       eslint:
         specifier: 'catalog:'
         version: 10.10.0(jiti@2.7.0)
@@ -1624,7 +1627,7 @@ importers:
         version: 6.0.3
       unplugin-swc:
         specifier: 'catalog:'
-        version: 1.6.0(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2)(rolldown@1.2.9)(rollup@4.63.4)(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(webpack@5.106.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2))
+        version: 1.6.0(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2)(rolldown@1.2.9)(rollup@2.80.0)(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(webpack@5.106.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(esbuild@0.28.2))
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.7)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.1.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
@@ -1720,7 +1723,7 @@ importers:
         version: 2.0.7(antd@6.6.4(date-fns@3.6.0)(luxon@3.7.2)(moment@2.31.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       axios:
         specifier: ^1.10.0
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       csstype:
         specifier: ^3.2.3
         version: 3.2.3
@@ -1980,7 +1983,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       axios:
         specifier: ^1.13.2
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
@@ -2299,7 +2302,7 @@ importers:
     dependencies:
       axios:
         specifier: 'catalog:'
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
     devDependencies:
       '@hey-api/openapi-ts':
         specifier: 0.99.0
@@ -5380,6 +5383,10 @@ packages:
   '@peculiar/utils@2.0.3':
     resolution: {integrity: sha512-+oL3HPFRIZ1St2K50lWCXiioIgSoxzz7R1J3uF6neO2yl1sgmpgY6XXJH4BdpoDkMWznQTeYF6oWNDZLCdQ4eQ==}
 
+  '@peculiar/x509@1.14.3':
+    resolution: {integrity: sha512-C2Xj8FZ0uHWeCXXqX5B4/gVFQmtSkiuOolzAgutjTfseNOHT3pUjljDZsTSxXFGgio54bCzVFqmEOUrIVk8RDA==}
+    engines: {node: '>=20.0.0'}
+
   '@peculiar/x509@2.1.0':
     resolution: {integrity: sha512-IYbg1R03CSQGWwl24kGyqrdVtixNSbRaDvBg1r5wyYjTP+VwPQkka1BzTgU5+vxiuwqg04OxdvdJ1xYYFIdUSA==}
     engines: {node: '>=20.0.0'}
@@ -7226,6 +7233,10 @@ packages:
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
     engines: {node: '>= 0.6'}
+
+  acme-client@5.4.0:
+    resolution: {integrity: sha512-mORqg60S8iML6XSmVjqjGHJkINrCGLMj2QvDmFzI9vIlv1RGlyjmw3nrzaINJjkNsYXC41XhhD5pfy7CtuGcbA==}
+    engines: {node: '>= 16'}
 
   acorn-import-attributes@1.9.5:
     resolution: {integrity: sha512-n02Vykv5uA3eHGM/Z2dQrcD56kL8TyDb2p1+0P83PClMnC/nc+anbQRhIOWnSq4Ke/KvDPrY3C9hDtC/A3eHnQ==}
@@ -16845,7 +16856,7 @@ snapshots:
   '@nestjs/axios@4.0.1(@nestjs/common@11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(axios@1.20.0)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.2.5(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      axios: 1.20.0
+      axios: 1.20.0(debug@4.4.3)
       rxjs: 7.8.2
 
   '@nestjs/cli@11.0.24(@swc/core@1.16.2(@swc/helpers@0.5.23))(@types/node@25.9.7)(esbuild@0.27.7)(postcss@8.5.28)(prettier@3.9.8)':
@@ -17286,6 +17297,20 @@ snapshots:
   '@peculiar/utils@2.0.3':
     dependencies:
       tslib: 2.8.1
+
+  '@peculiar/x509@1.14.3':
+    dependencies:
+      '@peculiar/asn1-cms': 2.10.0
+      '@peculiar/asn1-csr': 2.10.0
+      '@peculiar/asn1-ecc': 2.10.0
+      '@peculiar/asn1-pkcs9': 2.10.0
+      '@peculiar/asn1-rsa': 2.10.0
+      '@peculiar/asn1-schema': 2.10.0
+      '@peculiar/asn1-x509': 2.10.0
+      pvtsutils: 1.3.6
+      reflect-metadata: 0.2.2
+      tslib: 2.8.1
+      tsyringe: 4.10.0
 
   '@peculiar/x509@2.1.0':
     dependencies:
@@ -19863,7 +19888,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.7)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.1.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@25.9.7)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.7)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.1.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -19925,7 +19950,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.7)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.1.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@25.9.7)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@25.9.7)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.1.1(@noble/hashes@1.8.0))(vite@8.3.0(@types/node@25.9.7)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   '@vitest/utils@4.1.11':
     dependencies:
@@ -20038,6 +20063,16 @@ snapshots:
     dependencies:
       mime-types: 3.0.2
       negotiator: 1.1.0
+
+  acme-client@5.4.0:
+    dependencies:
+      '@peculiar/x509': 1.14.3
+      asn1js: 3.0.10
+      axios: 1.20.0(debug@4.4.3)
+      debug: 4.4.3(supports-color@10.2.2)
+      node-forge: 1.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   acorn-import-attributes@1.9.5(acorn@8.18.0):
     dependencies:
@@ -20585,9 +20620,9 @@ snapshots:
 
   axe-core@4.13.0: {}
 
-  axios@1.20.0:
+  axios@1.20.0(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -22643,7 +22678,9 @@ snapshots:
 
   fn.name@1.1.0: {}
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3(supports-color@10.2.2)
 
   fontfaceobserver@2.3.0: {}
 

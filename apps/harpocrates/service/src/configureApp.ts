@@ -4,6 +4,7 @@ import {
   VersioningType,
 } from "@nestjs/common";
 import { operationsFromOpenApi } from "@ncfritz/olympus-metrics";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import cookieParser from "cookie-parser";
 import { useHttpServerMetrics } from "@ncfritz/olympus-nest";
 import { serverConfig, type ServerConfigType } from "./config/configuration";
@@ -24,6 +25,11 @@ export const configureApp = (app: INestApplication): INestApplication => {
       operationsFromOpenApi(API_NAME, buildOpenApiDocument(app, false)),
   });
   app.enableVersioning({ type: VersioningType.URI });
+  // JSON, and ACME's requests: JWS, as application/jose+json (RFC 8555
+  // §6.2). This replaces the default JSON parser, so it names both.
+  (app as NestExpressApplication).useBodyParser("json", {
+    type: ["application/json", "application/jose+json"],
+  });
   // The CA console's session rides on cookies (ADR 0029, 0032).
   app.use(cookieParser());
   app.useGlobalPipes(
