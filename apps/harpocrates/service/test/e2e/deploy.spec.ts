@@ -413,6 +413,14 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
         where: { id: renewal!.certificateId },
       });
       expect(renewedBy.renewsId).toBe(first.id);
+
+      // Renewed, it needs no renewal: no alert for it until it expires.
+      const metrics = await request(server()).get("/metrics").expect(200);
+      expect(metrics.text).toMatch(
+        new RegExp(
+          `certificate_expiry_days\\{[^}]*serial="${first.serial}",renewal="renewed"`,
+        ),
+      );
     });
 
     it("by anyone else is followed too", async () => {

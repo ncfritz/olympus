@@ -70,6 +70,7 @@ export class PkiGaugeService implements OnModuleInit {
               subject: true,
               serial: true,
               notAfter: true,
+              renewedBy: { select: { id: true } },
             },
           }),
         );
@@ -80,9 +81,9 @@ export class PkiGaugeService implements OnModuleInit {
               profile: row.profileId ?? "none",
               subject: row.subject,
               serial: row.serial,
-              // Whether it renews itself or needs a person: nothing renews
-              // itself until renewal and ACME (phases 5 and 6).
-              renewal: "manual",
+              // Whether it still needs renewing, and by whom: renewed (its
+              // successor exists, so it needs nothing), or manual.
+              renewal: row.renewedBy ? "renewed" : "manual",
             },
             days(row.notAfter),
           );

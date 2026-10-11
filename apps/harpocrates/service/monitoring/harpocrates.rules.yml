@@ -111,8 +111,9 @@ groups:
             in a ceremony before then.
 
       # The profile's threshold: its validity less the age it renews at.
-      # Only certificates nothing renews by itself; renewal and ACME
-      # (phases 5 and 6) set renewal="automatic" on theirs.
+      # Only certificates nothing renews by itself (renewal="manual"): not
+      # one already renewed ("renewed"), which stays valid, and listed,
+      # until it expires.
       - alert: HarpocratesCertificateNeedsRenewal
         expr: >-
           certificate_expiry_days{renewal="manual"}
@@ -126,8 +127,9 @@ groups:
             ({{ $labels.profile }} certificate from {{ $labels.issuer }},
             serial {{ $labels.serial }}), and nothing renews it by itself.
 
+      # Not one already renewed: it is replaced, and expires as it should.
       - alert: HarpocratesCertificateExpiring
-        expr: certificate_expiry_days < 7
+        expr: certificate_expiry_days{renewal!="renewed"} < 7
         labels:
           severity: critical
         annotations:

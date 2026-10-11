@@ -176,7 +176,7 @@ tests:
                 364 days until it can no longer fit its longest certificate. Create its successor
                 (the next generation) in a ceremony before then.
   # internal-tls renews with 30 days left, service with 122; the ACME
-  # certificate renews itself.
+  # certificate renews itself, and nas's older certificate was renewed.
   - name: certificates past their profile's threshold
     interval: 1m
     input_series:
@@ -192,6 +192,8 @@ tests:
         values: 100
       - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=acme",serial="dd",renewal="automatic"}
         values: 20
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=nas",serial="a0",renewal="renewed"}
+        values: 25
     alert_rule_test:
       - eval_time: 0m
         alertname: HarpocratesCertificateNeedsRenewal
@@ -220,13 +222,15 @@ tests:
               description:
                 It expires in 100 days (service certificate from service-issuing-1-g1, serial cc),
                 and nothing renews it by itself.
-  - name: anything inside a week, renewing itself or not
+  - name: anything inside a week, renewing itself or not, but not one already renewed
     interval: 1m
     input_series:
       - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=acme",serial="dd",renewal="automatic"}
         values: 6
       - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=git",serial="bb",renewal="manual"}
         values: 8
+      - series: certificate_expiry_days{issuer="tls-issuing-1-g1",profile="internal-tls",subject="CN=nas",serial="ee",renewal="renewed"}
+        values: 2
     alert_rule_test:
       - eval_time: 0m
         alertname: HarpocratesCertificateExpiring
