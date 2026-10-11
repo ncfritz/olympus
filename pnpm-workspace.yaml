@@ -67,6 +67,9 @@ catalog:
   openapi-fetch: ^0.17.0
   openapi-typescript: ^7.13.0
   "@testing-library/react": ^16.3.3
+  # Charts in the consoles (the site pins its own, on React 18).
+  highcharts: ^13.0.2
+  highcharts-react-official: ^3.2.3
   jsdom: ^30.1.1
 
 # npm "overrides" carried over from olympus-api.

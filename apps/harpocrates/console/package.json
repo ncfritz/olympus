@@ -19,6 +19,8 @@
     "@ncfritz/olympus-console": "workspace:*",
     "@peculiar/x509": "catalog:",
     "antd": "catalog:",
+    "highcharts": "catalog:",
+    "highcharts-react-official": "catalog:",
     "next": "catalog:",
     "openapi-fetch": "catalog:",
     "react": "catalog:",
