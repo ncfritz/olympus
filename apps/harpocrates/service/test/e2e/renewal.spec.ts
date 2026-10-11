@@ -5,6 +5,11 @@ import * as net from "net";
 import * as path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+// The client's own source, not the package: the SDK, which the client is
+// built on, is generated from this service's document, so a dependency
+// on the client would be a cycle.
+import { CertificateRenewer } from "../../../../../packages/client/src/renewal";
+import { createTlsAgent } from "../../../../../packages/client/src/tls";
 import { OID } from "../../src/pki/x509";
 import { RenewalListener } from "../../src/renewal/services/RenewalListener";
 import {
@@ -25,6 +30,8 @@ type Certificate = {
   certificate: string;
   chain: string[];
 };
+
+const DAY = 24 * 60 * 60 * 1000;
 
 const freePort = (): Promise<number> =>
   new Promise((resolve, reject) => {
@@ -240,6 +247,46 @@ describe.skipIf(!E2E_DATABASE_URL)("renewal over mutual TLS", () => {
     );
     expect(otherSubject.status).toBe(403);
     expect(otherSubject.body.message).toMatch(/CSR asks for/);
+  });
+
+  it("is what a service's renewer and agent use, with no restart", async () => {
+    // The service's files, as it is configured with them.
+    const { certificate, key } = await serviceCertificate("weather-relay");
+    const dir = fs.mkdtempSync(path.join("/tmp", "hrp-agent-"));
+    const ca = path.join(dir, "root.crt");
+    fs.writeFileSync(ca, hierarchy.root.certificate);
+    const tls = {
+      certificate: path.join(dir, "client.crt"),
+      key: path.join(dir, "client.key"),
+      ca,
+      renewal: { url: `https://localhost:${port}`, ca },
+    };
+    fs.writeFileSync(
+      tls.certificate,
+      [certificate.certificate, ...certificate.chain].join(""),
+    );
+    fs.writeFileSync(tls.key, key);
+    const agent = createTlsAgent(tls, 60_000);
+    const quiet = { log: () => {}, warn: () => {} };
+    try {
+      const renewer = new CertificateRenewer(tls, quiet);
+      expect(await renewer.check(new Date())).toBe("not-due");
+      expect(await renewer.check(new Date(Date.now() + 365 * DAY))).toBe(
+        "renewed",
+      );
+      const renewed = new X509Certificate(fs.readFileSync(tls.certificate));
+      expect(renewed.serialNumber.toLowerCase().replace(/^0+/, "")).not.toBe(
+        certificate.serial,
+      );
+      expect(renewed.subject).toBe(
+        new X509Certificate(certificate.certificate).subject,
+      );
+      // The agent's next connection presents the renewal.
+      expect(agent.reload()).toBe(true);
+    } finally {
+      agent.destroy();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("keeps each listener's routes to itself", async () => {

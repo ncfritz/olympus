@@ -169,9 +169,41 @@ describe("readApiClientConfig", () => {
         certificate: "/certs/agent.crt",
         key: "/certs/agent.key",
         ca: "/certs/services-ca.crt",
+        renewal: undefined,
       },
     });
     expect(reader.problems).toEqual([]);
+  });
+
+  it("reads where the certificate renews itself", () => {
+    const { config, reader } = read({
+      API_BASE_URL: "https://olympus-api:3443/v1",
+      API_CLIENT_CERT: "/certs/agent.crt",
+      API_CLIENT_KEY: "/certs/agent.key",
+      RENEWAL_URL: "https://pki.internal.ncfritz.net:9443",
+      RENEWAL_CA_CERT: "/certs/tls-ca.crt",
+    });
+    expect(config.tls?.renewal).toEqual({
+      url: "https://pki.internal.ncfritz.net:9443",
+      ca: "/certs/tls-ca.crt",
+    });
+    expect(reader.problems).toEqual([]);
+  });
+
+  it("refuses renewal without a certificate, or over plain HTTP", () => {
+    expect(
+      read({ RENEWAL_URL: "https://pki.internal.ncfritz.net:9443" }).reader
+        .problems,
+    ).toEqual([
+      "RENEWAL_URL renews API_CLIENT_CERT: set it with API_CLIENT_CERT and API_CLIENT_KEY",
+    ]);
+    expect(
+      read({
+        API_CLIENT_CERT: "/certs/agent.crt",
+        API_CLIENT_KEY: "/certs/agent.key",
+        RENEWAL_URL: "http://pki.internal.ncfritz.net:9443",
+      }).reader.problems,
+    ).toEqual(["RENEWAL_URL must be https: renewal is over mutual TLS"]);
   });
 
   it("refuses half a certificate", () => {

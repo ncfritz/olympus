@@ -21,6 +21,10 @@
     "./tls": {
       "types": "./dist/tls.d.ts",
       "default": "./dist/tls.js"
+    },
+    "./renewal": {
+      "types": "./dist/renewal.d.ts",
+      "default": "./dist/renewal.js"
     }
   },
   "scripts": {
@@ -34,7 +38,9 @@
   },
   "dependencies": {
     "@ncfritz/olympus-metrics": "workspace:*",
-    "@ncfritz/olympus-sdk": "workspace:*"
+    "@ncfritz/olympus-sdk": "workspace:*",
+    "@peculiar/x509": "^2.1.0",
+    "reflect-metadata": "catalog:"
   },
   "peerDependencies": {
     "@nestjs/common": "catalog:",

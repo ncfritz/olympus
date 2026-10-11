@@ -4,7 +4,13 @@ import type { Server } from "https";
 import type { TLSSocket } from "tls";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createOlympusClients } from "../../src/clients";
-import { type ClientTlsOptions, tlsAxiosOptions } from "../../src/tls";
+import * as os from "os";
+import * as path from "path";
+import {
+  type ClientTlsOptions,
+  createTlsAgent,
+  tlsAxiosOptions,
+} from "../../src/tls";
 import { devCaFile } from "../support/devCa";
 
 /**
@@ -93,6 +99,49 @@ describe("the client TLS options", () => {
 
   it("is refused without a certificate", async () => {
     await expect(api().get("/olympus/ping")).rejects.toThrow();
+  });
+
+  it("picks up a renewed certificate without a restart", async () => {
+    // The service's files, which a renewal replaces in place.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "client-tls-"));
+    const tls: ClientTlsOptions = {
+      certificate: path.join(dir, "client.crt"),
+      key: path.join(dir, "client.key"),
+      ca: devCaFile("services-ca.crt"),
+    };
+    const install = (name: string, which: "both" | "certificate") => {
+      fs.copyFileSync(devCaFile(`agents/${name}.crt`), tls.certificate);
+      if (which === "both") {
+        fs.copyFileSync(devCaFile(`agents/${name}.key`), tls.key);
+      }
+    };
+    install("dionysus-search-agent", "both");
+    const agent = createTlsAgent(tls, 60_000);
+    const client = createOlympusClients({
+      baseUrl,
+      clientName: "dionysus-search-agent",
+      axios: { httpsAgent: agent },
+    }).olympus.instance;
+    try {
+      await client.get("/olympus/ping");
+      expect(callers.at(-1)).toBe("dionysus-search-agent");
+
+      // Half-written: a certificate that does not match the key is not
+      // taken up, and the old pair goes on working.
+      install("dionysus-metadata-agent", "certificate");
+      expect(agent.reload()).toBe(false);
+      await client.get("/olympus/ping");
+      expect(callers.at(-1)).toBe("dionysus-search-agent");
+
+      install("dionysus-metadata-agent", "both");
+      expect(agent.reload()).toBe(true);
+      await client.get("/olympus/ping");
+      expect(callers.at(-1)).toBe("dionysus-metadata-agent");
+      expect(agent.reload()).toBe(false);
+    } finally {
+      agent.destroy();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("adds nothing when the service has no certificate", () => {

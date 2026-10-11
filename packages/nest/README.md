@@ -12,7 +12,8 @@ NestJS infrastructure shared by the API (`apps/api`) and the agents
   `readAmqpConfig` (AMQP\_\*, with a password-free `redactedUri` for logs),
   `readLoggingConfig` (console, Loki and file logging),
   `readApiClientConfig` (API_BASE_URL and the client certificate a service
-  presents to the API's mTLS listener, ADR 0018).
+  presents to the API's mTLS listener, ADR 0018; with RENEWAL_URL and
+  RENEWAL_CA_CERT, where it renews itself through Harpocrates, ADR 0020).
 - `createWinstonLogger`: the Winston logger behind Nest's `Logger`
   (`WinstonModule.createLogger({ instance })` in `main.ts`).
 - `@ExecuteWithMetrics(operation)`: `client_<operation>_*` counters and a

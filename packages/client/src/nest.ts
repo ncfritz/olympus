@@ -13,10 +13,16 @@ import {
   type OlympusClients,
 } from "./clients";
 import { OLYMPUS_APIS } from "./index";
+import { CertificateRenewer } from "./renewal";
 import { type ClientTlsOptions, tlsAxiosOptions } from "./tls";
 
 /** The OlympusClients, for SDK calls the wrappers don't cover. */
 export const OLYMPUS_CLIENTS = Symbol("OLYMPUS_CLIENTS");
+
+/** The service's CertificateRenewer, or null when it does not renew itself. */
+export const CERTIFICATE_RENEWER = Symbol("CERTIFICATE_RENEWER");
+
+const OPTIONS = Symbol("OLYMPUS_CLIENT_MODULE_OPTIONS");
 
 /** createOlympusClients' options; metrics are always recorded (prom-client). */
 export type OlympusClientModuleOptions = Omit<
@@ -54,11 +60,31 @@ export class OlympusClientModule {
       ...args: never[]
     ) => OlympusClientModuleOptions | Promise<OlympusClientModuleOptions>;
   }): DynamicModule {
+    const resolvedOptions: Provider = {
+      provide: OPTIONS,
+      inject: (options.inject ?? []) as never[],
+      useFactory: options.useFactory,
+    };
+    // The certificate renews itself when its options say where (ADR 0020):
+    // the agent below picks the renewal up from the files.
+    const renewer: Provider = {
+      provide: CERTIFICATE_RENEWER,
+      inject: [OPTIONS],
+      useFactory: (resolved: OlympusClientModuleOptions) => {
+        const tls = resolved.tls;
+        if (!tls?.renewal) return null;
+        const renewer = new CertificateRenewer(
+          { ...tls, renewal: tls.renewal },
+          new Logger(CertificateRenewer.name),
+        );
+        renewer.start();
+        return renewer;
+      },
+    };
     const clients: Provider = {
       provide: OLYMPUS_CLIENTS,
-      inject: (options.inject ?? []) as never[],
-      useFactory: async (...args: never[]) => {
-        const resolved = await options.useFactory(...args);
+      inject: [OPTIONS],
+      useFactory: (resolved: OlympusClientModuleOptions) => {
         new Logger(OlympusClientModule.name).log(
           `Using the Olympus API at ${resolved.baseUrl} as ${resolved.clientName}` +
             (resolved.tls ? ` with ${resolved.tls.certificate}` : ""),
@@ -78,8 +104,8 @@ export class OlympusClientModule {
     return {
       module: OlympusClientModule,
       imports: options.imports ?? [],
-      providers: [clients, ...apis],
-      exports: [OLYMPUS_CLIENTS, ...OLYMPUS_APIS],
+      providers: [resolvedOptions, renewer, clients, ...apis],
+      exports: [OLYMPUS_CLIENTS, CERTIFICATE_RENEWER, ...OLYMPUS_APIS],
     };
   }
 }

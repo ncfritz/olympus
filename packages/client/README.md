@@ -50,6 +50,7 @@ them takes a user, because the endpoints read it from the token.
 | `@ncfritz/olympus-client/prometheus` | Node           | `createPrometheusRequestMetrics()`                                   |
 | `@ncfritz/olympus-client/nest`       | Nest services  | `OlympusClientModule`: clients and wrappers as providers, metrics on |
 | `@ncfritz/olympus-client/tls`        | Node           | `createTlsAgent`/`tlsAxiosOptions`: the caller's client certificate  |
+| `@ncfritz/olympus-client/renewal`    | Node           | `CertificateRenewer`: the certificate renewing itself (Harpocrates)  |
 
 ## Nest
 
@@ -74,6 +75,26 @@ certificate: `tls` above, or `tlsAxiosOptions(tls)` in `axios` outside
 Nest. `readApiClientConfig` in `@ncfritz/olympus-nest` reads the three
 paths and refuses an `https` base URL without them. The agent keeps the
 connection alive, so a service handshakes once and not per request.
+
+The agent reloads the certificate and key when their files change (polled
+every five seconds): idle connections close, and the next one presents
+the new certificate, with no restart. A certificate and key that do not
+match, as for a moment while a renewal writes them, wait for the next
+check.
+
+### Renewing itself
+
+With `RENEWAL_URL` (and `RENEWAL_CA_CERT`, the chain of Harpocrates's TLS
+CA), `readApiClientConfig` adds `tls.renewal`, and `OlympusClientModule`
+starts a `CertificateRenewer` (ADR 0020, Renewal and delivery). Hourly,
+from two-thirds of the certificate's life, it presents the certificate to
+Harpocrates's renewal listener (`POST /v1/renew` on 9443) and writes the
+renewal, with its chain, over `API_CLIENT_CERT`; the agent above picks it
+up. It keeps the key while Harpocrates allows, and when the key is too old
+makes a new one and renews with a CSR for the same subject and names,
+writing the key first. A refusal is logged and tried at the next check.
+The files must be writable: in the stack, the `tls/<service>` mount
+without `:ro`, once the service's certificate is one Harpocrates issued.
 
 The site does not use this: a browser sends no certificate, and the border
 nginx is what checks the device certificate there.

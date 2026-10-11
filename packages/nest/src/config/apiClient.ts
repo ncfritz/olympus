@@ -13,12 +13,19 @@ export type ApiClientConfig = {
     certificate: string;
     key: string;
     ca?: string;
+    /**
+     * Where the certificate renews itself (Harpocrates's renewal listener,
+     * ADR 0020); unset, a person replaces it.
+     */
+    renewal?: { url: string; ca?: string };
   };
 };
 
 /**
  * API_BASE_URL, and API_CLIENT_CERT with API_CLIENT_KEY (and the optional
- * API_CA_CERT) when the service authenticates with a certificate.
+ * API_CA_CERT) when the service authenticates with a certificate; with
+ * RENEWAL_URL (and RENEWAL_CA_CERT, the TLS CA's chain), the certificate
+ * renews itself there at two-thirds of its life, writing over those files.
  */
 export const readApiClientConfig = (
   read: EnvReader,
@@ -30,6 +37,11 @@ export const readApiClientConfig = (
   const ca = read.optional("API_CA_CERT");
 
   if (!certificate && !key) {
+    if (read.optional("RENEWAL_URL")) {
+      read.problems.push(
+        "RENEWAL_URL renews API_CLIENT_CERT: set it with API_CLIENT_CERT and API_CLIENT_KEY",
+      );
+    }
     if (baseUrl.startsWith("https:")) {
       read.problems.push(
         "API_CLIENT_CERT and API_CLIENT_KEY are required for an https API_BASE_URL",
@@ -41,5 +53,18 @@ export const readApiClientConfig = (
     read.problems.push("API_CLIENT_CERT and API_CLIENT_KEY are set together");
     return { baseUrl };
   }
-  return { baseUrl, tls: { certificate, key, ca } };
+  const renewalUrl = read.optional("RENEWAL_URL");
+  const renewalCa = read.optional("RENEWAL_CA_CERT");
+  if (renewalUrl && !renewalUrl.startsWith("https:")) {
+    read.problems.push("RENEWAL_URL must be https: renewal is over mutual TLS");
+  }
+  return {
+    baseUrl,
+    tls: {
+      certificate,
+      key,
+      ca,
+      renewal: renewalUrl ? { url: renewalUrl, ca: renewalCa } : undefined,
+    },
+  };
 };

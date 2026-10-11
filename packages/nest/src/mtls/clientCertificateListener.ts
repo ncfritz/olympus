@@ -93,8 +93,9 @@ const secureContext = (config: ClientCertificateListenerConfig) => ({
  * application. Who the certificate names is for the application to check
  * (identifyPeerCertificate).
  *
- * The revocation lists are reloaded when their files change, without a
- * restart; existing connections keep the context they handshook with.
+ * Its own certificate and key, and the revocation lists, are reloaded
+ * when their files change, without a restart; existing connections keep
+ * the context they handshook with.
  * The files are polled rather than watched: Harpocrates replaces a list
  * by renaming a new file over it, which a watch on the old file misses.
  */
@@ -163,8 +164,16 @@ export const createClientCertificateListener = (
     hooks.onRefused?.();
   });
 
+  // Its own certificate and key, renewed in place (ADR 0020), and the
+  // revocation lists: a change to any is a new context for new
+  // connections. A key and certificate caught mid-renewal do not match;
+  // the context is refused and the next change, the other file, retries.
   const pollMs = hooks.pollMs ?? REVOCATION_LIST_POLL_MS;
-  for (const path of config.revocationLists) {
+  for (const file of [
+    config.certificate,
+    config.key,
+    ...config.revocationLists,
+  ]) {
     const changed = (current: fs.Stats, previous: fs.Stats) => {
       if (
         current.mtimeMs === previous.mtimeMs &&
@@ -175,18 +184,20 @@ export const createClientCertificateListener = (
       }
       try {
         server.setSecureContext(secureContext(config));
-        logger.log(`Reloaded the revocation lists after ${path} changed`);
+        logger.log(
+          `Reloaded the certificate and revocation lists after ${file} changed`,
+        );
       } catch (error) {
-        logger.error(
-          `Could not reload the revocation lists: ${
+        logger.warn(
+          `Could not reload after ${file} changed: ${
             error instanceof Error ? error.message : String(error)
           }`,
         );
       }
     };
     // `persistent: false` so polling never holds the process open.
-    fs.watchFile(path, { persistent: false, interval: pollMs }, changed);
-    server.on("close", () => fs.unwatchFile(path, changed));
+    fs.watchFile(file, { persistent: false, interval: pollMs }, changed);
+    server.on("close", () => fs.unwatchFile(file, changed));
   }
 
   server.listen(config.port, () =>

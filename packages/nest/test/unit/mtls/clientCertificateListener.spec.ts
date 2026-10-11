@@ -140,3 +140,73 @@ describe.skipIf(!fs.existsSync(path.join(DEV_CA, "agents/olympus-api.crt")))(
     });
   },
 );
+
+describe.skipIf(!fs.existsSync(path.join(DEV_CA, "api.crt")))(
+  "a renewed certificate",
+  () => {
+    let server: ReturnType<typeof createClientCertificateListener> | undefined;
+    afterEach(() => {
+      server?.close();
+      vi.restoreAllMocks();
+    });
+
+    /** What the listener presents to a new connection. */
+    const served = (port: number): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const client = tls.connect(
+          {
+            port,
+            host: "127.0.0.1",
+            rejectUnauthorized: false,
+            cert: fs.readFileSync(path.join(DEV_CA, "agents/olympus-api.crt")),
+            key: fs.readFileSync(path.join(DEV_CA, "agents/olympus-api.key")),
+          },
+          () => {
+            resolve(client.getPeerCertificate().fingerprint256);
+            client.destroy();
+          },
+        );
+        client.on("error", reject);
+      });
+
+    it("is served to new connections without a restart", async () => {
+      vi.spyOn(Logger.prototype, "log").mockImplementation(() => undefined);
+      vi.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "listener-"));
+      const certificate = path.join(dir, "server.crt");
+      const key = path.join(dir, "server.key");
+      const install = (name: string) => {
+        fs.copyFileSync(path.join(DEV_CA, `${name}.crt`), certificate);
+        fs.copyFileSync(path.join(DEV_CA, `${name}.key`), key);
+      };
+      install("api");
+      const app = {
+        getHttpAdapter: () => ({ getInstance: () => () => undefined }),
+      } as unknown as INestApplication;
+      server = createClientCertificateListener(
+        app,
+        {
+          port: 0,
+          certificate,
+          key,
+          ca: path.join(DEV_CA, "services-ca.crt"),
+          revocationLists: [],
+        },
+        { name: "ServicesListener", pollMs: 20 },
+      );
+      await new Promise((resolve) => server!.once("listening", resolve));
+      const { port } = server.address() as { port: number };
+      const before = await served(port);
+
+      install("agents/olympus-api");
+      await vi.waitFor(
+        async () => expect(await served(port)).not.toBe(before),
+        {
+          timeout: 5_000,
+          interval: 50,
+        },
+      );
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+  },
+);
