@@ -732,6 +732,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/acme/credentials": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists ACME credentials
+     * @description Every External Account Binding credential, newest first, with the names its account may request and the account it was bound to. Never their keys.
+     */
+    get: operations["ListAcmeCredentials"];
+    put?: never;
+    /**
+     * Creates an ACME credential
+     * @description Makes an External Account Binding credential for one ACME client: its key id and HMAC key, which the answer shows once, and the names or subtrees its account may request from the TLS CA. A credential registers one account; binding erases its key.
+     */
+    post: operations["CreateAcmeCredential"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/acme/credential/{credentialId}/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Revokes an ACME credential
+     * @description Revokes an External Account Binding credential: unused, it can no longer register an account; bound, its account is revoked and can order nothing more. Certificates it was issued stay valid until revoked themselves.
+     */
+    post: operations["RevokeAcmeCredential"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1680,6 +1724,86 @@ export interface components {
     CheckDeployTargetResponse: {
       /** @description The target, with what its endpoint served just now */
       deployTarget: components["schemas"]["FullDeployTarget"];
+    };
+    AcmeNames: {
+      /**
+       * @description Names it may request exactly
+       * @example [
+       *       "nas.internal.ncfritz.net"
+       *     ]
+       */
+      exact?: string[];
+      /**
+       * @description Names it may request with every name below them
+       * @example [
+       *       "lab.internal.ncfritz.net"
+       *     ]
+       */
+      subtrees?: string[];
+    };
+    /**
+     * @description valid, deactivated (by its client) or revoked (here)
+     * @enum {string}
+     */
+    AcmeAccountStatus: "valid" | "deactivated" | "revoked";
+    AcmeAccountSummary: {
+      /** @description Its ID */
+      id: string;
+      /** @description valid, deactivated (by its client) or revoked (here) */
+      status: components["schemas"]["AcmeAccountStatus"];
+      /** @description The contact URIs its client gave */
+      contacts: string[];
+      /** @description Its key's RFC 7638 thumbprint, base64url */
+      keyThumbprint: string;
+      /** @description An ISO-8601 formatted string: when it registered */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    AcmeCredential: {
+      /** @description Its key id, which the ACME client is given (--eab-kid) */
+      id: string;
+      /** @description What it is for: the host or the client that holds it */
+      label: string;
+      /** @description The names its account may request */
+      names: components["schemas"]["AcmeNames"];
+      /** @description Who made it */
+      principal: string;
+      /** @description An ISO-8601 formatted string: when an account bound it, which erased its key */
+      boundAt?: string;
+      /** @description An ISO-8601 formatted string: when it was revoked */
+      revokedAt?: string;
+      /** @description The account it was bound to */
+      account?: components["schemas"]["AcmeAccountSummary"];
+      /** @description An ISO-8601 formatted string: when it was made */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    ListAcmeCredentialsResponse: {
+      /** @description Every credential, newest first */
+      credentials: components["schemas"]["AcmeCredential"][];
+    };
+    CreateAcmeCredentialRequest: {
+      /**
+       * @description What it is for: the host or the client that will hold it
+       * @example Caddy on furball
+       */
+      label: string;
+      /** @description The names its account may request: at least one */
+      names: components["schemas"]["AcmeNames"];
+    };
+    CreateAcmeCredentialResponse: {
+      /** @description The credential */
+      credential: components["schemas"]["AcmeCredential"];
+      /** @description Its HMAC key, base64url (--eab-hmac-key): shown this once, and erased when an account binds it */
+      hmacKey: string;
+      /** @description The ACME directory the client registers at */
+      directoryUrl: string;
+    };
+    RevokeAcmeCredentialResponse: {
+      /** @description The credential, revoked, with its account */
+      credential: components["schemas"]["AcmeCredential"];
     };
   };
   responses: never;
@@ -4404,6 +4528,164 @@ export interface operations {
       };
       /** @description The entity with the specified identifiers was not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListAcmeCredentials: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The credentials. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListAcmeCredentialsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CreateAcmeCredential: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description What it is for, and its names. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAcmeCredentialRequest"];
+      };
+    };
+    responses: {
+      /** @description The credential, with its HMAC key this once. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateAcmeCredentialResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  RevokeAcmeCredential: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The credential's key id */
+        credentialId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The credential, revoked. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RevokeAcmeCredentialResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
         headers: {
           [name: string]: unknown;
         };

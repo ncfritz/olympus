@@ -2,6 +2,7 @@ import useSWR from "swr";
 import { apiClient } from "./client";
 import { unwrap } from "./errors";
 import type {
+  AcmeCredential,
   AuditEvent,
   Ceremony,
   Certificate,
@@ -38,6 +39,7 @@ export const KEYS = {
   audit: "/audit/events",
   deployTargets: "/deploy-targets",
   deployTarget: (id: string) => `/deploy-target/${id}`,
+  acmeCredentials: "/acme/credentials",
 } as const;
 
 export type CertificateFilter = {
@@ -158,4 +160,11 @@ export const useDeployTarget = (
         }),
       ).deployTarget,
     { refreshInterval },
+  );
+
+/** Every ACME credential, newest first, with its account. */
+export const useAcmeCredentials = () =>
+  useSWR<AcmeCredential[]>(
+    KEYS.acmeCredentials,
+    async () => unwrap(await apiClient.GET("/v1/acme/credentials")).credentials,
   );

@@ -32,3 +32,6 @@ export type Deployment = Schemas["Deployment"];
 export type DeploymentStatus = Schemas["DeploymentStatus"];
 export type EndpointObservation = Schemas["EndpointObservation"];
 export type EndpointResult = Schemas["EndpointResult"];
+export type AcmeCredential = Schemas["AcmeCredential"];
+export type CreateAcmeCredentialResponse =
+  Schemas["CreateAcmeCredentialResponse"];

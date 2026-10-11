@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ApiOutlined,
   AuditOutlined,
   CloudUploadOutlined,
   DashboardOutlined,
@@ -63,6 +64,12 @@ const PAGES: ShellPage[] = [
     href: "/deploy-targets",
   },
   {
+    key: "/acme",
+    label: "ACME",
+    icon: <ApiOutlined />,
+    href: "/acme",
+  },
+  {
     key: "/profiles",
     label: "Profiles",
     icon: <ProfileOutlined />,
@@ -88,6 +95,7 @@ const activePageOf = (pathname: string): string => {
   for (const page of [
     "/certificates",
     "/deploy-targets",
+    "/acme",
     "/profiles",
     "/audit",
   ]) {
