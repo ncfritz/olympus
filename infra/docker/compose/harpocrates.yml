@@ -139,7 +139,10 @@ services:
       RENEWAL_LISTEN_PORT: "9443"
       RENEWAL_TLS_DIR: /var/lib/harpocrates/renewal-tls
     # On the LAN directly, like the API's 3443: a proxy would end the
-    # client certificate renewal needs (ADR 0020, Surfaces).
+    # client certificate renewal needs (ADR 0020, Surfaces). ACME is here
+    # too (https://<RENEWAL_HOSTNAMES>:9443/acme/directory); it validates
+    # challenges from this container, over the edge network, to each
+    # name's port 80 or 443 on the LAN.
     ports:
       - "${LAN_BIND:-127.0.0.1}:9443:9443"
     secrets:

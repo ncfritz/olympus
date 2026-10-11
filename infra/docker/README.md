@@ -74,6 +74,11 @@ HTTP on purpose), and the API mounts them read-only for its services
 listener. The management API is published at
 `https://${CONTROL_HOST}/harpocrates/ca/api` (`nginx/control.conf`).
 
+Its renewal listener, on the LAN at `9443`, also serves ACME
+(`https://pki.internal.ncfritz.net:9443/acme/directory`, with External
+Account Binding credentials made in the console); challenges are
+validated from the container to each name's port 80 or 443.
+
 Its deploy targets write certificates to
 `${DATA_DIR}/olympus/apps/harpocrates/deployed`, a directory per target,
 which nginx mounts read-only at `/srv/harpocrates/deployed`. The nginx
