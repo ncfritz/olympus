@@ -629,7 +629,11 @@ export interface paths {
      */
     get: operations["ListProfiles"];
     put?: never;
-    post?: never;
+    /**
+     * Creates a profile
+     * @description A new profile, at v1 (ADR 0034). Its name is its own for good: a deactivated profile keeps it.
+     */
+    post: operations["CreateProfile"];
     delete?: never;
     options?: never;
     head?: never;
@@ -649,11 +653,111 @@ export interface paths {
      */
     get: operations["DescribeProfile"];
     /**
-     * Updates a profile
-     * @description Pins a profile to an issuer, or unpins it; its other rules come from migrations.
+     * Edits a profile
+     * @description What is given changes, the rest carries over. A change of settings makes the profile's next version, which new certificates take; what was issued under an earlier one renews under it. The description alone makes no version.
      */
     put: operations["UpdateProfile"];
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/profile/{profileId}/versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists a profile's versions
+     * @description Every version of a profile, newest first: each one's settings, who made it and when (ADR 0034).
+     */
+    get: operations["ListProfileVersions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/profile/{profileId}/copy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Copies a profile
+     * @description A new profile whose v1 is a version of this one (its latest, by default).
+     */
+    post: operations["CopyProfile"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/profile/{profileId}/deactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Deactivates a profile
+     * @description The soft delete: no new certificate may choose it; what was issued under it renews as before.
+     */
+    post: operations["DeactivateProfile"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/profile/{profileId}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reactivates a profile
+     * @description New certificates may choose it again.
+     */
+    post: operations["ReactivateProfile"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/profile/{profileId}/move": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Moves certificates to a profile version
+     * @description The enrollments of the given certificates, issued under this profile, move to one of its versions: their next renewal uses it.
+     */
+    post: operations["MoveProfileEnrollments"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1595,32 +1699,38 @@ export interface components {
       skipped: components["schemas"]["SkippedCertificate"][];
     };
     /**
-     * @description The alternative name types it allows
+     * @description A key usage (RFC 5280, 4.2.1.3)
+     * @enum {string}
+     */
+    KeyUsage:
+      | "digital_signature"
+      | "content_commitment"
+      | "key_encipherment"
+      | "data_encipherment"
+      | "key_agreement"
+      | "key_cert_sign"
+      | "crl_sign";
+    /**
+     * @description A kind of name: DNS, IP address, email or URI
      * @enum {string}
      */
     NameType: "dns" | "ip" | "email" | "uri";
     Profile: {
-      /** @description The profile's name, e.g. internal-tls */
-      id: string;
-      /** @description The version these settings are: the latest, which new certificates take (ADR 0034) */
-      version: number;
-      /** @description What it is for */
-      description: string;
       /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
-      issuerId?: string;
+      issuerId?: string | null;
       /** @description The purpose of the issuing CA it issues from */
       issuerPurpose: string;
       /** @description The key type generated for its certificates unless the request chooses another */
       keyAlgorithm: components["schemas"]["KeyAlgorithm"];
       /** @description How long its certificates are valid, in days */
       validityDays: number;
-      /** @description How many days into a certificate's life it is renewed */
+      /** @description How many days into a certificate's life it is renewed: less than its validity */
       renewAtDays: number;
       /** @description How old a key may be and still be renewed, in days */
       maxKeyAgeDays: number;
       /** @description Whether a subscriber may submit a CSR */
       allowCsr: boolean;
-      /** @description Whether the signer may generate (and escrow) the key */
+      /** @description Whether the signer may generate (and escrow) the key, or be brought one */
       allowGenerated: boolean;
       /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
       legacyExport: boolean;
@@ -1635,30 +1745,211 @@ export interface components {
        * @enum {string}
        */
       extensions: "standard" | "minimal";
-      /** @description Whether it is issued only in a ceremony with a root that signs directly */
-      directOnly: boolean;
       /** @description Its key usages */
-      keyUsages: string[];
+      keyUsages: components["schemas"]["KeyUsage"][];
       /** @description Its extended key usages, dotted OIDs */
       extendedKeyUsages: string[];
       /** @description The alternative name types it allows */
       nameTypes: components["schemas"]["NameType"][];
+      /** @description The profile's name, e.g. internal-tls */
+      id: string;
+      /** @description The version these settings are: the latest, which new certificates take (ADR 0034) */
+      version: number;
+      /** @description What it is for */
+      description: string;
+      /** @description Whether it is issued only in a ceremony with a root that signs directly */
+      directOnly: boolean;
+      /** @description Whether a new certificate may choose it; inactive, what was issued under it still renews */
+      active: boolean;
+      /** @description An ISO-8601 formatted string: when it was deactivated */
+      deactivatedAt?: string;
+      /** @description An ISO-8601 formatted string: when it was made */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
     };
     ListProfilesResponse: {
       /** @description Every profile */
       profiles: components["schemas"]["Profile"][];
     };
+    BaseProfile: {
+      /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
+      issuerId?: string | null;
+      /** @description The purpose of the issuing CA it issues from */
+      issuerPurpose: string;
+      /** @description The key type generated for its certificates unless the request chooses another */
+      keyAlgorithm: components["schemas"]["KeyAlgorithm"];
+      /** @description How long its certificates are valid, in days */
+      validityDays: number;
+      /** @description How many days into a certificate's life it is renewed: less than its validity */
+      renewAtDays: number;
+      /** @description How old a key may be and still be renewed, in days */
+      maxKeyAgeDays: number;
+      /** @description Whether a subscriber may submit a CSR */
+      allowCsr: boolean;
+      /** @description Whether the signer may generate (and escrow) the key, or be brought one */
+      allowGenerated: boolean;
+      /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
+      legacyExport: boolean;
+      /** @description Whether a certificate needs at least one alternative name */
+      requireSan: boolean;
+      /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
+      escrow: boolean;
+      /** @description Whether one request may choose escrow otherwise */
+      escrowOverridable: boolean;
+      /**
+       * @description standard: the extensions its rules make; minimal: the key identifiers and nothing else
+       * @enum {string}
+       */
+      extensions: "standard" | "minimal";
+      /** @description Its key usages */
+      keyUsages: components["schemas"]["KeyUsage"][];
+      /** @description Its extended key usages, dotted OIDs */
+      extendedKeyUsages: string[];
+      /** @description The alternative name types it allows */
+      nameTypes: components["schemas"]["NameType"][];
+      /** @description Its name: lower case, digits and hyphens, e.g. web-tls */
+      id: string;
+      /** @description What it is for */
+      description: string;
+    };
+    CreateProfileRequest: {
+      /** @description The profile, and its first version's settings */
+      profile: components["schemas"]["BaseProfile"];
+    };
+    CreateProfileResponse: {
+      /** @description The profile, at v1 */
+      profile: components["schemas"]["Profile"];
+    };
     DescribeProfileResponse: {
       /** @description The profile */
       profile: components["schemas"]["Profile"];
     };
-    UpdateProfileRequest: {
-      /** @description The issuer to pin it to; null to follow the active CA of its purpose */
+    PartialProfile: {
+      /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
       issuerId?: string | null;
+      /** @description The purpose of the issuing CA it issues from */
+      issuerPurpose?: string;
+      /** @description The key type generated for its certificates unless the request chooses another */
+      keyAlgorithm?: components["schemas"]["KeyAlgorithm"];
+      /** @description How long its certificates are valid, in days */
+      validityDays?: number;
+      /** @description How many days into a certificate's life it is renewed: less than its validity */
+      renewAtDays?: number;
+      /** @description How old a key may be and still be renewed, in days */
+      maxKeyAgeDays?: number;
+      /** @description Whether a subscriber may submit a CSR */
+      allowCsr?: boolean;
+      /** @description Whether the signer may generate (and escrow) the key, or be brought one */
+      allowGenerated?: boolean;
+      /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
+      legacyExport?: boolean;
+      /** @description Whether a certificate needs at least one alternative name */
+      requireSan?: boolean;
+      /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
+      escrow?: boolean;
+      /** @description Whether one request may choose escrow otherwise */
+      escrowOverridable?: boolean;
+      /**
+       * @description standard: the extensions its rules make; minimal: the key identifiers and nothing else
+       * @enum {string}
+       */
+      extensions?: "standard" | "minimal";
+      /** @description Its key usages */
+      keyUsages?: components["schemas"]["KeyUsage"][];
+      /** @description Its extended key usages, dotted OIDs */
+      extendedKeyUsages?: string[];
+      /** @description The alternative name types it allows */
+      nameTypes?: components["schemas"]["NameType"][];
+      /** @description What it is for */
+      description?: string;
+    };
+    UpdateProfileRequest: {
+      /** @description What changes */
+      profile: components["schemas"]["PartialProfile"];
     };
     UpdateProfileResponse: {
       /** @description The profile, updated */
       profile: components["schemas"]["Profile"];
+    };
+    ProfileVersion: {
+      /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
+      issuerId?: string | null;
+      /** @description The purpose of the issuing CA it issues from */
+      issuerPurpose: string;
+      /** @description The key type generated for its certificates unless the request chooses another */
+      keyAlgorithm: components["schemas"]["KeyAlgorithm"];
+      /** @description How long its certificates are valid, in days */
+      validityDays: number;
+      /** @description How many days into a certificate's life it is renewed: less than its validity */
+      renewAtDays: number;
+      /** @description How old a key may be and still be renewed, in days */
+      maxKeyAgeDays: number;
+      /** @description Whether a subscriber may submit a CSR */
+      allowCsr: boolean;
+      /** @description Whether the signer may generate (and escrow) the key, or be brought one */
+      allowGenerated: boolean;
+      /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
+      legacyExport: boolean;
+      /** @description Whether a certificate needs at least one alternative name */
+      requireSan: boolean;
+      /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
+      escrow: boolean;
+      /** @description Whether one request may choose escrow otherwise */
+      escrowOverridable: boolean;
+      /**
+       * @description standard: the extensions its rules make; minimal: the key identifiers and nothing else
+       * @enum {string}
+       */
+      extensions: "standard" | "minimal";
+      /** @description Its key usages */
+      keyUsages: components["schemas"]["KeyUsage"][];
+      /** @description Its extended key usages, dotted OIDs */
+      extendedKeyUsages: string[];
+      /** @description The alternative name types it allows */
+      nameTypes: components["schemas"]["NameType"][];
+      /** @description v1, v2, … */
+      version: number;
+      /** @description Who made it: a principal, or `migration` for the seeds */
+      createdBy: string;
+      /** @description An ISO-8601 formatted string: when it was made */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    ListProfileVersionsResponse: {
+      /** @description Its versions, newest first */
+      versions: components["schemas"]["ProfileVersion"][];
+    };
+    CopyProfileRequest: {
+      /** @description The new profile's name */
+      id: string;
+      /** @description What it is for; by default the copied profile's */
+      description?: string;
+      /** @description The version to copy; by default the latest */
+      version?: number;
+    };
+    CopyProfileResponse: {
+      /** @description The new profile, at v1 */
+      profile: components["schemas"]["Profile"];
+    };
+    DeactivateProfileResponse: {
+      /** @description The profile, inactive */
+      profile: components["schemas"]["Profile"];
+    };
+    ReactivateProfileResponse: {
+      /** @description The profile, active */
+      profile: components["schemas"]["Profile"];
+    };
+    MoveProfileEnrollmentsRequest: {
+      /** @description The certificates whose enrollments move: their next renewal uses the version */
+      certificateIds: string[];
+      /** @description The version of this profile they move to */
+      version: number;
+    };
+    MoveProfileEnrollmentsResponse: {
+      /** @description How many enrollments moved */
+      moved: number;
     };
     RenewPresentedCertificateRequest: {
       /** @description A CSR, PEM, for the same subject: with a new key it rekeys; without one the same key is certified again while it is young enough */
@@ -4147,6 +4438,87 @@ export interface operations {
       };
     };
   };
+  CreateProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The profile and its settings. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateProfileRequest"];
+      };
+    };
+    responses: {
+      /** @description The profile was created. */
+      201: {
+        headers: {
+          /** @description The profile */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateProfileResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   DescribeProfile: {
     parameters: {
       query?: never;
@@ -4207,14 +4579,14 @@ export interface operations {
       };
       cookie?: never;
     };
-    /** @description The issuer to pin it to. */
+    /** @description What changes. */
     requestBody: {
       content: {
         "application/json": components["schemas"]["UpdateProfileRequest"];
       };
     };
     responses: {
-      /** @description The profile was updated. */
+      /** @description The profile, as its latest version. */
       200: {
         headers: {
           [name: string]: unknown;
@@ -4252,6 +4624,322 @@ export interface operations {
       };
       /** @description The entity with the specified identifiers was not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListProfileVersions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The profile's name */
+        profileId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The versions. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListProfileVersionsResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CopyProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The profile's name */
+        profileId: string;
+      };
+      cookie?: never;
+    };
+    /** @description The new profile's name, and which version to copy. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CopyProfileRequest"];
+      };
+    };
+    responses: {
+      /** @description The new profile. */
+      201: {
+        headers: {
+          /** @description The profile */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CopyProfileResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DeactivateProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The profile's name */
+        profileId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The profile. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DeactivateProfileResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ReactivateProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The profile's name */
+        profileId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The profile. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReactivateProfileResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  MoveProfileEnrollments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The profile's name */
+        profileId: string;
+      };
+      cookie?: never;
+    };
+    /** @description The certificates, and the version. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MoveProfileEnrollmentsRequest"];
+      };
+    };
+    responses: {
+      /** @description How many moved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MoveProfileEnrollmentsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
         headers: {
           [name: string]: unknown;
         };

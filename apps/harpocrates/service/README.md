@@ -21,7 +21,12 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
   `code-signing`, `email`, `document`), in versions (ADR 0034): every
   setting lives on a version, a new certificate takes the latest, and an
   enrollment and each certificate record theirs, so a renewal keeps the
-  version it was issued under. The seeds are v1.
+  version it was issued under. The seeds are v1. An admin makes a
+  profile, edits it (a change of settings is its next version; the
+  description alone is not), copies any version into a new profile,
+  deactivates it (nothing new may choose it; what it issued renews) or
+  reactivates it, and moves chosen certificates' enrollments to another
+  of its versions, which their next renewal uses.
 - **Keys, enrollments, certificates**: every key once, by its
   SubjectPublicKeyInfo hash; one enrollment (the request) per key; the
   key's certificates as its lineage, first issue and renewals.
@@ -97,25 +102,26 @@ are picked up by the running service's next run).
 `openapi/harpocrates.json`; the SDK's `harpocrates` client is generated
 from it.
 
-| Operation                                                              | Who                   |
-| ---------------------------------------------------------------------- | --------------------- |
-| `GET /issuers`, `GET /issuer/{id}`                                     | either role           |
-| `POST /issuers/roots`, `POST /issuers/import`                          | admin, recent sign-in |
-| `POST /issuers/preview` (a new CA's settings and defaults, unsigned)   | admin                 |
-| `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing` | admin, recent sign-in |
-| `GET /ceremony/{id}`, `DELETE /ceremony/{id}`                          | admin                 |
-| `GET /profiles`, `GET /profile/{id}`                                   | either role           |
-| `PUT /profile/{id}` (the issuer pin)                                   | admin                 |
-| `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`     | either role           |
-| `GET /certificate/{id}/download` (`pem`, `der`, `chain`)               | either role           |
-| `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`        | either role           |
-| `POST /certificate/{id}/key-export` (PEM, PKCS#12, legacy PKCS#12)     | admin, recent sign-in |
-| `POST /certificates/import` (another CA product's, XCA's)              | admin                 |
-| `GET /signer/status`; `POST /signer/seal`, `POST /signer/unseal`       | either role; admin    |
-| `GET /audit/events`, `GET /audit/verification`                         | either role           |
-| `GET /issuer/{id}/crls`                                                | either role           |
-| `POST /issuer/{id}/crls` (import a list)                               | admin                 |
-| `POST /ceremony/{id}/crl` (an offline CA's list)                       | admin, recent sign-in |
+| Operation                                                                                                                        | Who                   |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `GET /issuers`, `GET /issuer/{id}`                                                                                               | either role           |
+| `POST /issuers/roots`, `POST /issuers/import`                                                                                    | admin, recent sign-in |
+| `POST /issuers/preview` (a new CA's settings and defaults, unsigned)                                                             | admin                 |
+| `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing`                                                           | admin, recent sign-in |
+| `GET /ceremony/{id}`, `DELETE /ceremony/{id}`                                                                                    | admin                 |
+| `GET /profiles`, `GET /profile/{id}`                                                                                             | either role           |
+| `GET /profile/{id}/versions`                                                                                                     | either role           |
+| `POST /profiles`, `PUT /profile/{id}` (a new version), `POST /profile/{id}/copy`, `.../deactivate`, `.../reactivate`, `.../move` | admin, recent sign-in |
+| `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`                                                               | either role           |
+| `GET /certificate/{id}/download` (`pem`, `der`, `chain`)                                                                         | either role           |
+| `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`                                                                  | either role           |
+| `POST /certificate/{id}/key-export` (PEM, PKCS#12, legacy PKCS#12)                                                               | admin, recent sign-in |
+| `POST /certificates/import` (another CA product's, XCA's)                                                                        | admin                 |
+| `GET /signer/status`; `POST /signer/seal`, `POST /signer/unseal`                                                                 | either role; admin    |
+| `GET /audit/events`, `GET /audit/verification`                                                                                   | either role           |
+| `GET /issuer/{id}/crls`                                                                                                          | either role           |
+| `POST /issuer/{id}/crls` (import a list)                                                                                         | admin                 |
+| `POST /ceremony/{id}/crl` (an offline CA's list)                                                                                 | admin, recent sign-in |
 
 "Recent" is `AUTH_RECENT_SIGN_IN_SECONDS` since the token's `auth_time`.
 `/health` and `/metrics` are open.

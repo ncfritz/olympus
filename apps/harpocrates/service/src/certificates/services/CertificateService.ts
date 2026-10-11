@@ -252,7 +252,7 @@ export class CertificateService {
     request: CreateCertificateRequest,
   ): Promise<FullCertificate> {
     return this.audited(principal, "create", request.profileId, async () => {
-      const profile = await this.profiles.row(request.profileId);
+      const profile = await this.profiles.forNewCertificate(request.profileId);
       if (profile.directOnly) {
         throw new UnprocessableEntityException(
           `The ${profile.id} profile is issued only in a ceremony with a root that signs directly`,
@@ -353,7 +353,7 @@ export class CertificateService {
             `${issuer.id} does not sign leaves: only a root that signs directly does`,
           );
         }
-        const profile = await this.profiles.row(profileId);
+        const profile = await this.profiles.forNewCertificate(profileId);
         if (!profile.directOnly) {
           throw new UnprocessableEntityException(
             `The ${profile.id} profile is issued by an issuing CA, not in a ceremony`,

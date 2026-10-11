@@ -3002,6 +3002,111 @@
         "tags": [
           "Profiles"
         ]
+      },
+      "post": {
+        "description": "A new profile, at v1 (ADR 0034). Its name is its own for good: a deactivated profile keeps it.",
+        "operationId": "CreateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The profile and its settings.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The profile was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The profile"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates a profile",
+        "tags": [
+          "Profiles"
+        ]
       }
     },
     "/v1/profile/{profileId}": {
@@ -3072,7 +3177,7 @@
         ]
       },
       "put": {
-        "description": "Pins a profile to an issuer, or unpins it; its other rules come from migrations.",
+        "description": "What is given changes, the rest carries over. A change of settings makes the profile's next version, which new certificates take; what was issued under an earlier one renews under it. The description alone makes no version.",
         "operationId": "UpdateProfile",
         "parameters": [
           {
@@ -3087,7 +3192,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "The issuer to pin it to.",
+          "description": "What changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -3098,7 +3203,7 @@
         },
         "responses": {
           "200": {
-            "description": "The profile was updated.",
+            "description": "The profile, as its latest version.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3146,6 +3251,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3153,7 +3268,427 @@
             "bearer": []
           }
         ],
-        "summary": "Updates a profile",
+        "summary": "Edits a profile",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}/versions": {
+      "get": {
+        "description": "Every version of a profile, newest first: each one's settings, who made it and when (ADR 0034).",
+        "operationId": "ListProfileVersions",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The versions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListProfileVersionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists a profile's versions",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}/copy": {
+      "post": {
+        "description": "A new profile whose v1 is a version of this one (its latest, by default).",
+        "operationId": "CopyProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The new profile's name, and which version to copy.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new profile.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The profile"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Copies a profile",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}/deactivate": {
+      "post": {
+        "description": "The soft delete: no new certificate may choose it; what was issued under it renews as before.",
+        "operationId": "DeactivateProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeactivateProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivates a profile",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}/reactivate": {
+      "post": {
+        "description": "New certificates may choose it again.",
+        "operationId": "ReactivateProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReactivateProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reactivates a profile",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/v1/profile/{profileId}/move": {
+      "post": {
+        "description": "The enrollments of the given certificates, issued under this profile, move to one of its versions: their next renewal uses it.",
+        "operationId": "MoveProfileEnrollments",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "description": "The profile's name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The certificates, and the version.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveProfileEnrollmentsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How many moved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveProfileEnrollmentsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Moves certificates to a profile version",
         "tags": [
           "Profiles"
         ]
@@ -6272,9 +6807,22 @@
           "skipped"
         ]
       },
+      "KeyUsage": {
+        "type": "string",
+        "description": "A key usage (RFC 5280, 4.2.1.3)",
+        "enum": [
+          "digital_signature",
+          "content_commitment",
+          "key_encipherment",
+          "data_encipherment",
+          "key_agreement",
+          "key_cert_sign",
+          "crl_sign"
+        ]
+      },
       "NameType": {
         "type": "string",
-        "description": "The alternative name types it allows",
+        "description": "A kind of name: DNS, IP address, email or URI",
         "enum": [
           "dns",
           "ip",
@@ -6285,20 +6833,9 @@
       "Profile": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "The profile's name, e.g. internal-tls"
-          },
-          "version": {
-            "type": "number",
-            "description": "The version these settings are: the latest, which new certificates take (ADR 0034)"
-          },
-          "description": {
-            "type": "string",
-            "description": "What it is for"
-          },
           "issuerId": {
             "type": "string",
+            "nullable": true,
             "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
           },
           "issuerPurpose": {
@@ -6319,7 +6856,7 @@
           },
           "renewAtDays": {
             "type": "number",
-            "description": "How many days into a certificate's life it is renewed"
+            "description": "How many days into a certificate's life it is renewed: less than its validity"
           },
           "maxKeyAgeDays": {
             "type": "number",
@@ -6331,7 +6868,7 @@
           },
           "allowGenerated": {
             "type": "boolean",
-            "description": "Whether the signer may generate (and escrow) the key"
+            "description": "Whether the signer may generate (and escrow) the key, or be brought one"
           },
           "legacyExport": {
             "type": "boolean",
@@ -6357,15 +6894,11 @@
             ],
             "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
           },
-          "directOnly": {
-            "type": "boolean",
-            "description": "Whether it is issued only in a ceremony with a root that signs directly"
-          },
           "keyUsages": {
-            "description": "Its key usages",
             "type": "array",
+            "description": "Its key usages",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/KeyUsage"
             }
           },
           "extendedKeyUsages": {
@@ -6381,12 +6914,41 @@
             "items": {
               "$ref": "#/components/schemas/NameType"
             }
+          },
+          "id": {
+            "type": "string",
+            "description": "The profile's name, e.g. internal-tls"
+          },
+          "version": {
+            "type": "number",
+            "description": "The version these settings are: the latest, which new certificates take (ADR 0034)"
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for"
+          },
+          "directOnly": {
+            "type": "boolean",
+            "description": "Whether it is issued only in a ceremony with a root that signs directly"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether a new certificate may choose it; inactive, what was issued under it still renews"
+          },
+          "deactivatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was deactivated"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was made"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
           }
         },
         "required": [
-          "id",
-          "version",
-          "description",
           "issuerPurpose",
           "keyAlgorithm",
           "validityDays",
@@ -6399,10 +6961,16 @@
           "escrow",
           "escrowOverridable",
           "extensions",
-          "directOnly",
           "keyUsages",
           "extendedKeyUsages",
-          "nameTypes"
+          "nameTypes",
+          "id",
+          "version",
+          "description",
+          "directOnly",
+          "active",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "ListProfilesResponse": {
@@ -6418,6 +6986,152 @@
         },
         "required": [
           "profiles"
+        ]
+      },
+      "BaseProfile": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
+          },
+          "issuerPurpose": {
+            "type": "string",
+            "description": "The purpose of the issuing CA it issues from"
+          },
+          "keyAlgorithm": {
+            "description": "The key type generated for its certificates unless the request chooses another",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "How long its certificates are valid, in days"
+          },
+          "renewAtDays": {
+            "type": "number",
+            "description": "How many days into a certificate's life it is renewed: less than its validity"
+          },
+          "maxKeyAgeDays": {
+            "type": "number",
+            "description": "How old a key may be and still be renewed, in days"
+          },
+          "allowCsr": {
+            "type": "boolean",
+            "description": "Whether a subscriber may submit a CSR"
+          },
+          "allowGenerated": {
+            "type": "boolean",
+            "description": "Whether the signer may generate (and escrow) the key, or be brought one"
+          },
+          "legacyExport": {
+            "type": "boolean",
+            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
+          },
+          "requireSan": {
+            "type": "boolean",
+            "description": "Whether a certificate needs at least one alternative name"
+          },
+          "escrow": {
+            "type": "boolean",
+            "description": "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed"
+          },
+          "escrowOverridable": {
+            "type": "boolean",
+            "description": "Whether one request may choose escrow otherwise"
+          },
+          "extensions": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "minimal"
+            ],
+            "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
+          },
+          "keyUsages": {
+            "type": "array",
+            "description": "Its key usages",
+            "items": {
+              "$ref": "#/components/schemas/KeyUsage"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "Its extended key usages, dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameTypes": {
+            "type": "array",
+            "description": "The alternative name types it allows",
+            "items": {
+              "$ref": "#/components/schemas/NameType"
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "Its name: lower case, digits and hyphens, e.g. web-tls"
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for"
+          }
+        },
+        "required": [
+          "issuerPurpose",
+          "keyAlgorithm",
+          "validityDays",
+          "renewAtDays",
+          "maxKeyAgeDays",
+          "allowCsr",
+          "allowGenerated",
+          "legacyExport",
+          "requireSan",
+          "escrow",
+          "escrowOverridable",
+          "extensions",
+          "keyUsages",
+          "extendedKeyUsages",
+          "nameTypes",
+          "id",
+          "description"
+        ]
+      },
+      "CreateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile, and its first version's settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BaseProfile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "CreateProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile, at v1",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
         ]
       },
       "DescribeProfileResponse": {
@@ -6436,15 +7150,112 @@
           "profile"
         ]
       },
-      "UpdateProfileRequest": {
+      "PartialProfile": {
         "type": "object",
         "properties": {
           "issuerId": {
             "type": "string",
             "nullable": true,
-            "description": "The issuer to pin it to; null to follow the active CA of its purpose"
+            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
+          },
+          "issuerPurpose": {
+            "type": "string",
+            "description": "The purpose of the issuing CA it issues from"
+          },
+          "keyAlgorithm": {
+            "description": "The key type generated for its certificates unless the request chooses another",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "How long its certificates are valid, in days"
+          },
+          "renewAtDays": {
+            "type": "number",
+            "description": "How many days into a certificate's life it is renewed: less than its validity"
+          },
+          "maxKeyAgeDays": {
+            "type": "number",
+            "description": "How old a key may be and still be renewed, in days"
+          },
+          "allowCsr": {
+            "type": "boolean",
+            "description": "Whether a subscriber may submit a CSR"
+          },
+          "allowGenerated": {
+            "type": "boolean",
+            "description": "Whether the signer may generate (and escrow) the key, or be brought one"
+          },
+          "legacyExport": {
+            "type": "boolean",
+            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
+          },
+          "requireSan": {
+            "type": "boolean",
+            "description": "Whether a certificate needs at least one alternative name"
+          },
+          "escrow": {
+            "type": "boolean",
+            "description": "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed"
+          },
+          "escrowOverridable": {
+            "type": "boolean",
+            "description": "Whether one request may choose escrow otherwise"
+          },
+          "extensions": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "minimal"
+            ],
+            "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
+          },
+          "keyUsages": {
+            "type": "array",
+            "description": "Its key usages",
+            "items": {
+              "$ref": "#/components/schemas/KeyUsage"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "Its extended key usages, dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameTypes": {
+            "type": "array",
+            "description": "The alternative name types it allows",
+            "items": {
+              "$ref": "#/components/schemas/NameType"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for"
           }
         }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "What changes",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PartialProfile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
       },
       "UpdateProfileResponse": {
         "type": "object",
@@ -6460,6 +7271,245 @@
         },
         "required": [
           "profile"
+        ]
+      },
+      "ProfileVersion": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The issuer it is pinned to; unset, the active issuing CA of its purpose"
+          },
+          "issuerPurpose": {
+            "type": "string",
+            "description": "The purpose of the issuing CA it issues from"
+          },
+          "keyAlgorithm": {
+            "description": "The key type generated for its certificates unless the request chooses another",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
+          },
+          "validityDays": {
+            "type": "number",
+            "description": "How long its certificates are valid, in days"
+          },
+          "renewAtDays": {
+            "type": "number",
+            "description": "How many days into a certificate's life it is renewed: less than its validity"
+          },
+          "maxKeyAgeDays": {
+            "type": "number",
+            "description": "How old a key may be and still be renewed, in days"
+          },
+          "allowCsr": {
+            "type": "boolean",
+            "description": "Whether a subscriber may submit a CSR"
+          },
+          "allowGenerated": {
+            "type": "boolean",
+            "description": "Whether the signer may generate (and escrow) the key, or be brought one"
+          },
+          "legacyExport": {
+            "type": "boolean",
+            "description": "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)"
+          },
+          "requireSan": {
+            "type": "boolean",
+            "description": "Whether a certificate needs at least one alternative name"
+          },
+          "escrow": {
+            "type": "boolean",
+            "description": "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed"
+          },
+          "escrowOverridable": {
+            "type": "boolean",
+            "description": "Whether one request may choose escrow otherwise"
+          },
+          "extensions": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "minimal"
+            ],
+            "description": "standard: the extensions its rules make; minimal: the key identifiers and nothing else"
+          },
+          "keyUsages": {
+            "type": "array",
+            "description": "Its key usages",
+            "items": {
+              "$ref": "#/components/schemas/KeyUsage"
+            }
+          },
+          "extendedKeyUsages": {
+            "description": "Its extended key usages, dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nameTypes": {
+            "type": "array",
+            "description": "The alternative name types it allows",
+            "items": {
+              "$ref": "#/components/schemas/NameType"
+            }
+          },
+          "version": {
+            "type": "number",
+            "description": "v1, v2, …"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "Who made it: a principal, or `migration` for the seeds"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was made"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "issuerPurpose",
+          "keyAlgorithm",
+          "validityDays",
+          "renewAtDays",
+          "maxKeyAgeDays",
+          "allowCsr",
+          "allowGenerated",
+          "legacyExport",
+          "requireSan",
+          "escrow",
+          "escrowOverridable",
+          "extensions",
+          "keyUsages",
+          "extendedKeyUsages",
+          "nameTypes",
+          "version",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ListProfileVersionsResponse": {
+        "type": "object",
+        "properties": {
+          "versions": {
+            "description": "Its versions, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileVersion"
+            }
+          }
+        },
+        "required": [
+          "versions"
+        ]
+      },
+      "CopyProfileRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The new profile's name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What it is for; by default the copied profile's"
+          },
+          "version": {
+            "type": "number",
+            "description": "The version to copy; by default the latest"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CopyProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The new profile, at v1",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "DeactivateProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile, inactive",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "ReactivateProfileResponse": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "description": "The profile, active",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              }
+            ]
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "MoveProfileEnrollmentsRequest": {
+        "type": "object",
+        "properties": {
+          "certificateIds": {
+            "description": "The certificates whose enrollments move: their next renewal uses the version",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "number",
+            "description": "The version of this profile they move to"
+          }
+        },
+        "required": [
+          "certificateIds",
+          "version"
+        ]
+      },
+      "MoveProfileEnrollmentsResponse": {
+        "type": "object",
+        "properties": {
+          "moved": {
+            "type": "number",
+            "description": "How many enrollments moved"
+          }
+        },
+        "required": [
+          "moved"
         ]
       },
       "RenewPresentedCertificateRequest": {

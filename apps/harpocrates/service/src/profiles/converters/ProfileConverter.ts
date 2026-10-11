@@ -6,7 +6,13 @@ import type {
   ProfileVersion as ProfileVersionRow,
 } from "../../store/prisma";
 import type { KeyAlgorithmName } from "../../model/common";
-import type { Profile } from "../../model/profiles";
+import moment from "moment";
+import type {
+  KeyUsageName,
+  Profile,
+  ProfileSettings,
+  ProfileVersion,
+} from "../../model/profiles";
 
 /** A profile version with its rules. */
 export type ProfileVersionWithRules = ProfileVersionRow & {
@@ -91,10 +97,25 @@ export const keyAlgorithmName = (row: {
   keyAlgorithm: ProfileVersionRow["keyAlgorithm"];
 }): KeyAlgorithmName => ALGORITHMS[row.keyAlgorithm];
 
-export const toDomainObject = (row: ProfileWithRules): Profile => ({
-  id: row.id,
-  version: row.version,
-  description: row.description,
+/** A version's settings, as the API gives them. */
+export const toSettings = (row: {
+  issuerId: string | null;
+  issuerPurpose: string;
+  keyAlgorithm: ProfileVersionRow["keyAlgorithm"];
+  validityDays: number;
+  renewAtDays: number;
+  maxKeyAgeDays: number;
+  allowCsr: boolean;
+  allowGenerated: boolean;
+  legacyExport: boolean;
+  requireSan: boolean;
+  escrow: boolean;
+  escrowOverridable: boolean;
+  extensions: ProfileVersionRow["extensions"];
+  keyUsages: ProfileKeyUsage[];
+  extendedKeyUsages: ProfileExtendedKeyUsage[];
+  nameTypes: ProfileNameType[];
+}): ProfileSettings => ({
   issuerId: row.issuerId ?? undefined,
   issuerPurpose: row.issuerPurpose,
   keyAlgorithm: keyAlgorithmName(row),
@@ -108,8 +129,34 @@ export const toDomainObject = (row: ProfileWithRules): Profile => ({
   escrow: row.escrow,
   escrowOverridable: row.escrowOverridable,
   extensions: row.extensions,
-  directOnly: row.directOnly,
-  keyUsages: row.keyUsages.map((u) => u.usage).sort(),
+  keyUsages: row.keyUsages.map((u) => u.usage as KeyUsageName).sort(),
   extendedKeyUsages: row.extendedKeyUsages.map((u) => u.oid).sort(),
   nameTypes: row.nameTypes.map((t) => t.type).sort(),
 });
+
+export const toDomainObject = (row: ProfileWithRules): Profile => ({
+  id: row.id,
+  version: row.version,
+  description: row.description,
+  directOnly: row.directOnly,
+  active: !row.deactivatedAt,
+  deactivatedAt: row.deactivatedAt ? moment(row.deactivatedAt) : undefined,
+  createdAt: moment(row.createdAt),
+  updatedAt: moment(row.updatedAt),
+  ...toSettings(row),
+});
+
+export const toProfileVersion = (
+  row: ProfileVersionWithRules,
+): ProfileVersion => ({
+  version: row.version,
+  createdBy: row.createdBy,
+  createdAt: moment(row.createdAt),
+  updatedAt: moment(row.updatedAt),
+  ...toSettings(row),
+});
+
+/** The algorithm names the store keeps, by the API's names. */
+export const KEY_ALGORITHM_ROWS = Object.fromEntries(
+  Object.entries(ALGORITHMS).map(([row, name]) => [name, row]),
+) as Record<KeyAlgorithmName, ProfileVersionRow["keyAlgorithm"]>;

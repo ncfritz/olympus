@@ -238,6 +238,17 @@ recovery passphrase is used.
 | C16.3 | DEV | Renew the certificate `endpoint-stale` serves without deploying it; run the check | deployed-versus-issued shows the endpoint serving the old serial                                  | API; metric  |
 | C16.4 | INT | Open the dashboard                                                                | the 90-day timeline, what needs a person, issuing windows, lists and seal state, matching the API | screenshot   |
 
+## C17 — Profiles as versioned presets
+
+| Id    | Env | Steps                                                                                   | Expected                                                                                | Evidence       |
+| ----- | --- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------- |
+| C17.1 | DEV | Make a profile as an admin (API; the console from step 6); try again as an operator     | v1, active; the operator is refused (403); both audited or refused in the log           | console; audit |
+| C17.2 | DEV | Change its description, then its validity                                               | the description makes no version; the validity makes v2; the versions list shows both   | API            |
+| C17.3 | DEV | Issue under v1, edit to v2, renew the certificate                                       | the renewal has v1's validity                                                           | certificate    |
+| C17.4 | DEV | Move that certificate to v2, renew it again                                             | the renewal has v2's validity                                                           | certificate    |
+| C17.5 | DEV | Deactivate the profile; issue under it; renew a certificate issued under it; reactivate | issuing refused (422), naming the deactivation; the renewal issues; issuing works again | API; console   |
+| C17.6 | DEV | Copy v1 into a new profile                                                              | the new profile's v1 has v1's settings; copying onto an existing name is refused (409)  | API            |
+
 ## Sign-off matrix
 
 | Phase | Flows to pass                                                                 |
@@ -251,3 +262,4 @@ recovery passphrase is used.
 | 7     | C10, C11.5                                                                    |
 | 8     | C8, C5.4, C6, C4.7, C12                                                       |
 | 9     | C15                                                                           |
+| 10    | C17                                                                           |

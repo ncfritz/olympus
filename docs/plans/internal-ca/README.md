@@ -466,7 +466,7 @@ Independent of phases 8 and 9.
 7. **Docs**: the service and console READMEs, and the certificates
    guide.
 
-**Sign-off:** C17 (to be written with step 2).
+**Sign-off:** C17.
 
 ## Phase 11 — OCSP
 

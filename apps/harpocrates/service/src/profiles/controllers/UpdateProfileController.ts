@@ -11,7 +11,7 @@ import {
 import type { Response } from "express";
 import { CurrentPrincipal } from "../../auth/currentPrincipal";
 import type { Principal } from "../../auth/principal";
-import { AdminOnly } from "../../auth/roles";
+import { AdminOnly, RecentSignIn } from "../../auth/roles";
 import {
   UpdateProfileRequest,
   UpdateProfileResponse,
@@ -26,9 +26,9 @@ export class UpdateProfileController {
 
   @Put("/profile/:profileId")
   @ApiOperation({
-    summary: "Updates a profile",
+    summary: "Edits a profile",
     description:
-      "Pins a profile to an issuer, or unpins it; its other rules come from migrations.",
+      "What is given changes, the rest carries over. A change of settings makes the profile's next version, which new certificates take; what was issued under an earlier one renews under it. The description alone makes no version.",
     operationId: "UpdateProfile",
     tags: ["Profiles"],
   })
@@ -42,14 +42,17 @@ export class UpdateProfileController {
   @ApiBody({
     type: UpdateProfileRequest,
     required: true,
-    description: "The issuer to pin it to.",
+    description: "What changes.",
   })
   @ApiOkResponse({
-    description: "The profile was updated.",
+    description: "The profile, as its latest version.",
     type: UpdateProfileResponse,
   })
-  @ApiStandardErrorResponses({ include: [HttpStatus.FORBIDDEN] })
+  @ApiStandardErrorResponses({
+    include: [HttpStatus.FORBIDDEN, HttpStatus.UNPROCESSABLE_ENTITY],
+  })
   @AdminOnly()
+  @RecentSignIn()
   async handle(
     @Param("profileId") profileId: string,
     @Body() request: UpdateProfileRequest,
@@ -57,7 +60,11 @@ export class UpdateProfileController {
     @Res() response: Response,
   ): Promise<void> {
     const responseBody: UpdateProfileResponse = {
-      profile: await this.profiles.update(principal, profileId, request),
+      profile: await this.profiles.update(
+        principal,
+        profileId,
+        request.profile,
+      ),
     };
     response.status(HttpStatus.OK).send(responseBody);
   }

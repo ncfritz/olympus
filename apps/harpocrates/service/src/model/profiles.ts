@@ -1,18 +1,256 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, Matches, ValidateIf } from "class-validator";
+import { ApiTimestamp } from "@ncfritz/olympus-model";
+import { ApiProperty, OmitType, PartialType } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from "class-validator";
+import type { Moment } from "moment";
 import {
   KEY_ALGORITHM_ENUM,
+  KEY_ALGORITHM_VALUES,
   type KeyAlgorithmName,
   NAME_TYPE_ENUM,
+  NAME_TYPE_VALUES,
   type NameTypeName,
 } from "./common";
+
+export const KEY_USAGE_VALUES = [
+  "digital_signature",
+  "content_commitment",
+  "key_encipherment",
+  "data_encipherment",
+  "key_agreement",
+  "key_cert_sign",
+  "crl_sign",
+] as const;
+export type KeyUsageName = (typeof KEY_USAGE_VALUES)[number];
+
+export const KEY_USAGE_ENUM = {
+  enum: [...KEY_USAGE_VALUES],
+  enumName: "KeyUsage",
+  enumSchema: { description: "A key usage (RFC 5280, 4.2.1.3)" },
+};
+
+export const EXTENSION_SET_VALUES = ["standard", "minimal"] as const;
+export type ExtensionSetName = (typeof EXTENSION_SET_VALUES)[number];
+
+/** A profile's slug: lower case, digits and hyphens. */
+export const PROFILE_SLUG = /^[a-z][a-z0-9-]{0,62}$/;
+
+/** A dotted OID. */
+const OID = /^[0-2](\.(0|[1-9][0-9]*))+$/;
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
-/** What a certificate may be (ADR 0020, Profiles). */
-export class Profile {
+/**
+ * What one version of a profile says a certificate may be (ADR 0020,
+ * Profiles; ADR 0034): every setting a version freezes.
+ */
+export class ProfileSettings {
+  @ApiProperty({
+    type: String,
+    required: false,
+    nullable: true,
+    description:
+      "The issuer it is pinned to; unset, the active issuing CA of its purpose",
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Matches(PROFILE_SLUG)
+  issuerId?: string | null;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The purpose of the issuing CA it issues from",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(64)
+  issuerPurpose: string;
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    required: true,
+    description:
+      "The key type generated for its certificates unless the request chooses another",
+  })
+  @IsIn([...KEY_ALGORITHM_VALUES])
+  keyAlgorithm: KeyAlgorithmName;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How long its certificates are valid, in days",
+  })
+  @IsInt()
+  @Min(1)
+  @Max(36500)
+  validityDays: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "How many days into a certificate's life it is renewed: less than its validity",
+  })
+  @IsInt()
+  @Min(1)
+  renewAtDays: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How old a key may be and still be renewed, in days",
+  })
+  @IsInt()
+  @Min(1)
+  maxKeyAgeDays: number;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether a subscriber may submit a CSR",
+  })
+  @IsBoolean()
+  allowCsr: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether the signer may generate (and escrow) the key, or be brought one",
+  })
+  @IsBoolean()
+  allowGenerated: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)",
+  })
+  @IsBoolean()
+  legacyExport: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether a certificate needs at least one alternative name",
+  })
+  @IsBoolean()
+  requireSan: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed",
+  })
+  @IsBoolean()
+  escrow: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether one request may choose escrow otherwise",
+  })
+  @IsBoolean()
+  escrowOverridable: boolean;
+
+  @ApiProperty({
+    type: String,
+    enum: [...EXTENSION_SET_VALUES],
+    enumName: "ExtensionSet",
+    required: true,
+    description:
+      "standard: the extensions its rules make; minimal: the key identifiers and nothing else",
+  })
+  @IsIn([...EXTENSION_SET_VALUES])
+  extensions: ExtensionSetName;
+
+  @ApiProperty({
+    ...KEY_USAGE_ENUM,
+    isArray: true,
+    required: true,
+    description: "Its key usages",
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsIn([...KEY_USAGE_VALUES], { each: true })
+  keyUsages: KeyUsageName[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Its extended key usages, dotted OIDs",
+  })
+  @IsArray()
+  @ArrayUnique()
+  @Matches(OID, { each: true })
+  extendedKeyUsages: string[];
+
+  @ApiProperty({
+    ...NAME_TYPE_ENUM,
+    isArray: true,
+    required: true,
+    description: "The alternative name types it allows",
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsIn([...NAME_TYPE_VALUES], { each: true })
+  nameTypes: NameTypeName[];
+}
+
+/** One version of a profile, frozen once made (ADR 0034). */
+export class ProfileVersion extends ProfileSettings {
+  @ApiProperty({ type: Number, required: true, description: "v1, v2, …" })
+  version: number;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Who made it: a principal, or `migration` for the seeds",
+  })
+  createdBy: string;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it was made",
+  })
+  createdAt: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it last changed",
+  })
+  updatedAt: Moment;
+}
+
+/**
+ * What a certificate may be (ADR 0020, Profiles): the profile, read as its
+ * latest version, which new certificates take (ADR 0034).
+ */
+export class Profile extends ProfileSettings {
   @ApiProperty({
     type: String,
     required: true,
@@ -36,104 +274,6 @@ export class Profile {
   description: string;
 
   @ApiProperty({
-    type: String,
-    required: false,
-    description:
-      "The issuer it is pinned to; unset, the active issuing CA of its purpose",
-  })
-  issuerId?: string;
-
-  @ApiProperty({
-    type: String,
-    required: true,
-    description: "The purpose of the issuing CA it issues from",
-  })
-  issuerPurpose: string;
-
-  @ApiProperty({
-    ...KEY_ALGORITHM_ENUM,
-    required: true,
-    description:
-      "The key type generated for its certificates unless the request chooses another",
-  })
-  keyAlgorithm: KeyAlgorithmName;
-
-  @ApiProperty({
-    type: Number,
-    required: true,
-    description: "How long its certificates are valid, in days",
-  })
-  validityDays: number;
-
-  @ApiProperty({
-    type: Number,
-    required: true,
-    description: "How many days into a certificate's life it is renewed",
-  })
-  renewAtDays: number;
-
-  @ApiProperty({
-    type: Number,
-    required: true,
-    description: "How old a key may be and still be renewed, in days",
-  })
-  maxKeyAgeDays: number;
-
-  @ApiProperty({
-    type: Boolean,
-    required: true,
-    description: "Whether a subscriber may submit a CSR",
-  })
-  allowCsr: boolean;
-
-  @ApiProperty({
-    type: Boolean,
-    required: true,
-    description: "Whether the signer may generate (and escrow) the key",
-  })
-  allowGenerated: boolean;
-
-  @ApiProperty({
-    type: Boolean,
-    required: true,
-    description:
-      "Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain)",
-  })
-  legacyExport: boolean;
-
-  @ApiProperty({
-    type: Boolean,
-    required: true,
-    description: "Whether a certificate needs at least one alternative name",
-  })
-  requireSan: boolean;
-
-  @ApiProperty({
-    type: Boolean,
-    required: true,
-    description:
-      "Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed",
-  })
-  escrow: boolean;
-
-  @ApiProperty({
-    type: Boolean,
-    required: true,
-    description: "Whether one request may choose escrow otherwise",
-  })
-  escrowOverridable: boolean;
-
-  @ApiProperty({
-    type: String,
-    enum: ["standard", "minimal"],
-    enumName: "ExtensionSet",
-    required: true,
-    description:
-      "standard: the extensions its rules make; minimal: the key identifiers and nothing else",
-  })
-  extensions: "standard" | "minimal";
-
-  @ApiProperty({
     type: Boolean,
     required: true,
     description:
@@ -142,47 +282,138 @@ export class Profile {
   directOnly: boolean;
 
   @ApiProperty({
-    type: String,
-    isArray: true,
+    type: Boolean,
     required: true,
-    description: "Its key usages",
+    description:
+      "Whether a new certificate may choose it; inactive, what was issued under it still renews",
   })
-  keyUsages: string[];
+  active: boolean;
 
-  @ApiProperty({
-    type: String,
-    isArray: true,
-    required: true,
-    description: "Its extended key usages, dotted OIDs",
+  @ApiTimestamp({
+    required: false,
+    description: "An ISO-8601 formatted string: when it was deactivated",
   })
-  extendedKeyUsages: string[];
+  deactivatedAt?: Moment;
 
-  @ApiProperty({
-    ...NAME_TYPE_ENUM,
-    isArray: true,
+  @ApiTimestamp({
     required: true,
-    description: "The alternative name types it allows",
+    description: "An ISO-8601 formatted string: when it was made",
   })
-  nameTypes: NameTypeName[];
+  createdAt: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it last changed",
+  })
+  updatedAt: Moment;
 }
+
+/** A new profile: its name, what it is for, and its v1. */
+export class BaseProfile extends ProfileSettings {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its name: lower case, digits and hyphens, e.g. web-tls",
+  })
+  @IsString()
+  @Matches(PROFILE_SLUG)
+  id: string;
+
+  @ApiProperty({ type: String, required: true, description: "What it is for" })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  description: string;
+}
+
+/**
+ * A profile's changes: what is given changes, the rest carries over. A
+ * changed setting makes its next version; a description alone does not.
+ */
+export class PartialProfile extends PartialType(
+  OmitType(BaseProfile, ["id"] as const),
+) {}
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
+export class CreateProfileRequest {
+  @ApiProperty({
+    type: () => BaseProfile,
+    required: true,
+    description: "The profile, and its first version's settings",
+  })
+  @ValidateNested()
+  @Type(() => BaseProfile)
+  profile: BaseProfile;
+}
+
 export class UpdateProfileRequest {
+  @ApiProperty({
+    type: () => PartialProfile,
+    required: true,
+    description: "What changes",
+  })
+  @ValidateNested()
+  @Type(() => PartialProfile)
+  profile: PartialProfile;
+}
+
+export class CopyProfileRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The new profile's name",
+  })
+  @IsString()
+  @Matches(PROFILE_SLUG)
+  id: string;
+
   @ApiProperty({
     type: String,
     required: false,
-    nullable: true,
-    description:
-      "The issuer to pin it to; null to follow the active CA of its purpose",
+    description: "What it is for; by default the copied profile's",
   })
   @IsOptional()
-  @ValidateIf((_, value) => value !== null)
   @IsString()
-  @Matches(/^[a-z][a-z0-9-]{0,62}$/)
-  issuerId?: string | null;
+  @IsNotEmpty()
+  @MaxLength(200)
+  description?: string;
+
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The version to copy; by default the latest",
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  version?: number;
+}
+
+export class MoveProfileEnrollmentsRequest {
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "The certificates whose enrollments move: their next renewal uses the version",
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsUUID("all", { each: true })
+  certificateIds: string[];
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "The version of this profile they move to",
+  })
+  @IsInt()
+  @Min(1)
+  version: number;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -206,6 +437,61 @@ export class DescribeProfileResponse {
     description: "The profile",
   })
   profile: Profile;
+}
+
+export class CreateProfileResponse {
+  @ApiProperty({
+    type: () => Profile,
+    required: true,
+    description: "The profile, at v1",
+  })
+  profile: Profile;
+}
+
+export class CopyProfileResponse {
+  @ApiProperty({
+    type: () => Profile,
+    required: true,
+    description: "The new profile, at v1",
+  })
+  profile: Profile;
+}
+
+export class DeactivateProfileResponse {
+  @ApiProperty({
+    type: () => Profile,
+    required: true,
+    description: "The profile, inactive",
+  })
+  profile: Profile;
+}
+
+export class ReactivateProfileResponse {
+  @ApiProperty({
+    type: () => Profile,
+    required: true,
+    description: "The profile, active",
+  })
+  profile: Profile;
+}
+
+export class ListProfileVersionsResponse {
+  @ApiProperty({
+    type: () => ProfileVersion,
+    isArray: true,
+    required: true,
+    description: "Its versions, newest first",
+  })
+  versions: ProfileVersion[];
+}
+
+export class MoveProfileEnrollmentsResponse {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How many enrollments moved",
+  })
+  moved: number;
 }
 
 export class UpdateProfileResponse {
