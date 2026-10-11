@@ -576,7 +576,7 @@
           "Keys"
         ],
         "summary": "Imports a key",
-        "description": "An encrypted PKCS#8 key, as XCA exports it: an issuing CA's, at the cutover. Refused if the store already holds it.",
+        "description": "An encrypted PKCS#8 key, as XCA exports it (an issuing CA's, at the cutover), or the key in a PKCS#12 file (a subject's, brought to be certified). Refused if the store already holds it.",
         "operationId": "ImportKey",
         "parameters": [
           {
@@ -2385,6 +2385,14 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImportFormat": {
+        "type": "string",
+        "enum": [
+          "pem",
+          "pkcs12"
+        ],
+        "title": "ImportFormat"
+      },
       "ImportKeyRequest": {
         "properties": {
           "purpose": {
@@ -2393,11 +2401,15 @@
           "privateKey": {
             "type": "string",
             "title": "Privatekey",
-            "description": "Encrypted PKCS#8, PEM."
+            "description": "Encrypted PKCS#8, PEM; or a PKCS#12 file, base64."
           },
           "passphrase": {
             "type": "string",
             "title": "Passphrase"
+          },
+          "format": {
+            "$ref": "#/components/schemas/ImportFormat",
+            "default": "pem"
           }
         },
         "additionalProperties": false,
@@ -2457,11 +2469,19 @@
       "KeyAlgorithm": {
         "type": "string",
         "enum": [
+          "RSA-2048",
+          "RSA-3072",
+          "RSA-4096",
+          "RSA-8192",
+          "DSA-2048",
+          "DSA-3072",
           "P-256",
-          "RSA-2048"
+          "P-384",
+          "P-521",
+          "Ed25519"
         ],
         "title": "KeyAlgorithm",
-        "description": "What the signer generates. P-256 everywhere (ADR 0018); RSA 2048 for\ndevices that need it (the printer)."
+        "description": "What the signer generates. P-256 is the default (ADR 0018); a\ncertificate's key may be any of these, chosen when it is issued (ADR\n0020, amended). DSA is for clients that still take it: TLS 1.3 and\nbrowsers do not."
       },
       "KeyPurpose": {
         "type": "string",

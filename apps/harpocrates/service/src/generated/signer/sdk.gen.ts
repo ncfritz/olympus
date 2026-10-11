@@ -237,7 +237,7 @@ export const generateKey = <ThrowOnError extends boolean = true>(
 /**
  * Imports a key
  *
- * An encrypted PKCS#8 key, as XCA exports it: an issuing CA's, at the cutover. Refused if the store already holds it.
+ * An encrypted PKCS#8 key, as XCA exports it (an issuing CA's, at the cutover), or the key in a PKCS#12 file (a subject's, brought to be certified). Refused if the store already holds it.
  */
 export const importKey = <ThrowOnError extends boolean = true>(
   options: Options<ImportKeyData, ThrowOnError>,

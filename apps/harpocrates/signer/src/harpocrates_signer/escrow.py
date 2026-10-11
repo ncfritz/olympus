@@ -80,7 +80,7 @@ def export_key(
     name = certificate.subject.rfc4514_string().encode("utf-8")
     return pkcs12.serialize_key_and_certificates(
         name,
-        key,  # type: ignore[arg-type]  # Ed25519 subject keys are SSH's, never escrowed
+        key,
         certificate,
         cas,
         encryption,

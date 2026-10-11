@@ -96,6 +96,7 @@ export type {
   GenerateKeyResponse,
   GenerateKeyResponses,
   HttpValidationError,
+  ImportFormat,
   ImportKeyData,
   ImportKeyError,
   ImportKeyErrors,

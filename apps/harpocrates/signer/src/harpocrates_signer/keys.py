@@ -4,22 +4,54 @@ Only public keys leave the signer, apart from an escrowed subject key
 exported on purpose (escrow.py). An issuer's key never leaves at all.
 """
 
+import base64
+import binascii
 import sqlite3
 import uuid
 from dataclasses import dataclass
 from enum import StrEnum
 
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
+from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, rsa
+from cryptography.hazmat.primitives.serialization import pkcs12
 
 from harpocrates_signer.errors import BadRequestError, ConflictError, NotFoundError
 from harpocrates_signer.store import KeyRow, Store, now
 from harpocrates_signer.vault import Vault
 
 type PrivateKey = (
-    ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey | ed25519.Ed25519PrivateKey
+    ec.EllipticCurvePrivateKey
+    | rsa.RSAPrivateKey
+    | dsa.DSAPrivateKey
+    | ed25519.Ed25519PrivateKey
 )
-type PublicKey = ec.EllipticCurvePublicKey | rsa.RSAPublicKey | ed25519.Ed25519PublicKey
+type PublicKey = (
+    ec.EllipticCurvePublicKey
+    | rsa.RSAPublicKey
+    | dsa.DSAPublicKey
+    | ed25519.Ed25519PublicKey
+)
+
+#: The private key types the signer keeps, for isinstance checks.
+PRIVATE_KEY_TYPES = (
+    ec.EllipticCurvePrivateKey,
+    rsa.RSAPrivateKey,
+    dsa.DSAPrivateKey,
+    ed25519.Ed25519PrivateKey,
+)
+#: ...and their public halves.
+PUBLIC_KEY_TYPES = (
+    ec.EllipticCurvePublicKey,
+    rsa.RSAPublicKey,
+    dsa.DSAPublicKey,
+    ed25519.Ed25519PublicKey,
+)
+
+CURVES: dict[str, ec.EllipticCurve] = {
+    "P-256": ec.SECP256R1(),
+    "P-384": ec.SECP384R1(),
+    "P-521": ec.SECP521R1(),
+}
 
 
 class KeyPurpose(StrEnum):
@@ -30,11 +62,21 @@ class KeyPurpose(StrEnum):
 
 
 class KeyAlgorithm(StrEnum):
-    """What the signer generates. P-256 everywhere (ADR 0018); RSA 2048 for
-    devices that need it (the printer)."""
+    """What the signer generates. P-256 is the default (ADR 0018); a
+    certificate's key may be any of these, chosen when it is issued (ADR
+    0020, amended). DSA is for clients that still take it: TLS 1.3 and
+    browsers do not."""
 
-    P256 = "P-256"
     RSA2048 = "RSA-2048"
+    RSA3072 = "RSA-3072"
+    RSA4096 = "RSA-4096"
+    RSA8192 = "RSA-8192"
+    DSA2048 = "DSA-2048"
+    DSA3072 = "DSA-3072"
+    P256 = "P-256"
+    P384 = "P-384"
+    P521 = "P-521"
+    ED25519 = "Ed25519"
 
 
 @dataclass(frozen=True)
@@ -49,7 +91,7 @@ class KeyInfo:
 
 def algorithm_of(key: PrivateKey | PublicKey) -> str:
     if isinstance(key, ec.EllipticCurvePrivateKey | ec.EllipticCurvePublicKey):
-        names = {"secp256r1": "P-256", "secp384r1": "P-384"}
+        names = {curve.name: name for name, curve in CURVES.items()}
         name = names.get(key.curve.name)
         if name is None:
             raise BadRequestError(f"the curve {key.curve.name} is not supported")
@@ -58,6 +100,10 @@ def algorithm_of(key: PrivateKey | PublicKey) -> str:
         if key.key_size < 2048:
             raise BadRequestError("RSA keys must be at least 2048 bits")
         return f"RSA-{key.key_size}"
+    if isinstance(key, dsa.DSAPrivateKey | dsa.DSAPublicKey):
+        if key.key_size < 2048:
+            raise BadRequestError("DSA keys must be at least 2048 bits")
+        return f"DSA-{key.key_size}"
     return "Ed25519"
 
 
@@ -68,9 +114,21 @@ def public_key_der(key: PublicKey) -> bytes:
 
 
 def generate_private_key(algorithm: KeyAlgorithm) -> PrivateKey:
-    if algorithm is KeyAlgorithm.P256:
-        return ec.generate_private_key(ec.SECP256R1())
-    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    family, _, size = algorithm.value.partition("-")
+    if algorithm.value in CURVES:
+        return ec.generate_private_key(CURVES[algorithm.value])
+    if family == "RSA":
+        return rsa.generate_private_key(public_exponent=65537, key_size=int(size))
+    if family == "DSA":
+        return dsa.generate_private_key(key_size=int(size))
+    return ed25519.Ed25519PrivateKey.generate()
+
+
+class ImportFormat(StrEnum):
+    #: Encrypted PKCS#8, PEM: as XCA exports it.
+    PEM = "pem"
+    #: PKCS#12 (.p12, .pfx), base64: only its key is kept.
+    PKCS12 = "pkcs12"
 
 
 def load_encrypted_pkcs8(pem: str, passphrase: str) -> PrivateKey:
@@ -83,9 +141,28 @@ def load_encrypted_pkcs8(pem: str, passphrase: str) -> PrivateKey:
         raise BadRequestError(
             "the key is not encrypted PKCS#8, or the passphrase is wrong"
         ) from error
-    if not isinstance(
-        key, ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey | ed25519.Ed25519PrivateKey
-    ):
+    return _supported(key)
+
+
+def load_pkcs12_key(data: str, passphrase: str) -> PrivateKey:
+    """The key in a PKCS#12 file, base64; its certificates are not kept."""
+    try:
+        raw = base64.b64decode(data, validate=True)
+    except binascii.Error as error:
+        raise BadRequestError("the PKCS#12 file is not base64") from error
+    try:
+        key, _, _ = pkcs12.load_key_and_certificates(raw, passphrase.encode("utf-8"))
+    except ValueError as error:
+        raise BadRequestError(
+            "the file is not PKCS#12, or the passphrase is wrong"
+        ) from error
+    if key is None:
+        raise BadRequestError("the PKCS#12 file holds no key")
+    return _supported(key)
+
+
+def _supported(key: object) -> PrivateKey:
+    if not isinstance(key, PRIVATE_KEY_TYPES):
         raise BadRequestError("the key type is not supported")
     algorithm_of(key)
     return key
@@ -99,8 +176,19 @@ class Keys:
     def generate(self, purpose: KeyPurpose, algorithm: KeyAlgorithm) -> KeyInfo:
         return self._keep(purpose, generate_private_key(algorithm))
 
-    def import_key(self, purpose: KeyPurpose, pem: str, passphrase: str) -> KeyInfo:
-        return self._keep(purpose, load_encrypted_pkcs8(pem, passphrase))
+    def import_key(
+        self,
+        purpose: KeyPurpose,
+        data: str,
+        passphrase: str,
+        import_format: ImportFormat = ImportFormat.PEM,
+    ) -> KeyInfo:
+        key = (
+            load_pkcs12_key(data, passphrase)
+            if import_format is ImportFormat.PKCS12
+            else load_encrypted_pkcs8(data, passphrase)
+        )
+        return self._keep(purpose, key)
 
     def _keep(self, purpose: KeyPurpose, key: PrivateKey) -> KeyInfo:
         key_id = str(uuid.uuid4())
@@ -139,10 +227,7 @@ class Keys:
             key_id, row.wrapped_data_key, row.wrapped_private_key
         )
         key = serialization.load_der_private_key(der, password=None)
-        if not isinstance(
-            key,
-            ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey | ed25519.Ed25519PrivateKey,
-        ):
+        if not isinstance(key, PRIVATE_KEY_TYPES):
             raise TypeError("the store holds a key of an unsupported type")
         return key
 
@@ -165,10 +250,7 @@ class Keys:
 
 def _info(row: KeyRow) -> KeyInfo:
     public_key = serialization.load_der_public_key(row.public_key)
-    if not isinstance(
-        public_key,
-        ec.EllipticCurvePublicKey | rsa.RSAPublicKey | ed25519.Ed25519PublicKey,
-    ):
+    if not isinstance(public_key, PUBLIC_KEY_TYPES):
         raise TypeError("the store holds a key of an unsupported type")
     return KeyInfo(
         id=row.id,

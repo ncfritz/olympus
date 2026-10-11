@@ -251,6 +251,11 @@ export type HttpValidationError = {
 };
 
 /**
+ * ImportFormat
+ */
+export type ImportFormat = "pem" | "pkcs12";
+
+/**
  * ImportKeyRequest
  */
 export type ImportKeyRequest = {
@@ -258,13 +263,14 @@ export type ImportKeyRequest = {
   /**
    * Privatekey
    *
-   * Encrypted PKCS#8, PEM.
+   * Encrypted PKCS#8, PEM; or a PKCS#12 file, base64.
    */
   privateKey: string;
   /**
    * Passphrase
    */
   passphrase: string;
+  format?: ImportFormat;
 };
 
 /**
@@ -300,10 +306,22 @@ export type IssuerResponse = {
 /**
  * KeyAlgorithm
  *
- * What the signer generates. P-256 everywhere (ADR 0018); RSA 2048 for
- * devices that need it (the printer).
+ * What the signer generates. P-256 is the default (ADR 0018); a
+ * certificate's key may be any of these, chosen when it is issued (ADR
+ * 0020, amended). DSA is for clients that still take it: TLS 1.3 and
+ * browsers do not.
  */
-export type KeyAlgorithm = "P-256" | "RSA-2048";
+export type KeyAlgorithm =
+  | "RSA-2048"
+  | "RSA-3072"
+  | "RSA-4096"
+  | "RSA-8192"
+  | "DSA-2048"
+  | "DSA-3072"
+  | "P-256"
+  | "P-384"
+  | "P-521"
+  | "Ed25519";
 
 /**
  * KeyPurpose

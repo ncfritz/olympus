@@ -33,14 +33,17 @@ def generate_key(body: GenerateKeyRequest, signer: SignerDep) -> KeyResponse:
 @router.post(
     "/keys/import",
     summary="Imports a key",
-    description="An encrypted PKCS#8 key, as XCA exports it: an issuing "
-    "CA's, at the cutover. Refused if the store already holds it.",
+    description="An encrypted PKCS#8 key, as XCA exports it (an issuing "
+    "CA's, at the cutover), or the key in a PKCS#12 file (a subject's, "
+    "brought to be certified). Refused if the store already holds it.",
     status_code=status.HTTP_201_CREATED,
     responses=errors(400, 409, 503),
 )
 def import_key(body: ImportKeyRequest, signer: SignerDep) -> KeyResponse:
     return KeyResponse.of(
-        signer.keys.import_key(body.purpose, body.private_key, body.passphrase)
+        signer.keys.import_key(
+            body.purpose, body.private_key, body.passphrase, body.format
+        )
     )
 
 

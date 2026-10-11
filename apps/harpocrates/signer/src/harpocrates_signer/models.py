@@ -7,12 +7,20 @@ from enum import StrEnum
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
+from cryptography.hazmat.primitives.asymmetric import ec
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from harpocrates_signer.errors import BadRequestError, RefusedError
-from harpocrates_signer.keys import KeyAlgorithm, KeyInfo, KeyPurpose, Keys, PublicKey
+from harpocrates_signer.keys import (
+    PUBLIC_KEY_TYPES,
+    ImportFormat,
+    KeyAlgorithm,
+    KeyInfo,
+    KeyPurpose,
+    Keys,
+    PublicKey,
+)
 from harpocrates_signer.signing import (
     CertificateRequest,
     CrlRequest,
@@ -93,8 +101,11 @@ class GenerateKeyRequest(Wire):
 
 class ImportKeyRequest(Wire):
     purpose: KeyPurpose
-    private_key: str = Field(description="Encrypted PKCS#8, PEM.")
+    private_key: str = Field(
+        description="Encrypted PKCS#8, PEM; or a PKCS#12 file, base64."
+    )
     passphrase: str
+    format: ImportFormat = ImportFormat.PEM
 
 
 class KeyResponse(Wire):
@@ -378,9 +389,7 @@ def _public_key(spec: CertificateSpec, keys: Keys) -> PublicKey:
             key = serialization.load_pem_public_key(pem.encode("ascii"))
         except ValueError as error:
             raise BadRequestError("the public key is not PEM") from error
-    if not isinstance(
-        key, ec.EllipticCurvePublicKey | rsa.RSAPublicKey | ed25519.Ed25519PublicKey
-    ):
+    if not isinstance(key, PUBLIC_KEY_TYPES):
         raise BadRequestError("the key type is not supported")
     return key
 
