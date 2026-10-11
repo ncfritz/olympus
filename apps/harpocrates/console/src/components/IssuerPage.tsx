@@ -56,7 +56,7 @@ import {
 import { ErrorAlert } from "./ErrorAlert";
 import { IssuedChart } from "./IssuedChart";
 import styles from "./IssuerPage.module.css";
-import { IssuerTree } from "./IssuerTree";
+import { SignedList } from "./SignedList";
 
 const constraintLines = (constraints: NameConstraints): string[] =>
   (["permitted", "excluded"] as const).flatMap((kind) =>
@@ -392,14 +392,9 @@ export function IssuerPage() {
             {
               key: "certificates",
               label: "Certificates",
-              children:
-                issuer.tier === "issuing" ? (
-                  <Link href={`/certificates?issuerId=${issuer.id}`}>
-                    The certificates it issued
-                  </Link>
-                ) : (
-                  <IssuerTree issuers={issuers ?? []} rootId={issuer.id} />
-                ),
+              children: (
+                <SignedList issuerId={issuer.id} issuers={issuers ?? []} />
+              ),
             },
             {
               key: "crls",
