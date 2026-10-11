@@ -174,3 +174,49 @@ def test_serials_are_positive_and_at_most_159_bits():
     for bad in (0, -1, 2**159):
         with pytest.raises(RefusedError):
             invariants.check_serial(bad)
+
+
+def _with_policies(*oids: str) -> x509.Certificate:
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Policy CA")])
+    return (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(1)
+        .not_valid_before(NOW - timedelta(days=1))
+        .not_valid_after(NOW + timedelta(days=30))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=0), True)
+        .add_extension(
+            x509.CertificatePolicies(
+                [x509.PolicyInformation(x509.ObjectIdentifier(o), None) for o in oids]
+            ),
+            False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+
+
+def test_policies_stay_within_the_cas_above():
+    ev = x509.ObjectIdentifier("2.23.140.1.1")
+    ov = x509.ObjectIdentifier("2.23.140.1.2.2")
+    invariants.check_certificate_policies([ov], [LOCALHOST])
+    invariants.check_certificate_policies([ov], [_with_policies("2.23.140.1.2.2")])
+    invariants.check_certificate_policies([ev], [_with_policies("2.5.29.32.0")])
+    with pytest.raises(RefusedError) as error:
+        invariants.check_certificate_policies([ev], [_with_policies("2.23.140.1.2.2")])
+    assert error.value.invariant == "certificate-policies"
+
+
+def test_custom_extensions_are_unmanaged_single_and_well_formed():
+    custom = x509.ObjectIdentifier("1.3.6.1.4.1.55555.1")
+    invariants.check_custom_extensions([(custom, b"\x05\x00")])
+    for extensions in (
+        [(x509.ObjectIdentifier("2.5.29.17"), b"\x30\x00")],
+        [(custom, b"\x05\x00"), (custom, b"\x05\x00")],
+        [(custom, b"\x05")],
+    ):
+        with pytest.raises(RefusedError) as error:
+            invariants.check_custom_extensions(extensions)
+        assert error.value.invariant == "custom-extension"

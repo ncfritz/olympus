@@ -5,6 +5,17 @@ export type ClientOptions = {
 };
 
 /**
+ * AuthorityKeyIdentifierForm
+ */
+export type AuthorityKeyIdentifierForm =
+  "key-id" | "key-id-and-issuer" | "none";
+
+/**
+ * BasicConstraintsForm
+ */
+export type BasicConstraintsForm = "critical" | "non-critical" | "omitted";
+
+/**
  * CeremonyResponse
  */
 export type CeremonyResponse = {
@@ -114,6 +125,40 @@ export type CertificateSpec = {
    * `minimal`: the key identifiers only, for a leaf whose consumer accepts nothing else; keyUsage and everything after it must then be empty.
    */
   extensions?: ExtensionSet;
+  /**
+   * The certificate's hash; SHA-256 when absent. None for an Ed25519 issuer.
+   */
+  signatureHash?: SignatureHash | null;
+  /**
+   * `pss` only under an RSA issuer.
+   */
+  rsaPadding?: RsaPadding;
+  /**
+   * RFC 5280's method, RFC 7093's truncated SHA-256, or none (never for a CA).
+   */
+  subjectKeyIdentifier?: KeyIdentifierMethod;
+  /**
+   * The issuer's key identifier, alone or with its issuer and serial; or none.
+   */
+  authorityKeyIdentifier?: AuthorityKeyIdentifierForm;
+  /**
+   * For a leaf (CA:FALSE); a CA's are always critical.
+   */
+  basicConstraints?: BasicConstraintsForm;
+  /**
+   * The issuing CA's own names.
+   */
+  issuerAlternativeNames?: Names;
+  /**
+   * Certificatepolicies
+   */
+  certificatePolicies?: Array<PolicySpec>;
+  /**
+   * Customextensions
+   *
+   * Any extension the signer does not build itself.
+   */
+  customExtensions?: Array<CustomExtensionSpec>;
 };
 
 /**
@@ -162,6 +207,26 @@ export type CrlSpec = {
    * Revoked
    */
   revoked?: Array<RevokedSpec>;
+};
+
+/**
+ * CustomExtensionSpec
+ */
+export type CustomExtensionSpec = {
+  /**
+   * Oid
+   */
+  oid: string;
+  /**
+   * Critical
+   */
+  critical?: boolean;
+  /**
+   * Value
+   *
+   * The extension's value: one DER element, base64.
+   */
+  value: string;
 };
 
 /**
@@ -324,6 +389,14 @@ export type KeyAlgorithm =
   | "Ed25519";
 
 /**
+ * KeyIdentifierMethod
+ *
+ * RFC 5280's SHA-1 of the key's bits, or RFC 7093's leftmost 160
+ * bits of their SHA-256; or no subject key identifier at all.
+ */
+export type KeyIdentifierMethod = "sha1" | "sha256" | "none";
+
+/**
  * KeyPurpose
  *
  * An issuer's key signs; a subject's key is certified (and may be escrowed).
@@ -401,6 +474,18 @@ export type Names = {
    * Uri
    */
   uri?: Array<string>;
+  /**
+   * Upn
+   *
+   * Microsoft user principal names (otherName), user@domain.
+   */
+  upn?: Array<string>;
+  /**
+   * Registeredid
+   *
+   * Dotted OIDs (registeredID).
+   */
+  registeredId?: Array<string>;
 };
 
 /**
@@ -471,6 +556,30 @@ export type PassphraseRequest = {
 };
 
 /**
+ * PolicySpec
+ */
+export type PolicySpec = {
+  /**
+   * Oid
+   *
+   * The policy's OID.
+   */
+  oid: string;
+  /**
+   * Cpsuri
+   *
+   * Where its certification practice statement is.
+   */
+  cpsUri?: string | null;
+  /**
+   * Usernotice
+   *
+   * Explicit text for relying parties.
+   */
+  userNotice?: string | null;
+};
+
+/**
  * RegisterIssuerRequest
  */
 export type RegisterIssuerRequest = {
@@ -536,12 +645,22 @@ export type RevokedSpec = {
 };
 
 /**
+ * RsaPadding
+ */
+export type RsaPadding = "pkcs1v15" | "pss";
+
+/**
  * SealReason
  *
  * Why the signer is sealed; what the service shows and alerts on.
  */
 export type SealReason =
   "uninitialised" | "deliberate" | "no-unseal-key" | "wrong-unseal-key";
+
+/**
+ * SignatureHash
+ */
+export type SignatureHash = "sha256" | "sha384" | "sha512";
 
 /**
  * StatusResponse

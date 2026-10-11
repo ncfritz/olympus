@@ -106,6 +106,9 @@ def _check_ca_request(signer: x509.Certificate, request: CertificateRequest) -> 
         frozenset(oid.dotted_string for oid in request.extended_key_usages),
         (signer,),
     )
+    invariants.check_certificate_policies(
+        [p.oid for p in request.certificate_policies], (signer,)
+    )
 
 
 def _check_leaf_request(signer: x509.Certificate, request: CertificateRequest) -> None:
@@ -129,6 +132,9 @@ def _check_leaf_request(signer: x509.Certificate, request: CertificateRequest) -
     )
     invariants.check_name_constraints(
         invariants.names_of(request.subject, request.sans), (signer,)
+    )
+    invariants.check_certificate_policies(
+        [p.oid for p in request.certificate_policies], (signer,)
     )
 
 
@@ -218,7 +224,11 @@ class Ceremonies:
             _check_ca_request(held.certificate, request)
             check_ca_key(request.subject_key, self._keys)
         return build_certificate(
-            request, held.certificate.subject, held.key.public_key(), held.key
+            request,
+            held.certificate.subject,
+            held.key.public_key(),
+            held.key,
+            held.certificate,
         )
 
     def sign_crl(

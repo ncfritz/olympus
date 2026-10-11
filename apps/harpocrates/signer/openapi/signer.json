@@ -1997,6 +1997,24 @@
   },
   "components": {
     "schemas": {
+      "AuthorityKeyIdentifierForm": {
+        "type": "string",
+        "enum": [
+          "key-id",
+          "key-id-and-issuer",
+          "none"
+        ],
+        "title": "AuthorityKeyIdentifierForm"
+      },
+      "BasicConstraintsForm": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "non-critical",
+          "omitted"
+        ],
+        "title": "BasicConstraintsForm"
+      },
       "CeremonyResponse": {
         "properties": {
           "id": {
@@ -2164,6 +2182,56 @@
             "$ref": "#/components/schemas/ExtensionSet",
             "description": "`minimal`: the key identifiers only, for a leaf whose consumer accepts nothing else; keyUsage and everything after it must then be empty.",
             "default": "standard"
+          },
+          "signatureHash": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignatureHash"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The certificate's hash; SHA-256 when absent. None for an Ed25519 issuer."
+          },
+          "rsaPadding": {
+            "$ref": "#/components/schemas/RsaPadding",
+            "description": "`pss` only under an RSA issuer.",
+            "default": "pkcs1v15"
+          },
+          "subjectKeyIdentifier": {
+            "$ref": "#/components/schemas/KeyIdentifierMethod",
+            "description": "RFC 5280's method, RFC 7093's truncated SHA-256, or none (never for a CA).",
+            "default": "sha1"
+          },
+          "authorityKeyIdentifier": {
+            "$ref": "#/components/schemas/AuthorityKeyIdentifierForm",
+            "description": "The issuer's key identifier, alone or with its issuer and serial; or none.",
+            "default": "key-id"
+          },
+          "basicConstraints": {
+            "$ref": "#/components/schemas/BasicConstraintsForm",
+            "description": "For a leaf (CA:FALSE); a CA's are always critical.",
+            "default": "critical"
+          },
+          "issuerAlternativeNames": {
+            "$ref": "#/components/schemas/Names",
+            "description": "The issuing CA's own names."
+          },
+          "certificatePolicies": {
+            "items": {
+              "$ref": "#/components/schemas/PolicySpec"
+            },
+            "type": "array",
+            "title": "Certificatepolicies"
+          },
+          "customExtensions": {
+            "items": {
+              "$ref": "#/components/schemas/CustomExtensionSpec"
+            },
+            "type": "array",
+            "title": "Customextensions",
+            "description": "Any extension the signer does not build itself."
           }
         },
         "additionalProperties": false,
@@ -2247,6 +2315,32 @@
           "nextUpdate"
         ],
         "title": "CrlSpec"
+      },
+      "CustomExtensionSpec": {
+        "properties": {
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-2](\\.(0|[1-9][0-9]*))+$",
+            "title": "Oid"
+          },
+          "critical": {
+            "type": "boolean",
+            "title": "Critical",
+            "default": false
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "The extension's value: one DER element, base64."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "oid",
+          "value"
+        ],
+        "title": "CustomExtensionSpec"
       },
       "ErrorResponse": {
         "properties": {
@@ -2483,6 +2577,16 @@
         "title": "KeyAlgorithm",
         "description": "What the signer generates. P-256 is the default (ADR 0018); a\ncertificate's key may be any of these, chosen when it is issued (ADR\n0020, amended). DSA is for clients that still take it: TLS 1.3 and\nbrowsers do not."
       },
+      "KeyIdentifierMethod": {
+        "type": "string",
+        "enum": [
+          "sha1",
+          "sha256",
+          "none"
+        ],
+        "title": "KeyIdentifierMethod",
+        "description": "RFC 5280's SHA-1 of the key's bits, or RFC 7093's leftmost 160\nbits of their SHA-256; or no subject key identifier at all."
+      },
       "KeyPurpose": {
         "type": "string",
         "enum": [
@@ -2587,6 +2691,22 @@
             },
             "type": "array",
             "title": "Uri"
+          },
+          "upn": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Upn",
+            "description": "Microsoft user principal names (otherName), user@domain."
+          },
+          "registeredId": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Registeredid",
+            "description": "Dotted OIDs (registeredID)."
           }
         },
         "additionalProperties": false,
@@ -2680,6 +2800,47 @@
         ],
         "title": "PassphraseRequest"
       },
+      "PolicySpec": {
+        "properties": {
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-2](\\.(0|[1-9][0-9]*))+$",
+            "title": "Oid",
+            "description": "The policy's OID."
+          },
+          "cpsUri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpsuri",
+            "description": "Where its certification practice statement is."
+          },
+          "userNotice": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usernotice",
+            "description": "Explicit text for relying parties."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "oid"
+        ],
+        "title": "PolicySpec"
+      },
       "RegisterIssuerRequest": {
         "properties": {
           "id": {
@@ -2769,6 +2930,14 @@
         ],
         "title": "RevokedSpec"
       },
+      "RsaPadding": {
+        "type": "string",
+        "enum": [
+          "pkcs1v15",
+          "pss"
+        ],
+        "title": "RsaPadding"
+      },
       "SealReason": {
         "type": "string",
         "enum": [
@@ -2779,6 +2948,15 @@
         ],
         "title": "SealReason",
         "description": "Why the signer is sealed; what the service shows and alerts on."
+      },
+      "SignatureHash": {
+        "type": "string",
+        "enum": [
+          "sha256",
+          "sha384",
+          "sha512"
+        ],
+        "title": "SignatureHash"
       },
       "StatusResponse": {
         "properties": {

@@ -1,6 +1,8 @@
 """The API's wire shapes (Pydantic), camelCase like the rest of Olympus,
 and their conversion to the signer's own types."""
 
+import base64
+import binascii
 import ipaddress
 from datetime import datetime
 from enum import StrEnum
@@ -11,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from harpocrates_signer.der import utf8_string
 from harpocrates_signer.errors import BadRequestError, RefusedError
 from harpocrates_signer.keys import (
     PUBLIC_KEY_TYPES,
@@ -22,15 +25,26 @@ from harpocrates_signer.keys import (
     PublicKey,
 )
 from harpocrates_signer.signing import (
+    AuthorityKeyIdentifierForm,
+    BasicConstraintsForm,
     CertificateRequest,
     CrlRequest,
+    CustomExtension,
     IssuerInfo,
+    KeyIdentifierMethod,
     NameConstraintsRequest,
+    PolicyRequest,
     RevokedEntry,
+    RsaPadding,
+    SignatureHash,
 )
 from harpocrates_signer.vault import SealReason
 
 SERIAL_PATTERN = r"^[0-9a-fA-F]{1,40}$"
+OID_PATTERN = r"^[0-2](\.(0|[1-9][0-9]*))+$"
+
+#: The otherName type of a Microsoft user principal name.
+UPN = x509.ObjectIdentifier("1.3.6.1.4.1.311.20.2.3")
 
 
 class Wire(BaseModel):
@@ -207,6 +221,13 @@ class Names(Wire):
     ip: list[str] = Field(default_factory=list[str])
     email: list[str] = Field(default_factory=list[str])
     uri: list[str] = Field(default_factory=list[str])
+    upn: list[str] = Field(
+        default_factory=list[str],
+        description="Microsoft user principal names (otherName), user@domain.",
+    )
+    registered_id: list[str] = Field(
+        default_factory=list[str], description="Dotted OIDs (registeredID)."
+    )
 
 
 class NameConstraintsSpec(Wire):
@@ -219,6 +240,22 @@ class NameConstraintsSpec(Wire):
 class ExtensionSet(StrEnum):
     STANDARD = "standard"
     MINIMAL = "minimal"
+
+
+class PolicySpec(Wire):
+    oid: str = Field(pattern=OID_PATTERN, description="The policy's OID.")
+    cps_uri: str | None = Field(
+        default=None, description="Where its certification practice statement is."
+    )
+    user_notice: str | None = Field(
+        default=None, max_length=200, description="Explicit text for relying parties."
+    )
+
+
+class CustomExtensionSpec(Wire):
+    oid: str = Field(pattern=OID_PATTERN)
+    critical: bool = False
+    value: str = Field(description="The extension's value: one DER element, base64.")
 
 
 class CertificateSpec(Wire):
@@ -248,6 +285,36 @@ class CertificateSpec(Wire):
         description="`minimal`: the key identifiers only, for a leaf whose "
         "consumer accepts nothing else; keyUsage and everything after it must "
         "then be empty.",
+    )
+    signature_hash: SignatureHash | None = Field(
+        default=None,
+        description="The certificate's hash; SHA-256 when absent. None for an "
+        "Ed25519 issuer.",
+    )
+    rsa_padding: RsaPadding = Field(
+        default=RsaPadding.PKCS1V15, description="`pss` only under an RSA issuer."
+    )
+    subject_key_identifier: KeyIdentifierMethod = Field(
+        default=KeyIdentifierMethod.SHA1,
+        description="RFC 5280's method, RFC 7093's truncated SHA-256, or none "
+        "(never for a CA).",
+    )
+    authority_key_identifier: AuthorityKeyIdentifierForm = Field(
+        default=AuthorityKeyIdentifierForm.KEY_ID,
+        description="The issuer's key identifier, alone or with its issuer and "
+        "serial; or none.",
+    )
+    basic_constraints: BasicConstraintsForm = Field(
+        default=BasicConstraintsForm.CRITICAL,
+        description="For a leaf (CA:FALSE); a CA's are always critical.",
+    )
+    issuer_alternative_names: Names = Field(
+        default_factory=Names, description="The issuing CA's own names."
+    )
+    certificate_policies: list[PolicySpec] = Field(default_factory=list[PolicySpec])
+    custom_extensions: list[CustomExtensionSpec] = Field(
+        default_factory=list[CustomExtensionSpec],
+        description="Any extension the signer does not build itself.",
     )
 
 
@@ -361,7 +428,20 @@ def general_names(names: Names, networks: bool = False) -> tuple[x509.GeneralNam
         raise BadRequestError("an IP entry does not parse") from error
     result += [x509.RFC822Name(e) for e in names.email]
     result += [x509.UniformResourceIdentifier(u) for u in names.uri]
+    for upn in names.upn:
+        if upn.count("@") != 1 or upn.startswith("@") or upn.endswith("@"):
+            raise BadRequestError(f"{upn} is not a user principal name")
+        result.append(x509.OtherName(UPN, utf8_string(upn)))
+    result += [x509.RegisteredID(_oid(o)) for o in names.registered_id]
     return tuple(result)
+
+
+def _custom_extension(spec: CustomExtensionSpec) -> CustomExtension:
+    try:
+        value = base64.b64decode(spec.value, validate=True)
+    except binascii.Error as error:
+        raise BadRequestError(f"{spec.oid}'s value is not base64") from error
+    return CustomExtension(oid=_oid(spec.oid), critical=spec.critical, value=value)
 
 
 def _public_key(spec: CertificateSpec, keys: Keys) -> PublicKey:
@@ -424,6 +504,17 @@ def certificate_request(
         crl_distribution_points=tuple(spec.crl_distribution_points),
         issuer_urls=tuple(spec.issuer_urls),
         minimal_extensions=spec.extensions is ExtensionSet.MINIMAL,
+        signature_hash=spec.signature_hash,
+        rsa_padding=spec.rsa_padding,
+        subject_key_identifier=spec.subject_key_identifier,
+        authority_key_identifier=spec.authority_key_identifier,
+        basic_constraints=spec.basic_constraints,
+        issuer_alternative_names=general_names(spec.issuer_alternative_names),
+        certificate_policies=tuple(
+            PolicyRequest(oid=_oid(p.oid), cps_uri=p.cps_uri, user_notice=p.user_notice)
+            for p in spec.certificate_policies
+        ),
+        custom_extensions=tuple(_custom_extension(e) for e in spec.custom_extensions),
     )
 
 

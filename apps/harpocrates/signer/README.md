@@ -30,6 +30,23 @@ calls it through a generated client.
   in memory for one ceremony, an hour at most, and never across a
   restart. Only a ceremony signs `CA:TRUE`.
 
+## What a certificate can carry
+
+The service sends everything (`CertificateSpec`); a profile version
+chooses (ADR 0034), and the defaults are what the signer always built:
+
+- the signature's hash (SHA-256, SHA-384, SHA-512; none under Ed25519)
+  and, under an RSA issuer, PKCS#1 v1.5 or PSS;
+- the subject key identifier by RFC 5280's SHA-1 or RFC 7093's
+  truncated SHA-256, or none; the authority key identifier as the
+  issuer's own subject key identifier, alone or with its issuer and
+  serial, or none;
+- basic constraints critical, non-critical or omitted (`CA:FALSE`);
+- subject alternative names of DNS, IP, email, URI, a Microsoft UPN
+  (otherName) or a registeredID; the issuer's alternative names;
+- certificate policies with a CPS URI and a user notice; custom
+  extensions by OID, critical or not, their value as DER.
+
 ## Invariants
 
 Refusals answer `422` with the invariant's name:
@@ -45,6 +62,11 @@ Refusals answer `422` with the invariant's name:
 | `proof-of-possession`           | a CSR whose signature does not verify                                                           |
 | `ceremony`                      | a ceremony asked to sign a leaf, or opened with a CA that signs no CAs                          |
 | `escrow`                        | exporting an issuer's key, or with another key's certificate                                    |
+| `signature`                     | a hash for an Ed25519 issuer, or PSS under an issuer that is not RSA                            |
+| `basic-constraints`             | a CA whose basic constraints are not critical                                                   |
+| `key-identifier`                | a CA without a subject key identifier                                                           |
+| `certificate-policies`          | a policy outside those of a CA above it (unless it asserts anyPolicy)                           |
+| `custom-extension`              | an extension the signer builds itself, one given twice, or a value not one DER element          |
 | `issuer-key`, `chain`, `serial` | an issuer registered with the wrong key or a chain not its own; a serial outside 1 to 2^159 - 1 |
 
 ## Commands

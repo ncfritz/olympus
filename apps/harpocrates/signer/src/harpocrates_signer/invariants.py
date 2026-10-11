@@ -12,8 +12,9 @@ from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 
 from cryptography import x509
-from cryptography.x509.oid import ExtendedKeyUsageOID
+from cryptography.x509.oid import CertificatePoliciesOID, ExtendedKeyUsageOID
 
+from harpocrates_signer import der
 from harpocrates_signer.errors import RefusedError
 
 MAX_SERIAL = 2**159
@@ -229,3 +230,81 @@ def _uri_matches(uri: str, subtree: x509.GeneralName) -> bool:
     if base.startswith("."):
         return host.endswith(base)
     return host == base
+
+
+# ---- certificate policies
+
+
+def check_certificate_policies(
+    requested: Iterable[x509.ObjectIdentifier],
+    constraining: Sequence[x509.Certificate],
+) -> None:
+    """A certificate's policies are within the policies of every CA above
+    it that names its own, unless that CA asserts anyPolicy (RFC 5280,
+    6.1: a policy outside them would not validate)."""
+    wanted = {oid.dotted_string for oid in requested}
+    if not wanted:
+        return
+    for certificate in constraining:
+        try:
+            policies = certificate.extensions.get_extension_for_class(
+                x509.CertificatePolicies
+            ).value
+        except x509.ExtensionNotFound:
+            continue
+        present = {p.policy_identifier.dotted_string for p in policies}
+        if CertificatePoliciesOID.ANY_POLICY.dotted_string in present:
+            continue
+        outside = wanted - present
+        if outside:
+            raise RefusedError(
+                "certificate-policies",
+                f"{', '.join(sorted(outside))} is outside the policies of "
+                f"{certificate.subject.rfc4514_string()}",
+            )
+
+
+# ---- custom extensions
+
+#: The extensions the signer builds itself, and the ones a leaf never
+#: carries or Harpocrates does not yet offer (policy constraints and
+#: mappings, inhibitAnyPolicy; the TLS feature, with OCSP; ADR 0034).
+MANAGED_EXTENSIONS: dict[str, str] = {
+    "2.5.29.14": "subject key identifier",
+    "2.5.29.15": "key usage",
+    "2.5.29.17": "subject alternative name",
+    "2.5.29.18": "issuer alternative name",
+    "2.5.29.19": "basic constraints",
+    "2.5.29.30": "name constraints",
+    "2.5.29.31": "CRL distribution points",
+    "2.5.29.32": "certificate policies",
+    "2.5.29.33": "policy mappings",
+    "2.5.29.35": "authority key identifier",
+    "2.5.29.36": "policy constraints",
+    "2.5.29.37": "extended key usage",
+    "2.5.29.54": "inhibit anyPolicy",
+    "1.3.6.1.5.5.7.1.1": "authority information access",
+    "1.3.6.1.5.5.7.1.24": "TLS feature",
+}
+
+
+def check_custom_extensions(
+    extensions: Sequence[tuple[x509.ObjectIdentifier, bytes]],
+) -> None:
+    """Custom extensions are none the signer manages, each once, each
+    value one well-formed DER element."""
+    seen: set[str] = set()
+    for oid, value in extensions:
+        dotted = oid.dotted_string
+        if dotted in MANAGED_EXTENSIONS:
+            raise RefusedError(
+                "custom-extension",
+                f"{dotted} ({MANAGED_EXTENSIONS[dotted]}) is not a custom extension",
+            )
+        if dotted in seen:
+            raise RefusedError("custom-extension", f"{dotted} is given twice")
+        seen.add(dotted)
+        if not der.is_one_element(value):
+            raise RefusedError(
+                "custom-extension", f"{dotted}'s value is not one DER element"
+            )
