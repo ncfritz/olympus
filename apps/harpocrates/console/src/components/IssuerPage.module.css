@@ -4,31 +4,17 @@
 }
 
 /*
- * The details' labels, right-aligned in a column of their own: each
- * label is as wide as its column's longest.
+ * The details' labels, right-aligned in a column of their own, wide
+ * enough that the longest ("Extended key usages") never wraps.
  */
 .label {
-  flex: 0 0 150px;
+  flex: 0 0 180px;
   justify-content: flex-end;
   text-align: right;
+  white-space: nowrap;
 }
 
-.tagLabel {
-  flex: 0 0 64px;
-  justify-content: flex-end;
-  text-align: right;
-}
-
-/* The details: the CA's fields, and beside them its tags. */
-.fields {
-  flex: 1 1 560px;
-}
-
-.tags {
-  flex: 0 0 auto;
-}
-
-/* Every tag in the third column is the same width. */
+/* Every tag in the details is the same width. */
 .tag {
   width: 125px;
   text-align: center;
