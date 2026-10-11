@@ -6,7 +6,7 @@ import type {
 import moment from "moment";
 import type { NameConstraints, Names, NameTypeName } from "../../model/common";
 import type { FullIssuer, Issuer } from "../../model/issuers";
-import { certificatePem } from "../../pki/x509";
+import { certificatePem, toPem } from "../../pki/x509";
 import { issuingWindowClosesAt } from "../issuingWindow";
 
 export type IssuerWithRules = IssuerRow & {
@@ -73,6 +73,7 @@ export const toFullIssuer = (
 ): FullIssuer => ({
   ...toDomainObject(row),
   certificate: row.certificate ? certificatePem(row.certificate) : undefined,
+  csr: row.csr ? toPem(row.csr, "CERTIFICATE REQUEST") : undefined,
   chain,
 });
 

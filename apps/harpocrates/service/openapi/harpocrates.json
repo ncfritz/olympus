@@ -4607,6 +4607,10 @@
             "type": "string",
             "description": "Its certificate, PEM"
           },
+          "csr": {
+            "type": "string",
+            "description": "The request its certificate was made from, PEM, when Harpocrates keeps one: a CA whose parent is outside it. A root has none"
+          },
           "chain": {
             "description": "The certificates above it, PEM, nearest first",
             "type": "array",

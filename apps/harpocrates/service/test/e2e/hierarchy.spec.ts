@@ -6,6 +6,7 @@ import {
   buildHierarchy,
   E2E_DATABASE_URL,
   EXPORT_PASSPHRASE,
+  makeCsr,
   opensslVerify,
   RECOVERY_PASSPHRASE,
   startHarness,
@@ -122,6 +123,37 @@ describe.skipIf(!E2E_DATABASE_URL)("the hierarchy", () => {
     expect(Date.parse(issuer.issuingWindowClosesAt)).toBeGreaterThan(
       Date.now(),
     );
+  });
+
+  it("gives a CA's CSR as PEM when it keeps one, and none for a root", async () => {
+    const describe = async (id: string) =>
+      (
+        (
+          await request(server())
+            .get(`/v1/issuer/${id}`)
+            .set("Authorization", harness.operator)
+            .expect(200)
+        ).body as { issuer: { csr?: string } }
+      ).issuer;
+    expect((await describe(hierarchy.root.id)).csr).toBeUndefined();
+    const { csr } = await makeCsr("an external parent's request");
+    const der = Buffer.from(csr.replace(/-----[^-]+-----|\s/g, ""), "base64");
+    await harness.prisma.issuer.update({
+      where: { id: "tls-issuing-1-g1" },
+      data: { csr: der },
+    });
+    try {
+      const pem = (await describe("tls-issuing-1-g1")).csr;
+      expect(pem).toMatch(/^-----BEGIN CERTIFICATE REQUEST-----\n/);
+      expect(pem?.replace(/-----[^-]+-----|\s/g, "")).toBe(
+        der.toString("base64"),
+      );
+    } finally {
+      await harness.prisma.issuer.update({
+        where: { id: "tls-issuing-1-g1" },
+        data: { csr: null },
+      });
+    }
   });
 
   it("keeps offline keys out of the signer once the ceremony closes", async () => {

@@ -243,6 +243,14 @@ export class FullIssuer extends Issuer {
 
   @ApiProperty({
     type: String,
+    required: false,
+    description:
+      "The request its certificate was made from, PEM, when Harpocrates keeps one: a CA whose parent is outside it. A root has none",
+  })
+  csr?: string;
+
+  @ApiProperty({
+    type: String,
     isArray: true,
     required: true,
     description: "The certificates above it, PEM, nearest first",
