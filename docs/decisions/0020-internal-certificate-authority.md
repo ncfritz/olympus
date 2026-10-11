@@ -1,6 +1,6 @@
 # 0020. An internal certificate authority: Harpocrates
 
-- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in
+- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in; by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): profiles as versioned, editable presets
 - **Date:** 2026-09-21; amended and accepted 2026-09-25
 
 ## Context
@@ -291,6 +291,13 @@ its EKUs, and whose constraints admit its names). Initial set:
 
 There is no timestamping authority: signing certificates are renewed
 early and what they signed is re-signed before they expire.
+
+> **Amended by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md).**
+> Profiles are administered: made, versioned (v1, v2, …), copied and
+> deactivated, each version a frozen preset of everything above and
+> more (subject DN rules, SAN rules and a name policy, four-state key
+> usages, signature hash, key identifiers, policies, custom
+> extensions). A certificate records its version and renews under it.
 
 > **Amended by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md).**
 > A profile's key type is the default: the operator chooses any type the

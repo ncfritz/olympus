@@ -1,6 +1,6 @@
 # 0033. Harpocrates: the key type chosen at issuance, and keys brought in
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): a profile version may limit the key types a request chooses from
 - **Date:** 2026-10-11; accepted 2026-10-11 (Neil)
 - **Amends:** [ADR 0020](0020-internal-certificate-authority.md)
 

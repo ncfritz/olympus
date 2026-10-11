@@ -26,6 +26,8 @@ console was 7, renewal 5, ACME 6, SSH 8.
 | 7     | ACME, with ARI                                                                                 | 5                                       | C10, C11.5                                    |
 | 8     | The migration from XCA, and XCA retired                                                        | 6, 7                                    | C8, C5.4, C6, C4.7, C12                       |
 | 9     | SSH certificates                                                                               | 6                                       | C15                                           |
+| 10    | Profiles as versioned, editable presets (ADR 0034)                                             | 5                                       | C17                                           |
+| 11    | OCSP: a responder, AIA OCSP and must-staple                                                    | 10                                      | C18                                           |
 | Later | SCEP, `dns-01`, hardware keys, discovery, a timestamping authority                             |                                         |                                               |
 
 Phases 6 and 7 are independent. The console (phase 5) grows with each
@@ -430,6 +432,58 @@ the signer and the service. The mockups are the design canvas
 6. **First consumers**: the Mac Mini, the NAS and the laptop.
 
 **Sign-off:** C15.
+
+## Phase 10 — Profiles as versioned, editable presets
+
+[ADR 0034](../../decisions/0034-harpocrates-profiles-versioned-presets.md).
+Independent of phases 8 and 9.
+
+1. **Versions, behaviour-preserving**: `profiles` keeps the slug, the
+   description and whether it is active; `profile_versions` holds every
+   setting, frozen. Today's profiles become v1 of themselves; each
+   enrollment and certificate records its version. Nothing issued
+   changes.
+2. **Lifecycle**: create, a new version (edit), copy from any version,
+   deactivate and reactivate, and moving chosen enrollments to a newer
+   version; validation of a version as it is made; audit; pki-admin
+   after a recent sign-in.
+3. **Rules at issuance and renewal**, in the service: the subject DN
+   (presence, default, locked, pattern, count), SAN types, the name
+   policy, the four usage states (forced, default, optional, excluded)
+   with a CSR's requested extensions, key types, and CSR signature
+   hashes. A renewal applies its own version.
+4. **Signer**: the hash and RSA padding, the subject and authority key
+   identifier methods, basic constraints, issuer alternative names
+   (a setting on each CA), certificate policies and custom extensions;
+   the invariants extended to match; its document and the service's
+   client regenerated.
+5. **Preview**: the certificate a version would produce, before it is
+   saved.
+6. **Console**: profiles listed (active and inactive) with their
+   versions, a version's history and a diff between two; an editor in
+   sections, with help on every setting; copy, deactivate, reactivate;
+   the issuance form follows the chosen version.
+7. **Docs**: the service and console READMEs, and the certificates
+   guide.
+
+**Sign-off:** C17 (to be written with step 2).
+
+## Phase 11 — OCSP
+
+Under an ADR of its own, amending ADR 0020's "no OCSP".
+
+1. **A responder** on the PKI host (`/ocsp`, GET and POST, RFC 6960):
+   responses signed by a delegated OCSP signing certificate per CA
+   (`id-kp-OCSPSigning`, `id-pkix-ocsp-nocheck`), issued in a ceremony
+   for an offline CA; status from the service's revocation records.
+2. **AIA OCSP** in certificates, its URL a CA setting, included or
+   omitted per profile version.
+3. **OCSP must-staple** (the TLS feature extension, RFC 7633) as a
+   profile setting, offered only once the responder is in service.
+4. **Monitoring**: responder errors, response freshness, and a check
+   that a stapling server staples.
+
+**Sign-off:** C18.
 
 ## Follow-ups
 
