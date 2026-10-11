@@ -53,35 +53,53 @@ const constraintLines = (constraints: NameConstraints): string[] =>
 
 /**
  * The details' fields, two to a row, a wide one on a row of its own: the
- * single field before a wide one fills the rest of its row.
+ * single field before a wide one fills the rest of its row. A right-hand
+ * one (the tags) always lands in the second column, after an empty cell
+ * when it starts a row, so the tags stack in one column.
  */
-type Field = { key: string; label: string; children: ReactNode; wide?: true };
+type Field = {
+  key: string;
+  label: string;
+  children: ReactNode;
+  /** A row of its own. */
+  wide?: true;
+  /** Always in the right-hand column. */
+  right?: true;
+};
 
 const toRows = (
   fields: (Field | false | undefined)[],
 ): DescriptionsProps["items"] => {
   const present = fields.filter((f): f is Field => Boolean(f));
+  const items: NonNullable<DescriptionsProps["items"]> = [];
   let column = 0;
-  return present.map((field, index) => {
+  present.forEach((field, index) => {
     if (field.wide) {
       column = 0;
-      return {
+      items.push({
         key: field.key,
         label: field.label,
         children: field.children,
         span: 2,
-      };
+      });
+      return;
+    }
+    // A right-hand field on a new row: an empty cell to its left.
+    if (field.right && column === 0) {
+      items.push({ key: `${field.key}-blank`, children: null });
+      column = 1;
     }
     const next = present[index + 1];
     const fills = column === 0 && (!next || next.wide);
     column = fills ? 0 : (column + 1) % 2;
-    return {
+    items.push({
       key: field.key,
       label: field.label,
       children: field.children,
       ...(fills ? { span: "filled" as const } : {}),
-    };
+    });
   });
+  return items;
 };
 
 /** A value in the theme's code font, without code formatting. */
@@ -247,11 +265,13 @@ export function IssuerPage() {
             },
             {
               key: "tier",
+              right: true,
               label: "Tier",
               children: <DetailTag>{TIERS[issuer.tier]}</DetailTag>,
             },
             issuer.shape && {
               key: "shape",
+              right: true,
               label: "Shape",
               children: (
                 <DetailTag color="blue">{SHAPES[issuer.shape].label}</DetailTag>
@@ -259,6 +279,7 @@ export function IssuerPage() {
             },
             {
               key: "status",
+              right: true,
               label: "Status",
               children: (
                 <DetailTag color={STATUS_COLORS[issuer.status]}>
@@ -268,6 +289,7 @@ export function IssuerPage() {
             },
             {
               key: "key",
+              right: true,
               label: "Key",
               children: (
                 <DetailTag>{issuer.offline ? "offline" : "online"}</DetailTag>
@@ -276,6 +298,7 @@ export function IssuerPage() {
             !discarded &&
               windowClosed(issuer) && {
                 key: "signing",
+                right: true,
                 label: "Signing",
                 children: <DetailTag color="orange">no longer signs</DetailTag>,
               },
