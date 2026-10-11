@@ -16,6 +16,48 @@
   word-break: break-all;
 }
 
+/* The hex values (serial, fingerprints, key identifiers): each in a flat
+   card, 4px in, 4px round, small enough to read whole. */
+.hexFields {
+  margin-bottom: 16px;
+}
+
+.hexCard:global(.ant-card) {
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+/* Doubled, and under the card, to outrank antd's own small-card rules. */
+.hexCard .hexBody.hexBody {
+  padding: 4px;
+}
+
+.hex {
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.hexCard .hexActions.hexActions {
+  border-radius: 0 0 4px 4px;
+}
+
+.hexCard .hexActions.hexActions > li {
+  margin: 0;
+  padding: 4px;
+}
+
+.hexCard .hexCopy:global(.ant-btn) {
+  font-size: 12px;
+  height: auto;
+  padding: 0 4px;
+}
+
+.identifiers {
+  margin-top: 4px;
+}
+
 .extensionName:global(.ant-typography) {
   margin: 0;
 }

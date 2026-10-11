@@ -4,6 +4,7 @@ import { CopyOutlined, DownloadOutlined } from "@ant-design/icons";
 import {
   Alert,
   Button,
+  Card,
   Descriptions,
   Divider,
   Flex,
@@ -25,13 +26,77 @@ const Mono = ({ children }: { children: string }) => (
   <span className={styles.mono}>{children}</span>
 );
 
+/** The extensions whose value is an identifier, shown as hex in a card. */
+const KEY_IDENTIFIERS = new Set([
+  "2.5.29.14", // subject key identifier
+  "2.5.29.35", // authority key identifier
+]);
+
+type Copy = (text: string, what: string) => void;
+
+/**
+ * A long hex value (a serial, a fingerprint, a key identifier) in a card
+ * of its own, small enough to read whole, with a copy action.
+ */
+function HexCard({
+  value,
+  label,
+  copy,
+}: {
+  value: string;
+  label: string;
+  copy: Copy;
+}) {
+  return (
+    <Card
+      size="small"
+      className={styles.hexCard}
+      classNames={{ body: styles.hexBody, actions: styles.hexActions }}
+      actions={[
+        <Button
+          key="copy"
+          type="text"
+          size="small"
+          icon={<CopyOutlined />}
+          className={styles.hexCopy}
+          onClick={() => copy(value, label)}
+        >
+          Copy
+        </Button>,
+      ]}
+    >
+      <span className={styles.hex}>{value}</span>
+    </Card>
+  );
+}
+
+/** A labelled hex value: its label above its card, left-aligned. */
+function HexField({
+  label,
+  value,
+  copy,
+}: {
+  label: string;
+  value: string;
+  copy: Copy;
+}) {
+  return (
+    <Flex vertical gap={4}>
+      <Typography.Text type="secondary">{label}</Typography.Text>
+      <HexCard value={value} label={label} copy={copy} />
+    </Flex>
+  );
+}
+
 /** One extension: its name, whether it is critical, its OID and values. */
 function ExtensionSection({
   extension,
   nameConstraints,
+  copy,
 }: {
   extension: ExtensionDetail;
   nameConstraints: string[];
+  copy: Copy;
 }) {
   const values =
     extension.oid === NAME_CONSTRAINTS_OID && nameConstraints.length
@@ -50,13 +115,26 @@ function ExtensionSection({
           {extension.oid}
         </Typography.Text>
       )}
-      <ul className={styles.values}>
-        {values.map((value) => (
-          <li key={value}>
-            <Mono>{value}</Mono>
-          </li>
-        ))}
-      </ul>
+      {KEY_IDENTIFIERS.has(extension.oid) ? (
+        <Flex vertical gap={4} className={styles.identifiers}>
+          {values.map((value) => (
+            <HexCard
+              key={value}
+              value={value}
+              label={extension.name}
+              copy={copy}
+            />
+          ))}
+        </Flex>
+      ) : (
+        <ul className={styles.values}>
+          {values.map((value) => (
+            <li key={value}>
+              <Mono>{value}</Mono>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -76,6 +154,15 @@ export function CertificateDetails({
   const { data: certificate, error } = useSWR(["certificate", pem], () =>
     readCertificate(pem),
   );
+  const [messages, messageHolder] = message.useMessage();
+  const copy: Copy = async (text, what) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      void messages.success(`Copied the ${what}`);
+    } catch {
+      void messages.error("The browser did not allow copying");
+    }
+  };
   if (error) {
     return (
       <Alert
@@ -90,30 +177,25 @@ export function CertificateDetails({
 
   return (
     <Flex vertical>
+      {messageHolder}
+      <Flex vertical gap="middle" className={styles.hexFields}>
+        <HexField label="Serial" value={certificate.serial} copy={copy} />
+        <HexField
+          label="SHA-256 fingerprint"
+          value={certificate.sha256}
+          copy={copy}
+        />
+        <HexField
+          label="SHA-1 fingerprint"
+          value={certificate.sha1}
+          copy={copy}
+        />
+      </Flex>
       <Descriptions
         column={1}
         size="small"
         classNames={{ label: styles.label }}
         items={[
-          {
-            key: "serial",
-            label: "Serial",
-            children: <Mono>{certificate.serial}</Mono>,
-          },
-          {
-            key: "sha256",
-            label: "SHA-256",
-            children: (
-              <Typography.Text copyable={{ text: certificate.sha256 }}>
-                <Mono>{certificate.sha256}</Mono>
-              </Typography.Text>
-            ),
-          },
-          {
-            key: "sha1",
-            label: "SHA-1",
-            children: <Mono>{certificate.sha1}</Mono>,
-          },
           {
             key: "publicKey",
             label: "Public key",
@@ -133,6 +215,7 @@ export function CertificateDetails({
             key={extension.oid}
             extension={extension}
             nameConstraints={nameConstraints}
+            copy={copy}
           />
         ))}
       </Flex>
