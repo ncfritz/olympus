@@ -458,10 +458,13 @@ model DeployTarget {
   /// What it deploys: the newest of its lineage.
   certificateId String      @map("certificate_id") @db.Uuid
   certificate   Certificate @relation(fields: [certificateId], references: [id])
+  /// host:port, where it is served and checked: its name on 443 by default.
+  endpoint      String
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
 
-  deployments Deployment[]
+  deployments  Deployment[]
+  observations EndpointObservation[]
 
   @@map("deploy_targets")
 }
@@ -495,6 +498,45 @@ model Deployment {
   @@index([targetId, createdAt])
   @@index([status])
   @@map("deployments")
+}
+
+/// What an endpoint served when it was checked. current: the target's
+/// certificate. previous: one it deployed before (not reloaded yet).
+/// other: a certificate it never deployed. unreachable: no TLS handshake.
+enum EndpointResult {
+  current
+  previous
+  other
+  unreachable
+}
+
+/// What a deploy target's endpoint served (ADR 0020, Renewal and
+/// delivery): one row while the answer stays the same, from when it was
+/// first seen (createdAt) to when it was last seen (updatedAt).
+model EndpointObservation {
+  id                    String         @id @default(uuid()) @db.Uuid
+  targetId              String         @map("target_id") @db.Uuid
+  target                DeployTarget   @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  /// The host:port checked.
+  endpoint              String
+  result                EndpointResult
+  /// The target's certificate when it was checked.
+  expectedCertificateId String         @map("expected_certificate_id") @db.Uuid
+  /// The certificate served, when it is one this target deployed.
+  servedCertificateId   String?        @map("served_certificate_id") @db.Uuid
+  servedSha256          String?        @map("served_sha256")
+  servedSerial          String?        @map("served_serial")
+  servedSubject         String?        @map("served_subject")
+  servedNotAfter        DateTime?      @map("served_not_after")
+  /// Why there was no handshake.
+  error                 String?
+  /// How many checks saw this.
+  checks                Int            @default(1)
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+
+  @@index([targetId, updatedAt])
+  @@map("endpoint_observations")
 }
 
 // ---- Audit

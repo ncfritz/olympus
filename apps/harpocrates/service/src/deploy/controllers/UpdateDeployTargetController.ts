@@ -36,7 +36,7 @@ export class UpdateDeployTargetController {
   @ApiOperation({
     summary: "Updates a deploy target",
     description:
-      "Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once. Renewals it follows by itself. pki-admin only, after a recent sign-in, as for any escrow export.",
+      "Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once (renewals it follows by itself); or at another endpoint, checked from then on. pki-admin only, after a recent sign-in, as for any escrow export.",
     operationId: "UpdateDeployTarget",
     tags: ["Deploy Targets"],
   })
@@ -50,7 +50,7 @@ export class UpdateDeployTargetController {
   @ApiBody({
     type: UpdateDeployTargetRequest,
     required: true,
-    description: "Its certificate from now on.",
+    description: "Its certificate, its endpoint, or both, from now on.",
   })
   @ApiOkResponse({
     description:

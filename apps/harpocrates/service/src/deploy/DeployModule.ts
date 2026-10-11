@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { CertificatesModule } from "../certificates/CertificatesModule";
+import { CheckDeployTargetController } from "./controllers/CheckDeployTargetController";
 import { CreateDeployTargetController } from "./controllers/CreateDeployTargetController";
 import { DeleteDeployTargetController } from "./controllers/DeleteDeployTargetController";
 import { DeployDeployTargetController } from "./controllers/DeployDeployTargetController";
@@ -8,6 +9,8 @@ import { ListDeployTargetsController } from "./controllers/ListDeployTargetsCont
 import { UpdateDeployTargetController } from "./controllers/UpdateDeployTargetController";
 import { DeployScheduler } from "./services/DeployScheduler";
 import { DeployService } from "./services/DeployService";
+import { EndpointCheckService } from "./services/EndpointCheckService";
+import { EndpointProbe } from "./services/EndpointProbe";
 import { HostPathDeployer } from "./services/HostPathDeployer";
 
 /** Deploy targets (ADR 0020, Renewal and delivery). */
@@ -19,9 +22,16 @@ import { HostPathDeployer } from "./services/HostPathDeployer";
     DescribeDeployTargetController,
     UpdateDeployTargetController,
     DeployDeployTargetController,
+    CheckDeployTargetController,
     DeleteDeployTargetController,
   ],
-  providers: [DeployService, DeployScheduler, HostPathDeployer],
+  providers: [
+    DeployService,
+    DeployScheduler,
+    HostPathDeployer,
+    EndpointCheckService,
+    EndpointProbe,
+  ],
   exports: [DeployService, DeployScheduler],
 })
 export class DeployModule {}

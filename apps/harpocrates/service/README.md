@@ -162,6 +162,16 @@ escrow export does; deploying again is open to either role. Deleting a
 target leaves its files, still served until nginx's configuration stops
 naming them.
 
+Each target has an endpoint, `host:port` (its name on 443 unless given),
+where the service checks what is actually served: a TLS handshake with
+the host as SNI, trusting anything. The answer is `current` (the
+target's certificate), `previous` (one it deployed before: nginx has not
+reloaded), `other` (one it never deployed) or `unreachable`, kept in
+`endpoint_observations` as one row while it stays the same. An endpoint
+is checked 30 seconds after each deployment lands, then every
+`ENDPOINT_CHECK_SECONDS` while it is `current` and every 5 minutes while
+it is not; `POST /v1/deploy-target/:id/check` checks it now.
+
 The CA console (`apps/harpocrates/console`) signs in through Olympus
 (ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
 service completes the sign-in and keeps the tokens in httpOnly cookies
@@ -182,23 +192,26 @@ taken.
 
 ## Metrics and alerts
 
-| Metric                                                           | What                                                                         |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `harpocrates_certificates_issued_total{issuer,profile}`          | Issued, renewals included                                                    |
-| `harpocrates_revocations_total{issuer,reason}`                   | Revoked                                                                      |
-| `harpocrates_refusals_total{invariant}`                          | Requests refused by a profile rule or the signer                             |
-| `harpocrates_crls_signed_total{issuer,source}`                   | Lists signed or imported                                                     |
-| `harpocrates_crl_signing_failures_total{issuer,reason}`          | Scheduled signings that failed: `sealed`, `refused`, `error`                 |
-| `harpocrates_crl_publication_failures_total{issuer}`             | Publication attempts that failed                                             |
-| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`     | When each CA's newest published list lapses (Unix time)                      |
-| `harpocrates_crl_publication_pending_seconds{issuer,tier}`       | How long its newest list has waited to be published; 0 once out              |
-| `harpocrates_deployments_total{target}`                          | Certificates deployed to a deploy target                                     |
-| `harpocrates_deployment_failures_total{target}`                  | Deployment attempts that failed                                              |
-| `harpocrates_target_renewal_failures_total{target,reason}`       | Renewals of a target's certificate that failed: `sealed`, `refused`, `error` |
-| `harpocrates_issuing_window_days{issuer}`                        | Days until each active CA stops issuing                                      |
-| `harpocrates_profile_renewal_due_days{profile}`                  | Days before expiry a profile's certificates are due for renewal              |
-| `harpocrates_signer_sealed`                                      | 1 when the signer is sealed or unreachable                                   |
-| `certificate_expiry_days{issuer,profile,subject,serial,renewal}` | Days left on every valid certificate; `renewal` is `manual` for now          |
+| Metric                                                              | What                                                                                |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `harpocrates_certificates_issued_total{issuer,profile}`             | Issued, renewals included                                                           |
+| `harpocrates_revocations_total{issuer,reason}`                      | Revoked                                                                             |
+| `harpocrates_refusals_total{invariant}`                             | Requests refused by a profile rule or the signer                                    |
+| `harpocrates_crls_signed_total{issuer,source}`                      | Lists signed or imported                                                            |
+| `harpocrates_crl_signing_failures_total{issuer,reason}`             | Scheduled signings that failed: `sealed`, `refused`, `error`                        |
+| `harpocrates_crl_publication_failures_total{issuer}`                | Publication attempts that failed                                                    |
+| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`        | When each CA's newest published list lapses (Unix time)                             |
+| `harpocrates_crl_publication_pending_seconds{issuer,tier}`          | How long its newest list has waited to be published; 0 once out                     |
+| `harpocrates_deployments_total{target}`                             | Certificates deployed to a deploy target                                            |
+| `harpocrates_deployment_failures_total{target}`                     | Deployment attempts that failed                                                     |
+| `harpocrates_deploy_target_serving{target,result}`                  | 1 for what each target's endpoint served at its last check, 0 for the other results |
+| `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                            |
+| `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                             |
+| `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`        |
+| `harpocrates_issuing_window_days{issuer}`                           | Days until each active CA stops issuing                                             |
+| `harpocrates_profile_renewal_due_days{profile}`                     | Days before expiry a profile's certificates are due for renewal                     |
+| `harpocrates_signer_sealed`                                         | 1 when the signer is sealed or unreachable                                          |
+| `certificate_expiry_days{issuer,profile,subject,serial,renewal}`    | Days left on every valid certificate; `renewal` is `manual` for now                 |
 
 The gauges are read at scrape time; a scrape never fails because the
 database or the signer is down. A list's lapse is a timestamp, not days
@@ -273,34 +286,35 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 
 ## Environment
 
-| Variable                      | Default                            | Meaning                                                                                |
-| ----------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | —                                  | `harpocrates-postgres`; or `DATABASE_URL_FILE`, a file holding it (the stack's secret) |
-| `LISTEN_PORT`                 | `3200`                             | The management API, `/health` and `/metrics`                                           |
-| `SIGNER_SOCKET_PATH`          | —                                  | The signer's socket                                                                    |
-| `SIGNER_TOKEN_FILE`           | —                                  | The shared token (a secret)                                                            |
-| `AUTH_JWKS_URL`               | —                                  | The API's published keys; or                                                           |
-| `AUTH_JWKS_FILE`              | —                                  | the same as a file (exactly one of the two)                                            |
-| `AUTH_AUDIENCE`               | `olympus-api`                      | The tokens' audience                                                                   |
-| `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                              | How recent a sign-in ceremonies and escrow export need                                 |
-| `OLYMPUS_API_URL`             | —                                  | The API, server to server, for the console's sign-in; unset, there is none             |
-| `OLYMPUS_SIGN_IN_URL`         | `OLYMPUS_API_URL`                  | Where a browser reaches the API to sign in                                             |
-| `AUTH_BASE_URL`               | `http://localhost:<LISTEN_PORT>`   | Where a browser reaches this service; the sign-in completes at `/auth/callback` here   |
-| `WEB_APP_URL`                 | —                                  | The console: the cookies' path, CORS, and where a sign-in may return to                |
-| `PKI_REALM`                   | `ncfritz.net`                      | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                |
-| `PKI_ORGANIZATION`            | `ncfritz.net`                      | `O=` in the names it issues                                                            |
-| `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net`  | Where lists and CA certificates are served, and read back from                         |
-| `PKI_PUBLISHED_DIR`           | —                                  | The directory the distribution host serves                                             |
-| `CRL_VALIDITY_HOURS`          | `168`                              | An online CA's list's validity                                                         |
-| `CRL_REFRESH_HOURS`           | `24`                               | How old an online CA's list gets before it is re-signed                                |
-| `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                              | An offline CA's list's validity, signed in a ceremony                                  |
-| `CRL_SCHEDULE_SECONDS`        | `30`                               | How often the scheduler runs; `0` turns it off                                         |
-| `RENEWAL_LISTEN_PORT`         | `9443`                             | The renewal listener; `0` turns it off                                                 |
-| `RENEWAL_TLS_DIR`             | `/var/lib/harpocrates/renewal-tls` | Its own key and certificate                                                            |
-| `RENEWAL_HOSTNAMES`           | `pki.internal.ncfritz.net`         | The names its certificate is issued for, comma-separated                               |
-| `RENEWAL_TLS_PROFILE`         | `internal-tls`                     | The profile it is issued under                                                         |
-| `DEPLOY_DIR`                  | `/srv/harpocrates/deployed`        | Where `host_path` deploy targets are written, a directory each                         |
-| `DEPLOY_SCHEDULE_SECONDS`     | `60`                               | How often targets are renewed, followed and deployed; `0` turns it off                 |
+| Variable                      | Default                            | Meaning                                                                                            |
+| ----------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                | —                                  | `harpocrates-postgres`; or `DATABASE_URL_FILE`, a file holding it (the stack's secret)             |
+| `LISTEN_PORT`                 | `3200`                             | The management API, `/health` and `/metrics`                                                       |
+| `SIGNER_SOCKET_PATH`          | —                                  | The signer's socket                                                                                |
+| `SIGNER_TOKEN_FILE`           | —                                  | The shared token (a secret)                                                                        |
+| `AUTH_JWKS_URL`               | —                                  | The API's published keys; or                                                                       |
+| `AUTH_JWKS_FILE`              | —                                  | the same as a file (exactly one of the two)                                                        |
+| `AUTH_AUDIENCE`               | `olympus-api`                      | The tokens' audience                                                                               |
+| `AUTH_RECENT_SIGN_IN_SECONDS` | `300`                              | How recent a sign-in ceremonies and escrow export need                                             |
+| `OLYMPUS_API_URL`             | —                                  | The API, server to server, for the console's sign-in; unset, there is none                         |
+| `OLYMPUS_SIGN_IN_URL`         | `OLYMPUS_API_URL`                  | Where a browser reaches the API to sign in                                                         |
+| `AUTH_BASE_URL`               | `http://localhost:<LISTEN_PORT>`   | Where a browser reaches this service; the sign-in completes at `/auth/callback` here               |
+| `WEB_APP_URL`                 | —                                  | The console: the cookies' path, CORS, and where a sign-in may return to                            |
+| `PKI_REALM`                   | `ncfritz.net`                      | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                            |
+| `PKI_ORGANIZATION`            | `ncfritz.net`                      | `O=` in the names it issues                                                                        |
+| `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net`  | Where lists and CA certificates are served, and read back from                                     |
+| `PKI_PUBLISHED_DIR`           | —                                  | The directory the distribution host serves                                                         |
+| `CRL_VALIDITY_HOURS`          | `168`                              | An online CA's list's validity                                                                     |
+| `CRL_REFRESH_HOURS`           | `24`                               | How old an online CA's list gets before it is re-signed                                            |
+| `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                              | An offline CA's list's validity, signed in a ceremony                                              |
+| `CRL_SCHEDULE_SECONDS`        | `30`                               | How often the scheduler runs; `0` turns it off                                                     |
+| `RENEWAL_LISTEN_PORT`         | `9443`                             | The renewal listener; `0` turns it off                                                             |
+| `RENEWAL_TLS_DIR`             | `/var/lib/harpocrates/renewal-tls` | Its own key and certificate                                                                        |
+| `RENEWAL_HOSTNAMES`           | `pki.internal.ncfritz.net`         | The names its certificate is issued for, comma-separated                                           |
+| `RENEWAL_TLS_PROFILE`         | `internal-tls`                     | The profile it is issued under                                                                     |
+| `DEPLOY_DIR`                  | `/srv/harpocrates/deployed`        | Where `host_path` deploy targets are written, a directory each                                     |
+| `DEPLOY_SCHEDULE_SECONDS`     | `60`                               | How often targets are renewed, followed and deployed; `0` turns it off                             |
+| `ENDPOINT_CHECK_SECONDS`      | `3600`                             | How often a target's endpoint is checked while it serves its certificate; `0` turns the checks off |
 
 Logging is the shared set (`LOKI_URL`, `CONSOLE_LOGGING_LEVEL`, ...) in
 `dev.env.example`.

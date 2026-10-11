@@ -3353,7 +3353,7 @@
         ]
       },
       "put": {
-        "description": "Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once. Renewals it follows by itself. pki-admin only, after a recent sign-in, as for any escrow export.",
+        "description": "Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once (renewals it follows by itself); or at another endpoint, checked from then on. pki-admin only, after a recent sign-in, as for any escrow export.",
         "operationId": "UpdateDeployTarget",
         "parameters": [
           {
@@ -3368,7 +3368,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Its certificate from now on.",
+          "description": "Its certificate, its endpoint, or both, from now on.",
           "content": {
             "application/json": {
               "schema": {
@@ -3582,6 +3582,74 @@
           }
         ],
         "summary": "Deploys a deploy target again",
+        "tags": [
+          "Deploy Targets"
+        ]
+      }
+    },
+    "/v1/deploy-target/{targetId}/check": {
+      "post": {
+        "description": "Connects to the target's endpoint now and records which certificate it serves: the target's, one it deployed before, another, or none.",
+        "operationId": "CheckDeployTarget",
+        "parameters": [
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "description": "The deploy target's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The endpoint was checked; its newest observation says what it served.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckDeployTargetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Checks a deploy target's endpoint",
         "tags": [
           "Deploy Targets"
         ]
@@ -5968,6 +6036,86 @@
           "updatedAt"
         ]
       },
+      "EndpointResult": {
+        "type": "string",
+        "description": "What it served",
+        "enum": [
+          "current",
+          "previous",
+          "other",
+          "unreachable"
+        ]
+      },
+      "EndpointObservation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "The host:port checked"
+          },
+          "result": {
+            "description": "What it served",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EndpointResult"
+              }
+            ]
+          },
+          "expectedCertificateId": {
+            "type": "string",
+            "description": "The target's certificate when it was checked"
+          },
+          "servedCertificateId": {
+            "type": "string",
+            "description": "The certificate served, when this target deployed it"
+          },
+          "servedSha256": {
+            "type": "string",
+            "description": "The served certificate's SHA-256 fingerprint, hex"
+          },
+          "servedSerial": {
+            "type": "string",
+            "description": "The served certificate's serial, hex"
+          },
+          "servedSubject": {
+            "type": "string",
+            "description": "The served certificate's subject, RFC 4514"
+          },
+          "servedNotAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the served certificate expires"
+          },
+          "error": {
+            "type": "string",
+            "description": "Why there was no handshake"
+          },
+          "checks": {
+            "type": "number",
+            "description": "How many checks saw this"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was first seen"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was last seen"
+          }
+        },
+        "required": [
+          "id",
+          "endpoint",
+          "result",
+          "expectedCertificateId",
+          "checks",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "DeployTarget": {
         "type": "object",
         "properties": {
@@ -6003,11 +6151,23 @@
             "type": "string",
             "description": "An ISO-8601 formatted string: when Harpocrates renews that certificate"
           },
+          "endpoint": {
+            "type": "string",
+            "description": "The host:port it is served at, and checked"
+          },
           "lastDeployment": {
             "description": "Its newest deployment",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Deployment"
+              }
+            ]
+          },
+          "lastObservation": {
+            "description": "What its endpoint served when last checked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EndpointObservation"
               }
             ]
           },
@@ -6028,6 +6188,7 @@
           "subject",
           "notAfter",
           "renewsAt",
+          "endpoint",
           "createdAt",
           "updatedAt"
         ]
@@ -6058,6 +6219,11 @@
           "certificateId": {
             "type": "string",
             "description": "The certificate to deploy: its key generated and escrowed, so Harpocrates can install it"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "The host:port it is served at, and checked: its name on 443 by default",
+            "example": "nas.internal.ncfritz.net:443"
           }
         },
         "required": [
@@ -6100,11 +6266,23 @@
             "type": "string",
             "description": "An ISO-8601 formatted string: when Harpocrates renews that certificate"
           },
+          "endpoint": {
+            "type": "string",
+            "description": "The host:port it is served at, and checked"
+          },
           "lastDeployment": {
             "description": "Its newest deployment",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Deployment"
+              }
+            ]
+          },
+          "lastObservation": {
+            "description": "What its endpoint served when last checked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EndpointObservation"
               }
             ]
           },
@@ -6122,6 +6300,13 @@
             "items": {
               "$ref": "#/components/schemas/Deployment"
             }
+          },
+          "observations": {
+            "description": "What its endpoint served, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndpointObservation"
+            }
           }
         },
         "required": [
@@ -6132,9 +6317,11 @@
           "subject",
           "notAfter",
           "renewsAt",
+          "endpoint",
           "createdAt",
           "updatedAt",
-          "deployments"
+          "deployments",
+          "observations"
         ]
       },
       "CreateDeployTargetResponse": {
@@ -6175,11 +6362,13 @@
           "certificateId": {
             "type": "string",
             "description": "The certificate to deploy from now on, deployed at once: a reissue, after a revocation"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "The host:port it is served at, and checked, from now on",
+            "example": "nas.internal.ncfritz.net:443"
           }
-        },
-        "required": [
-          "certificateId"
-        ]
+        }
       },
       "UpdateDeployTargetResponse": {
         "type": "object",
@@ -6202,6 +6391,22 @@
         "properties": {
           "deployTarget": {
             "description": "The target, and the deployment as it went",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullDeployTarget"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deployTarget"
+        ]
+      },
+      "CheckDeployTargetResponse": {
+        "type": "object",
+        "properties": {
+          "deployTarget": {
+            "description": "The target, with what its endpoint served just now",
             "allOf": [
               {
                 "$ref": "#/components/schemas/FullDeployTarget"

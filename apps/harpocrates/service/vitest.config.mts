@@ -28,6 +28,7 @@ export default mergeConfig(
         // The renewal listener is off unless a test starts it.
         RENEWAL_LISTEN_PORT: "0",
         DEPLOY_SCHEDULE_SECONDS: "0",
+        ENDPOINT_CHECK_SECONDS: "0",
         DEPLOY_DIR: "/nonexistent/deployed",
       },
       outputFile: { html: "test-report/index.html" },

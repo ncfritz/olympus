@@ -1,5 +1,7 @@
 import { createPrivateKey, X509Certificate } from "crypto";
 import * as fs from "fs";
+import * as https from "https";
+import type { AddressInfo } from "net";
 import * as path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -25,9 +27,22 @@ type Deployment = {
   lastError?: string;
 };
 
+type Observation = {
+  endpoint: string;
+  result: "current" | "previous" | "other" | "unreachable";
+  expectedCertificateId: string;
+  servedCertificateId?: string;
+  servedSerial?: string;
+  error?: string;
+  checks: number;
+};
+
 type Target = {
   id: string;
   name: string;
+  endpoint: string;
+  lastObservation?: Observation;
+  observations: Observation[];
   kind: string;
   certificateId: string;
   renewsAt: string;
@@ -103,7 +118,9 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
 
   beforeAll(async () => {
     deployDir = fs.mkdtempSync(path.join("/tmp", "hrp-deploy-"));
-    harness = await startHarness({ env: { DEPLOY_DIR: deployDir } });
+    harness = await startHarness({
+      env: { DEPLOY_DIR: deployDir, ENDPOINT_CHECK_SECONDS: "3600" },
+    });
     hierarchy = await buildHierarchy(harness, [
       { purpose: "TLS", extendedKeyUsages: [OID.serverAuth, OID.clientAuth] },
       {
@@ -137,6 +154,7 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
     it("is deployed at once: the chain without the root, and the key, for nginx", () => {
       expect(target).toMatchObject({
         name: "nas.internal.ncfritz.net",
+        endpoint: "nas.internal.ncfritz.net:443",
         kind: "host_path",
         certificateId: certificate.id,
       });
@@ -486,6 +504,168 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
           where: { subjectId: target.id, kind: "deploy-target.deleted" },
         }),
       ).toBe(1);
+    });
+  });
+
+  describe("its endpoint", () => {
+    let target: Target;
+    let first: { id: string; serial: string };
+    let web: https.Server;
+    const SETTLE = 30_000;
+
+    /** What nginx would serve from the target's files, read when told. */
+    const serve = (name: string) => {
+      const dir = path.join(deployDir, name);
+      return {
+        cert: fs.readFileSync(path.join(dir, "fullchain.pem")),
+        key: fs.readFileSync(path.join(dir, "privkey.pem")),
+      };
+    };
+
+    const check = async () =>
+      (
+        (
+          await request(server())
+            .post(`/v1/deploy-target/${target.id}/check`)
+            .set("Authorization", harness.operator)
+            .expect(200)
+        ).body as { deployTarget: Target }
+      ).deployTarget;
+
+    beforeAll(async () => {
+      web = https.createServer({}, (_, response) => response.end());
+      await new Promise<void>((resolve) => web.listen(0, "127.0.0.1", resolve));
+      const { port } = web.address() as AddressInfo;
+      first = await hostCertificate("web.internal.ncfritz.net");
+      const created = await request(server())
+        .post("/v1/deploy-targets")
+        .set("Authorization", harness.admin)
+        .send({
+          name: "web",
+          certificateId: first.id,
+          endpoint: `127.0.0.1:${port}`,
+        })
+        .expect(201);
+      target = (created.body as { deployTarget: Target }).deployTarget;
+      web.setSecureContext(serve("web"));
+    });
+
+    afterAll(() => {
+      web.closeAllConnections();
+      web.close();
+    });
+
+    it("is checked once the deployment has had time to land", async () => {
+      const soon = await scheduler().run(new Date(Date.now() + 10_000));
+      expect(soon.checked.map((c) => c.target)).not.toContain("web");
+      const landed = await scheduler().run(new Date(Date.now() + SETTLE + 1));
+      expect(landed.checked).toContainEqual({
+        target: "web",
+        result: "current",
+      });
+      const again = await scheduler().run(new Date(Date.now() + SETTLE + 2));
+      expect(again.checked.map((c) => c.target)).not.toContain("web");
+      const described = await describeTarget(target.id);
+      expect(described.lastObservation).toMatchObject({
+        endpoint: target.endpoint,
+        result: "current",
+        expectedCertificateId: first.id,
+        servedCertificateId: first.id,
+        servedSerial: first.serial,
+        checks: 1,
+      });
+    });
+
+    it("says when nginx still serves the certificate before a renewal", async () => {
+      const run = await scheduler().run(new Date(Date.now() + 61 * DAY));
+      const renewal = run.renewed.find((r) => r.target === "web")!;
+      expect(renewal).toBeDefined();
+      expect(run.checked).toContainEqual({ target: "web", result: "previous" });
+      const described = await describeTarget(target.id);
+      expect(described.lastObservation).toMatchObject({
+        result: "previous",
+        expectedCertificateId: renewal.certificateId,
+        servedCertificateId: first.id,
+      });
+
+      // nginx reloads.
+      web.setSecureContext(serve("web"));
+      const reloaded = await check();
+      expect(reloaded.lastObservation).toMatchObject({
+        result: "current",
+        servedCertificateId: renewal.certificateId,
+      });
+      // The same answer again is the same row, seen once more.
+      const same = await check();
+      expect(same.lastObservation?.checks).toBe(2);
+      expect(same.observations.map((o) => o.result)).toEqual([
+        "current",
+        "previous",
+        "current",
+      ]);
+    });
+
+    it("says when it serves another certificate", async () => {
+      web.setSecureContext(serve("nas.internal.ncfritz.net"));
+      const other = await check();
+      expect(other.lastObservation).toMatchObject({ result: "other" });
+      expect(other.lastObservation?.servedCertificateId).toBeUndefined();
+      web.setSecureContext(serve("web"));
+    });
+
+    it("says when nothing answers, and the gauges say so too", async () => {
+      web.closeAllConnections();
+      await new Promise<void>((resolve) => web.close(() => resolve()));
+      const down = await check();
+      expect(down.lastObservation).toMatchObject({
+        result: "unreachable",
+        error: expect.stringMatching(/ECONNREFUSED/),
+      });
+      const metrics = await request(server()).get("/metrics").expect(200);
+      // The registry adds its own labels (app, environment) after these.
+      expect(metrics.text).toMatch(
+        /harpocrates_deploy_target_serving\{target="web",result="unreachable"[^}]*\} 1\n/,
+      );
+      expect(metrics.text).toMatch(
+        /harpocrates_deploy_target_serving\{target="web",result="current"[^}]*\} 0\n/,
+      );
+      expect(metrics.text).toMatch(
+        /harpocrates_deploy_target_checked_timestamp_seconds\{target="web"[^}]*\} \d+/,
+      );
+    });
+
+    it("moves, without a deployment", async () => {
+      await request(server())
+        .put(`/v1/deploy-target/${target.id}`)
+        .set("Authorization", harness.admin)
+        .send({ endpoint: "nope" })
+        .expect(400);
+      await request(server())
+        .put(`/v1/deploy-target/${target.id}`)
+        .set("Authorization", harness.admin)
+        .send({ endpoint: "web.internal.ncfritz.net:70000" })
+        .expect(400);
+      await request(server())
+        .put(`/v1/deploy-target/${target.id}`)
+        .set("Authorization", harness.admin)
+        .send({})
+        .expect(400);
+      const before = await describeTarget(target.id);
+      const moved = await request(server())
+        .put(`/v1/deploy-target/${target.id}`)
+        .set("Authorization", harness.admin)
+        .send({ endpoint: "web.internal.ncfritz.net:8443" })
+        .expect(200);
+      const after = (moved.body as { deployTarget: Target }).deployTarget;
+      expect(after.endpoint).toBe("web.internal.ncfritz.net:8443");
+      expect(after.deployments).toEqual(before.deployments);
+      const audited = await harness.prisma.auditEvent.findFirstOrThrow({
+        where: { subjectId: target.id, kind: "deploy-target.updated" },
+        include: { attributes: true },
+      });
+      expect(
+        Object.fromEntries(audited.attributes.map((a) => [a.name, a.value])),
+      ).toMatchObject({ endpoint: "web.internal.ncfritz.net:8443" });
     });
   });
 });

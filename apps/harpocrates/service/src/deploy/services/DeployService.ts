@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   Injectable,
@@ -37,6 +38,15 @@ import { HostPathDeployer } from "./HostPathDeployer";
 /** The first retry after 30 seconds, doubling, at most every 15 minutes. */
 const FIRST_RETRY_MS = 30_000;
 const MAX_RETRY_MS = 15 * 60_000;
+
+/** host:port, with a port a port can be. */
+const checkEndpoint = (endpoint: string): string => {
+  const port = Number(endpoint.slice(endpoint.lastIndexOf(":") + 1));
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new BadRequestException(`${endpoint} has no port 1 to 65535`);
+  }
+  return endpoint;
+};
 
 /** How many deployments a target's description shows. */
 const HISTORY = 20;
@@ -101,13 +111,18 @@ export class DeployService {
     request: CreateDeployTargetRequest,
   ): Promise<FullDeployTarget> {
     await this.certificates.checkDeployable(request.certificateId);
+    const endpoint = checkEndpoint(request.endpoint ?? `${request.name}:443`);
     let deploymentId: string;
     let targetId: string;
     try {
       ({ targetId, deploymentId } = await this.prisma.$transaction(
         async (tx) => {
           const target = await tx.deployTarget.create({
-            data: { name: request.name, certificateId: request.certificateId },
+            data: {
+              name: request.name,
+              certificateId: request.certificateId,
+              endpoint,
+            },
           });
           await this.audit.record(
             {
@@ -119,6 +134,7 @@ export class DeployService {
                 name: target.name,
                 kind: target.kind,
                 certificateId: target.certificateId,
+                endpoint: target.endpoint,
               },
             },
             tx,
@@ -147,18 +163,34 @@ export class DeployService {
     return this.describe(targetId);
   }
 
-  /** Points a target at another certificate (a reissue), deployed at once. */
+  /**
+   * Points a target at another certificate (a reissue), deployed at once,
+   * or at another endpoint, checked from then on.
+   */
   async update(
     principal: Principal,
     targetId: string,
     request: UpdateDeployTargetRequest,
   ): Promise<FullDeployTarget> {
+    if (!request.certificateId && !request.endpoint) {
+      throw new BadRequestException(
+        "Give the certificate or the endpoint to change",
+      );
+    }
     const current = await this.row(targetId);
-    await this.certificates.checkDeployable(request.certificateId);
+    const certificateId =
+      request.certificateId !== current.certificateId
+        ? request.certificateId
+        : undefined;
+    const endpoint =
+      request.endpoint !== undefined && request.endpoint !== current.endpoint
+        ? checkEndpoint(request.endpoint)
+        : undefined;
+    if (certificateId) await this.certificates.checkDeployable(certificateId);
     const deploymentId = await this.prisma.$transaction(async (tx) => {
       await tx.deployTarget.update({
         where: { id: targetId },
-        data: { certificateId: request.certificateId },
+        data: { certificateId, endpoint },
       });
       await this.audit.record(
         {
@@ -168,15 +200,19 @@ export class DeployService {
           subjectId: targetId,
           attributes: {
             name: current.name,
-            from: current.certificateId,
-            certificateId: request.certificateId,
+            ...(certificateId
+              ? { from: current.certificateId, certificateId }
+              : {}),
+            ...(endpoint ? { fromEndpoint: current.endpoint, endpoint } : {}),
           },
         },
         tx,
       );
-      return this.queue(tx, targetId, request.certificateId, principal);
+      return certificateId
+        ? this.queue(tx, targetId, certificateId, principal)
+        : undefined;
     });
-    await this.attempt(deploymentId);
+    if (deploymentId) await this.attempt(deploymentId);
     return this.describe(targetId);
   }
 

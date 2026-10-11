@@ -43,6 +43,9 @@ export class PkiGaugeService implements OnModuleInit {
       "harpocrates_profile_renewal_due_days",
       "harpocrates_crl_next_update_timestamp_seconds",
       "harpocrates_crl_publication_pending_seconds",
+      "harpocrates_deploy_target_serving",
+      "harpocrates_deploy_target_checked_timestamp_seconds",
+      "harpocrates_deploy_target_served_expiry_timestamp_seconds",
     ]) {
       register.removeSingleMetric(name);
     }
@@ -188,6 +191,73 @@ export class PkiGaugeService implements OnModuleInit {
               ? 0
               : Math.round((Date.now() - newest.createdAt.getTime()) / 1000),
           );
+        }
+      },
+    });
+
+    // What each deploy target's endpoint served when last checked: 1 for
+    // the answer it gave (current, previous, other, unreachable), 0 for
+    // the rest, so `== 0` on current is the alert whatever went wrong.
+    const latestObservations = () =>
+      quietly(() =>
+        prisma.deployTarget.findMany({
+          select: {
+            name: true,
+            observations: { orderBy: { updatedAt: "desc" }, take: 1 },
+          },
+        }),
+      );
+
+    new Gauge({
+      name: "harpocrates_deploy_target_serving",
+      help: "What each deploy target's endpoint served when last checked: 1 for its result (current, previous, other, unreachable), 0 for the others",
+      labelNames: ["target", "result"],
+      async collect() {
+        this.reset();
+        for (const row of await latestObservations()) {
+          const last = row.observations[0];
+          if (!last) continue;
+          for (const result of [
+            "current",
+            "previous",
+            "other",
+            "unreachable",
+          ]) {
+            this.set(
+              { target: row.name, result },
+              last.result === result ? 1 : 0,
+            );
+          }
+        }
+      },
+    });
+
+    new Gauge({
+      name: "harpocrates_deploy_target_checked_timestamp_seconds",
+      help: "When each deploy target's endpoint was last checked, as a Unix time",
+      labelNames: ["target"],
+      async collect() {
+        this.reset();
+        for (const row of await latestObservations()) {
+          const last = row.observations[0];
+          if (last) {
+            this.set({ target: row.name }, last.updatedAt.getTime() / 1000);
+          }
+        }
+      },
+    });
+
+    new Gauge({
+      name: "harpocrates_deploy_target_served_expiry_timestamp_seconds",
+      help: "When the certificate each deploy target's endpoint served at its last check expires, as a Unix time",
+      labelNames: ["target"],
+      async collect() {
+        this.reset();
+        for (const row of await latestObservations()) {
+          const served = row.observations[0]?.servedNotAfter;
+          if (served) {
+            this.set({ target: row.name }, served.getTime() / 1000);
+          }
         }
       },
     });

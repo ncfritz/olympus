@@ -10,12 +10,18 @@ import {
   type DeployConfigType,
 } from "../../config/configuration";
 import { type DeployRun, DeployService } from "./DeployService";
+import {
+  type EndpointCheck,
+  EndpointCheckService,
+} from "./EndpointCheckService";
+
+export type DeploySchedulerRun = DeployRun & { checked: EndpointCheck[] };
 
 /**
  * Keeps deploy targets current: every DEPLOY_SCHEDULE_SECONDS it renews
  * the targets' certificates that are due, moves each target to the
- * newest renewal of its certificate, and deploys what is pending, retrying
- * failures with a backoff. While the signer is sealed renewals and
+ * newest renewal of its certificate, deploys what is pending, retrying
+ * failures with a backoff, and checks what each endpoint serves. While the signer is sealed renewals and
  * deployments fail, and the next run tries again. One instance runs it;
  * the CLI and the tests turn it off.
  */
@@ -30,6 +36,7 @@ export class DeployScheduler
 
   constructor(
     private readonly deploys: DeployService,
+    private readonly endpoints: EndpointCheckService,
     @Inject(deployConfig.KEY) private readonly config: DeployConfigType,
   ) {}
 
@@ -69,11 +76,15 @@ export class DeployScheduler
     return this.running;
   }
 
-  /** One pass: renew what is due, follow renewals, deploy what is pending. */
-  async run(now = new Date()): Promise<DeployRun> {
+  /**
+   * One pass: renew what is due, follow renewals, deploy what is pending,
+   * and check the endpoints that are due a check.
+   */
+  async run(now = new Date()): Promise<DeploySchedulerRun> {
     const renewals = await this.deploys.renewDue(now);
     const followed = await this.deploys.follow();
     const deployed = await this.deploys.deployPending(now);
-    return { ...renewals, followed, deployed };
+    const checked = await this.endpoints.checkDue(now);
+    return { ...renewals, followed, deployed, checked };
   }
 }

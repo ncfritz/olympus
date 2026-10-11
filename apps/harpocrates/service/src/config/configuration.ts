@@ -115,6 +115,12 @@ export type DeployConfig = {
    * renewed when due, failed deployments retried. 0 turns it off.
    */
   scheduleSeconds: number;
+  /**
+   * How often each target's endpoint is checked for the certificate it
+   * serves (every 5 minutes at most while it serves the wrong one, and 30
+   * seconds after each deployment). 0 turns the checks off.
+   */
+  checkSeconds: number;
 };
 
 export type HarpocratesConfig = {
@@ -244,6 +250,7 @@ export const readConfig = (
     deploy: {
       dir: read.string("DEPLOY_DIR", "/srv/harpocrates/deployed"),
       scheduleSeconds: integer(read, "DEPLOY_SCHEDULE_SECONDS", 60, 0),
+      checkSeconds: integer(read, "ENDPOINT_CHECK_SECONDS", 3600, 0),
     },
   };
   if (config.renewal.port > 65535) {
