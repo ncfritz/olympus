@@ -1,0 +1,36 @@
+/* A value in the theme's code font. */
+.mono {
+  font-family: var(--ant-font-family-code);
+}
+
+/* The facts' labels, right-aligned, never wrapping. */
+.label {
+  flex: 0 0 90px;
+  justify-content: flex-end;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Long hex runs break anywhere rather than widen the panel. */
+.label + :global(.ant-descriptions-item-content) {
+  word-break: break-all;
+}
+
+.extensionName:global(.ant-typography) {
+  margin: 0;
+}
+
+.values {
+  margin: 4px 0 0;
+  padding-inline-start: 0;
+  list-style: none;
+  word-break: break-all;
+}
+
+/* PEM text, to read and copy. */
+.pem {
+  font-family: var(--ant-font-family-code);
+  font-size: 12px;
+  margin: 0;
+  white-space: pre;
+}

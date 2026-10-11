@@ -1,6 +1,13 @@
 "use client";
 
-import { DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  FileProtectOutlined,
+  FileTextOutlined,
+  ProfileOutlined,
+} from "@ant-design/icons";
+import { SideTabPanel } from "@ncfritz/olympus-console";
 import {
   Alert,
   Button,
@@ -10,6 +17,7 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
   Typography,
 } from "antd";
 import Link from "next/link";
@@ -39,7 +47,11 @@ import {
 } from "@/lib/labels";
 import { SIGNS_LABEL, signsOf } from "@/lib/signs";
 import { commonName } from "@/lib/tree";
-import { CertificateDetails } from "./CertificateDetails";
+import {
+  CertificateDetails,
+  CertificatePem,
+  PemBlock,
+} from "./CertificateDetails";
 import { ErrorAlert } from "./ErrorAlert";
 import styles from "./IssuerPage.module.css";
 import { IssuerTree } from "./IssuerTree";
@@ -93,7 +105,20 @@ const DetailTag = ({
   </Tag>
 );
 
-/** One CA: its certificate, its rules, what is beneath it and its lists. */
+/** A side tab's label: its icon, named in a tooltip. */
+const TabIcon = ({ title, icon }: { title: string; icon: ReactNode }) => (
+  <Tooltip title={title} placement="left">
+    <span aria-label={title}>{icon}</span>
+  </Tooltip>
+);
+
+/** The side panel's width, open. */
+const PANEL_WIDTH = 560;
+
+/**
+ * One CA: its rules, what is beneath it and its lists; in a side panel,
+ * its certificate's details, its CSR and its PEM.
+ */
 export function IssuerPage() {
   const issuerId = useSearchParams().get("id") ?? undefined;
   const { data: issuer, error: notFound } = useIssuer(issuerId);
@@ -236,151 +261,186 @@ export function IssuerPage() {
     }
   };
 
+  const none = (text: string) => (
+    <Typography.Text type="secondary">{text}</Typography.Text>
+  );
+  const sideTabs = [
+    {
+      key: "details",
+      label: <TabIcon title="Certificate details" icon={<ProfileOutlined />} />,
+      children: issuer.certificate ? (
+        <CertificateDetails
+          pem={issuer.certificate}
+          nameConstraints={constraints}
+        />
+      ) : (
+        none("It has no certificate yet.")
+      ),
+    },
+    {
+      key: "csr",
+      label: (
+        <TabIcon title="Certificate request" icon={<FileProtectOutlined />} />
+      ),
+      children: issuer.csr ? (
+        <PemBlock pem={issuer.csr} />
+      ) : (
+        none(
+          issuer.tier === "root"
+            ? "A root signs itself: it has no CSR."
+            : "Its certificate was made here, from its key: there is no CSR.",
+        )
+      ),
+    },
+    {
+      key: "pem",
+      label: <TabIcon title="Certificate (PEM)" icon={<FileTextOutlined />} />,
+      children: issuer.certificate ? (
+        <CertificatePem pem={issuer.certificate} fileName={issuer.id} />
+      ) : (
+        none("It has no certificate yet.")
+      ),
+    },
+  ];
+
   return (
-    <Flex vertical gap="large">
-      <Flex justify="space-between" align="center" wrap gap="middle">
-        <div>
-          <Typography.Title level={3}>
-            {commonName(issuer.subject)}
-          </Typography.Title>
-        </div>
-        <Flex gap="small" wrap>
-          {issuer.certificate && (
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={() =>
-                saveFile(
-                  `${issuer.id}.crt.pem`,
-                  issuer.certificate!,
-                  "application/x-pem-file",
-                )
-              }
-            >
-              Certificate
-            </Button>
-          )}
-          {issuer.offline && !discarded && issuer.status === "active" && (
-            <Link href={`/ceremonies/new?issuerId=${issuer.id}`}>
-              <Button type="primary">
-                {issuer.provedAt ? "Open a ceremony" : "Prove the backup"}
+    <SideTabPanel
+      panelId="harpocrates.ca"
+      tabs={sideTabs}
+      width={PANEL_WIDTH}
+      className={styles.page}
+    >
+      <Flex vertical gap="large">
+        <Flex justify="space-between" align="center" wrap gap="middle">
+          <div>
+            <Typography.Title level={3}>
+              {commonName(issuer.subject)}
+            </Typography.Title>
+          </div>
+          <Flex gap="small" wrap>
+            {issuer.certificate && (
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={() =>
+                  saveFile(
+                    `${issuer.id}.crt.pem`,
+                    issuer.certificate!,
+                    "application/x-pem-file",
+                  )
+                }
+              >
+                Certificate
               </Button>
-            </Link>
-          )}
-          {unused && isAdmin && (
-            <Popconfirm
-              title="Discard this root?"
-              description="It has signed nothing. It is never published, and its name and number are not used again."
-              okText="Discard"
-              okButtonProps={{ danger: true }}
-              onConfirm={discard}
-            >
-              <Button danger icon={<DeleteOutlined />}>
-                Discard
-              </Button>
-            </Popconfirm>
-          )}
+            )}
+            {issuer.offline && !discarded && issuer.status === "active" && (
+              <Link href={`/ceremonies/new?issuerId=${issuer.id}`}>
+                <Button type="primary">
+                  {issuer.provedAt ? "Open a ceremony" : "Prove the backup"}
+                </Button>
+              </Link>
+            )}
+            {unused && isAdmin && (
+              <Popconfirm
+                title="Discard this root?"
+                description="It has signed nothing. It is never published, and its name and number are not used again."
+                okText="Discard"
+                okButtonProps={{ danger: true }}
+                onConfirm={discard}
+              >
+                <Button danger icon={<DeleteOutlined />}>
+                  Discard
+                </Button>
+              </Popconfirm>
+            )}
+          </Flex>
         </Flex>
-      </Flex>
-      <ErrorAlert error={error} />
-      <Flex vertical gap="small">
-        <Descriptions
-          column={1}
-          size="small"
-          classNames={{ label: styles.label }}
+        <ErrorAlert error={error} />
+        <Flex vertical gap="small">
+          <Descriptions
+            column={1}
+            size="small"
+            classNames={{ label: styles.label }}
+            items={[
+              {
+                key: "subject",
+                label: "Subject",
+                children: <Mono>{issuer.subject}</Mono>,
+              },
+            ]}
+          />
+          <Flex wrap gap={64}>
+            {[leftFields, rightFields].map((fields, index) => (
+              <Descriptions
+                key={index}
+                className={styles.column}
+                column={1}
+                size="small"
+                classNames={{
+                  label: index === 0 ? styles.label : styles.rightLabel,
+                }}
+                items={fields}
+              />
+            ))}
+          </Flex>
+        </Flex>
+        <Tabs
           items={[
             {
-              key: "subject",
-              label: "Subject",
-              children: <Mono>{issuer.subject}</Mono>,
+              key: "certificates",
+              label: "Certificates",
+              children:
+                issuer.tier === "issuing" ? (
+                  <Link href={`/certificates?issuerId=${issuer.id}`}>
+                    The certificates it issued
+                  </Link>
+                ) : (
+                  <IssuerTree issuers={issuers ?? []} rootId={issuer.id} />
+                ),
+            },
+            {
+              key: "crls",
+              label: "Revocation lists",
+              children: (
+                <Table<RevocationList>
+                  rowKey="number"
+                  size="small"
+                  dataSource={crls ?? []}
+                  pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                  columns={[
+                    { title: "Number", dataIndex: "number" },
+                    { title: "Source", dataIndex: "source" },
+                    { title: "Entries", dataIndex: "entries" },
+                    {
+                      title: "This update",
+                      dataIndex: "thisUpdate",
+                      render: formatDateTime,
+                    },
+                    {
+                      title: "Next update",
+                      dataIndex: "nextUpdate",
+                      render: formatDate,
+                    },
+                    {
+                      title: "Published",
+                      dataIndex: "publishedAt",
+                      render: (publishedAt: string | undefined, list) =>
+                        publishedAt ? (
+                          formatDateTime(publishedAt)
+                        ) : list.lastError ? (
+                          <Typography.Text type="danger">
+                            {list.lastError}
+                          </Typography.Text>
+                        ) : (
+                          <Tag color="gold">waiting</Tag>
+                        ),
+                    },
+                  ]}
+                />
+              ),
             },
           ]}
         />
-        <Flex wrap gap={64}>
-          {[leftFields, rightFields].map((fields, index) => (
-            <Descriptions
-              key={index}
-              className={styles.column}
-              column={1}
-              size="small"
-              classNames={{
-                label: index === 0 ? styles.label : styles.rightLabel,
-              }}
-              items={fields}
-            />
-          ))}
-        </Flex>
       </Flex>
-      <Tabs
-        items={[
-          {
-            key: "certificates",
-            label: "Certificates",
-            children:
-              issuer.tier === "issuing" ? (
-                <Link href={`/certificates?issuerId=${issuer.id}`}>
-                  The certificates it issued
-                </Link>
-              ) : (
-                <IssuerTree issuers={issuers ?? []} rootId={issuer.id} />
-              ),
-          },
-          {
-            key: "crls",
-            label: "Revocation lists",
-            children: (
-              <Table<RevocationList>
-                rowKey="number"
-                size="small"
-                dataSource={crls ?? []}
-                pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                columns={[
-                  { title: "Number", dataIndex: "number" },
-                  { title: "Source", dataIndex: "source" },
-                  { title: "Entries", dataIndex: "entries" },
-                  {
-                    title: "This update",
-                    dataIndex: "thisUpdate",
-                    render: formatDateTime,
-                  },
-                  {
-                    title: "Next update",
-                    dataIndex: "nextUpdate",
-                    render: formatDate,
-                  },
-                  {
-                    title: "Published",
-                    dataIndex: "publishedAt",
-                    render: (publishedAt: string | undefined, list) =>
-                      publishedAt ? (
-                        formatDateTime(publishedAt)
-                      ) : list.lastError ? (
-                        <Typography.Text type="danger">
-                          {list.lastError}
-                        </Typography.Text>
-                      ) : (
-                        <Tag color="gold">waiting</Tag>
-                      ),
-                  },
-                ]}
-              />
-            ),
-          },
-          {
-            key: "details",
-            label: "Details",
-            children: issuer.certificate ? (
-              <CertificateDetails
-                pem={issuer.certificate}
-                nameConstraints={constraints}
-              />
-            ) : (
-              <Typography.Text type="secondary">
-                It has no certificate yet.
-              </Typography.Text>
-            ),
-          },
-        ]}
-      />
-    </Flex>
+    </SideTabPanel>
   );
 }
