@@ -1,6 +1,6 @@
 # 0020. An internal certificate authority: Harpocrates
 
-- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key
+- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in
 - **Date:** 2026-09-21; amended and accepted 2026-09-25
 
 ## Context
@@ -292,6 +292,11 @@ its EKUs, and whose constraints admit its names). Initial set:
 There is no timestamping authority: signing certificates are renewed
 early and what they signed is re-signed before they expire.
 
+> **Amended by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md).**
+> A profile's key type is the default: the operator chooses any type the
+> signer generates (RSA, DSA, a NIST curve or Ed25519), and a CSR may be
+> of any type Harpocrates certifies.
+
 ### Keys and enrollment
 
 **One key, one request, many certificates.** A key is bound to exactly
@@ -326,6 +331,12 @@ Two enrollment modes, per profile:
   existed outside the device. For `serverAuth` this departs,
   deliberately, from what the Baseline Requirements allow public CAs:
   the printer cannot make a CSR.
+
+> **Amended by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md).**
+> A third mode, **imported**: the operator brings the key (encrypted
+> PKCS#8 or PKCS#12) where the profile allows a generated one; escrowed,
+> it is kept like a generated key, and otherwise the signer forgets it
+> once it is certified.
 
 Escrowed keys are subject to the seal like everything else, live as long
 as their lineage, and are deleted when its last certificate is revoked or

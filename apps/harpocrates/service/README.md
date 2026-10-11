@@ -38,13 +38,20 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
   purpose whose usages cover the profile's. A CA stops issuing when its
   **issuing window** closes: its expiry less its longest certificate and
   30 days.
+- **The key** (ADR 0033): generated in the signer, of the type the
+  request names (RSA 2048 to 8192, DSA 2048 or 3072, P-256, P-384,
+  P-521 or Ed25519) or else the profile's; brought in (`key`: encrypted
+  PKCS#8 PEM or PKCS#12, with its passphrase) where the profile allows a
+  generated key, and forgotten by the signer once certified unless
+  escrowed; or the subscriber's CSR, of any of those types (RSA and DSA
+  from 2048 bits).
 - **One key, one request**: a key already seen is reissued only for the
   same profile, subject and names, and refused (`409`) for anything else.
   A CA's key is never a subject's. Weak RSA keys (ROCA, close primes) are
   refused.
 - **Renewal** reuses the key while it is younger than the profile's
   `maxKeyAgeDays`, and otherwise needs a new key: a CSR, or a generated
-  one where the profile allows it. A new key is a new enrollment that
+  one (of the old key's type) where the profile allows it. A new key is a new enrollment that
   replaces the old one.
 - **Revocation** with `keyCompromise` revokes every certificate for the
   key and blocks it for good. An escrowed key is destroyed with its
@@ -202,7 +209,7 @@ and lasts 7 days. Orders, and each challenge's outcome, are audited.
 
 A ready order is finalized with a CSR for exactly its names (a common
 name, if any, among them), issued under `ACME_PROFILE` (`internal-tls`:
-P-256, 90 days) by the same path as any certificate: the profile's
+90 days; any key type Harpocrates certifies) by the same path as any certificate: the profile's
 rules, the issuing window, the signer's invariants and the TLS CA's name
 constraints. A refused CSR is `badCSR` and leaves the order ready for
 another. The certificate is served with the CAs above it, not the root,
