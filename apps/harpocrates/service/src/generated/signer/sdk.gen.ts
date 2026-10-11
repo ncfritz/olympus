@@ -51,6 +51,9 @@ import type {
   OpenCeremonyData,
   OpenCeremonyErrors,
   OpenCeremonyResponses,
+  PreviewData,
+  PreviewErrors,
+  PreviewResponses,
   RegisterIssuerData,
   RegisterIssuerErrors,
   RegisterIssuerResponses,
@@ -395,6 +398,28 @@ export const signCrl = <ThrowOnError extends boolean = true>(
   >({
     responseType: "json",
     url: "/v1/issuers/{issuer_id}/crls",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Previews a certificate
+ *
+ * The leaf the given issuer would sign from this spec, after the same invariants, signed by a throwaway key of the issuer's type: it reads as the real certificate would and never verifies. Nothing is kept and no issuer key is used, so it answers while sealed.
+ */
+export const preview = <ThrowOnError extends boolean = true>(
+  options: Options<PreviewData, ThrowOnError>,
+): RequestResult<PreviewResponses, PreviewErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    PreviewResponses,
+    PreviewErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/previews/certificates",
     ...options,
     headers: {
       "Content-Type": "application/json",

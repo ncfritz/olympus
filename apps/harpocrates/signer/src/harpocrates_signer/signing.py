@@ -27,10 +27,13 @@ from harpocrates_signer.errors import (
     RefusedError,
 )
 from harpocrates_signer.keys import (
+    KeyAlgorithm,
     KeyPurpose,
     Keys,
     PrivateKey,
     PublicKey,
+    algorithm_of,
+    generate_private_key,
     public_key_der,
 )
 from harpocrates_signer.store import IssuerRow, Store
@@ -502,6 +505,26 @@ def check_leaf(request: CertificateRequest, issuer: IssuerInfo, keys: Keys) -> N
         [p.oid for p in request.certificate_policies], constraining
     )
     check_subject_key(request.subject_key, keys)
+
+
+def preview_certificate(
+    request: CertificateRequest, issuer: IssuerInfo, keys: Keys
+) -> x509.Certificate:
+    """The leaf `issuer` would sign, after the same invariants, signed by a
+    throwaway key of the issuer's type (ADR 0034, preview): it reads as
+    the real one would, names the real issuer and its key identifier, and
+    never verifies. No issuer key is touched, so it works sealed."""
+    _check_chain(issuer.certificate, issuer.chain)
+    check_leaf(request, issuer, keys)
+    issuer_key: PublicKey = issuer.certificate.public_key()  # type: ignore[assignment]  # issuers hold the supported key types
+    throwaway = generate_private_key(KeyAlgorithm(algorithm_of(issuer_key)))
+    return build_certificate(
+        request,
+        issuer.certificate.subject,
+        issuer_key,
+        throwaway,
+        issuer.certificate,
+    )
 
 
 def check_subject_key(subject_key: PublicKey, keys: Keys) -> None:

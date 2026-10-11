@@ -1335,6 +1335,96 @@
         }
       }
     },
+    "/v1/previews/certificates": {
+      "post": {
+        "tags": [
+          "Issuers"
+        ],
+        "summary": "Previews a certificate",
+        "description": "The leaf the given issuer would sign from this spec, after the same invariants, signed by a throwaway key of the issuer's type: it reads as the real certificate would and never verifies. Nothing is kept and no issuer key is used, so it answers while sealed.",
+        "operationId": "Preview",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/ceremonies": {
       "post": {
         "tags": [
@@ -2840,6 +2930,50 @@
           "oid"
         ],
         "title": "PolicySpec"
+      },
+      "PreviewCertificateRequest": {
+        "properties": {
+          "certificate": {
+            "$ref": "#/components/schemas/CertificateSpec"
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer",
+            "description": "The issuer's certificate, PEM."
+          },
+          "chain": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chain",
+            "description": "The CAs above it, PEM, nearest first."
+          },
+          "maxValidityDays": {
+            "type": "integer",
+            "maximum": 36500.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Maxvaliditydays"
+          },
+          "extendedKeyUsages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extendedkeyusages",
+            "description": "Dotted OIDs the issuer may put in a certificate."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "certificate",
+          "issuer",
+          "maxValidityDays",
+          "extendedKeyUsages"
+        ],
+        "title": "PreviewCertificateRequest",
+        "description": "A leaf as an issuer would sign it, the issuer given rather than\nregistered: an issuing CA, or a root that signs directly."
       },
       "RegisterIssuerRequest": {
         "properties": {

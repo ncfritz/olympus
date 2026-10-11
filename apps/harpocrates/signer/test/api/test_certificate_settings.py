@@ -6,14 +6,16 @@ by openssl where a relying party would check it."""
 import base64
 import hashlib
 
+import pytest
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.x509.oid import ExtensionOID, SignatureAlgorithmOID
 
 from harpocrates_signer import der
 from test.api.test_signing import refused, server_spec, sign, verify
-from test.conftest import EXPORT_PASSPHRASE, ca_spec, load, ok
+from test.conftest import EXPORT_PASSPHRASE, SERVER_AUTH, ca_spec, load, ok
 
 UPN = x509.ObjectIdentifier("1.3.6.1.4.1.311.20.2.3")
 # A private-arc extension: a UTF8String "olympus".
@@ -280,3 +282,58 @@ def test_a_root_with_rfc_7093_identifiers_names_itself(unsealed):
     assert aki.authority_cert_serial_number == root.serial_number
     assert root.signature_algorithm_oid == SignatureAlgorithmOID.ECDSA_WITH_SHA512
     root.verify_directly_issued_by(root)
+
+
+# ---- previews (ADR 0034)
+
+
+def preview_body(hierarchy, certificate, **fields):
+    return {
+        "certificate": certificate,
+        "issuer": hierarchy.issuing,
+        "chain": [hierarchy.intermediate, hierarchy.root],
+        "maxValidityDays": 90,
+        "extendedKeyUsages": [SERVER_AUTH],
+        **fields,
+    }
+
+
+def test_a_preview_reads_as_the_real_one_and_never_verifies(unsealed, hierarchy):
+    ok(unsealed.post("/v1/seal"), 204)
+    pem = ok(
+        unsealed.post(
+            "/v1/previews/certificates",
+            json=preview_body(
+                hierarchy, leaf_spec(signatureHash="sha384", certificatePolicies=[])
+            ),
+        ),
+        200,
+    )["certificate"]
+    leaf, issuing = load(pem), load(hierarchy.issuing)
+    assert leaf.issuer == issuing.subject
+    assert leaf.signature_algorithm_oid == SignatureAlgorithmOID.ECDSA_WITH_SHA384
+    aki = leaf.extensions.get_extension_for_class(x509.AuthorityKeyIdentifier).value
+    assert (
+        aki.key_identifier
+        == issuing.extensions.get_extension_for_class(
+            x509.SubjectKeyIdentifier
+        ).value.digest
+    )
+    with pytest.raises(InvalidSignature):
+        leaf.verify_directly_issued_by(issuing)
+
+
+def test_a_preview_keeps_the_invariants(unsealed, hierarchy):
+    body = leaf_spec()
+    body["sans"] = {"dns": ["host.example.com"]}
+    refused(
+        unsealed.post("/v1/previews/certificates", json=preview_body(hierarchy, body)),
+        "name-constraints",
+    )
+    refused(
+        unsealed.post(
+            "/v1/previews/certificates",
+            json=preview_body(hierarchy, leaf_spec(), chain=[hierarchy.root]),
+        ),
+        "chain",
+    )

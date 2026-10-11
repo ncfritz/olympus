@@ -9,6 +9,7 @@ from harpocrates_signer.models import (
     CrlResponse,
     CrlSpec,
     IssuerResponse,
+    PreviewCertificateRequest,
     RegisterIssuerRequest,
     certificate_request,
     crl_request,
@@ -16,6 +17,7 @@ from harpocrates_signer.models import (
     pem_certificate,
     pem_crl,
 )
+from harpocrates_signer.signing import IssuerInfo, preview_certificate
 
 router = APIRouter(
     prefix="/v1", tags=["Issuers"], dependencies=[Depends(require_token)]
@@ -82,3 +84,27 @@ def sign_certificate(
 def sign_crl(issuer_id: str, body: CrlSpec, signer: SignerDep) -> CrlResponse:
     crl = signer.issuers.sign_crl(issuer_id, crl_request(body))
     return CrlResponse(crl=pem_crl(crl))
+
+
+@router.post(
+    "/previews/certificates",
+    summary="Previews a certificate",
+    description="The leaf the given issuer would sign from this spec, after "
+    "the same invariants, signed by a throwaway key of the issuer's type: "
+    "it reads as the real certificate would and never verifies. Nothing is "
+    "kept and no issuer key is used, so it answers while sealed.",
+    responses=errors(400, 404, 422),
+)
+def preview(body: PreviewCertificateRequest, signer: SignerDep) -> CertificateResponse:
+    issuer = IssuerInfo(
+        id="preview",
+        key_id="",
+        certificate=load_certificate(body.issuer),
+        chain=tuple(load_certificate(c) for c in body.chain),
+        max_validity_days=body.max_validity_days,
+        extended_key_usages=frozenset(body.extended_key_usages),
+    )
+    certificate = preview_certificate(
+        certificate_request(body.certificate, signer.keys), issuer, signer.keys
+    )
+    return CertificateResponse(certificate=pem_certificate(certificate))

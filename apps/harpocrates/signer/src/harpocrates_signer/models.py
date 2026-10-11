@@ -318,6 +318,22 @@ class CertificateSpec(Wire):
     )
 
 
+class PreviewCertificateRequest(Wire):
+    """A leaf as an issuer would sign it, the issuer given rather than
+    registered: an issuing CA, or a root that signs directly."""
+
+    certificate: CertificateSpec
+    issuer: str = Field(description="The issuer's certificate, PEM.")
+    chain: list[str] = Field(
+        default_factory=list[str],
+        description="The CAs above it, PEM, nearest first.",
+    )
+    max_validity_days: int = Field(gt=0, le=36500)
+    extended_key_usages: list[str] = Field(
+        description="Dotted OIDs the issuer may put in a certificate."
+    )
+
+
 class CertificateResponse(Wire):
     certificate: str = Field(description="PEM.")
 

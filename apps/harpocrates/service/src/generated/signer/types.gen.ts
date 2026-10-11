@@ -580,6 +580,38 @@ export type PolicySpec = {
 };
 
 /**
+ * PreviewCertificateRequest
+ *
+ * A leaf as an issuer would sign it, the issuer given rather than
+ * registered: an issuing CA, or a root that signs directly.
+ */
+export type PreviewCertificateRequest = {
+  certificate: CertificateSpec;
+  /**
+   * Issuer
+   *
+   * The issuer's certificate, PEM.
+   */
+  issuer: string;
+  /**
+   * Chain
+   *
+   * The CAs above it, PEM, nearest first.
+   */
+  chain?: Array<string>;
+  /**
+   * Maxvaliditydays
+   */
+  maxValidityDays: number;
+  /**
+   * Extendedkeyusages
+   *
+   * Dotted OIDs the issuer may put in a certificate.
+   */
+  extendedKeyUsages: Array<string>;
+};
+
+/**
  * RegisterIssuerRequest
  */
 export type RegisterIssuerRequest = {
@@ -1430,6 +1462,49 @@ export type SignCrlResponses = {
 };
 
 export type SignCrlResponse = SignCrlResponses[keyof SignCrlResponses];
+
+export type PreviewData = {
+  body: PreviewCertificateRequest;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: "/v1/previews/certificates";
+};
+
+export type PreviewErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+};
+
+export type PreviewError = PreviewErrors[keyof PreviewErrors];
+
+export type PreviewResponses = {
+  /**
+   * Successful Response
+   */
+  200: CertificateResponse;
+};
+
+export type PreviewResponse = PreviewResponses[keyof PreviewResponses];
 
 export type OpenCeremonyData = {
   body: OpenCeremonyRequest;

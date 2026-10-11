@@ -26,6 +26,10 @@ calls it through a generated client.
   signs answers `503` while sealed.
 - **Online issuers**: issuing CAs (path length 0) whose keys it holds,
   each with its chain, maximum validity and the usages it may sign.
+- **Previews**: the leaf an issuer (given, not registered) would sign,
+  after the same invariants, signed by a throwaway key of the issuer's
+  type, so it reads as the real one and never verifies; no issuer key is
+  used, so it answers while sealed.
 - **Ceremonies**: an offline CA's key (a root or an intermediate), held
   in memory for one ceremony, an hour at most, and never across a
   restart. Only a ceremony signs `CA:TRUE`.
