@@ -1,0 +1,79 @@
+/*
+ * A page with a side panel of tabs, as the main site's (apps/site,
+ * styles/globals.css, .collapsible-tabs): the panel's trigger is a bar
+ * across its top, beside the tab bar, and closed it is the tab bar alone.
+ */
+
+.panel {
+  height: 100%;
+  min-height: 0;
+  background: var(--ant-color-bg-container);
+}
+
+/* The page beside the panel scrolls by itself. */
+.main {
+  min-width: 0;
+  overflow: auto;
+  padding: 24px;
+  background: var(--ant-color-bg-container);
+}
+
+.sider:global(.ant-layout-sider) {
+  position: relative;
+  border-inline-start: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-bg-container);
+}
+
+/* The trigger antd keeps room for at the bottom moves to the top. */
+.sider:global(.ant-layout-sider-has-trigger) {
+  padding-bottom: 0;
+}
+
+.sider :global(.ant-layout-sider-children) {
+  overflow: hidden;
+}
+
+/* Outranks antd's own trigger rule, which fixes it to the window's foot. */
+.panel .sider :global(.ant-layout-sider-trigger) {
+  position: absolute;
+  top: 0;
+  height: 24px;
+  line-height: 24px;
+  width: calc(100% - 62px) !important;
+  background: var(--ant-color-fill-quaternary);
+  color: var(--ant-color-text);
+  border-radius: 0;
+  z-index: 1;
+}
+
+.panel .sider :global(.ant-layout-sider-trigger:hover) {
+  background: var(--ant-color-fill-secondary);
+}
+
+.panel.collapsed .sider :global(.ant-layout-sider-trigger) {
+  width: 62px !important;
+}
+
+/* The tabs run the panel's height; the bar's first tab clears the trigger. */
+.tabs {
+  height: 100%;
+}
+
+.tabs > :global(.ant-tabs-nav .ant-tabs-nav-list) {
+  top: 23px;
+}
+
+.tabs > :global(.ant-tabs-body-holder) {
+  overflow: auto;
+}
+
+/* antd 6.6 calls each pane .ant-tabs-content (once .ant-tabs-tabpane). */
+.tabs > :global(.ant-tabs-body-holder > .ant-tabs-body > .ant-tabs-content) {
+  margin-top: 40px;
+  padding-inline: 16px;
+  padding-bottom: 24px;
+}
+
+.collapsed .tabs > :global(.ant-tabs-body-holder) {
+  display: none;
+}

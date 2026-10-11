@@ -16,3 +16,4 @@ export * from "./shell/icons";
 export * from "./shell/pageLink";
 export * from "./shell/pagesCollapsed";
 export * from "./shell/SignInCard";
+export * from "./shell/SideTabPanel";

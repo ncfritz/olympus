@@ -95,6 +95,26 @@ Nothing supplies the breadcrumbs. They are read off `nav`, `current`,
 `pages` and `activePage` — the suite, the property, the console, then the
 page and whatever section it is under.
 
+### A side panel of tabs
+
+`SideTabPanel` puts a panel of tabs down a page's right-hand side, as the
+main site's Minerva calendar views have one: an icon per tab, a tab
+opens the panel, and the bar across its top closes it to the tab bar
+alone. Whether it is open is kept per browser under its `panelId`. The
+page beside it and the panel scroll separately, so it wants the height
+it is to fill (a page in the shell's content area: the window less the
+header's 64px and the breadcrumbs' 28px).
+
+```tsx
+<SideTabPanel
+  panelId="harpocrates.ca"
+  width={560}
+  tabs={[{ key: "details", label: <ProfileOutlined />, children: <Details /> }]}
+>
+  {page}
+</SideTabPanel>
+```
+
 ## The registry
 
 `PROPERTIES` in `src/registry.ts` is the suite's map, and the key
