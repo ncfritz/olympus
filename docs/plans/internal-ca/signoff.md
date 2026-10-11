@@ -240,14 +240,18 @@ recovery passphrase is used.
 
 ## C17 — Profiles as versioned presets
 
-| Id    | Env | Steps                                                                                   | Expected                                                                                | Evidence       |
-| ----- | --- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------- |
-| C17.1 | DEV | Make a profile as an admin (API; the console from step 6); try again as an operator     | v1, active; the operator is refused (403); both audited or refused in the log           | console; audit |
-| C17.2 | DEV | Change its description, then its validity                                               | the description makes no version; the validity makes v2; the versions list shows both   | API            |
-| C17.3 | DEV | Issue under v1, edit to v2, renew the certificate                                       | the renewal has v1's validity                                                           | certificate    |
-| C17.4 | DEV | Move that certificate to v2, renew it again                                             | the renewal has v2's validity                                                           | certificate    |
-| C17.5 | DEV | Deactivate the profile; issue under it; renew a certificate issued under it; reactivate | issuing refused (422), naming the deactivation; the renewal issues; issuing works again | API; console   |
-| C17.6 | DEV | Copy v1 into a new profile                                                              | the new profile's v1 has v1's settings; copying onto an existing name is refused (409)  | API            |
+| Id     | Env | Steps                                                                                                               | Expected                                                                                     | Evidence       |
+| ------ | --- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------- |
+| C17.1  | DEV | Make a profile as an admin (API; the console from step 6); try again as an operator                                 | v1, active; the operator is refused (403); both audited or refused in the log                | console; audit |
+| C17.2  | DEV | Change its description, then its validity                                                                           | the description makes no version; the validity makes v2; the versions list shows both        | API            |
+| C17.3  | DEV | Issue under v1, edit to v2, renew the certificate                                                                   | the renewal has v1's validity                                                                | certificate    |
+| C17.4  | DEV | Move that certificate to v2, renew it again                                                                         | the renewal has v2's validity                                                                | certificate    |
+| C17.5  | DEV | Deactivate the profile; issue under it; renew a certificate issued under it; reactivate                             | issuing refused (422), naming the deactivation; the renewal issues; issuing works again      | API; console   |
+| C17.6  | DEV | Copy v1 into a new profile                                                                                          | the new profile's v1 has v1's settings; copying onto an existing name is refused (409)       | API            |
+| C17.7  | DEV | Make a version with a locked C, a permitted DNS subtree and a forced EKU; issue inside it, then outside each rule   | inside issues; each rule outside is refused (422) naming it                                  | console        |
+| C17.8  | DEV | Make a version with SHA-384, RFC 7093 key identifiers, a policy and a custom extension; issue; `openssl x509 -text` | the certificate carries each; `openssl verify` passes with the chain                         | certificate    |
+| C17.9  | DEV | Set a CA's issuer alternative names; a version including them; issue                                                | the certificate's IAN is the CA's; the change is audited (issuer.updated)                    | console; audit |
+| C17.10 | DEV | Edit a profile in the console, watching the preview; break a rule (renewal past validity)                           | the preview follows each change; the broken rule shows before saving and the save is refused | console        |
 
 ## Sign-off matrix
 

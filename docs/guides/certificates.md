@@ -80,6 +80,46 @@ issuer's name for services (`AUTH_SERVICES_ISSUER`,
 | `email`         | Signing CA | generated, exported        | S/MIME                        |
 | `document`      | Signing CA | CSR or generated           | signing documents             |
 
+### Profiles are versioned presets
+
+[ADR 0034](../decisions/0034-harpocrates-profiles-versioned-presets.md).
+The seeded profiles above are v1 of themselves; an admin (after a recent
+sign-in) makes new ones and edits, copies, deactivates and reactivates
+them, in the console's Profiles page or over the API. Every change is
+audited (`profile.*`).
+
+- **A change of settings is the next version** (v2, v3, …); the
+  description alone is not. New certificates take the latest version.
+  A certificate renews under the version it was issued under, so editing a
+  profile never changes what a renewal produces, until its enrollments
+  are moved to another version (`POST /v1/profile/<id>/move`).
+- **Deactivating** stops new certificates under it; what it issued still
+  renews. A copy takes any version as a new profile's v1.
+- **A version decides** the subject DN (each attribute required,
+  optional or excluded, with a default, a lock, a pattern and a count),
+  the alternative name types (including a Microsoft UPN and a
+  registeredID), a minimum count and a name policy of permitted and
+  excluded subtrees, each key and extended key usage forced, default,
+  optional or excluded, the key types and CSR hashes it takes, the
+  signature hash and RSA padding, the key identifier methods, basic
+  constraints, whether the CRL and caIssuers URLs and the CA's issuer
+  alternative names go in, certificate policies, and custom extensions.
+  The console's editor gives help on each.
+- **Preview before saving.** The editor shows, as the settings change,
+  the certificate they would produce: built by the signer from a sample
+  request, after the same rules and invariants as issuance, and signed
+  by a throwaway key, so it never verifies. It says why the settings
+  would not save and why the sample would be refused
+  (`POST /v1/profiles/preview`).
+- **The issuing CA's alternative names** (an email or URI for whoever
+  runs it) are set on the CA's page (`PUT /v1/issuer/<id>`); a version
+  that includes them puts them in its certificates.
+
+A version's rules apply to every request: a subject or name it does not
+allow, a usage it excludes, a key type or CSR hash it does not take, is
+refused with `422` and the reason. The signer then applies its own
+invariants to whatever it is asked to sign.
+
 ## A service certificate
 
 One per **deployment**, not per service: the asset agent runs on the
@@ -193,7 +233,8 @@ the renewal alert say when one is due, by its profile:
 
 issue the same request again with a new CSR, or renew over the API
 (`POST /v1/certificate/<id>/renew`, which keeps the key while it is
-younger than the profile's maximum key age). Put the new certificate over
+younger than the profile's maximum key age, and applies the version the
+certificate was issued under). Put the new certificate over
 the old file and restart the service.
 
 ## Ceremonies

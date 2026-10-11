@@ -438,6 +438,18 @@ the signer and the service. The mockups are the design canvas
 [ADR 0034](../../decisions/0034-harpocrates-profiles-versioned-presets.md).
 Independent of phases 8 and 9.
 
+**Done 2026-10-11** (steps 1 to 7; the sign-off runs on DEV are
+outstanding). Described in
+[the service's README](../../../apps/harpocrates/service/README.md),
+[the signer's](../../../apps/harpocrates/signer/README.md),
+[the console's](../../../apps/harpocrates/console/README.md) and
+[the certificates guide](../../guides/certificates.md). What differs
+from the steps: the CA's issuer alternative names are set after it
+exists (`PUT /v1/issuer/{id}`), not in its ceremony; the signer previews
+a certificate under an issuer it is given rather than a registered one,
+so a root that signs directly previews too; and moving enrollments has
+the API alone, no console page yet.
+
 1. **Versions, behaviour-preserving**: `profiles` keeps the slug, the
    description and whether it is active; `profile_versions` holds every
    setting, frozen. Today's profiles become v1 of themselves; each
