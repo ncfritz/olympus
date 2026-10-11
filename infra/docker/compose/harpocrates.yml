@@ -152,6 +152,9 @@ services:
       - harpocrates-socket:/run/harpocrates-signer
       - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published
       - ${DATA_DIR:?}/olympus/apps/harpocrates/renewal-tls:/var/lib/harpocrates/renewal-tls
+      # Deploy targets: a directory per target, which nginx reads and
+      # reloads from (compose/nginx.yml).
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/deployed:/srv/harpocrates/deployed
     # Publication reads each list back through the distribution URL: the
     # host's nginx, whatever this container's DNS says of the name.
     extra_hosts:

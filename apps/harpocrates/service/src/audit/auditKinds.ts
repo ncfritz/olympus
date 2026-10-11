@@ -25,6 +25,11 @@ export const AuditKind = {
   SignerSealed: "signer.sealed",
   SignerUnsealed: "signer.unsealed",
   SignerInitialised: "signer.initialised",
+  DeployTargetCreated: "deploy-target.created",
+  DeployTargetUpdated: "deploy-target.updated",
+  DeployTargetDeleted: "deploy-target.deleted",
+  CertificateDeployed: "deployment.deployed",
+  DeploymentFailed: "deployment.failed",
 } as const;
 
 export type AuditKindName = (typeof AuditKind)[keyof typeof AuditKind];

@@ -337,6 +337,8 @@ model Certificate {
 
   revocation    Revocation?
   escrowExports EscrowExport[]
+  deployTargets DeployTarget[]
+  deployments   Deployment[]
 
   @@unique([issuerId, serial])
   @@index([notAfter])
@@ -428,6 +430,66 @@ model EscrowExport {
   exportedAt    DateTime    @default(now()) @map("exported_at")
 
   @@map("escrow_exports")
+}
+
+// ---- Deploy targets
+
+/// Where a deploy target puts a certificate (ADR 0020, Renewal and
+/// delivery). host_path: files in a directory a web server reads, which
+/// reloads when they change. DSM and the printer come later.
+enum DeployKind {
+  host_path
+}
+
+/// A place a certificate is installed for something that can neither
+/// renew over mutual TLS nor speak ACME. Its certificate's key is
+/// generated and escrowed; Harpocrates renews the certificate when due,
+/// the target follows the renewal, and every new certificate is deployed.
+model DeployTarget {
+  id            String      @id @default(uuid()) @db.Uuid
+  /// Also its directory, under DEPLOY_DIR.
+  name          String      @unique
+  kind          DeployKind  @default(host_path)
+  /// What it deploys: the newest of its lineage.
+  certificateId String      @map("certificate_id") @db.Uuid
+  certificate   Certificate @relation(fields: [certificateId], references: [id])
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  deployments Deployment[]
+
+  @@map("deploy_targets")
+}
+
+/// pending: to do, or failing and retried (with lastError). superseded:
+/// a newer deployment to the same target replaced it before it succeeded.
+enum DeploymentStatus {
+  pending
+  deployed
+  superseded
+}
+
+/// One certificate, installed at one target.
+model Deployment {
+  id            String           @id @default(uuid()) @db.Uuid
+  targetId      String           @map("target_id") @db.Uuid
+  target        DeployTarget     @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  certificateId String           @map("certificate_id") @db.Uuid
+  certificate   Certificate      @relation(fields: [certificateId], references: [id])
+  status        DeploymentStatus @default(pending)
+  /// Who asked: a principal, or `system` for a renewal it followed.
+  principal     String
+  attempts      Int              @default(0)
+  lastAttemptAt DateTime?        @map("last_attempt_at")
+  /// Why the last attempt failed.
+  lastError     String?          @map("last_error")
+  deployedAt    DateTime?        @map("deployed_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  @@index([targetId, createdAt])
+  @@index([status])
+  @@map("deployments")
 }
 
 // ---- Audit

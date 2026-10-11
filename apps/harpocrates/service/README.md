@@ -27,6 +27,9 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
 - **Revocation lists**: each CA's, numbered, where each came from, and
   whether it is published; and the revocations only an imported list
   told it of (XCA's), carried into every list the CA signs after.
+- **Deploy targets and deployments**: where a certificate is installed
+  for something that cannot renew it, and each certificate installed
+  there, with its attempts and last error.
 
 ## Rules it applies
 
@@ -125,6 +128,40 @@ key in `RENEWAL_TLS_DIR`, issues itself a certificate for
 two-thirds of its life without a restart. Until there is a TLS issuing CA
 and the signer is unsealed it waits, and checks again every five minutes.
 
+### Deploy targets
+
+For what can neither renew over mutual TLS nor speak ACME (ADR 0020,
+Renewal and delivery), a deploy target installs a certificate whose key
+Harpocrates generated and keeps in escrow. A `host_path` target is a
+directory named for the target under `DEPLOY_DIR`, which nginx mounts
+read-only:
+
+| File            | What                                                             |
+| --------------- | ---------------------------------------------------------------- |
+| `privkey.pem`   | The key, PKCS#8, unencrypted, mode 0600: `ssl_certificate_key`   |
+| `cert.pem`      | The certificate                                                  |
+| `fullchain.pem` | It and the CAs above it, not the root: `ssl_certificate`         |
+| `deployed`      | Its id and serial, written last: what nginx's watcher reloads on |
+
+Each file is replaced whole, the key first, and read back before the
+`deployed` file is written. The signer only exports a key encrypted, so
+the service exports it under a passphrase used once and decrypts it; each
+deploy is an escrow export (`escrow_exports`, format `deploy`, reason
+`Deployed to <target>`) and the key stays in the signer.
+
+Every `DEPLOY_SCHEDULE_SECONDS` the service renews each target's
+certificate once its profile's renewal age is reached (keeping the key
+while it is young, a new one past the profile's maximum key age), moves
+each target to the newest renewal of its certificate however it was
+renewed, and deploys what is pending. A failed deployment keeps its
+error and is retried after 30 seconds, doubling to every 15 minutes; it
+is audited once (`deployment.failed`), and success as
+`deployment.deployed`. Creating a target, or pointing it at a reissue,
+deploys at once, and needs `pki-admin` after a recent sign-in, as any
+escrow export does; deploying again is open to either role. Deleting a
+target leaves its files, still served until nginx's configuration stops
+naming them.
+
 The CA console (`apps/harpocrates/console`) signs in through Olympus
 (ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
 service completes the sign-in and keeps the tokens in httpOnly cookies
@@ -145,20 +182,23 @@ taken.
 
 ## Metrics and alerts
 
-| Metric                                                           | What                                                                |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `harpocrates_certificates_issued_total{issuer,profile}`          | Issued, renewals included                                           |
-| `harpocrates_revocations_total{issuer,reason}`                   | Revoked                                                             |
-| `harpocrates_refusals_total{invariant}`                          | Requests refused by a profile rule or the signer                    |
-| `harpocrates_crls_signed_total{issuer,source}`                   | Lists signed or imported                                            |
-| `harpocrates_crl_signing_failures_total{issuer,reason}`          | Scheduled signings that failed: `sealed`, `refused`, `error`        |
-| `harpocrates_crl_publication_failures_total{issuer}`             | Publication attempts that failed                                    |
-| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`     | When each CA's newest published list lapses (Unix time)             |
-| `harpocrates_crl_publication_pending_seconds{issuer,tier}`       | How long its newest list has waited to be published; 0 once out     |
-| `harpocrates_issuing_window_days{issuer}`                        | Days until each active CA stops issuing                             |
-| `harpocrates_profile_renewal_due_days{profile}`                  | Days before expiry a profile's certificates are due for renewal     |
-| `harpocrates_signer_sealed`                                      | 1 when the signer is sealed or unreachable                          |
-| `certificate_expiry_days{issuer,profile,subject,serial,renewal}` | Days left on every valid certificate; `renewal` is `manual` for now |
+| Metric                                                           | What                                                                         |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `harpocrates_certificates_issued_total{issuer,profile}`          | Issued, renewals included                                                    |
+| `harpocrates_revocations_total{issuer,reason}`                   | Revoked                                                                      |
+| `harpocrates_refusals_total{invariant}`                          | Requests refused by a profile rule or the signer                             |
+| `harpocrates_crls_signed_total{issuer,source}`                   | Lists signed or imported                                                     |
+| `harpocrates_crl_signing_failures_total{issuer,reason}`          | Scheduled signings that failed: `sealed`, `refused`, `error`                 |
+| `harpocrates_crl_publication_failures_total{issuer}`             | Publication attempts that failed                                             |
+| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`     | When each CA's newest published list lapses (Unix time)                      |
+| `harpocrates_crl_publication_pending_seconds{issuer,tier}`       | How long its newest list has waited to be published; 0 once out              |
+| `harpocrates_deployments_total{target}`                          | Certificates deployed to a deploy target                                     |
+| `harpocrates_deployment_failures_total{target}`                  | Deployment attempts that failed                                              |
+| `harpocrates_target_renewal_failures_total{target,reason}`       | Renewals of a target's certificate that failed: `sealed`, `refused`, `error` |
+| `harpocrates_issuing_window_days{issuer}`                        | Days until each active CA stops issuing                                      |
+| `harpocrates_profile_renewal_due_days{profile}`                  | Days before expiry a profile's certificates are due for renewal              |
+| `harpocrates_signer_sealed`                                      | 1 when the signer is sealed or unreachable                                   |
+| `certificate_expiry_days{issuer,profile,subject,serial,renewal}` | Days left on every valid certificate; `renewal` is `manual` for now          |
 
 The gauges are read at scrape time; a scrape never fails because the
 database or the signer is down. A list's lapse is a timestamp, not days
@@ -259,6 +299,8 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 | `RENEWAL_TLS_DIR`             | `/var/lib/harpocrates/renewal-tls` | Its own key and certificate                                                            |
 | `RENEWAL_HOSTNAMES`           | `pki.internal.ncfritz.net`         | The names its certificate is issued for, comma-separated                               |
 | `RENEWAL_TLS_PROFILE`         | `internal-tls`                     | The profile it is issued under                                                         |
+| `DEPLOY_DIR`                  | `/srv/harpocrates/deployed`        | Where `host_path` deploy targets are written, a directory each                         |
+| `DEPLOY_SCHEDULE_SECONDS`     | `60`                               | How often targets are renewed, followed and deployed; `0` turns it off                 |
 
 Logging is the shared set (`LOKI_URL`, `CONSOLE_LOGGING_LEVEL`, ...) in
 `dev.env.example`.

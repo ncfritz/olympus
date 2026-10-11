@@ -29,6 +29,13 @@ services:
       # What pki.internal.ncfritz.net serves (nginx/pki.conf): the lists
       # and CA certificates Harpocrates publishes.
       - ${DATA_DIR:?}/olympus/apps/harpocrates/published:/srv/harpocrates/published:ro
+      # Certificates Harpocrates deploys here (its deploy targets): a
+      # directory per target, fullchain.pem and privkey.pem for a server
+      # block's ssl_certificate and ssl_certificate_key. The watcher, run
+      # by the image's entrypoint, reloads nginx when one changes; nginx
+      # needs no access to Harpocrates, nor Harpocrates to Docker.
+      - ${DATA_DIR:?}/olympus/apps/harpocrates/deployed:/srv/harpocrates/deployed:ro
+      - ../nginx-watch/40-reload-on-deploy.sh:/docker-entrypoint.d/40-reload-on-deploy.sh:ro
     networks:
       - edge
       # The host's other sites, as before.

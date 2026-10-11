@@ -3121,6 +3121,471 @@
           "Renewal"
         ]
       }
+    },
+    "/v1/deploy-targets": {
+      "get": {
+        "description": "Every deploy target by name, with its certificate, when Harpocrates renews it, and its newest deployment.",
+        "operationId": "ListDeployTargets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The deploy targets.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDeployTargetsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists deploy targets",
+        "tags": [
+          "Deploy Targets"
+        ]
+      },
+      "post": {
+        "description": "Installs a certificate whose key Harpocrates generated and escrows in a directory of its own under DEPLOY_DIR, for a web server that reloads when it changes, and deploys it at once. From then on Harpocrates renews the certificate when due and deploys each renewal. Writing the key out is an escrow export: pki-admin only, after a recent sign-in, and recorded.",
+        "operationId": "CreateDeployTarget",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Its name and certificate.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeployTargetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The target was created; its first deployment says whether it is installed yet.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The target"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDeployTargetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates a deploy target",
+        "tags": [
+          "Deploy Targets"
+        ]
+      }
+    },
+    "/v1/deploy-target/{targetId}": {
+      "get": {
+        "description": "A deploy target with its recent deployments, newest first.",
+        "operationId": "DescribeDeployTarget",
+        "parameters": [
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "description": "The deploy target's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deploy target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeDeployTargetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes a deploy target",
+        "tags": [
+          "Deploy Targets"
+        ]
+      },
+      "put": {
+        "description": "Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once. Renewals it follows by itself. pki-admin only, after a recent sign-in, as for any escrow export.",
+        "operationId": "UpdateDeployTarget",
+        "parameters": [
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "description": "The deploy target's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Its certificate from now on.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeployTargetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The target was updated; its newest deployment says whether the certificate is installed yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateDeployTargetResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Updates a deploy target",
+        "tags": [
+          "Deploy Targets"
+        ]
+      },
+      "delete": {
+        "description": "Stops renewing and deploying for the target. Its files stay where they are and are still served until the web server's configuration stops naming them.",
+        "operationId": "DeleteDeployTarget",
+        "parameters": [
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "description": "The deploy target's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The target is deleted."
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deletes a deploy target",
+        "tags": [
+          "Deploy Targets"
+        ]
+      }
+    },
+    "/v1/deploy-target/{targetId}/deploy": {
+      "post": {
+        "description": "Deploys the target's certificate again, now, to the place it already has: after its files were lost, or rather than wait for a retry.",
+        "operationId": "DeployDeployTarget",
+        "parameters": [
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "description": "The deploy target's ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deployment was tried; the newest says whether it succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeployDeployTargetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deploys a deploy target again",
+        "tags": [
+          "Deploy Targets"
+        ]
+      }
     }
   },
   "info": {
@@ -3145,6 +3610,9 @@
     },
     {
       "name": "Certificates"
+    },
+    {
+      "name": "Deploy Targets"
     },
     {
       "name": "Issuers"
@@ -5420,6 +5888,330 @@
             "description": "The certificate to renew; it must be the one presented. Without it, the presented certificate is renewed"
           }
         }
+      },
+      "DeployKind": {
+        "type": "string",
+        "description": "How a target installs a certificate: host_path writes files a web server reads and reloads",
+        "enum": [
+          "host_path"
+        ]
+      },
+      "DeploymentStatus": {
+        "type": "string",
+        "description": "Whether it is done",
+        "enum": [
+          "pending",
+          "deployed",
+          "superseded"
+        ]
+      },
+      "Deployment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate it installs"
+          },
+          "serial": {
+            "type": "string",
+            "description": "The certificate's serial, hex"
+          },
+          "status": {
+            "description": "Whether it is done",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeploymentStatus"
+              }
+            ]
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who asked for it: `system` when it followed a renewal"
+          },
+          "attempts": {
+            "type": "number",
+            "description": "How many times it was tried"
+          },
+          "lastAttemptAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was last tried"
+          },
+          "lastError": {
+            "type": "string",
+            "description": "Why the last attempt failed"
+          },
+          "deployedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it succeeded"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was asked for"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "certificateId",
+          "serial",
+          "status",
+          "principal",
+          "attempts",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DeployTarget": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name, which is also its directory under DEPLOY_DIR"
+          },
+          "kind": {
+            "description": "How it installs a certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeployKind"
+              }
+            ]
+          },
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate it deploys: the newest of its lineage, renewed by Harpocrates when due"
+          },
+          "subject": {
+            "type": "string",
+            "description": "That certificate's subject, RFC 4514"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when that certificate expires"
+          },
+          "renewsAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when Harpocrates renews that certificate"
+          },
+          "lastDeployment": {
+            "description": "Its newest deployment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Deployment"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "certificateId",
+          "subject",
+          "notAfter",
+          "renewsAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ListDeployTargetsResponse": {
+        "type": "object",
+        "properties": {
+          "deployTargets": {
+            "description": "Every deploy target, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeployTarget"
+            }
+          }
+        },
+        "required": [
+          "deployTargets"
+        ]
+      },
+      "CreateDeployTargetRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Its name, which is also its directory: lower-case letters, digits, dots and hyphens",
+            "example": "pki.internal.ncfritz.net"
+          },
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate to deploy: its key generated and escrowed, so Harpocrates can install it"
+          }
+        },
+        "required": [
+          "name",
+          "certificateId"
+        ]
+      },
+      "FullDeployTarget": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name, which is also its directory under DEPLOY_DIR"
+          },
+          "kind": {
+            "description": "How it installs a certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeployKind"
+              }
+            ]
+          },
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate it deploys: the newest of its lineage, renewed by Harpocrates when due"
+          },
+          "subject": {
+            "type": "string",
+            "description": "That certificate's subject, RFC 4514"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when that certificate expires"
+          },
+          "renewsAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when Harpocrates renews that certificate"
+          },
+          "lastDeployment": {
+            "description": "Its newest deployment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Deployment"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          },
+          "deployments": {
+            "description": "Its deployments, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Deployment"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "certificateId",
+          "subject",
+          "notAfter",
+          "renewsAt",
+          "createdAt",
+          "updatedAt",
+          "deployments"
+        ]
+      },
+      "CreateDeployTargetResponse": {
+        "type": "object",
+        "properties": {
+          "deployTarget": {
+            "description": "The target, and its first deployment as it went",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullDeployTarget"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deployTarget"
+        ]
+      },
+      "DescribeDeployTargetResponse": {
+        "type": "object",
+        "properties": {
+          "deployTarget": {
+            "description": "The target",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullDeployTarget"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deployTarget"
+        ]
+      },
+      "UpdateDeployTargetRequest": {
+        "type": "object",
+        "properties": {
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate to deploy from now on, deployed at once: a reissue, after a revocation"
+          }
+        },
+        "required": [
+          "certificateId"
+        ]
+      },
+      "UpdateDeployTargetResponse": {
+        "type": "object",
+        "properties": {
+          "deployTarget": {
+            "description": "The target, and the deployment of its new certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullDeployTarget"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deployTarget"
+        ]
+      },
+      "DeployDeployTargetResponse": {
+        "type": "object",
+        "properties": {
+          "deployTarget": {
+            "description": "The target, and the deployment as it went",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullDeployTarget"
+              }
+            ]
+          }
+        },
+        "required": [
+          "deployTarget"
+        ]
       }
     }
   }

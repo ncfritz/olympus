@@ -43,3 +43,21 @@ export const crlPublicationFailures = counter(
   "Attempts to publish a list that failed: written, or read back from the distribution URL",
   ["issuer"],
 );
+
+export const deploymentsDone = counter(
+  "harpocrates_deployments_total",
+  "Certificates deployed to a deploy target, by target",
+  ["target"],
+);
+
+export const deploymentFailures = counter(
+  "harpocrates_deployment_failures_total",
+  "Attempts to deploy a certificate to a deploy target that failed, by target",
+  ["target"],
+);
+
+export const targetRenewalFailures = counter(
+  "harpocrates_target_renewal_failures_total",
+  "Renewals of a deploy target's certificate that failed, by target and reason (sealed, refused, error)",
+  ["target", "reason"],
+);

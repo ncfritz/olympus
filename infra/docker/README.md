@@ -74,6 +74,21 @@ HTTP on purpose), and the API mounts them read-only for its services
 listener. The management API is published at
 `https://${CONTROL_HOST}/harpocrates/ca/api` (`nginx/control.conf`).
 
+Its deploy targets write certificates to
+`${DATA_DIR}/olympus/apps/harpocrates/deployed`, a directory per target,
+which nginx mounts read-only at `/srv/harpocrates/deployed`. The nginx
+image's entrypoint runs `nginx-watch/40-reload-on-deploy.sh`, which checks
+the targets' `deployed` files every 10 seconds and reloads nginx when one
+changes and its configuration tests. A server block uses a target as
+
+```nginx
+ssl_certificate     /srv/harpocrates/deployed/<target>/fullchain.pem;
+ssl_certificate_key /srv/harpocrates/deployed/<target>/privkey.pem;
+```
+
+once the target has been deployed: `nginx -t` fails while the files are
+missing.
+
 `bootstrap` makes its directories and three of its four secrets, in
 `HARPOCRATES_SECRETS_DIR` (random:
 the signer's token, the Postgres password and the database URL built from
@@ -561,6 +576,7 @@ this repository their code is in
 | `olympus/apps/site/olr`                                 | the site                                                     |
 | `olympus/apps/harpocrates/signer`                       | the signer's sealed key store (uid 10001's)                  |
 | `olympus/apps/harpocrates/published`                    | the CA's lists and certificates; nginx and the API read them |
+| `olympus/apps/harpocrates/deployed`                     | deploy targets' certificates and keys; nginx reads them      |
 | `olympus/agents/dionysus-asset`, `-metadata`, `-search` | the Dionysus agents                                          |
 | `olympus/agents/minerva-calendar-sync`                  | the calendar agent and its migration                         |
 | `olympus/agents/minerva-mail`                           | the mail agent: mailbox credentials                          |

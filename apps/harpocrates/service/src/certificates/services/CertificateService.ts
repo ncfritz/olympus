@@ -8,9 +8,10 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import type { Enrollment, Key, Prisma, RevocationReason } from "@prisma/client";
+import { createPrivateKey, randomBytes } from "crypto";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
-import type { Principal } from "../../auth/principal";
+import { type Principal, SYSTEM } from "../../auth/principal";
 import { pkiConfig, type PkiConfigType } from "../../config/configuration";
 import { CrlScheduler } from "../../crls/services/CrlScheduler";
 import type { IssuerWithRules } from "../../issuers/converters/IssuerConverter";
@@ -66,6 +67,14 @@ import {
 } from "../converters/CertificateConverter";
 
 const DAY = 24 * 60 * 60 * 1000;
+
+/** What a deploy target installs: PEM, the key unencrypted. */
+export type DeployableCertificate = {
+  certificate: string;
+  /** The CAs above it, nearest first, without the root. */
+  chain: string[];
+  privateKey: string;
+};
 
 type NameRow = { type: NameTypeName; value: string };
 
@@ -209,11 +218,7 @@ export class CertificateService {
         fileName: `${name}.pem`,
       };
     }
-    // The chain for a server: it and the CAs above it, not the root.
-    const chain = (await this.chainOf(row.issuerId)).filter((ca) => {
-      const parsed = parseCertificate(ca);
-      return parsed.subject !== parsed.issuer;
-    });
+    const chain = await this.serverChainOf(row.issuerId);
     return {
       body: [pem, ...chain].join(""),
       contentType: "application/x-pem-file",
@@ -620,6 +625,94 @@ export class CertificateService {
     };
   }
 
+  // ---- deployment
+
+  /**
+   * Refuses a certificate a deploy target cannot install: one not valid,
+   * or whose key Harpocrates does not keep (a CSR's, or a generated key
+   * exported once).
+   */
+  async checkDeployable(certificateId: string): Promise<void> {
+    this.deployableKey(await this.row(certificateId));
+  }
+
+  /**
+   * What a deploy target installs (ADR 0020, Renewal and delivery): the
+   * certificate, the CAs above it but not the root, and its escrowed key
+   * in the clear. The signer exports a key only encrypted, so it is
+   * exported under a passphrase used once and decrypted here; it is never
+   * logged or kept. Recorded as an escrow export whose reason names the
+   * target.
+   */
+  async exportForDeployment(
+    certificateId: string,
+    target: string,
+  ): Promise<DeployableCertificate> {
+    const row = await this.row(certificateId);
+    const key = this.deployableKey(row);
+    const certificate = certificatePem(row.der);
+    const passphrase = randomBytes(32).toString("base64url");
+    const encrypted = await this.signer.exportKey(
+      key.signerKeyId!,
+      "pem",
+      passphrase,
+      certificate,
+      [],
+    );
+    const privateKey = createPrivateKey({ key: encrypted, passphrase })
+      .export({ format: "pem", type: "pkcs8" })
+      .toString();
+    const reason = `Deployed to ${target}`;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.escrowExport.create({
+        data: {
+          keyId: key.id,
+          certificateId: row.id,
+          format: "deploy",
+          principal: SYSTEM.id,
+          reason,
+        },
+      });
+      await this.audit.record(
+        {
+          kind: AuditKind.KeyExported,
+          principal: SYSTEM,
+          subjectType: "key",
+          subjectId: key.id,
+          reason,
+          attributes: { certificateId: row.id, format: "deploy" },
+        },
+        tx,
+      );
+    });
+    return {
+      certificate,
+      chain: await this.serverChainOf(row.issuerId),
+      privateKey,
+    };
+  }
+
+  private deployableKey(row: CertificateWithLineage): Key {
+    const state = stateOf(row);
+    if (state !== "valid") {
+      throw new UnprocessableEntityException(
+        `The certificate is ${state}: only a valid certificate is deployed`,
+      );
+    }
+    const key = row.enrollment?.key;
+    if (!key || key.location !== "signer" || !key.signerKeyId) {
+      throw new UnprocessableEntityException(
+        "Only a certificate whose key Harpocrates generated is deployed: this one's key is the subscriber's",
+      );
+    }
+    if (key.destroyedAt || key.exportOnce) {
+      throw new UnprocessableEntityException(
+        "Only a certificate whose key is escrowed is deployed: this one's key was for one export",
+      );
+    }
+    return key;
+  }
+
   // ---- the parts
 
   private async row(certificateId: string): Promise<CertificateWithLineage> {
@@ -642,6 +735,14 @@ export class CertificateService {
       ...(issuer.certificate ? [certificatePem(issuer.certificate)] : []),
       ...(await this.issuers.chainPems(issuer)),
     ];
+  }
+
+  /** The chain a server sends: the CAs above it, not the root. */
+  private async serverChainOf(issuerId: string): Promise<string[]> {
+    return (await this.chainOf(issuerId)).filter((ca) => {
+      const parsed = parseCertificate(ca);
+      return parsed.subject !== parsed.issuer;
+    });
   }
 
   private checkNames(profile: ProfileWithRules, names: NameRow[]): void {

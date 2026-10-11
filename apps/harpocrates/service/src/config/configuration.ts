@@ -103,6 +103,20 @@ export type RenewalConfig = {
   profileId: string;
 };
 
+export type DeployConfig = {
+  /**
+   * Where host-path targets are written, a directory per target: mounted
+   * here read-write and read-only into the web server, which reloads when
+   * a target's `deployed` file changes.
+   */
+  dir: string;
+  /**
+   * How often deploy targets are checked: renewals followed, certificates
+   * renewed when due, failed deployments retried. 0 turns it off.
+   */
+  scheduleSeconds: number;
+};
+
 export type HarpocratesConfig = {
   server: ServerConfig;
   logging: LoggingConfig;
@@ -112,6 +126,7 @@ export type HarpocratesConfig = {
   pki: PkiConfig;
   crl: CrlConfig;
   renewal: RenewalConfig;
+  deploy: DeployConfig;
 };
 
 const integer = (
@@ -226,6 +241,10 @@ export const readConfig = (
       hostnames: read.list("RENEWAL_HOSTNAMES", ["pki.internal.ncfritz.net"]),
       profileId: read.string("RENEWAL_TLS_PROFILE", "internal-tls"),
     },
+    deploy: {
+      dir: read.string("DEPLOY_DIR", "/srv/harpocrates/deployed"),
+      scheduleSeconds: integer(read, "DEPLOY_SCHEDULE_SECONDS", 60, 0),
+    },
   };
   if (config.renewal.port > 65535) {
     read.problems.push("RENEWAL_LISTEN_PORT must be a port number");
@@ -273,6 +292,11 @@ export const renewalConfig = registerAs(
   () => readConfig(process.env).renewal,
 );
 
+export const deployConfig = registerAs(
+  "deploy",
+  () => readConfig(process.env).deploy,
+);
+
 export type ServerConfigType = ConfigType<typeof serverConfig>;
 export type LoggingConfigType = ConfigType<typeof loggingConfig>;
 export type DatabaseConfigType = ConfigType<typeof databaseConfig>;
@@ -281,6 +305,7 @@ export type AuthConfigType = ConfigType<typeof authConfig>;
 export type PkiConfigType = ConfigType<typeof pkiConfig>;
 export type CrlConfigType = ConfigType<typeof crlConfig>;
 export type RenewalConfigType = ConfigType<typeof renewalConfig>;
+export type DeployConfigType = ConfigType<typeof deployConfig>;
 
 export const ALL_CONFIG = [
   serverConfig,
@@ -291,4 +316,5 @@ export const ALL_CONFIG = [
   pkiConfig,
   crlConfig,
   renewalConfig,
+  deployConfig,
 ];
