@@ -20,6 +20,7 @@ import {
   CA_KEY_ALGORITHM_ENUM,
   CA_KEY_ALGORITHM_VALUES,
   type CaKeyAlgorithmName,
+  ContactNames,
   NameConstraints,
 } from "./common";
 
@@ -230,6 +231,14 @@ export class Issuer {
     description: "Where its certificate is published",
   })
   caIssuersUrl: string;
+
+  @ApiProperty({
+    type: () => ContactNames,
+    required: true,
+    description:
+      "How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs",
+  })
+  alternativeNames: ContactNames;
 }
 
 /** A CA with its certificate and the chain above it. */
@@ -868,4 +877,27 @@ export class PreviewIssuerResponse {
       "Why creating it would be refused, as the create operation would say; empty when it would not",
   })
   problems: string[];
+}
+
+/** What can change on a CA after it exists. */
+export class UpdateIssuerRequest {
+  @ApiProperty({
+    type: () => ContactNames,
+    required: false,
+    description:
+      "Its issuer alternative names (emails, URIs), replacing those it has",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ContactNames)
+  alternativeNames?: ContactNames;
+}
+
+export class UpdateIssuerResponse {
+  @ApiProperty({
+    type: () => FullIssuer,
+    required: true,
+    description: "The CA, as it now is",
+  })
+  issuer: FullIssuer;
 }

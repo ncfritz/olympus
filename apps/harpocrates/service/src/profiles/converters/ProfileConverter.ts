@@ -7,10 +7,12 @@ import type {
   ProfileKeyAlgorithm as ProfileKeyAlgorithmRow,
   ProfileNamePolicy as ProfileNamePolicyRow,
   ProfileSubjectAttribute as ProfileSubjectAttributeRow,
+  ProfilePolicy as ProfilePolicyRow,
+  ProfileCustomExtension as ProfileCustomExtensionRow,
   ProfileVersion as ProfileVersionRow,
 } from "../../store/prisma";
 import { attributeName, attributeRank } from "../subjectAttributes";
-import type { KeyAlgorithmName } from "../../model/common";
+import type { KeyAlgorithmName, SubtreeNameTypeName } from "../../model/common";
 import moment from "moment";
 import type {
   HashName,
@@ -32,6 +34,8 @@ type VersionRules = {
   namePolicies: ProfileNamePolicyRow[];
   keyAlgorithms: ProfileKeyAlgorithmRow[];
   csrHashes: ProfileCsrHashRow[];
+  policies: ProfilePolicyRow[];
+  customExtensions: ProfileCustomExtensionRow[];
 };
 
 /** A version's rules, to include with it. */
@@ -43,6 +47,8 @@ export const VERSION_RULES = {
   namePolicies: true,
   keyAlgorithms: true,
   csrHashes: true,
+  policies: true,
+  customExtensions: true,
 } as const;
 
 /** A profile with a version's rules: its latest, or another's to renew. */
@@ -131,6 +137,14 @@ export const toSettings = (
     | "escrow"
     | "escrowOverridable"
     | "extensions"
+    | "signatureHash"
+    | "rsaPadding"
+    | "subjectKeyIdentifier"
+    | "authorityKeyIdentifier"
+    | "basicConstraints"
+    | "includeCrlDistribution"
+    | "includeCaIssuers"
+    | "includeIssuerAltName"
   > &
     VersionRules,
 ): ProfileSettings => ({
@@ -157,7 +171,11 @@ export const toSettings = (
     .map((t) => ({ type: t.type, presence: t.presence }))
     .sort((a, b) => a.type.localeCompare(b.type)),
   namePolicy: row.namePolicies
-    .map((p) => ({ type: p.type, kind: p.kind, value: p.value }))
+    .map((p) => ({
+      type: p.type as SubtreeNameTypeName,
+      kind: p.kind,
+      value: p.value,
+    }))
     .sort((a, b) =>
       `${a.type}${a.kind}${a.value}`.localeCompare(
         `${b.type}${b.kind}${b.value}`,
@@ -175,6 +193,28 @@ export const toSettings = (
     })),
   keyAlgorithms: row.keyAlgorithms.map((k) => ALGORITHMS[k.algorithm]).sort(),
   csrSignatureHashes: row.csrHashes.map((h) => h.hash as HashName).sort(),
+  signatureHash: row.signatureHash,
+  rsaPadding: row.rsaPadding,
+  subjectKeyIdentifier: row.subjectKeyIdentifier,
+  authorityKeyIdentifier: row.authorityKeyIdentifier,
+  basicConstraints: row.basicConstraints,
+  includeCrlDistribution: row.includeCrlDistribution,
+  includeCaIssuers: row.includeCaIssuers,
+  includeIssuerAltName: row.includeIssuerAltName,
+  policies: [...row.policies]
+    .sort((a, b) => a.position - b.position)
+    .map((p) => ({
+      oid: p.oid,
+      cpsUri: p.cpsUri ?? undefined,
+      userNotice: p.userNotice ?? undefined,
+    })),
+  customExtensions: [...row.customExtensions]
+    .sort((a, b) => a.oid.localeCompare(b.oid))
+    .map((e) => ({
+      oid: e.oid,
+      critical: e.critical,
+      value: Buffer.from(e.value).toString("base64"),
+    })),
 });
 
 export const toDomainObject = (row: ProfileWithRules): Profile => ({

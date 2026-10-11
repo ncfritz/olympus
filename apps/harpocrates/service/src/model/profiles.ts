@@ -5,6 +5,7 @@ import {
   ArrayNotEmpty,
   ArrayUnique,
   IsArray,
+  IsBase64,
   IsBoolean,
   IsIn,
   IsInt,
@@ -27,6 +28,10 @@ import {
   NAME_TYPE_ENUM,
   NAME_TYPE_VALUES,
   type NameTypeName,
+  OID,
+  SUBTREE_NAME_TYPE_ENUM,
+  SUBTREE_NAME_TYPE_VALUES,
+  type SubtreeNameTypeName,
 } from "./common";
 
 export const KEY_USAGE_VALUES = [
@@ -101,8 +106,30 @@ export const HASH_ENUM = {
 /** A profile's slug: lower case, digits and hyphens. */
 export const PROFILE_SLUG = /^[a-z][a-z0-9-]{0,62}$/;
 
-/** A dotted OID. */
-const OID = /^[0-2](\.(0|[1-9][0-9]*))+$/;
+export const CERTIFICATE_HASH_VALUES = ["sha256", "sha384", "sha512"] as const;
+export type CertificateHashName = (typeof CERTIFICATE_HASH_VALUES)[number];
+
+export const RSA_PADDING_VALUES = ["pkcs1v15", "pss"] as const;
+export type RsaPaddingName = (typeof RSA_PADDING_VALUES)[number];
+
+export const KEY_IDENTIFIER_METHOD_VALUES = ["sha1", "sha256", "none"] as const;
+export type KeyIdentifierMethodName =
+  (typeof KEY_IDENTIFIER_METHOD_VALUES)[number];
+
+export const AUTHORITY_KEY_IDENTIFIER_VALUES = [
+  "key_id",
+  "key_id_and_issuer",
+  "none",
+] as const;
+export type AuthorityKeyIdentifierName =
+  (typeof AUTHORITY_KEY_IDENTIFIER_VALUES)[number];
+
+export const BASIC_CONSTRAINTS_VALUES = [
+  "critical",
+  "non_critical",
+  "omitted",
+] as const;
+export type BasicConstraintsName = (typeof BASIC_CONSTRAINTS_VALUES)[number];
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Domain Objects                                                                                                     */
@@ -222,9 +249,13 @@ export class ProfileName {
 
 /** A subtree a version's names must lie in, or outside. */
 export class ProfileNamePolicy {
-  @ApiProperty({ ...NAME_TYPE_ENUM, required: true, description: "The type" })
-  @IsIn([...NAME_TYPE_VALUES])
-  type: NameTypeName;
+  @ApiProperty({
+    ...SUBTREE_NAME_TYPE_ENUM,
+    required: true,
+    description: "The type",
+  })
+  @IsIn([...SUBTREE_NAME_TYPE_VALUES])
+  type: SubtreeNameTypeName;
 
   @ApiProperty({
     type: String,
@@ -246,6 +277,66 @@ export class ProfileNamePolicy {
   @IsString()
   @IsNotEmpty()
   @MaxLength(253)
+  value: string;
+}
+
+/** A certificate policy a version's certificates assert. */
+export class ProfilePolicy {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The policy's OID",
+  })
+  @Matches(OID)
+  oid: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Where its certification practice statement is published",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  cpsUri?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "A notice for relying parties (explicit text)",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  userNotice?: string;
+}
+
+/** An extension the signer does not build itself (ADR 0034). */
+export class ProfileCustomExtension {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The extension's OID",
+  })
+  @Matches(OID)
+  oid: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether a relying party that does not know it must reject the certificate",
+  })
+  @IsBoolean()
+  critical: boolean;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its value: one DER element, base64",
+  })
+  @IsBase64()
+  @MaxLength(8192)
   value: string;
 }
 
@@ -458,6 +549,108 @@ export class ProfileSettings {
   @ArrayUnique()
   @IsIn([...HASH_VALUES], { each: true })
   csrSignatureHashes: HashName[];
+
+  @ApiProperty({
+    type: String,
+    enum: [...CERTIFICATE_HASH_VALUES],
+    enumName: "CertificateHash",
+    required: true,
+    description:
+      "The hash the issuer signs its certificates with; an Ed25519 issuer has none",
+  })
+  @IsIn([...CERTIFICATE_HASH_VALUES])
+  signatureHash: CertificateHashName;
+
+  @ApiProperty({
+    type: String,
+    enum: [...RSA_PADDING_VALUES],
+    enumName: "RsaPadding",
+    required: true,
+    description:
+      "Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it",
+  })
+  @IsIn([...RSA_PADDING_VALUES])
+  rsaPadding: RsaPaddingName;
+
+  @ApiProperty({
+    type: String,
+    enum: [...KEY_IDENTIFIER_METHOD_VALUES],
+    enumName: "KeyIdentifierMethod",
+    required: true,
+    description:
+      "The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none",
+  })
+  @IsIn([...KEY_IDENTIFIER_METHOD_VALUES])
+  subjectKeyIdentifier: KeyIdentifierMethodName;
+
+  @ApiProperty({
+    type: String,
+    enum: [...AUTHORITY_KEY_IDENTIFIER_VALUES],
+    enumName: "AuthorityKeyIdentifierForm",
+    required: true,
+    description:
+      "The authority key identifier: the issuer's key identifier, with its issuer and serial, or none",
+  })
+  @IsIn([...AUTHORITY_KEY_IDENTIFIER_VALUES])
+  authorityKeyIdentifier: AuthorityKeyIdentifierName;
+
+  @ApiProperty({
+    type: String,
+    enum: [...BASIC_CONSTRAINTS_VALUES],
+    enumName: "BasicConstraintsForm",
+    required: true,
+    description: "Basic constraints (CA:FALSE): critical, not, or left out",
+  })
+  @IsIn([...BASIC_CONSTRAINTS_VALUES])
+  basicConstraints: BasicConstraintsName;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether certificates name the issuer's CRL",
+  })
+  @IsBoolean()
+  includeCrlDistribution: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether certificates say where the issuer's certificate is (AIA caIssuers)",
+  })
+  @IsBoolean()
+  includeCaIssuers: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether certificates carry the issuer's alternative names, where it has any",
+  })
+  @IsBoolean()
+  includeIssuerAltName: boolean;
+
+  @ApiProperty({
+    type: () => ProfilePolicy,
+    isArray: true,
+    required: true,
+    description: "The certificate policies its certificates assert, in order",
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfilePolicy)
+  policies: ProfilePolicy[];
+
+  @ApiProperty({
+    type: () => ProfileCustomExtension,
+    isArray: true,
+    required: true,
+    description: "Extensions the signer does not build itself",
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfileCustomExtension)
+  customExtensions: ProfileCustomExtension[];
 }
 
 /** One version of a profile, frozen once made (ADR 0034). */

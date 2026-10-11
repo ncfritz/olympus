@@ -318,3 +318,56 @@ export const csrHashProblem = (
   allowed.length === 0 || hash === undefined || allowed.includes(hash)
     ? undefined
     : `the profile accepts CSRs signed with ${allowed.join(", ")}, not ${hash}`;
+
+/**
+ * The extensions Harpocrates builds itself, or a leaf never carries, or
+ * it does not offer yet (the TLS feature waits for OCSP): never custom
+ * (ADR 0034). The signer refuses the same.
+ */
+export const MANAGED_EXTENSIONS: Record<string, string> = {
+  "2.5.29.14": "subject key identifier",
+  "2.5.29.15": "key usage",
+  "2.5.29.17": "subject alternative name",
+  "2.5.29.18": "issuer alternative name",
+  "2.5.29.19": "basic constraints",
+  "2.5.29.30": "name constraints",
+  "2.5.29.31": "CRL distribution points",
+  "2.5.29.32": "certificate policies",
+  "2.5.29.33": "policy mappings",
+  "2.5.29.35": "authority key identifier",
+  "2.5.29.36": "policy constraints",
+  "2.5.29.37": "extended key usage",
+  "2.5.29.54": "inhibit anyPolicy",
+  "1.3.6.1.5.5.7.1.1": "authority information access",
+  "1.3.6.1.5.5.7.1.24": "TLS feature",
+};
+
+/** Whether bytes are exactly one DER element (definite, minimal lengths). */
+export const isOneDerElement = (data: Buffer): boolean => {
+  if (data.length < 2 || (data[0] & 0x1f) === 0x1f) return false;
+  let start = 2;
+  let length = data[1];
+  if (length >= 0x80) {
+    const count = length & 0x7f;
+    if (count === 0 || count > 4 || 2 + count > data.length) return false;
+    if (data[2] === 0) return false;
+    length = data.subarray(2, 2 + count).readUIntBE(0, count);
+    if (length < 0x80) return false;
+    start += count;
+  }
+  return start + length === data.length;
+};
+
+/** A custom extension's problem: a managed one, or not one DER element. */
+export const customExtensionProblem = (
+  oid: string,
+  base64: string,
+): string | undefined => {
+  if (MANAGED_EXTENSIONS[oid]) {
+    return `${oid} (${MANAGED_EXTENSIONS[oid]}) is not a custom extension`;
+  }
+  if (!isOneDerElement(Buffer.from(base64, "base64"))) {
+    return `${oid}'s value is not one DER element`;
+  }
+  return undefined;
+};

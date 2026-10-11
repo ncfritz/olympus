@@ -11,7 +11,7 @@ import type {
   CertificateStateName,
   FullCertificate,
 } from "../../model/certificates";
-import type { Names, NameTypeName } from "../../model/common";
+import type { CertificateNames, NameTypeName } from "../../model/common";
 import { certificatePem } from "../../pki/x509";
 
 export type CertificateWithLineage = CertificateRow & {
@@ -36,8 +36,8 @@ export const stateOf = (
       ? "expired"
       : "valid";
 
-export const buildNames = (names: EnrollmentName[]): Names => {
-  const result: Names = {};
+export const buildNames = (names: EnrollmentName[]): CertificateNames => {
+  const result: CertificateNames = {};
   for (const name of names) {
     const type = name.type as NameTypeName;
     result[type] = [...(result[type] ?? []), name.value];

@@ -1,10 +1,16 @@
 import type {
   Issuer as IssuerRow,
   IssuerExtendedKeyUsage,
+  IssuerAlternativeName,
   IssuerNameConstraint,
 } from "../../store/prisma";
 import moment from "moment";
-import type { NameConstraints, Names, NameTypeName } from "../../model/common";
+import type {
+  ContactNames,
+  NameConstraints,
+  Names,
+  SubtreeNameTypeName,
+} from "../../model/common";
 import type { FullIssuer, Issuer } from "../../model/issuers";
 import { certificatePem, toPem } from "../../pki/x509";
 import { issuingWindowClosesAt } from "../issuingWindow";
@@ -12,12 +18,27 @@ import { issuingWindowClosesAt } from "../issuingWindow";
 export type IssuerWithRules = IssuerRow & {
   extendedKeyUsages: IssuerExtendedKeyUsage[];
   nameConstraints: IssuerNameConstraint[];
+  alternativeNames: IssuerAlternativeName[];
 };
 
 export const ISSUER_RULES = {
   extendedKeyUsages: true,
   nameConstraints: true,
+  alternativeNames: true,
 } as const;
+
+/** A CA's alternative names, by type. */
+export const buildContactNames = (
+  names: IssuerAlternativeName[],
+): ContactNames => {
+  const result: ContactNames = {};
+  for (const name of [...names].sort((a, b) => a.id - b.id)) {
+    if (name.type === "email" || name.type === "uri") {
+      result[name.type] = [...(result[name.type] ?? []), name.value];
+    }
+  }
+  return result;
+};
 
 const buildNames = (
   constraints: IssuerNameConstraint[],
@@ -27,7 +48,7 @@ const buildNames = (
   if (chosen.length === 0) return undefined;
   const names: Names = {};
   for (const constraint of chosen) {
-    const type = constraint.type as NameTypeName;
+    const type = constraint.type as SubtreeNameTypeName;
     names[type] = [...(names[type] ?? []), constraint.value];
   }
   return names;
@@ -65,6 +86,7 @@ export const toDomainObject = (row: IssuerWithRules): Issuer => ({
   nameConstraints: buildNameConstraints(row.nameConstraints),
   crlUrl: row.crlUrl,
   caIssuersUrl: row.caIssuersUrl,
+  alternativeNames: buildContactNames(row.alternativeNames),
 });
 
 export const toFullIssuer = (
@@ -84,7 +106,7 @@ export const constraintRows = (constraints: NameConstraints | undefined) =>
       ([type, values]) =>
         (values as string[] | undefined)?.map((value) => ({
           kind,
-          type: type as NameTypeName,
+          type: type as SubtreeNameTypeName,
           value,
         })) ?? [],
     ),

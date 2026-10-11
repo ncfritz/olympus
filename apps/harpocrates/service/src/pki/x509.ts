@@ -23,7 +23,7 @@ export const OID = {
   documentSigning: "1.3.6.1.5.5.7.3.36",
 } as const;
 
-export type NameType = "dns" | "ip" | "email" | "uri";
+export type NameType = "dns" | "ip" | "email" | "uri" | "upn" | "registeredId";
 
 export type SubjectNames = { type: NameType; value: string }[];
 
@@ -214,6 +214,10 @@ const sanNames = (extensions: readonly x509.Extension[]): SubjectNames => {
     if (name.type === "ip") names.push({ type: "ip", value: name.value });
     if (name.type === "email") names.push({ type: "email", value: name.value });
     if (name.type === "url") names.push({ type: "uri", value: name.value });
+    if (name.type === "upn") names.push({ type: "upn", value: name.value });
+    if (name.type === "id") {
+      names.push({ type: "registeredId", value: name.value });
+    }
   }
   return names;
 };

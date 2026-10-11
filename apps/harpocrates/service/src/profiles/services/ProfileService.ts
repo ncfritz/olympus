@@ -5,7 +5,7 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import type { NamePresence, Prisma, UsageState } from "../../store/prisma";
-import { subtreeProblem } from "../rules";
+import { customExtensionProblem, subtreeProblem } from "../rules";
 import { attributeOid } from "../subjectAttributes";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
@@ -53,7 +53,20 @@ const SETTINGS: (keyof ProfileSettings)[] = [
   "subjectAttributes",
   "keyAlgorithms",
   "csrSignatureHashes",
+  "signatureHash",
+  "rsaPadding",
+  "subjectKeyIdentifier",
+  "authorityKeyIdentifier",
+  "basicConstraints",
+  "includeCrlDistribution",
+  "includeCaIssuers",
+  "includeIssuerAltName",
+  "policies",
+  "customExtensions",
 ];
+
+/** The settings whose order counts: a certificate lists them as given. */
+const ORDERED: (keyof ProfileSettings)[] = ["policies"];
 
 /** A value as compared: lists as sets, objects without empty fields. */
 const canonical = (value: unknown): string =>
@@ -71,6 +84,16 @@ const canonical = (value: unknown): string =>
 
 /** Two settings' values the same. */
 const same = (a: unknown, b: unknown): boolean => canonical(a) === canonical(b);
+
+/** Two values of a setting the same, in order where its order counts. */
+const sameSetting = (
+  key: keyof ProfileSettings,
+  a: unknown,
+  b: unknown,
+): boolean =>
+  ORDERED.includes(key) && Array.isArray(a) && Array.isArray(b)
+    ? a.length === b.length && a.every((v, i) => same(v, b[i]))
+    : same(a, b);
 
 /** A version's settings as it keeps them: excluded usages and names unlisted. */
 const stored = (settings: ProfileSettings): ProfileSettings => ({
@@ -146,6 +169,35 @@ const ruleProblems = (settings: ProfileSettings): string[] => {
     problems.push(
       `its default key type ${settings.keyAlgorithm} is not among those it allows`,
     );
+  }
+  for (const twice of listedTwice(settings.policies.map((p) => p.oid))) {
+    problems.push(`the policy ${twice} is listed twice`);
+  }
+  for (const p of settings.policies) {
+    if (p.cpsUri && !/^https?:\/\/\S+$/.test(p.cpsUri)) {
+      problems.push(`${p.oid}'s CPS URI ${p.cpsUri} is not an http(s) URL`);
+    }
+  }
+  for (const twice of listedTwice(
+    settings.customExtensions.map((e) => e.oid),
+  )) {
+    problems.push(`the extension ${twice} is listed twice`);
+  }
+  for (const e of settings.customExtensions) {
+    const problem = customExtensionProblem(e.oid, e.value);
+    if (problem) problems.push(problem);
+  }
+  if (settings.extensions === "minimal") {
+    const extra = [
+      settings.policies.length && "certificate policies",
+      settings.customExtensions.length && "custom extensions",
+      settings.includeIssuerAltName && "the issuer's alternative names",
+    ].filter(Boolean);
+    if (extra.length) {
+      problems.push(
+        `minimal extensions carry only the key identifiers, not ${extra.join(", ")}`,
+      );
+    }
   }
   const forced = (usage: string) =>
     settings.keyUsages.some((u) => u.usage === usage && u.state === "forced");
@@ -292,7 +344,9 @@ export class ProfileService {
     }
     // Compared as it would be kept: excluded usages and names unlisted.
     const next = stored(merged);
-    const changed = SETTINGS.filter((key) => !same(current[key], next[key]));
+    const changed = SETTINGS.filter(
+      (key) => !sameSetting(key, current[key], next[key]),
+    );
     const describes =
       description !== undefined && description !== latest.description;
     if (changed.length === 0 && !describes) return this.describe(profileId);
@@ -512,6 +566,14 @@ export class ProfileService {
         escrow: settings.escrow,
         escrowOverridable: settings.escrowOverridable,
         extensions: settings.extensions,
+        signatureHash: settings.signatureHash,
+        rsaPadding: settings.rsaPadding,
+        subjectKeyIdentifier: settings.subjectKeyIdentifier,
+        authorityKeyIdentifier: settings.authorityKeyIdentifier,
+        basicConstraints: settings.basicConstraints,
+        includeCrlDistribution: settings.includeCrlDistribution,
+        includeCaIssuers: settings.includeCaIssuers,
+        includeIssuerAltName: settings.includeIssuerAltName,
         createdBy: principal.id,
         keyUsages: {
           create: kept.keyUsages.map(({ usage, state }) => ({
@@ -555,6 +617,21 @@ export class ProfileService {
         },
         csrHashes: {
           create: kept.csrSignatureHashes.map((hash) => ({ hash })),
+        },
+        policies: {
+          create: kept.policies.map((p, position) => ({
+            position,
+            oid: p.oid,
+            cpsUri: p.cpsUri || null,
+            userNotice: p.userNotice || null,
+          })),
+        },
+        customExtensions: {
+          create: kept.customExtensions.map((e) => ({
+            oid: e.oid,
+            critical: e.critical,
+            value: Buffer.from(e.value, "base64"),
+          })),
         },
       },
     });

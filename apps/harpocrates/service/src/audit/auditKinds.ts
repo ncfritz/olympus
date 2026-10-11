@@ -4,6 +4,7 @@ export const AuditKind = {
   IssuerImported: "issuer.imported",
   IssuerCompleted: "issuer.completed",
   IssuerDiscarded: "issuer.discarded",
+  IssuerUpdated: "issuer.updated",
   IssuerProved: "issuer.proved",
   CeremonyOpened: "ceremony.opened",
   CeremonyClosed: "ceremony.closed",

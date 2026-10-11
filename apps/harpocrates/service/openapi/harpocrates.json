@@ -932,6 +932,103 @@
         "tags": [
           "Issuers"
         ]
+      },
+      "put": {
+        "description": "Changes what can change once a CA exists: its issuer alternative names (ADR 0034), which the certificates it signs carry where their profile version says. What is given replaces what it had; what is not given stays.",
+        "operationId": "UpdateIssuer",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "What changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The CA, as it now is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edits a CA",
+        "tags": [
+          "Issuers"
+        ]
       }
     },
     "/v1/issuer/{issuerId}/discard": {
@@ -4953,6 +5050,25 @@
           }
         }
       },
+      "ContactNames": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "description": "Email addresses",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uri": {
+            "description": "URIs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "Issuer": {
         "type": "object",
         "properties": {
@@ -5062,6 +5178,14 @@
           "caIssuersUrl": {
             "type": "string",
             "description": "Where its certificate is published"
+          },
+          "alternativeNames": {
+            "description": "How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactNames"
+              }
+            ]
           }
         },
         "required": [
@@ -5076,7 +5200,8 @@
           "extendedKeyUsages",
           "nameConstraints",
           "crlUrl",
-          "caIssuersUrl"
+          "caIssuersUrl",
+          "alternativeNames"
         ]
       },
       "ListIssuersResponse": {
@@ -5274,6 +5399,14 @@
             "type": "string",
             "description": "Where its certificate is published"
           },
+          "alternativeNames": {
+            "description": "How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactNames"
+              }
+            ]
+          },
           "certificate": {
             "type": "string",
             "description": "Its certificate, PEM"
@@ -5303,6 +5436,7 @@
           "nameConstraints",
           "crlUrl",
           "caIssuersUrl",
+          "alternativeNames",
           "chain"
         ]
       },
@@ -5487,6 +5621,35 @@
         "properties": {
           "issuer": {
             "description": "The discarded root, revoked in the record",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
+      "UpdateIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "alternativeNames": {
+            "description": "Its issuer alternative names (emails, URIs), replacing those it has",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactNames"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The CA, as it now is",
             "allOf": [
               {
                 "$ref": "#/components/schemas/FullIssuer"
@@ -6036,6 +6199,53 @@
           }
         }
       },
+      "CertificateNames": {
+        "type": "object",
+        "properties": {
+          "dns": {
+            "description": "DNS names",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ip": {
+            "description": "IP addresses (for a CA's constraints, networks: 10.0.0.0/8)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "description": "Email addresses (for a CA's constraints, domains)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uri": {
+            "description": "URIs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "upn": {
+            "description": "Microsoft user principal names (otherName): user@domain",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "registeredId": {
+            "description": "registeredIDs: dotted OIDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "CreateCeremonyCertificateRequest": {
         "type": "object",
         "properties": {
@@ -6055,7 +6265,7 @@
             "description": "Its alternative names, if the profile carries them",
             "allOf": [
               {
-                "$ref": "#/components/schemas/Names"
+                "$ref": "#/components/schemas/CertificateNames"
               }
             ]
           },
@@ -6160,7 +6370,7 @@
             "description": "Its alternative names",
             "allOf": [
               {
-                "$ref": "#/components/schemas/Names"
+                "$ref": "#/components/schemas/CertificateNames"
               }
             ]
           },
@@ -6410,7 +6620,7 @@
             "description": "Its alternative names",
             "allOf": [
               {
-                "$ref": "#/components/schemas/Names"
+                "$ref": "#/components/schemas/CertificateNames"
               }
             ]
           },
@@ -6570,7 +6780,7 @@
             "description": "Its alternative names, of the types the profile allows",
             "allOf": [
               {
-                "$ref": "#/components/schemas/Names"
+                "$ref": "#/components/schemas/CertificateNames"
               }
             ]
           },
@@ -6913,12 +7123,14 @@
       },
       "NameType": {
         "type": "string",
-        "description": "A kind of name: DNS, IP address, email or URI",
+        "description": "The type",
         "enum": [
           "dns",
           "ip",
           "email",
-          "uri"
+          "uri",
+          "upn",
+          "registeredId"
         ]
       },
       "ProfileName": {
@@ -6947,6 +7159,16 @@
           "presence"
         ]
       },
+      "SubtreeNameType": {
+        "type": "string",
+        "description": "The type",
+        "enum": [
+          "dns",
+          "ip",
+          "email",
+          "uri"
+        ]
+      },
       "ProfileNamePolicy": {
         "type": "object",
         "properties": {
@@ -6954,7 +7176,7 @@
             "description": "The type",
             "allOf": [
               {
-                "$ref": "#/components/schemas/NameType"
+                "$ref": "#/components/schemas/SubtreeNameType"
               }
             ]
           },
@@ -7026,6 +7248,48 @@
           "sha256",
           "sha384",
           "sha512"
+        ]
+      },
+      "ProfilePolicy": {
+        "type": "object",
+        "properties": {
+          "oid": {
+            "type": "string",
+            "description": "The policy's OID"
+          },
+          "cpsUri": {
+            "type": "string",
+            "description": "Where its certification practice statement is published"
+          },
+          "userNotice": {
+            "type": "string",
+            "description": "A notice for relying parties (explicit text)"
+          }
+        },
+        "required": [
+          "oid"
+        ]
+      },
+      "ProfileCustomExtension": {
+        "type": "object",
+        "properties": {
+          "oid": {
+            "type": "string",
+            "description": "The extension's OID"
+          },
+          "critical": {
+            "type": "boolean",
+            "description": "Whether a relying party that does not know it must reject the certificate"
+          },
+          "value": {
+            "type": "string",
+            "description": "Its value: one DER element, base64"
+          }
+        },
+        "required": [
+          "oid",
+          "critical",
+          "value"
         ]
       },
       "Profile": {
@@ -7141,6 +7405,76 @@
               "$ref": "#/components/schemas/SignatureHash"
             }
           },
+          "signatureHash": {
+            "type": "string",
+            "enum": [
+              "sha256",
+              "sha384",
+              "sha512"
+            ],
+            "description": "The hash the issuer signs its certificates with; an Ed25519 issuer has none"
+          },
+          "rsaPadding": {
+            "type": "string",
+            "enum": [
+              "pkcs1v15",
+              "pss"
+            ],
+            "description": "Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it"
+          },
+          "subjectKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "sha1",
+              "sha256",
+              "none"
+            ],
+            "description": "The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none"
+          },
+          "authorityKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "key_id",
+              "key_id_and_issuer",
+              "none"
+            ],
+            "description": "The authority key identifier: the issuer's key identifier, with its issuer and serial, or none"
+          },
+          "basicConstraints": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "non_critical",
+              "omitted"
+            ],
+            "description": "Basic constraints (CA:FALSE): critical, not, or left out"
+          },
+          "includeCrlDistribution": {
+            "type": "boolean",
+            "description": "Whether certificates name the issuer's CRL"
+          },
+          "includeCaIssuers": {
+            "type": "boolean",
+            "description": "Whether certificates say where the issuer's certificate is (AIA caIssuers)"
+          },
+          "includeIssuerAltName": {
+            "type": "boolean",
+            "description": "Whether certificates carry the issuer's alternative names, where it has any"
+          },
+          "policies": {
+            "description": "The certificate policies its certificates assert, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfilePolicy"
+            }
+          },
+          "customExtensions": {
+            "description": "Extensions the signer does not build itself",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileCustomExtension"
+            }
+          },
           "id": {
             "type": "string",
             "description": "The profile's name, e.g. internal-tls"
@@ -7194,6 +7528,16 @@
           "subjectAttributes",
           "keyAlgorithms",
           "csrSignatureHashes",
+          "signatureHash",
+          "rsaPadding",
+          "subjectKeyIdentifier",
+          "authorityKeyIdentifier",
+          "basicConstraints",
+          "includeCrlDistribution",
+          "includeCaIssuers",
+          "includeIssuerAltName",
+          "policies",
+          "customExtensions",
           "id",
           "version",
           "description",
@@ -7331,6 +7675,76 @@
               "$ref": "#/components/schemas/SignatureHash"
             }
           },
+          "signatureHash": {
+            "type": "string",
+            "enum": [
+              "sha256",
+              "sha384",
+              "sha512"
+            ],
+            "description": "The hash the issuer signs its certificates with; an Ed25519 issuer has none"
+          },
+          "rsaPadding": {
+            "type": "string",
+            "enum": [
+              "pkcs1v15",
+              "pss"
+            ],
+            "description": "Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it"
+          },
+          "subjectKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "sha1",
+              "sha256",
+              "none"
+            ],
+            "description": "The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none"
+          },
+          "authorityKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "key_id",
+              "key_id_and_issuer",
+              "none"
+            ],
+            "description": "The authority key identifier: the issuer's key identifier, with its issuer and serial, or none"
+          },
+          "basicConstraints": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "non_critical",
+              "omitted"
+            ],
+            "description": "Basic constraints (CA:FALSE): critical, not, or left out"
+          },
+          "includeCrlDistribution": {
+            "type": "boolean",
+            "description": "Whether certificates name the issuer's CRL"
+          },
+          "includeCaIssuers": {
+            "type": "boolean",
+            "description": "Whether certificates say where the issuer's certificate is (AIA caIssuers)"
+          },
+          "includeIssuerAltName": {
+            "type": "boolean",
+            "description": "Whether certificates carry the issuer's alternative names, where it has any"
+          },
+          "policies": {
+            "description": "The certificate policies its certificates assert, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfilePolicy"
+            }
+          },
+          "customExtensions": {
+            "description": "Extensions the signer does not build itself",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileCustomExtension"
+            }
+          },
           "id": {
             "type": "string",
             "description": "Its name: lower case, digits and hyphens, e.g. web-tls"
@@ -7360,6 +7774,16 @@
           "subjectAttributes",
           "keyAlgorithms",
           "csrSignatureHashes",
+          "signatureHash",
+          "rsaPadding",
+          "subjectKeyIdentifier",
+          "authorityKeyIdentifier",
+          "basicConstraints",
+          "includeCrlDistribution",
+          "includeCaIssuers",
+          "includeIssuerAltName",
+          "policies",
+          "customExtensions",
           "id",
           "description"
         ]
@@ -7525,6 +7949,76 @@
               "$ref": "#/components/schemas/SignatureHash"
             }
           },
+          "signatureHash": {
+            "type": "string",
+            "enum": [
+              "sha256",
+              "sha384",
+              "sha512"
+            ],
+            "description": "The hash the issuer signs its certificates with; an Ed25519 issuer has none"
+          },
+          "rsaPadding": {
+            "type": "string",
+            "enum": [
+              "pkcs1v15",
+              "pss"
+            ],
+            "description": "Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it"
+          },
+          "subjectKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "sha1",
+              "sha256",
+              "none"
+            ],
+            "description": "The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none"
+          },
+          "authorityKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "key_id",
+              "key_id_and_issuer",
+              "none"
+            ],
+            "description": "The authority key identifier: the issuer's key identifier, with its issuer and serial, or none"
+          },
+          "basicConstraints": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "non_critical",
+              "omitted"
+            ],
+            "description": "Basic constraints (CA:FALSE): critical, not, or left out"
+          },
+          "includeCrlDistribution": {
+            "type": "boolean",
+            "description": "Whether certificates name the issuer's CRL"
+          },
+          "includeCaIssuers": {
+            "type": "boolean",
+            "description": "Whether certificates say where the issuer's certificate is (AIA caIssuers)"
+          },
+          "includeIssuerAltName": {
+            "type": "boolean",
+            "description": "Whether certificates carry the issuer's alternative names, where it has any"
+          },
+          "policies": {
+            "description": "The certificate policies its certificates assert, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfilePolicy"
+            }
+          },
+          "customExtensions": {
+            "description": "Extensions the signer does not build itself",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileCustomExtension"
+            }
+          },
           "description": {
             "type": "string",
             "description": "What it is for"
@@ -7676,6 +8170,76 @@
               "$ref": "#/components/schemas/SignatureHash"
             }
           },
+          "signatureHash": {
+            "type": "string",
+            "enum": [
+              "sha256",
+              "sha384",
+              "sha512"
+            ],
+            "description": "The hash the issuer signs its certificates with; an Ed25519 issuer has none"
+          },
+          "rsaPadding": {
+            "type": "string",
+            "enum": [
+              "pkcs1v15",
+              "pss"
+            ],
+            "description": "Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it"
+          },
+          "subjectKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "sha1",
+              "sha256",
+              "none"
+            ],
+            "description": "The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none"
+          },
+          "authorityKeyIdentifier": {
+            "type": "string",
+            "enum": [
+              "key_id",
+              "key_id_and_issuer",
+              "none"
+            ],
+            "description": "The authority key identifier: the issuer's key identifier, with its issuer and serial, or none"
+          },
+          "basicConstraints": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "non_critical",
+              "omitted"
+            ],
+            "description": "Basic constraints (CA:FALSE): critical, not, or left out"
+          },
+          "includeCrlDistribution": {
+            "type": "boolean",
+            "description": "Whether certificates name the issuer's CRL"
+          },
+          "includeCaIssuers": {
+            "type": "boolean",
+            "description": "Whether certificates say where the issuer's certificate is (AIA caIssuers)"
+          },
+          "includeIssuerAltName": {
+            "type": "boolean",
+            "description": "Whether certificates carry the issuer's alternative names, where it has any"
+          },
+          "policies": {
+            "description": "The certificate policies its certificates assert, in order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfilePolicy"
+            }
+          },
+          "customExtensions": {
+            "description": "Extensions the signer does not build itself",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileCustomExtension"
+            }
+          },
           "version": {
             "type": "number",
             "description": "v1, v2, …"
@@ -7713,6 +8277,16 @@
           "subjectAttributes",
           "keyAlgorithms",
           "csrSignatureHashes",
+          "signatureHash",
+          "rsaPadding",
+          "subjectKeyIdentifier",
+          "authorityKeyIdentifier",
+          "basicConstraints",
+          "includeCrlDistribution",
+          "includeCaIssuers",
+          "includeIssuerAltName",
+          "policies",
+          "customExtensions",
           "version",
           "createdBy",
           "createdAt",

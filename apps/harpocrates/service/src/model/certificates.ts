@@ -22,7 +22,7 @@ import {
   KEY_ALGORITHM_ENUM,
   KEY_ALGORITHM_VALUES,
   type KeyAlgorithmName,
-  Names,
+  CertificateNames,
 } from "./common";
 
 export const CERTIFICATE_STATE_VALUES = [
@@ -134,11 +134,11 @@ export class Certificate {
   subject: string;
 
   @ApiProperty({
-    type: () => Names,
+    type: () => CertificateNames,
     required: true,
     description: "Its alternative names",
   })
-  names: Names;
+  names: CertificateNames;
 
   @ApiTimestamp({
     required: true,
@@ -356,14 +356,14 @@ export class CreateCertificateRequest {
   subject: CertificateSubject;
 
   @ApiProperty({
-    type: () => Names,
+    type: () => CertificateNames,
     required: false,
     description: "Its alternative names, of the types the profile allows",
   })
   @IsOptional()
   @ValidateNested()
-  @Type(() => Names)
-  names?: Names;
+  @Type(() => CertificateNames)
+  names?: CertificateNames;
 
   @ApiProperty({
     type: String,
@@ -452,14 +452,14 @@ export class CreateCeremonyCertificateRequest {
   subject: CertificateSubject;
 
   @ApiProperty({
-    type: () => Names,
+    type: () => CertificateNames,
     required: false,
     description: "Its alternative names, if the profile carries them",
   })
   @IsOptional()
   @ValidateNested()
-  @Type(() => Names)
-  names?: Names;
+  @Type(() => CertificateNames)
+  names?: CertificateNames;
 
   @ApiProperty({
     type: Number,

@@ -22,6 +22,7 @@ import type {
   IssuedTierName,
   Issuer,
   IssuerShapeName,
+  UpdateIssuerRequest,
 } from "../../model/issuers";
 import {
   certificatePem,
@@ -65,6 +66,11 @@ export const BACKDATE_MINUTES = 5;
 export const startNow = () => new Date(Date.now() - BACKDATE_MINUTES * 60_000);
 
 /** The CAs (ADR 0020, Hierarchy): the tree, their rules and their windows. */
+/** An issuer alternative name's email: a mailbox. */
+const EMAIL = /^[^@\s]+@[^@\s]+$/;
+/** ...or URI: a scheme and the rest. */
+const URI = /^[a-z][a-z0-9+.-]*:\S+$/i;
+
 @Injectable()
 export class IssuerService {
   constructor(
@@ -291,6 +297,66 @@ export class IssuerService {
    * no certificate, no list. It is never published, and its number is not
    * used again: the record stays, revoked.
    */
+  /**
+   * Changes what can change on a CA once it exists: its alternative
+   * names, which leaves carry where their version says (ADR 0034).
+   */
+  async update(
+    principal: Principal,
+    issuerId: string,
+    request: UpdateIssuerRequest,
+  ): Promise<FullIssuer> {
+    const row = await this.row(issuerId);
+    const names = request.alternativeNames;
+    if (!names) return this.describe(issuerId);
+    const rows = [
+      ...(names.email ?? []).map((value) => ({
+        type: "email" as const,
+        value: value.trim(),
+      })),
+      ...(names.uri ?? []).map((value) => ({
+        type: "uri" as const,
+        value: value.trim(),
+      })),
+    ];
+    const problems = rows.flatMap(({ type, value }) =>
+      (type === "email" ? EMAIL : URI).test(value)
+        ? []
+        : [
+            `${value} is not ${type === "email" ? "an email address" : "a URI"}`,
+          ],
+    );
+    if (new Set(rows.map((r) => `${r.type}:${r.value}`)).size !== rows.length) {
+      problems.push("a name is given twice");
+    }
+    if (problems.length) {
+      throw new UnprocessableEntityException(
+        `The alternative names cannot be saved: ${problems.join("; ")}`,
+      );
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.issuerAlternativeName.deleteMany({ where: { issuerId } });
+      await tx.issuer.update({
+        where: { id: issuerId },
+        data: { alternativeNames: { create: rows } },
+      });
+      await this.audit.record(
+        {
+          kind: AuditKind.IssuerUpdated,
+          principal,
+          subjectType: "issuer",
+          subjectId: issuerId,
+          attributes: {
+            subject: row.subject,
+            alternativeNames: rows.map((r) => `${r.type}:${r.value}`).join(","),
+          },
+        },
+        tx,
+      );
+    });
+    return this.describe(issuerId);
+  }
+
   async discard(principal: Principal, issuerId: string): Promise<FullIssuer> {
     const row = await this.row(issuerId);
     if (row.tier !== "root") {

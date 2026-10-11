@@ -63,15 +63,26 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
     default, lock, pattern and count. With no default, the organization
     is the configured one. CN is required and OU and O optional unless a
     version says otherwise.
-  - _Names_: each type allowed or required, at least `minNames` of them,
-    inside the permitted subtrees of their type and outside the excluded
-    ones (RFC 5280: `example.com` is it and below, `.example.com` below
-    only; IP networks as address/prefix).
+  - _Names_ (DNS, IP, email, URI, a Microsoft UPN, a registeredID OID):
+    each type allowed or required, at least `minNames` of them, inside
+    the permitted subtrees of their type and outside the excluded ones
+    (RFC 5280: `example.com` is it and below, `.example.com` below only;
+    IP networks as address/prefix). UPNs and OIDs have no subtrees.
   - _Usages_, each forced, default or optional (any other is excluded):
     the forced ones always; then the request's `keyUsages` and
     `extendedKeyUsages` (refused if it names an excluded one), else what
     the CSR or the renewed certificate carried (excluded ones dropped),
     else the defaults.
+  - _How it is built_: the hash (SHA-256, 384 or 512; none under an
+    Ed25519 CA) and, under an RSA CA, PKCS#1 v1.5 or PSS; the subject
+    key identifier by RFC 5280's or RFC 7093's method, or none; the
+    authority key identifier alone, with the CA's issuer and serial, or
+    none; basic constraints critical, not, or left out; the CA's CRL and
+    caIssuers URLs each in or out; the CA's alternative names (set with
+    `PUT /issuer/{id}`) in or out; certificate policies with a CPS URI
+    and user notice; custom extensions by OID, their value DER. A
+    version's custom extensions are none Harpocrates builds itself, and
+    a minimal version carries none of these.
 - **One key, one request**: a key already seen is reissued only for the
   same profile, subject and names, and refused (`409`) for anything else.
   A CA's key is never a subject's. Weak RSA keys (ROCA, close primes) are
@@ -124,6 +135,7 @@ from it.
 | Operation                                                                                                                        | Who                   |
 | -------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | `GET /issuers`, `GET /issuer/{id}`                                                                                               | either role           |
+| `PUT /issuer/{id}` (its issuer alternative names)                                                                                | admin, recent sign-in |
 | `POST /issuers/roots`, `POST /issuers/import`                                                                                    | admin, recent sign-in |
 | `POST /issuers/preview` (a new CA's settings and defaults, unsigned)                                                             | admin                 |
 | `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing`                                                           | admin, recent sign-in |

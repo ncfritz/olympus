@@ -3,6 +3,8 @@ import {
   type AttributeRule,
   checkNames,
   csrHashProblem,
+  customExtensionProblem,
+  isOneDerElement,
   keyAlgorithmProblem,
   resolveSubject,
   resolveUsages,
@@ -247,5 +249,26 @@ describe("profile rules", () => {
     );
     expect(csrHashProblem(["sha256"], "sha1")).toMatch(/not sha1/);
     expect(csrHashProblem(["sha256"], undefined)).toBeUndefined();
+  });
+
+  it("takes a custom extension only unmanaged and one DER element", () => {
+    expect(isOneDerElement(Buffer.from([0x05, 0x00]))).toBe(true);
+    const long = Buffer.concat([
+      Buffer.from([0x04, 0x81, 0x80]),
+      Buffer.alloc(0x80),
+    ]);
+    expect(isOneDerElement(long)).toBe(true);
+    expect(isOneDerElement(Buffer.from([0x05, 0x00, 0x05, 0x00]))).toBe(false);
+    expect(
+      isOneDerElement(Buffer.from([0x04, 0x81, 0x05, 1, 2, 3, 4, 5])),
+    ).toBe(false);
+    expect(isOneDerElement(Buffer.from([0x05]))).toBe(false);
+    expect(customExtensionProblem("1.3.6.1.4.1.1.1", "BQA=")).toBeUndefined();
+    expect(customExtensionProblem("2.5.29.17", "BQA=")).toMatch(
+      /subject alternative name\) is not a custom extension/,
+    );
+    expect(customExtensionProblem("1.3.6.1.4.1.1.1", "BQ==")).toMatch(
+      /not one DER element/,
+    );
   });
 });

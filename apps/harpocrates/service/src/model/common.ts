@@ -1,6 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  Matches,
+  ValidateNested,
+} from "class-validator";
 
 /*
  * Schema pieces shared by the management API's shapes (see
@@ -8,14 +14,42 @@ import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
  * named schema, described once.
  */
 
-export const NAME_TYPE_VALUES = ["dns", "ip", "email", "uri"] as const;
+export const NAME_TYPE_VALUES = [
+  "dns",
+  "ip",
+  "email",
+  "uri",
+  "upn",
+  "registeredId",
+] as const;
 export type NameTypeName = (typeof NAME_TYPE_VALUES)[number];
 
 export const NAME_TYPE_ENUM = {
   enum: [...NAME_TYPE_VALUES],
   enumName: "NameType",
-  enumSchema: { description: "A kind of name: DNS, IP address, email or URI" },
+  enumSchema: {
+    description:
+      "A kind of name: DNS, IP address, email, URI, a Microsoft user principal name (otherName) or a registeredID (an OID)",
+  },
 };
+
+/** The name types with subtrees (RFC 5280, 4.2.1.10): constraints, policies. */
+export const SUBTREE_NAME_TYPE_VALUES = ["dns", "ip", "email", "uri"] as const;
+export type SubtreeNameTypeName = (typeof SUBTREE_NAME_TYPE_VALUES)[number];
+
+export const SUBTREE_NAME_TYPE_ENUM = {
+  enum: [...SUBTREE_NAME_TYPE_VALUES],
+  enumName: "SubtreeNameType",
+  enumSchema: {
+    description: "A kind of name with subtrees: DNS, IP address, email or URI",
+  },
+};
+
+/** A dotted OID. */
+export const OID = /^[0-2](\.(0|[1-9][0-9]*))+$/;
+
+/** A user principal name: user@domain. */
+export const UPN = /^[^@\s]+@[^@\s]+$/;
 
 export const KEY_ALGORITHM_VALUES = [
   "RSA-2048",
@@ -79,6 +113,56 @@ export class Names {
     isArray: true,
     required: false,
     description: "Email addresses (for a CA's constraints, domains)",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  email?: string[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description: "URIs",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  uri?: string[];
+}
+
+/** Names by type, as a certificate carries them: also UPNs and OIDs. */
+export class CertificateNames extends Names {
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description: "Microsoft user principal names (otherName): user@domain",
+  })
+  @IsOptional()
+  @IsArray()
+  @Matches(UPN, { each: true })
+  upn?: string[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description: "registeredIDs: dotted OIDs",
+  })
+  @IsOptional()
+  @IsArray()
+  @Matches(OID, { each: true })
+  registeredId?: string[];
+}
+
+/** How whoever runs a CA is reached: its issuer alternative names. */
+export class ContactNames {
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: false,
+    description: "Email addresses",
   })
   @IsOptional()
   @IsArray()

@@ -1,5 +1,5 @@
 import * as x509 from "@peculiar/x509";
-import { webcrypto, X509Certificate } from "crypto";
+import { createHash, webcrypto, X509Certificate } from "crypto";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { OID } from "../../src/pki/x509";
@@ -8,8 +8,26 @@ import {
   E2E_DATABASE_URL,
   startHarness,
   type Harness,
+  type Hierarchy,
 } from "../support/e2e";
 import { bearer } from "../support/tokens";
+
+/** An SPKI's subjectPublicKey bits: what key identifiers hash. */
+const subjectPublicKeyBits = (spki: Buffer): Buffer => {
+  const element = (offset: number) => {
+    let start = offset + 2;
+    let length = spki[offset + 1];
+    if (length & 0x80) {
+      const count = length & 0x7f;
+      length = spki.readUIntBE(offset + 2, count);
+      start += count;
+    }
+    return { start, end: start + length };
+  };
+  const algorithm = element(element(0).start);
+  const bits = element(algorithm.end);
+  return spki.subarray(bits.start + 1, bits.end);
+};
 
 type Profile = {
   id: string;
@@ -46,6 +64,16 @@ const settings = {
   ],
   keyAlgorithms: [],
   csrSignatureHashes: [],
+  signatureHash: "sha256",
+  rsaPadding: "pkcs1v15",
+  subjectKeyIdentifier: "sha1",
+  authorityKeyIdentifier: "key_id",
+  basicConstraints: "critical",
+  includeCrlDistribution: true,
+  includeCaIssuers: true,
+  includeIssuerAltName: false,
+  policies: [],
+  customExtensions: [],
 };
 
 const days = (pem: string) => {
@@ -62,6 +90,7 @@ const days = (pem: string) => {
  */
 describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
   let harness: Harness;
+  let hierarchy: Hierarchy;
   const server = () => harness.app.getHttpServer();
   const profile = (response: request.Response) =>
     (response.body as { profile: Profile }).profile;
@@ -98,7 +127,7 @@ describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
 
   beforeAll(async () => {
     harness = await startHarness();
-    await buildHierarchy(harness, [
+    hierarchy = await buildHierarchy(harness, [
       {
         purpose: "Service",
         extendedKeyUsages: [OID.clientAuth, OID.serverAuth],
@@ -570,6 +599,186 @@ describe.skipIf(!E2E_DATABASE_URL)("profiles", () => {
       ]) {
         expect(refused.body.message).toMatch(problem);
       }
+    });
+  });
+
+  describe("certificate settings", () => {
+    /** "olympus", a UTF8String: a custom extension's value. */
+    const CUSTOM = Buffer.from([0x0c, 0x07, ...Buffer.from("olympus")]);
+    const custom = {
+      oid: "1.3.6.1.4.1.55555.1.1",
+      critical: false,
+      value: CUSTOM.toString("base64"),
+    };
+    const configured = {
+      ...settings,
+      names: [
+        { type: "dns", presence: "allowed" },
+        { type: "upn", presence: "allowed" },
+        { type: "registeredId", presence: "allowed" },
+      ],
+      signatureHash: "sha384",
+      subjectKeyIdentifier: "sha256",
+      authorityKeyIdentifier: "key_id_and_issuer",
+      basicConstraints: "non_critical",
+      includeCrlDistribution: false,
+      includeIssuerAltName: true,
+      policies: [
+        {
+          oid: "1.3.6.1.4.1.55555.2.1",
+          cpsUri: "https://pki.internal.ncfritz.net/cps",
+          userNotice: "Internal use only",
+        },
+        { oid: "2.23.140.1.2.1" },
+      ],
+      customExtensions: [custom],
+    };
+
+    beforeAll(async () => {
+      x509.cryptoProvider.set(webcrypto as unknown as Crypto);
+    });
+
+    it("gives the CA its alternative names, an admin's after a recent sign-in", async () => {
+      const issuerId = hierarchy.issuing.Service.id;
+      const names = {
+        email: ["pki@ncfritz.net"],
+        uri: ["https://pki.internal.ncfritz.net/"],
+      };
+      await request(server())
+        .put(`/v1/issuer/${issuerId}`)
+        .set("Authorization", harness.operator)
+        .send({ alternativeNames: names })
+        .expect(403);
+      await request(server())
+        .put(`/v1/issuer/${issuerId}`)
+        .set("Authorization", harness.admin)
+        .send({ alternativeNames: { email: ["not an address"] } })
+        .expect(422);
+      const response = await request(server())
+        .put(`/v1/issuer/${issuerId}`)
+        .set("Authorization", harness.admin)
+        .send({ alternativeNames: names })
+        .expect(200);
+      expect(
+        (response.body as { issuer: { alternativeNames: object } }).issuer
+          .alternativeNames,
+      ).toEqual(names);
+      const audited = await harness.prisma.auditEvent.findMany({
+        where: { kind: "issuer.updated", subjectId: issuerId },
+      });
+      expect(audited).toHaveLength(1);
+    });
+
+    it("issues what the version says, and renews the same", async () => {
+      await create({
+        id: "configured",
+        description: "Configured",
+        ...configured,
+      }).expect(201);
+      const issued = await request(server())
+        .post("/v1/certificates")
+        .set("Authorization", harness.operator)
+        .send({
+          profileId: "configured",
+          subject: { commonName: "configured" },
+          names: {
+            dns: ["configured.internal.ncfritz.net"],
+            upn: ["neil@ncfritz.net"],
+            registeredId: ["1.3.6.1.4.1.55555.3"],
+          },
+        })
+        .expect(201);
+      const body = issued.body as {
+        certificate: { id: string; certificate: string };
+      };
+      for (const pem of [
+        body.certificate.certificate,
+        (await renew(body.certificate.id)).certificate,
+      ]) {
+        const certificate = new x509.X509Certificate(pem);
+        expect(certificate.signatureAlgorithm).toMatchObject({
+          name: "ECDSA",
+          hash: { name: "SHA-384" },
+        });
+        const constraints = certificate.getExtension(
+          x509.BasicConstraintsExtension,
+        );
+        expect(constraints?.critical).toBe(false);
+        expect(constraints?.ca).toBe(false);
+        const ski = certificate.getExtension(
+          x509.SubjectKeyIdentifierExtension,
+        )?.keyId;
+        expect(ski).toBe(
+          createHash("sha256")
+            .update(
+              subjectPublicKeyBits(Buffer.from(certificate.publicKey.rawData)),
+            )
+            .digest()
+            .subarray(0, 20)
+            .toString("hex"),
+        );
+        const aki = certificate.getExtension(
+          x509.AuthorityKeyIdentifierExtension,
+        );
+        expect(aki?.certId?.serialNumber).toBeTruthy();
+        expect(
+          certificate.getExtension("2.5.29.31" /* CRL distribution */),
+        ).toBeNull();
+        expect(
+          certificate.getExtension("1.3.6.1.5.5.7.1.1" /* AIA */),
+        ).not.toBeNull();
+        const ian = certificate.getExtension("2.5.29.18");
+        expect(ian).not.toBeNull();
+        const policies = certificate.getExtension(
+          x509.CertificatePolicyExtension,
+        );
+        expect(policies?.policies).toEqual([
+          "1.3.6.1.4.1.55555.2.1",
+          "2.23.140.1.2.1",
+        ]);
+        const extension = certificate.getExtension(custom.oid);
+        expect(Buffer.from(extension!.value)).toEqual(CUSTOM);
+        const sans = certificate.getExtension(
+          x509.SubjectAlternativeNameExtension,
+        );
+        const types = sans?.names.items.map((n) => n.type).sort();
+        expect(types).toEqual(["dns", "id", "upn"]);
+      }
+    });
+
+    it("refuses a version's extensions that are not its to make", async () => {
+      const refused = await create({
+        id: "overreaching",
+        description: "x",
+        ...configured,
+        customExtensions: [
+          { oid: "2.5.29.19", critical: true, value: "MAA=" },
+          { ...custom, value: Buffer.from([0x05]).toString("base64") },
+        ],
+        policies: [{ oid: "2.23.140.1.2.1", cpsUri: "ftp://nowhere" }],
+      }).expect(422);
+      for (const problem of [
+        /2.5.29.19 \(basic constraints\) is not a custom extension/,
+        /value is not one DER element/,
+        /CPS URI ftp:\/\/nowhere is not an http\(s\) URL/,
+      ]) {
+        expect(refused.body.message).toMatch(problem);
+      }
+      const minimal = await create({
+        id: "minimal-overreaching",
+        description: "x",
+        ...configured,
+        extensions: "minimal",
+      }).expect(422);
+      expect(minimal.body.message).toMatch(
+        /minimal extensions carry only the key identifiers/,
+      );
+      await create({
+        id: "policed-upn",
+        description: "x",
+        ...settings,
+        namePolicy: [{ type: "upn", kind: "permitted", value: "ncfritz.net" }],
+      }).expect(400);
     });
   });
 });

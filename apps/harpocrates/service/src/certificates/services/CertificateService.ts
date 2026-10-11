@@ -19,7 +19,14 @@ import { AuditService } from "../../audit/services/AuditService";
 import { type Principal, SYSTEM } from "../../auth/principal";
 import { pkiConfig, type PkiConfigType } from "../../config/configuration";
 import { CrlScheduler } from "../../crls/services/CrlScheduler";
-import type { IssuerWithRules } from "../../issuers/converters/IssuerConverter";
+import {
+  buildContactNames,
+  type IssuerWithRules,
+} from "../../issuers/converters/IssuerConverter";
+import type {
+  AuthorityKeyIdentifierName,
+  BasicConstraintsName,
+} from "../../model/profiles";
 import { addDays } from "../../issuers/issuingWindow";
 import { IssuerService, startNow } from "../../issuers/services/IssuerService";
 import { KeyService } from "../../keys/services/KeyService";
@@ -45,7 +52,7 @@ import type {
 import {
   isNameType,
   type KeyAlgorithmName,
-  type Names,
+  type CertificateNames,
   type NameTypeName,
 } from "../../model/common";
 import {
@@ -124,7 +131,7 @@ type Usages = { keyUsages?: string[]; extendedKeyUsages?: string[] };
 
 type Lineage = { enrollment: Enrollment; key: Key; created: boolean };
 
-const nameRows = (names: Names | undefined): NameRow[] =>
+const nameRows = (names: CertificateNames | undefined): NameRow[] =>
   Object.entries(names ?? {}).flatMap(([type, values]) =>
     isNameType(type)
       ? ((values as string[] | undefined) ?? []).map((value) => ({
@@ -143,12 +150,31 @@ const sameNames = (a: NameRow[], b: NameRow[]) => {
   return key(a) === key(b);
 };
 
-const toSans = (rows: NameRow[]): Names => {
-  const names: Names = {};
+const toSans = (rows: NameRow[]): CertificateNames => {
+  const names: CertificateNames = {};
   for (const row of rows)
     names[row.type] = [...(names[row.type] ?? []), row.value];
   return names;
 };
+
+/** The signer's spelling of a version's choices. */
+const BASIC_CONSTRAINTS = {
+  critical: "critical",
+  non_critical: "non-critical",
+  omitted: "omitted",
+} as const satisfies Record<
+  BasicConstraintsName,
+  CertificateSpec["basicConstraints"]
+>;
+
+const AUTHORITY_KEY_IDENTIFIER = {
+  key_id: "key-id",
+  key_id_and_issuer: "key-id-and-issuer",
+  none: "none",
+} as const satisfies Record<
+  AuthorityKeyIdentifierName,
+  CertificateSpec["authorityKeyIdentifier"]
+>;
 
 /**
  * Issuance, renewal, revocation and escrow export (ADR 0020, Keys and
@@ -911,6 +937,41 @@ export class CertificateService {
     };
   }
 
+  /**
+   * How a version's certificate is signed and identified (ADR 0034): its
+   * hash, unless the issuer's key is Ed25519, which has none; PSS only
+   * under an RSA issuer, another ignoring it; its key identifier methods.
+   */
+  private async certificateSettings(
+    profile: ProfileWithRules,
+    issuer: IssuerWithRules,
+  ): Promise<
+    Pick<
+      CertificateSpec,
+      | "signatureHash"
+      | "rsaPadding"
+      | "subjectKeyIdentifier"
+      | "authorityKeyIdentifier"
+    >
+  > {
+    const { algorithm } = await this.prisma.key.findUniqueOrThrow({
+      where: { id: issuer.keyId },
+      select: { algorithm: true },
+    });
+    return {
+      ...(algorithm === "Ed25519"
+        ? {}
+        : { signatureHash: profile.signatureHash }),
+      rsaPadding:
+        algorithm.startsWith("RSA_") && profile.rsaPadding === "pss"
+          ? "pss"
+          : "pkcs1v15",
+      subjectKeyIdentifier: profile.subjectKeyIdentifier,
+      authorityKeyIdentifier:
+        AUTHORITY_KEY_IDENTIFIER[profile.authorityKeyIdentifier],
+    };
+  }
+
   private checkValidity(
     profile: ProfileWithRules,
     issuer: IssuerWithRules,
@@ -1211,6 +1272,7 @@ export class CertificateService {
     );
     const notBefore = startNow();
     const minimal = profile.extensions === "minimal";
+    const settings = await this.certificateSettings(profile, issuer);
     const spec: CertificateSpec = {
       subject: issuance.subject,
       serial: randomSerial(),
@@ -1225,9 +1287,28 @@ export class CertificateService {
             keyUsage: usages.keyUsages as CertificateSpec["keyUsage"],
             extendedKeyUsages: usages.extendedKeyUsages,
             sans: toSans(issuance.names),
-            crlDistributionPoints: [issuer.crlUrl],
-            issuerUrls: [issuer.caIssuersUrl],
+            crlDistributionPoints: profile.includeCrlDistribution
+              ? [issuer.crlUrl]
+              : [],
+            issuerUrls: profile.includeCaIssuers ? [issuer.caIssuersUrl] : [],
+            basicConstraints: BASIC_CONSTRAINTS[profile.basicConstraints],
+            issuerAlternativeNames: profile.includeIssuerAltName
+              ? buildContactNames(issuer.alternativeNames)
+              : {},
+            certificatePolicies: [...profile.policies]
+              .sort((a, b) => a.position - b.position)
+              .map((p) => ({
+                oid: p.oid,
+                cpsUri: p.cpsUri ?? undefined,
+                userNotice: p.userNotice ?? undefined,
+              })),
+            customExtensions: profile.customExtensions.map((e) => ({
+              oid: e.oid,
+              critical: e.critical,
+              value: Buffer.from(e.value).toString("base64"),
+            })),
           }),
+      ...settings,
       ...(subjectKey.kind === "csr" ? { csr: subjectKey.csr } : {}),
       ...(subjectKey.kind === "publicKey"
         ? { publicKey: spkiPem(subjectKey.spki) }

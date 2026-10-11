@@ -60,6 +60,10 @@ enum NameType {
   ip
   email
   uri
+  /// A Microsoft user principal name (otherName): certificates only.
+  upn
+  /// A registeredID (an OID): certificates only.
+  registeredId
 }
 
 /// A CA. Roots and intermediates are offline: their keys are never in the
@@ -112,6 +116,7 @@ model Issuer {
 
   extendedKeyUsages   IssuerExtendedKeyUsage[]
   nameConstraints     IssuerNameConstraint[]
+  alternativeNames    IssuerAlternativeName[]
   profileVersions     ProfileVersion[]
   certificates        Certificate[]
   crls                Crl[]
@@ -141,6 +146,19 @@ model IssuerNameConstraint {
 
   @@unique([issuerId, kind, type, value])
   @@map("issuer_name_constraints")
+}
+
+/// How whoever runs a CA is reached (an email or URI): its issuer
+/// alternative name, which a version may put in its leaves (ADR 0034).
+model IssuerAlternativeName {
+  id       Int      @id @default(autoincrement())
+  issuerId String   @map("issuer_id")
+  issuer   Issuer   @relation(fields: [issuerId], references: [id], onDelete: Cascade)
+  type     NameType
+  value    String
+
+  @@unique([issuerId, type, value])
+  @@map("issuer_alternative_names")
 }
 
 /// An offline CA's key, in the signer for one ceremony.
@@ -195,35 +213,48 @@ model Profile {
 /// One version of a profile, v1, v2, …: every setting, frozen once made
 /// (ADR 0034). A new certificate takes the latest; a renewal keeps its own.
 model ProfileVersion {
-  id                String       @id @default(uuid()) @db.Uuid
-  profileId         String       @map("profile_id")
-  profile           Profile      @relation(fields: [profileId], references: [id])
-  version           Int
+  id                     String                     @id @default(uuid()) @db.Uuid
+  profileId              String                     @map("profile_id")
+  profile                Profile                    @relation(fields: [profileId], references: [id])
+  version                Int
   /// The default issuer; the operator may choose another that could sign.
-  issuerId          String?      @map("issuer_id")
-  issuer            Issuer?      @relation(fields: [issuerId], references: [id])
+  issuerId               String?                    @map("issuer_id")
+  issuer                 Issuer?                    @relation(fields: [issuerId], references: [id])
   /// The issuing CA purpose this profile belongs to, to find an issuer.
-  issuerPurpose     String       @map("issuer_purpose")
-  keyAlgorithm      KeyAlgorithm @map("key_algorithm")
-  validityDays      Int          @map("validity_days")
-  renewAtDays       Int          @map("renew_at_days")
-  maxKeyAgeDays     Int          @map("max_key_age_days")
-  allowCsr          Boolean      @map("allow_csr")
-  allowGenerated    Boolean      @map("allow_generated")
+  issuerPurpose          String                     @map("issuer_purpose")
+  keyAlgorithm           KeyAlgorithm               @map("key_algorithm")
+  validityDays           Int                        @map("validity_days")
+  renewAtDays            Int                        @map("renew_at_days")
+  maxKeyAgeDays          Int                        @map("max_key_age_days")
+  allowCsr               Boolean                    @map("allow_csr")
+  allowGenerated         Boolean                    @map("allow_generated")
   /// PKCS#12 without the chain, SHA-1 and 3DES: the printer.
-  legacyExport      Boolean      @default(false) @map("legacy_export")
+  legacyExport           Boolean                    @default(false) @map("legacy_export")
   /// How many alternative names a certificate needs, at least.
-  minNames          Int          @default(0) @map("min_names")
+  minNames               Int                        @default(0) @map("min_names")
   /// A generated key is kept, exportable again (ADR 0032, escrow). Off, it
   /// can be exported once, then it is destroyed.
-  escrow            Boolean      @default(true)
+  escrow                 Boolean                    @default(true)
   /// Whether one request may choose otherwise.
-  escrowOverridable Boolean      @default(false) @map("escrow_overridable")
-  extensions        ExtensionSet @default(standard)
+  escrowOverridable      Boolean                    @default(false) @map("escrow_overridable")
+  extensions             ExtensionSet               @default(standard)
+  /// The certificate's hash; under an Ed25519 issuer, none.
+  signatureHash          CertificateHash            @default(sha256) @map("signature_hash")
+  /// Under an RSA issuer; any other ignores it.
+  rsaPadding             RsaPadding                 @default(pkcs1v15) @map("rsa_padding")
+  subjectKeyIdentifier   KeyIdentifierMethod        @default(sha1) @map("subject_key_identifier")
+  authorityKeyIdentifier AuthorityKeyIdentifierForm @default(key_id) @map("authority_key_identifier")
+  basicConstraints       BasicConstraintsForm       @default(critical) @map("basic_constraints")
+  /// The issuer's CRL distribution point.
+  includeCrlDistribution Boolean                    @default(true) @map("include_crl_distribution")
+  /// AIA caIssuers: where the issuer's certificate is.
+  includeCaIssuers       Boolean                    @default(true) @map("include_ca_issuers")
+  /// The issuer's alternative names, where it has any.
+  includeIssuerAltName   Boolean                    @default(false) @map("include_issuer_alt_name")
   /// Who made this version: a principal, or `migration` for the seeds.
-  createdBy         String       @map("created_by")
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
+  createdBy              String                     @map("created_by")
+  createdAt              DateTime                   @default(now()) @map("created_at")
+  updatedAt              DateTime                   @updatedAt @map("updated_at")
 
   keyUsages         ProfileKeyUsage[]
   extendedKeyUsages ProfileExtendedKeyUsage[]
@@ -232,6 +263,8 @@ model ProfileVersion {
   namePolicies      ProfileNamePolicy[]
   keyAlgorithms     ProfileKeyAlgorithm[]
   csrHashes         ProfileCsrHash[]
+  policies          ProfilePolicy[]
+  customExtensions  ProfileCustomExtension[]
   enrollments       Enrollment[]
   certificates      Certificate[]
 
@@ -348,6 +381,65 @@ model ProfileCsrHash {
 
   @@id([profileVersionId, hash])
   @@map("profile_csr_hashes")
+}
+
+enum CertificateHash {
+  sha256
+  sha384
+  sha512
+}
+
+enum RsaPadding {
+  pkcs1v15
+  pss
+}
+
+/// RFC 5280's SHA-1 of the key's bits, RFC 7093's truncated SHA-256, or
+/// no subject key identifier.
+enum KeyIdentifierMethod {
+  sha1
+  sha256
+  none
+}
+
+enum AuthorityKeyIdentifierForm {
+  key_id
+  key_id_and_issuer
+  none
+}
+
+/// A leaf's basic constraints (CA:FALSE).
+enum BasicConstraintsForm {
+  critical
+  non_critical
+  omitted
+}
+
+/// A certificate policy a version's certificates assert, in order.
+model ProfilePolicy {
+  id               Int            @id @default(autoincrement())
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  position         Int
+  oid              String
+  cpsUri           String?        @map("cps_uri")
+  userNotice       String?        @map("user_notice")
+
+  @@unique([profileVersionId, oid])
+  @@map("profile_policies")
+}
+
+/// An extension the signer does not build itself, by OID, its value DER.
+model ProfileCustomExtension {
+  id               Int            @id @default(autoincrement())
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  oid              String
+  critical         Boolean        @default(false)
+  value            Bytes
+
+  @@unique([profileVersionId, oid])
+  @@map("profile_custom_extensions")
 }
 
 // ---- Keys, enrollments, certificates
