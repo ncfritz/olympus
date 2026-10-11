@@ -200,6 +200,19 @@ two seconds apart, before the challenge, its authorization and its order
 are invalid with the reason. An order is ready when every name is proved,
 and lasts 7 days. Orders, and each challenge's outcome, are audited.
 
+A ready order is finalized with a CSR for exactly its names (a common
+name, if any, among them), issued under `ACME_PROFILE` (`internal-tls`:
+P-256, 90 days) by the same path as any certificate: the profile's
+rules, the issuing window, the signer's invariants and the TLS CA's name
+constraints. A refused CSR is `badCSR` and leaves the order ready for
+another. The certificate is served with the CAs above it, not the root,
+to its account; it is revoked by that account or by its own key, with a
+reason a subscriber may give (0, 1, 3, 4, 5, 9). An account rolls its
+key with key-change. Renewal information (RFC 9773, `renewal-info`)
+suggests the profile's renewal age to half-way to expiry, and a window
+already past once a certificate is revoked. ACME certificates are
+`renewal="automatic"` in `certificate_expiry_days`.
+
 The CA console (`apps/harpocrates/console`) signs in through Olympus
 (ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
 service completes the sign-in and keeps the tokens in httpOnly cookies
@@ -348,6 +361,7 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 | `DEPLOY_SCHEDULE_SECONDS`     | `60`                                                      | How often targets are renewed, followed and deployed; `0` turns it off                             |
 | `ENDPOINT_CHECK_SECONDS`      | `3600`                                                    | How often a target's endpoint is checked while it serves its certificate; `0` turns the checks off |
 | `ACME_BASE_URL`               | `https://<first RENEWAL_HOSTNAMES>:<RENEWAL_LISTEN_PORT>` | Where ACME clients reach the renewal listener: the start of every ACME URL                         |
+| `ACME_PROFILE`                | `internal-tls`                                            | The profile ACME certificates are issued under                                                     |
 | `ACME_HTTP_PORT`              | `80`                                                      | The port `http-01` is validated on                                                                 |
 | `ACME_TLS_ALPN_PORT`          | `443`                                                     | The port `tls-alpn-01` is validated on                                                             |
 | `ACME_CHALLENGE_RESOLVE`      | —                                                         | An address every challenge connects to, whatever its name resolves to: tests only                  |

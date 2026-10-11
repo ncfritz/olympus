@@ -344,6 +344,8 @@ model Certificate {
   escrowExports EscrowExport[]
   deployTargets DeployTarget[]
   deployments   Deployment[]
+  /// The ACME order it was issued for.
+  acmeOrder     AcmeOrder?
 
   @@unique([issuerId, serial])
   @@index([notAfter])
@@ -636,16 +638,19 @@ enum AcmeOrderStatus {
 
 /// A request for a certificate for some DNS names (RFC 8555 §7.4).
 model AcmeOrder {
-  id          String          @id @default(uuid()) @db.Uuid
-  accountId   String          @map("account_id") @db.Uuid
-  account     AcmeAccount     @relation(fields: [accountId], references: [id])
-  status      AcmeOrderStatus @default(pending)
-  expiresAt   DateTime        @map("expires_at")
+  id            String          @id @default(uuid()) @db.Uuid
+  accountId     String          @map("account_id") @db.Uuid
+  account       AcmeAccount     @relation(fields: [accountId], references: [id])
+  status        AcmeOrderStatus @default(pending)
+  expiresAt     DateTime        @map("expires_at")
+  /// What finalizing it issued.
+  certificateId String?         @unique @map("certificate_id") @db.Uuid
+  certificate   Certificate?    @relation(fields: [certificateId], references: [id])
   /// Why it is invalid: an ACME error type and its detail.
-  errorType   String?         @map("error_type")
-  errorDetail String?         @map("error_detail")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  errorType     String?         @map("error_type")
+  errorDetail   String?         @map("error_detail")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
 
   authorizations AcmeAuthorization[]
 

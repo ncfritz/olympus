@@ -1,4 +1,6 @@
+import * as x509 from "@peculiar/x509";
 import * as acme from "acme-client";
+import { createPrivateKey, X509Certificate } from "crypto";
 import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
@@ -490,6 +492,254 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
       const deactivated = await client.deactivateAuthorization(authorization);
       expect(deactivated.status).toBe("deactivated");
       expect((await client.getOrder(order)).status).toBe("invalid");
+    });
+
+    describe("issuance", () => {
+      /** An order for `names`, proved by http-01: ready to finalize. */
+      const readyOrder = async (names: string[]) => {
+        const order = await client.createOrder({
+          identifiers: names.map((value) => ({ type: "dns", value })),
+        });
+        for (const authorization of await client.getAuthorizations(order)) {
+          await client.waitForValidStatus(
+            await answer(authorization, "http-01"),
+          );
+        }
+        await vi.waitFor(
+          async () =>
+            expect((await client.getOrder(order)).status).toBe("ready"),
+          { timeout: 5_000, interval: 100 },
+        );
+        return order;
+      };
+
+      const csrFor = async (names: string[], key?: Buffer) => {
+        const privateKey =
+          key ?? (await acme.crypto.createPrivateEcdsaKey("P-256"));
+        const [, csr] = await acme.crypto.createCsr(
+          { commonName: names[0], altNames: names },
+          privateKey,
+        );
+        return { csr, privateKey };
+      };
+
+      /** RFC 9773's certificate ID: its AKI and serial, base64url. */
+      const certIdOf = (pem: string) => {
+        const certificate = new x509.X509Certificate(pem);
+        const aki = certificate.getExtension(
+          x509.AuthorityKeyIdentifierExtension,
+        )!.keyId!;
+        let serial = new X509Certificate(pem).serialNumber;
+        if (serial.length % 2) serial = `0${serial}`;
+        if (parseInt(serial[0], 16) >= 8) serial = `00${serial}`;
+        return `${Buffer.from(aki, "hex").toString("base64url")}.${Buffer.from(serial, "hex").toString("base64url")}`;
+      };
+
+      let issued: string;
+      let issuedKey: Buffer;
+
+      it("is refused before the order is ready", async () => {
+        const order = await client.createOrder({
+          identifiers: [{ type: "dns", value: "e.lab.internal.ncfritz.net" }],
+        });
+        const { csr } = await csrFor(["e.lab.internal.ncfritz.net"]);
+        await expect(client.finalizeOrder(order, csr)).rejects.toThrow(
+          /authorizations are not all valid/,
+        );
+      });
+
+      it("takes a P-256 CSR for exactly the order's names", async () => {
+        const names = [
+          "f.lab.internal.ncfritz.net",
+          "nas.internal.ncfritz.net",
+        ];
+        const order = await readyOrder(names);
+        const other = await csrFor(["f.lab.internal.ncfritz.net"]);
+        await expect(client.finalizeOrder(order, other.csr)).rejects.toThrow(
+          /exactly the order's names/,
+        );
+        const [, rsa] = await acme.crypto.createCsr({
+          commonName: names[0],
+          altNames: names,
+        });
+        await expect(client.finalizeOrder(order, rsa)).rejects.toThrow(/P-256/);
+        // Still ready: a good CSR is issued.
+        const { csr, privateKey } = await csrFor(names);
+        const finalized = await client.finalizeOrder(order, csr);
+        expect(finalized).toMatchObject({
+          status: "valid",
+          certificate: expect.stringMatching(
+            new RegExp(`^https://localhost:${port}/acme/certificate/`),
+          ),
+        });
+        issued = await client.getCertificate(finalized);
+        issuedKey = privateKey;
+      });
+
+      it("is the certificate and the CAs above it, as a server sends them", async () => {
+        const pems = issued.match(
+          /-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----/g,
+        )!;
+        expect(pems).toHaveLength(3);
+        const leaf = new X509Certificate(pems[0]);
+        expect(leaf.subjectAltName).toBe(
+          "DNS:f.lab.internal.ncfritz.net, DNS:nas.internal.ncfritz.net",
+        );
+        expect(leaf.subject).toContain("CN=f.lab.internal.ncfritz.net");
+        expect(leaf.checkPrivateKey(createPrivateKey(issuedKey))).toBe(true);
+        expect(leaf.verify(new X509Certificate(pems[1]).publicKey)).toBe(true);
+        expect(pems[1]).toBe(hierarchy.issuing.TLS.certificate.trim());
+        const days =
+          (new Date(leaf.validTo).getTime() -
+            new Date(leaf.validFrom).getTime()) /
+          86_400_000;
+        expect(Math.round(days)).toBe(90);
+        const row = await harness.prisma.certificate.findFirstOrThrow({
+          where: { acmeOrder: { isNot: null } },
+          orderBy: { createdAt: "desc" },
+        });
+        expect(row.profileId).toBe("internal-tls");
+        const issuedEvent = await harness.prisma.auditEvent.findFirstOrThrow({
+          where: { kind: "certificate.issued", subjectId: row.id },
+        });
+        expect(issuedEvent.principal).toMatch(/^acme:/);
+        const metrics = await request(server()).get("/metrics").expect(200);
+        expect(metrics.text).toMatch(
+          new RegExp(
+            `certificate_expiry_days\\{[^}]*serial="${row.serial}",renewal="automatic"`,
+          ),
+        );
+      });
+
+      it("says when to renew it (RFC 9773)", async () => {
+        const certId = certIdOf(issued);
+        const answer = await call(
+          "GET",
+          `https://localhost:${port}/acme/renewal-info/${certId}`,
+        );
+        expect(answer.status).toBe(200);
+        expect(answer.headers["retry-after"]).toBe("21600");
+        const { suggestedWindow } = JSON.parse(answer.text) as {
+          suggestedWindow: { start: string; end: string };
+        };
+        const leaf = new X509Certificate(issued);
+        const daysIn = (iso: string) =>
+          Math.round(
+            (new Date(iso).getTime() - new Date(leaf.validFrom).getTime()) /
+              86_400_000,
+          );
+        expect([
+          daysIn(suggestedWindow.start),
+          daysIn(suggestedWindow.end),
+        ]).toEqual([60, 75]);
+        const unknown = await call(
+          "GET",
+          `https://localhost:${port}/acme/renewal-info/${certId.split(".")[0]}.AQ`,
+        );
+        expect(unknown.status).toBe(404);
+      });
+
+      it("is revoked by its account, once, and then renewal is due now", async () => {
+        await client.revokeCertificate(issued, { reason: 4 });
+        await expect(
+          client.revokeCertificate(issued, { reason: 4 }),
+        ).rejects.toThrow(/already revoked/);
+        const answer = await call(
+          "GET",
+          `https://localhost:${port}/acme/renewal-info/${certIdOf(issued)}`,
+        );
+        const { suggestedWindow } = JSON.parse(answer.text) as {
+          suggestedWindow: { end: string };
+        };
+        expect(new Date(suggestedWindow.end).getTime()).toBeLessThan(
+          Date.now(),
+        );
+        const row = await harness.prisma.certificate.findFirstOrThrow({
+          where: { acmeOrder: { isNot: null } },
+          include: { revocation: true },
+          orderBy: { createdAt: "desc" },
+        });
+        expect(row.revocation).toMatchObject({ reason: "superseded" });
+      });
+
+      it("is revoked by its own key, not by another account", async () => {
+        const names = ["g.lab.internal.ncfritz.net"];
+        const order = await readyOrder(names);
+        const { csr, privateKey } = await csrFor(names);
+        const certificate = await client.getCertificate(
+          await client.finalizeOrder(order, csr),
+        );
+        const stranger = await clientFor(
+          await createCredential({ subtrees: ["lab.internal.ncfritz.net"] }),
+        );
+        await stranger.createAccount({ termsOfServiceAgreed: true });
+        await expect(
+          stranger.revokeCertificate(certificate, { reason: 1 }),
+        ).rejects.toThrow(/not issued to this account/);
+        await expect(
+          client.revokeCertificate(certificate, { reason: 6 }),
+        ).rejects.toThrow(/not a reason a subscriber gives/);
+
+        // Signed by the certificate's key (jwk), with no account.
+        const holder = new acme.Client({
+          directoryUrl,
+          accountKey: privateKey,
+        });
+        const der = acme.crypto
+          .splitPemChain(certificate)[0]
+          .replace(/-----[^-]+-----|\s/g, "");
+        await (
+          holder as unknown as {
+            api: {
+              apiResourceRequest: (
+                resource: string,
+                payload: unknown,
+                codes: number[],
+                options: { includeJwsKid: boolean },
+              ) => Promise<unknown>;
+            };
+          }
+        ).api.apiResourceRequest(
+          "revokeCert",
+          {
+            certificate: Buffer.from(der, "base64").toString("base64url"),
+            reason: 1,
+          },
+          [200],
+          { includeJwsKid: false },
+        );
+        const row = await harness.prisma.certificate.findFirstOrThrow({
+          where: { acmeOrder: { isNot: null } },
+          include: { revocation: true },
+          orderBy: { createdAt: "desc" },
+        });
+        expect(row.revocation).toMatchObject({ reason: "keyCompromise" });
+      });
+    });
+
+    it("rolls its account key over (key-change)", async () => {
+      const created = await createCredential({
+        exact: ["roll.internal.ncfritz.net"],
+      });
+      const roller = await clientFor(created);
+      await roller.createAccount({ termsOfServiceAgreed: true });
+      const url = roller.getAccountUrl();
+      const newKey = await acme.crypto.createPrivateEcdsaKey();
+      await roller.updateAccountKey(newKey);
+      const withNewKey = new acme.Client({
+        directoryUrl,
+        accountKey: newKey,
+        accountUrl: url,
+      });
+      expect((await withNewKey.updateAccount({})).status).toBe("valid");
+      // The old key no longer signs for it.
+      const withOldKey = await clientFor(created);
+      await expect(
+        withOldKey.createAccount({
+          termsOfServiceAgreed: true,
+          onlyReturnExisting: true,
+        }),
+      ).rejects.toThrow(/No account has this key/);
     });
 
     it("are their account's alone", async () => {

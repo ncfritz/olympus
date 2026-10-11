@@ -73,6 +73,7 @@ export class PkiGaugeService implements OnModuleInit {
               notAfter: true,
               renewedBy: { select: { id: true } },
               deployTargets: { select: { id: true } },
+              acmeOrder: { select: { id: true } },
             },
           }),
         );
@@ -85,10 +86,11 @@ export class PkiGaugeService implements OnModuleInit {
               serial: row.serial,
               // Whether it still needs renewing, and by whom: renewed (its
               // successor exists, so it needs nothing), automatic (a deploy
-              // target's: Harpocrates renews it), or manual.
+              // target's, which Harpocrates renews, or ACME's, which its
+              // client renews), or manual.
               renewal: row.renewedBy
                 ? "renewed"
-                : row.deployTargets.length > 0
+                : row.deployTargets.length > 0 || row.acmeOrder
                   ? "automatic"
                   : "manual",
             },

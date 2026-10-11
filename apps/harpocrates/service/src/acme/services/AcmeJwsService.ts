@@ -184,6 +184,58 @@ export class AcmeJwsService {
     };
   }
 
+  /**
+   * key-change's inner JWS (RFC 8555 §7.3.5): signed by the new key, sent
+   * as its jwk, for the same URL, with no nonce.
+   */
+  async verifyInner(
+    jws: unknown,
+    url: string,
+  ): Promise<{ jwk: jose.JWK; key: KeyObject; payload: unknown }> {
+    if (!isFlattenedJws(jws)) {
+      throw Acme.malformed("The payload is not a flattened JWS");
+    }
+    const header = decodeJson(
+      jws.protected,
+      "inner protected header",
+    ) as AcmeProtectedHeader;
+    if (!ACME_ALGORITHMS.includes(header?.alg)) {
+      throw Acme.badSignatureAlgorithm(
+        `${String(header?.alg)} is not accepted`,
+        {
+          algorithms: ACME_ALGORITHMS,
+        },
+      );
+    }
+    if (header.jwk === undefined || header.kid !== undefined) {
+      throw Acme.malformed("The inner JWS is signed with the new key (jwk)");
+    }
+    if (header.nonce !== undefined) {
+      throw Acme.malformed("The inner JWS has no nonce");
+    }
+    if (header.url !== url) {
+      throw Acme.malformed("The inner JWS is for another URL");
+    }
+    const key = this.jwkKey(header.jwk);
+    let verified: jose.FlattenedVerifyResult;
+    try {
+      verified = await jose.flattenedVerify(jws, key, {
+        algorithms: ACME_ALGORITHMS,
+      });
+    } catch {
+      throw Acme.malformed("The inner JWS does not verify");
+    }
+    try {
+      return {
+        jwk: header.jwk,
+        key,
+        payload: JSON.parse(new TextDecoder().decode(verified.payload)),
+      };
+    } catch {
+      throw Acme.malformed("The inner payload is not JSON");
+    }
+  }
+
   /** A public key from a JWK: never a private one. */
   jwkKey(jwk: unknown): KeyObject {
     if (typeof jwk !== "object" || jwk === null) {

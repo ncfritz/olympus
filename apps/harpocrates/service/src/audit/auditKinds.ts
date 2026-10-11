@@ -35,6 +35,7 @@ export const AuditKind = {
   AcmeAccountCreated: "acme-account.created",
   AcmeAccountUpdated: "acme-account.updated",
   AcmeAccountDeactivated: "acme-account.deactivated",
+  AcmeAccountKeyChanged: "acme-account.key-changed",
   AcmeOrderCreated: "acme-order.created",
   AcmeChallengeValid: "acme-challenge.valid",
   AcmeChallengeInvalid: "acme-challenge.invalid",

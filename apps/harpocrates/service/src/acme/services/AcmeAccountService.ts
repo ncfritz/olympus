@@ -9,8 +9,8 @@ import type {
   Prisma,
 } from "../../store/prisma";
 import { PrismaService } from "../../store/PrismaService";
-import { Acme } from "../AcmeProblem";
-import type { VerifiedRequest } from "./AcmeJwsService";
+import { Acme, AcmeProblem } from "../AcmeProblem";
+import { AcmeJwsService, type VerifiedRequest } from "./AcmeJwsService";
 import { AcmeUrls } from "./AcmeUrls";
 
 /** An account as ACME shows it (RFC 8555 §7.1.2). */
@@ -64,6 +64,7 @@ export class AcmeAccountService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly urls: AcmeUrls,
+    private readonly jws: AcmeJwsService,
   ) {}
 
   /** new-account: register, or find the account the key already has. */
@@ -181,6 +182,72 @@ export class AcmeAccountService {
           subjectType: "acme-account",
           subjectId: accountId,
           attributes: { contacts: contacts?.join(" ") },
+        },
+        tx,
+      );
+      return row;
+    });
+    return this.object(updated);
+  }
+
+  /**
+   * key-change (RFC 8555 §7.3.5): the account's key replaced, the old key
+   * signing the request and the new one the payload. A key another
+   * account holds is a conflict, with that account's URL.
+   */
+  async keyChange(request: VerifiedRequest): Promise<AcmeAccountObject> {
+    const account = request.account!;
+    const inner = await this.jws.verifyInner(
+      request.payload,
+      this.urls.keyChange(),
+    );
+    const payload = inner.payload as { account?: unknown; oldKey?: unknown };
+    if (payload?.account !== this.urls.account(account.id)) {
+      throw Acme.unauthorized("The inner payload names another account");
+    }
+    let oldThumbprint: string;
+    try {
+      oldThumbprint = await jose.calculateJwkThumbprint(
+        payload.oldKey as jose.JWK,
+        "sha256",
+      );
+    } catch {
+      throw Acme.malformed("oldKey is not a JWK");
+    }
+    if (oldThumbprint !== account.keyThumbprint) {
+      throw Acme.unauthorized("oldKey is not the account's key");
+    }
+    const thumbprint = await jose.calculateJwkThumbprint(inner.jwk, "sha256");
+    const holder = await this.prisma.acmeAccount.findUnique({
+      where: { keyThumbprint: thumbprint },
+    });
+    if (holder) {
+      throw new AcmeProblem(
+        "malformed",
+        409,
+        holder.id === account.id
+          ? "That is the account's key already"
+          : "Another account has that key",
+        {},
+        { Location: this.urls.account(holder.id) },
+      );
+    }
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.acmeAccount.update({
+        where: { id: account.id },
+        data: {
+          keyThumbprint: thumbprint,
+          publicKey: inner.key.export({ format: "der", type: "spki" }),
+        },
+        include: { contacts: true },
+      });
+      await this.audit.record(
+        {
+          kind: AuditKind.AcmeAccountKeyChanged,
+          principal: acmePrincipal(account.id),
+          subjectType: "acme-account",
+          subjectId: account.id,
+          attributes: { from: oldThumbprint, keyThumbprint: thumbprint },
         },
         tx,
       );

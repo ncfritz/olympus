@@ -130,6 +130,8 @@ export type AcmeConfig = {
    * and port.
    */
   baseUrl: string;
+  /** The profile ACME certificates are issued under (internal-tls). */
+  profileId: string;
   /** The ports challenges are validated on: http-01's (80), tls-alpn-01's (443). */
   httpPort: number;
   tlsAlpnPort: number;
@@ -272,6 +274,7 @@ export const readConfig = (
     },
     acme: {
       baseUrl: "",
+      profileId: read.string("ACME_PROFILE", "internal-tls"),
       httpPort: integer(read, "ACME_HTTP_PORT", 80),
       tlsAlpnPort: integer(read, "ACME_TLS_ALPN_PORT", 443),
       challengeResolve: read.optional("ACME_CHALLENGE_RESOLVE"),

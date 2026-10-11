@@ -1,9 +1,15 @@
 import { Module } from "@nestjs/common";
+import { CertificatesModule } from "../certificates/CertificatesModule";
 import { AcmeNewOrderController } from "./controllers/AcmeNewOrderController";
 import { AcmeOrderController } from "./controllers/AcmeOrderController";
 import { AcmeAccountOrdersController } from "./controllers/AcmeAccountOrdersController";
 import { AcmeAuthorizationController } from "./controllers/AcmeAuthorizationController";
 import { AcmeChallengeController } from "./controllers/AcmeChallengeController";
+import { AcmeFinalizeController } from "./controllers/AcmeFinalizeController";
+import { AcmeCertificateController } from "./controllers/AcmeCertificateController";
+import { AcmeRevokeCertController } from "./controllers/AcmeRevokeCertController";
+import { AcmeKeyChangeController } from "./controllers/AcmeKeyChangeController";
+import { AcmeRenewalInfoController } from "./controllers/AcmeRenewalInfoController";
 import { AcmeAccountController } from "./controllers/AcmeAccountController";
 import { AcmeDirectoryController } from "./controllers/AcmeDirectoryController";
 import { AcmeNewAccountController } from "./controllers/AcmeNewAccountController";
@@ -18,8 +24,10 @@ import { AcmeChallengeValidator } from "./services/AcmeChallengeValidator";
 import { AcmeCredentialService } from "./services/AcmeCredentialService";
 import { AcmeDirectoryService } from "./services/AcmeDirectoryService";
 import { AcmeJwsService } from "./services/AcmeJwsService";
+import { AcmeIssuanceService } from "./services/AcmeIssuanceService";
 import { AcmeNonceService } from "./services/AcmeNonceService";
 import { AcmeOrderService } from "./services/AcmeOrderService";
+import { AcmeRenewalInfoService } from "./services/AcmeRenewalInfoService";
 import { AcmeUrls } from "./services/AcmeUrls";
 
 /**
@@ -27,6 +35,7 @@ import { AcmeUrls } from "./services/AcmeUrls";
  * and the management API's External Account Binding credentials.
  */
 @Module({
+  imports: [CertificatesModule],
   controllers: [
     AcmeDirectoryController,
     AcmeNewNonceHeadController,
@@ -38,6 +47,11 @@ import { AcmeUrls } from "./services/AcmeUrls";
     AcmeOrderController,
     AcmeAuthorizationController,
     AcmeChallengeController,
+    AcmeFinalizeController,
+    AcmeCertificateController,
+    AcmeRevokeCertController,
+    AcmeKeyChangeController,
+    AcmeRenewalInfoController,
     ListAcmeCredentialsController,
     CreateAcmeCredentialController,
     RevokeAcmeCredentialController,
@@ -51,6 +65,8 @@ import { AcmeUrls } from "./services/AcmeUrls";
     AcmeCredentialService,
     AcmeOrderService,
     AcmeChallengeValidator,
+    AcmeIssuanceService,
+    AcmeRenewalInfoService,
     AcmeExceptionFilter,
     AcmeHeadersInterceptor,
   ],

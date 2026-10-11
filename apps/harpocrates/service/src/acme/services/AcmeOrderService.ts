@@ -483,6 +483,9 @@ export class AcmeOrderService {
       })),
       authorizations: authorizations.map((a) => this.urls.authorization(a.id)),
       finalize: this.urls.finalize(order.id),
+      ...(order.certificateId
+        ? { certificate: this.urls.certificate(order.certificateId) }
+        : {}),
       ...(errorOf(order) ? { error: errorOf(order) } : {}),
     };
   }

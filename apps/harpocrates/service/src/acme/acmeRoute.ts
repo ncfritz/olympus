@@ -81,6 +81,9 @@ export class AcmeExceptionFilter implements ExceptionFilter {
     } catch {
       // The database is down: the problem still goes out.
     }
+    for (const [name, value] of Object.entries(problem.headers)) {
+      response.setHeader(name, value);
+    }
     response
       .status(problem.status)
       .type("application/problem+json")

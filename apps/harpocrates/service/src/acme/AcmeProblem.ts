@@ -27,6 +27,8 @@ export class AcmeProblem extends Error {
       AcmeProblemDocument,
       "subproblems" | "algorithms"
     > = {},
+    /** Headers the answer carries: a conflict's Location. */
+    readonly headers: Record<string, string> = {},
   ) {
     super(detail);
     this.name = "AcmeProblem";
