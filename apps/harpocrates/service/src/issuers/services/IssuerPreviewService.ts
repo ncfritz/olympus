@@ -231,10 +231,20 @@ export class IssuerPreviewService {
    * validity, and every extended key usage among them.
    */
   private async needsOf(purpose: string): Promise<PurposeNeeds | undefined> {
-    const profiles = await this.prisma.profile.findMany({
-      where: { issuerPurpose: purpose, directOnly: false },
-      include: { extendedKeyUsages: true },
+    // Each profile's latest version: what new certificates take.
+    const latest = await this.prisma.profile.findMany({
+      where: { directOnly: false },
+      include: {
+        versions: {
+          include: { extendedKeyUsages: true },
+          orderBy: { version: "desc" },
+          take: 1,
+        },
+      },
     });
+    const profiles = latest
+      .map((profile) => profile.versions[0])
+      .filter((version) => version?.issuerPurpose === purpose);
     if (profiles.length === 0) return undefined;
     return {
       maxValidityDays: Math.max(

@@ -430,7 +430,10 @@ export class CertificateService {
             "Only certificates issued under a profile are renewed",
           );
         }
-        const profile = await this.profiles.row(current.profileId);
+        // A renewal keeps the version its enrollment was issued under.
+        const profile = await this.profiles.version(
+          current.enrollment.profileVersionId,
+        );
         const names = current.enrollment.names.map((n) => ({
           type: n.type as NameTypeName,
           value: n.value,
@@ -1010,6 +1013,7 @@ export class CertificateService {
         data: {
           keyId: key.id,
           profileId: profile.id,
+          profileVersionId: profile.versionId,
           mode: subjectKey.kind === "signer" ? subjectKey.origin : "csr",
           subject,
           csr:
@@ -1097,6 +1101,7 @@ export class CertificateService {
           serial: parsed.serial,
           enrollmentId: issuance.lineage.enrollment.id,
           profileId: profile.id,
+          profileVersionId: profile.versionId,
           subject: parsed.subject,
           notBefore: parsed.notBefore,
           notAfter: parsed.notAfter,
@@ -1133,6 +1138,7 @@ export class CertificateService {
           attributes: {
             issuerId: issuer.id,
             profileId: profile.id,
+            profileVersion: profile.version,
             serial: parsed.serial,
             subject: parsed.subject,
             notAfter: parsed.notAfter.toISOString(),

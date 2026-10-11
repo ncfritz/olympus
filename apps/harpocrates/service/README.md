@@ -18,7 +18,10 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
   come back only for a ceremony.
 - **Profiles**: what a certificate may be (seeded: `service`,
   `api-server`, `device`, `internal-tls`, `legacy-device`,
-  `code-signing`, `email`, `document`).
+  `code-signing`, `email`, `document`), in versions (ADR 0034): every
+  setting lives on a version, a new certificate takes the latest, and an
+  enrollment and each certificate record theirs, so a renewal keeps the
+  version it was issued under. The seeds are v1.
 - **Keys, enrollments, certificates**: every key once, by its
   SubjectPublicKeyInfo hash; one enrollment (the request) per key; the
   key's certificates as its lineage, first issue and renewals.

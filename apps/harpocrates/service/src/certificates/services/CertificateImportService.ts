@@ -110,6 +110,7 @@ export class CertificateImportService {
             data: {
               keyId: subjectKey.id,
               profileId: profile.id,
+              profileVersionId: profile.versionId,
               mode: "imported",
               subject: parsed.subject,
               names: { create: certificateNames(pem) },
@@ -121,6 +122,7 @@ export class CertificateImportService {
             serial: parsed.serial,
             enrollmentId: enrollment.id,
             profileId: profile.id,
+            profileVersionId: profile.versionId,
             subject: parsed.subject,
             notBefore: parsed.notBefore,
             notAfter: parsed.notAfter,

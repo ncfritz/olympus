@@ -21,6 +21,14 @@ export class Profile {
   id: string;
 
   @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "The version these settings are: the latest, which new certificates take (ADR 0034)",
+  })
+  version: number;
+
+  @ApiProperty({
     type: String,
     required: true,
     description: "What it is for",

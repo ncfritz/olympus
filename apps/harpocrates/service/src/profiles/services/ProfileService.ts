@@ -5,12 +5,16 @@ import type { Principal } from "../../auth/principal";
 import type { Profile, UpdateProfileRequest } from "../../model/profiles";
 import { PrismaService } from "../../store/PrismaService";
 import {
-  PROFILE_RULES,
+  asProfileWithRules,
+  PROFILE_WITH_VERSION,
   type ProfileWithRules,
   toDomainObject,
 } from "../converters/ProfileConverter";
 
-/** Profiles (ADR 0020): seeded by migration; only the issuer pin changes. */
+/**
+ * Profiles (ADR 0020, 0034): each read as its latest version, which new
+ * certificates take; a renewal reads the version it was issued under.
+ */
 @Injectable()
 export class ProfileService {
   constructor(
@@ -20,25 +24,49 @@ export class ProfileService {
 
   async list(): Promise<Profile[]> {
     const rows = await this.prisma.profile.findMany({
-      include: PROFILE_RULES,
+      include: {
+        versions: {
+          include: { ...PROFILE_WITH_VERSION },
+          orderBy: { version: "desc" },
+          take: 1,
+        },
+      },
       orderBy: { id: "asc" },
     });
-    return rows.map(toDomainObject);
+    return rows.map((row) =>
+      toDomainObject(asProfileWithRules(row.versions[0])),
+    );
   }
 
   async describe(profileId: string): Promise<Profile> {
     return toDomainObject(await this.row(profileId));
   }
 
+  /** A profile as its latest version: what a new certificate takes. */
   async row(profileId: string): Promise<ProfileWithRules> {
-    const row = await this.prisma.profile.findUnique({
-      where: { id: profileId },
-      include: PROFILE_RULES,
+    const latest = await this.prisma.profileVersion.findFirst({
+      where: { profileId },
+      include: PROFILE_WITH_VERSION,
+      orderBy: { version: "desc" },
     });
-    if (!row) {
+    if (!latest) {
       throw new NotFoundException(`Profile with id ${profileId} not found`);
     }
-    return row;
+    return asProfileWithRules(latest);
+  }
+
+  /** A profile as one of its versions: what a renewal under it takes. */
+  async version(profileVersionId: string): Promise<ProfileWithRules> {
+    const version = await this.prisma.profileVersion.findUnique({
+      where: { id: profileVersionId },
+      include: PROFILE_WITH_VERSION,
+    });
+    if (!version) {
+      throw new NotFoundException(
+        `Profile version with id ${profileVersionId} not found`,
+      );
+    }
+    return asProfileWithRules(version);
   }
 
   async update(
@@ -46,7 +74,7 @@ export class ProfileService {
     profileId: string,
     request: UpdateProfileRequest,
   ): Promise<Profile> {
-    await this.row(profileId);
+    const latest = await this.row(profileId);
     if (request.issuerId) {
       const issuer = await this.prisma.issuer.findUnique({
         where: { id: request.issuerId },
@@ -58,8 +86,10 @@ export class ProfileService {
       }
     }
     await this.prisma.$transaction(async (tx) => {
-      await tx.profile.update({
-        where: { id: profileId },
+      // The pin is changed where it was, on the latest version, until
+      // editing makes versions of its own (ADR 0034, phase 10 step 2).
+      await tx.profileVersion.update({
+        where: { id: latest.versionId },
         data: { issuerId: request.issuerId ?? null },
       });
       await this.audit.record(

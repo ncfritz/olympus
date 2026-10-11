@@ -112,7 +112,7 @@ model Issuer {
 
   extendedKeyUsages   IssuerExtendedKeyUsage[]
   nameConstraints     IssuerNameConstraint[]
-  profiles            Profile[]
+  profileVersions     ProfileVersion[]
   certificates        Certificate[]
   crls                Crl[]
   ceremonies          Ceremony[]
@@ -173,10 +173,32 @@ enum KeyAlgorithm {
   Ed25519
 }
 
-/// What a certificate may be (ADR 0020, Profiles).
+/// What a certificate may be (ADR 0020, Profiles): a stable slug, whether
+/// it may be chosen, and its versions (ADR 0034).
 model Profile {
-  id                String       @id
-  description       String
+  id            String    @id
+  description   String
+  /// Only for leaves a root signs directly, in its ceremonies.
+  directOnly    Boolean   @default(false) @map("direct_only")
+  /// Deactivated: nothing new chooses it; what was issued renews as before.
+  deactivatedAt DateTime? @map("deactivated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  versions     ProfileVersion[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+
+  @@map("profiles")
+}
+
+/// One version of a profile, v1, v2, …: every setting, frozen once made
+/// (ADR 0034). A new certificate takes the latest; a renewal keeps its own.
+model ProfileVersion {
+  id                String       @id @default(uuid()) @db.Uuid
+  profileId         String       @map("profile_id")
+  profile           Profile      @relation(fields: [profileId], references: [id])
+  version           Int
   /// The default issuer; the operator may choose another that could sign.
   issuerId          String?      @map("issuer_id")
   issuer            Issuer?      @relation(fields: [issuerId], references: [id])
@@ -197,8 +219,10 @@ model Profile {
   /// Whether one request may choose otherwise.
   escrowOverridable Boolean      @default(false) @map("escrow_overridable")
   extensions        ExtensionSet @default(standard)
-  /// Only for leaves a root signs directly, in its ceremonies.
-  directOnly        Boolean      @default(false) @map("direct_only")
+  /// Who made this version: a principal, or `migration` for the seeds.
+  createdBy         String       @map("created_by")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
 
   keyUsages         ProfileKeyUsage[]
   extendedKeyUsages ProfileExtendedKeyUsage[]
@@ -206,34 +230,35 @@ model Profile {
   enrollments       Enrollment[]
   certificates      Certificate[]
 
-  @@map("profiles")
+  @@unique([profileId, version])
+  @@map("profile_versions")
 }
 
 model ProfileKeyUsage {
-  profileId String  @map("profile_id")
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  usage     String
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  usage            String
 
-  @@id([profileId, usage])
+  @@id([profileVersionId, usage])
   @@map("profile_key_usages")
 }
 
 model ProfileExtendedKeyUsage {
-  profileId String  @map("profile_id")
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  oid       String
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  oid              String
 
-  @@id([profileId, oid])
+  @@id([profileVersionId, oid])
   @@map("profile_extended_key_usages")
 }
 
-/// The subject alternative name types a profile allows.
+/// The subject alternative name types a profile version allows.
 model ProfileNameType {
-  profileId String   @map("profile_id")
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  type      NameType
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  type             NameType
 
-  @@id([profileId, type])
+  @@id([profileVersionId, type])
   @@map("profile_name_types")
 }
 
@@ -291,19 +316,22 @@ enum EnrollmentMode {
 /// The request that introduced a key: its CSR, subject, names and profile.
 /// The key's certificates (first issue, renewals) are its lineage.
 model Enrollment {
-  id         String         @id @default(uuid()) @db.Uuid
-  keyId      String         @unique @map("key_id") @db.Uuid
-  key        Key            @relation(fields: [keyId], references: [id])
-  profileId  String         @map("profile_id")
-  profile    Profile        @relation(fields: [profileId], references: [id])
-  mode       EnrollmentMode
-  subject    String
-  csr        Bytes?
+  id               String         @id @default(uuid()) @db.Uuid
+  keyId            String         @unique @map("key_id") @db.Uuid
+  key              Key            @relation(fields: [keyId], references: [id])
+  profileId        String         @map("profile_id")
+  profile          Profile        @relation(fields: [profileId], references: [id])
+  /// The version it issues and renews under (ADR 0034).
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id])
+  mode             EnrollmentMode
+  subject          String
+  csr              Bytes?
   /// The enrollment a rekey replaced.
-  replacesId String?        @unique @map("replaces_id") @db.Uuid
-  replaces   Enrollment?    @relation("EnrollmentReplaces", fields: [replacesId], references: [id])
-  replacedBy Enrollment?    @relation("EnrollmentReplaces")
-  createdAt  DateTime       @default(now()) @map("created_at")
+  replacesId       String?        @unique @map("replaces_id") @db.Uuid
+  replaces         Enrollment?    @relation("EnrollmentReplaces", fields: [replacesId], references: [id])
+  replacedBy       Enrollment?    @relation("EnrollmentReplaces")
+  createdAt        DateTime       @default(now()) @map("created_at")
 
   names        EnrollmentName[]
   certificates Certificate[]
@@ -328,25 +356,28 @@ enum CertificateStatus {
 }
 
 model Certificate {
-  id           String            @id @default(uuid()) @db.Uuid
-  issuerId     String            @map("issuer_id")
-  issuer       Issuer            @relation(fields: [issuerId], references: [id])
+  id               String            @id @default(uuid()) @db.Uuid
+  issuerId         String            @map("issuer_id")
+  issuer           Issuer            @relation(fields: [issuerId], references: [id])
   /// Hex, 159 random bits (ADR 0020, Serials).
-  serial       String
-  enrollmentId String?           @map("enrollment_id") @db.Uuid
-  enrollment   Enrollment?       @relation(fields: [enrollmentId], references: [id])
-  profileId    String?           @map("profile_id")
-  profile      Profile?          @relation(fields: [profileId], references: [id])
-  subject      String
-  notBefore    DateTime          @map("not_before")
-  notAfter     DateTime          @map("not_after")
-  status       CertificateStatus @default(valid)
-  der          Bytes
+  serial           String
+  enrollmentId     String?           @map("enrollment_id") @db.Uuid
+  enrollment       Enrollment?       @relation(fields: [enrollmentId], references: [id])
+  profileId        String?           @map("profile_id")
+  profile          Profile?          @relation(fields: [profileId], references: [id])
+  /// The version it was issued under (ADR 0034).
+  profileVersionId String?           @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion?   @relation(fields: [profileVersionId], references: [id])
+  subject          String
+  notBefore        DateTime          @map("not_before")
+  notAfter         DateTime          @map("not_after")
+  status           CertificateStatus @default(valid)
+  der              Bytes
   /// The certificate this one renewed.
-  renewsId     String?           @unique @map("renews_id") @db.Uuid
-  renews       Certificate?      @relation("CertificateRenews", fields: [renewsId], references: [id])
-  renewedBy    Certificate?      @relation("CertificateRenews")
-  createdAt    DateTime          @default(now()) @map("created_at")
+  renewsId         String?           @unique @map("renews_id") @db.Uuid
+  renews           Certificate?      @relation("CertificateRenews", fields: [renewsId], references: [id])
+  renewedBy        Certificate?      @relation("CertificateRenews")
+  createdAt        DateTime          @default(now()) @map("created_at")
 
   revocation    Revocation?
   escrowExports EscrowExport[]

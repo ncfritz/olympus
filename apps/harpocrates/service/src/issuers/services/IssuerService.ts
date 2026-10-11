@@ -6,7 +6,8 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { Issuer as IssuerRow, Prisma, Profile } from "../../store/prisma";
+import type { Issuer as IssuerRow, Prisma } from "../../store/prisma";
+import type { ProfileWithRules } from "../../profiles/converters/ProfileConverter";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";
@@ -571,7 +572,7 @@ export class IssuerService {
    * successor (ADR 0020, Longevity).
    */
   async forIssuance(
-    profile: Profile,
+    profile: ProfileWithRules,
     override?: string,
   ): Promise<IssuerWithRules> {
     if (override) {
@@ -618,13 +619,16 @@ export class IssuerService {
 
   private allowsUsages(
     row: IssuerWithRules,
-    profile: Profile & { extendedKeyUsages?: { oid: string }[] },
+    profile: Pick<ProfileWithRules, "extendedKeyUsages">,
   ): boolean {
     const allowed = new Set(row.extendedKeyUsages.map((u) => u.oid));
     return (profile.extendedKeyUsages ?? []).every((u) => allowed.has(u.oid));
   }
 
-  private assertCanIssue(row: IssuerWithRules, profile: Profile): void {
+  private assertCanIssue(
+    row: IssuerWithRules,
+    profile: ProfileWithRules,
+  ): void {
     if (row.tier !== "issuing" || row.status !== "active") {
       throw new UnprocessableEntityException(
         `Issuer ${row.id} is not an active issuing CA`,

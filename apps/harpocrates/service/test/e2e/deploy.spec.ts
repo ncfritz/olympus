@@ -285,15 +285,15 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
 
     it("a certificate whose key was for one export", async () => {
       const profile = { escrowOverridable: true };
-      await harness.prisma.profile.update({
-        where: { id: "internal-tls" },
+      await harness.prisma.profileVersion.updateMany({
+        where: { profileId: "internal-tls" },
         data: profile,
       });
       const certificate = await hostCertificate("once.internal.ncfritz.net", {
         escrow: false,
       });
-      await harness.prisma.profile.update({
-        where: { id: "internal-tls" },
+      await harness.prisma.profileVersion.updateMany({
+        where: { profileId: "internal-tls" },
         data: { escrowOverridable: false },
       });
       const refused = await createTarget("once", certificate.id).expect(422);

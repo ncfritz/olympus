@@ -127,13 +127,26 @@ export class PkiGaugeService implements OnModuleInit {
       labelNames: ["profile"],
       async collect() {
         this.reset();
+        // Each profile's latest version: what new certificates take.
         const rows = await quietly(() =>
           prisma.profile.findMany({
-            select: { id: true, validityDays: true, renewAtDays: true },
+            select: {
+              id: true,
+              versions: {
+                select: { validityDays: true, renewAtDays: true },
+                orderBy: { version: "desc" },
+                take: 1,
+              },
+            },
           }),
         );
         for (const row of rows) {
-          this.set({ profile: row.id }, row.validityDays - row.renewAtDays);
+          const [latest] = row.versions;
+          if (!latest) continue;
+          this.set(
+            { profile: row.id },
+            latest.validityDays - latest.renewAtDays,
+          );
         }
       },
     });

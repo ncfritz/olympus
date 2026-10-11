@@ -3,7 +3,7 @@ import type {
   Deployment as DeploymentRow,
   DeployTarget as DeployTargetRow,
   EndpointObservation as ObservationRow,
-  Profile,
+  ProfileVersion,
 } from "../../store/prisma";
 import moment from "moment";
 import type {
@@ -20,7 +20,7 @@ export type DeploymentWithCertificate = DeploymentRow & {
 };
 
 export type DeployTargetWithCertificate = DeployTargetRow & {
-  certificate: CertificateRow & { profile: Profile | null };
+  certificate: CertificateRow & { profileVersion: ProfileVersion | null };
   deployments: DeploymentWithCertificate[];
   observations: ObservationRow[];
 };
@@ -28,7 +28,7 @@ export type DeployTargetWithCertificate = DeployTargetRow & {
 /** Its certificate, and its deployments newest first (`take` to limit). */
 export const deployTargetInclude = (take?: number) =>
   ({
-    certificate: { include: { profile: true } },
+    certificate: { include: { profileVersion: true } },
     deployments: {
       include: { certificate: { select: { serial: true } } },
       orderBy: { createdAt: "desc" },
@@ -41,15 +41,17 @@ export const deployTargetInclude = (take?: number) =>
   }) as const;
 
 /**
- * When Harpocrates renews a certificate: its profile's renewal age into
- * its life, or at expiry without a profile (imported: never renewed).
+ * When Harpocrates renews a certificate: the renewal age of the profile
+ * version it was issued under into its life, or at expiry without one
+ * (imported: never renewed).
  */
 export const renewsAt = (
-  certificate: CertificateRow & { profile: Profile | null },
+  certificate: CertificateRow & { profileVersion: ProfileVersion | null },
 ): Date =>
-  certificate.profile
+  certificate.profileVersion
     ? new Date(
-        certificate.notBefore.getTime() + certificate.profile.renewAtDays * DAY,
+        certificate.notBefore.getTime() +
+          certificate.profileVersion.renewAtDays * DAY,
       )
     : certificate.notAfter;
 

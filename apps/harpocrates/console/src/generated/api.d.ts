@@ -1602,6 +1602,8 @@ export interface components {
     Profile: {
       /** @description The profile's name, e.g. internal-tls */
       id: string;
+      /** @description The version these settings are: the latest, which new certificates take (ADR 0034) */
+      version: number;
       /** @description What it is for */
       description: string;
       /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */

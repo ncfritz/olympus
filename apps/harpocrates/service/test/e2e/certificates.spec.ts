@@ -543,8 +543,8 @@ describe.skipIf(!E2E_DATABASE_URL)("certificates", () => {
       );
       const data = fs.readFileSync(path.join(harness.dir, "loose.key"), "utf8");
       // The seeded profiles fix their escrow; this one lets a request choose.
-      await harness.prisma.profile.update({
-        where: { id: "service" },
+      await harness.prisma.profileVersion.updateMany({
+        where: { profileId: "service" },
         data: { escrowOverridable: true },
       });
       const response = await create({
@@ -553,8 +553,8 @@ describe.skipIf(!E2E_DATABASE_URL)("certificates", () => {
         key: { format: "pem", data, passphrase: "bring me" },
         escrow: false,
       });
-      await harness.prisma.profile.update({
-        where: { id: "service" },
+      await harness.prisma.profileVersion.updateMany({
+        where: { profileId: "service" },
         data: { escrowOverridable: false },
       });
       expect(response.status).toBe(201);
@@ -791,6 +791,92 @@ describe.skipIf(!E2E_DATABASE_URL)("certificates", () => {
       expect(verification.body).toMatchObject({
         verification: { valid: true },
       });
+    });
+  });
+  describe("profile versions", () => {
+    const days = (pem: string) => {
+      const parsed = new X509Certificate(pem);
+      return Math.round(
+        (Date.parse(parsed.validTo) - Date.parse(parsed.validFrom)) /
+          86_400_000,
+      );
+    };
+
+    it("issues under the latest version, and renews under the one it was issued under", async () => {
+      const profiles = (
+        await request(server())
+          .get("/v1/profiles")
+          .set("Authorization", harness.operator)
+          .expect(200)
+      ).body as { profiles: { id: string; version: number }[] };
+      expect(profiles.profiles.every((p) => p.version === 1)).toBe(true);
+
+      const first = issued(
+        await create({
+          profileId: "service",
+          subject: { commonName: "versioned-1" },
+        }).expect(201),
+      );
+      expect(days(first.certificate)).toBe(365);
+
+      // A second version, shorter: as editing will make one (ADR 0034).
+      const v1 = await harness.prisma.profileVersion.findFirstOrThrow({
+        where: { profileId: "service", version: 1 },
+        include: { keyUsages: true, extendedKeyUsages: true, nameTypes: true },
+      });
+      const {
+        id: _id,
+        keyUsages,
+        extendedKeyUsages,
+        nameTypes,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        ...settings
+      } = v1;
+      const v2 = await harness.prisma.profileVersion.create({
+        data: {
+          ...settings,
+          version: 2,
+          validityDays: 30,
+          renewAtDays: 20,
+          createdBy: "test",
+          keyUsages: { create: keyUsages.map(({ usage }) => ({ usage })) },
+          extendedKeyUsages: {
+            create: extendedKeyUsages.map(({ oid }) => ({ oid })),
+          },
+          nameTypes: { create: nameTypes.map(({ type }) => ({ type })) },
+        },
+      });
+
+      const second = issued(
+        await create({
+          profileId: "service",
+          subject: { commonName: "versioned-2" },
+        }).expect(201),
+      );
+      expect(days(second.certificate)).toBe(30);
+      const recorded = await harness.prisma.certificate.findUniqueOrThrow({
+        where: { id: second.id },
+        include: { enrollment: true },
+      });
+      expect(recorded.profileVersionId).toBe(v2.id);
+      expect(recorded.enrollment?.profileVersionId).toBe(v2.id);
+
+      const renewed = issued(
+        await request(server())
+          .post(`/v1/certificate/${first.id}/renew`)
+          .set("Authorization", harness.operator)
+          .send({})
+          .expect(201),
+      );
+      expect(days(renewed.certificate)).toBe(365);
+      expect(
+        (
+          await harness.prisma.certificate.findUniqueOrThrow({
+            where: { id: renewed.id },
+          })
+        ).profileVersionId,
+      ).toBe(v1.id);
     });
   });
 });

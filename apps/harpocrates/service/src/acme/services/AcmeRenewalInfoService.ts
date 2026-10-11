@@ -36,7 +36,7 @@ export class AcmeRenewalInfoService {
       .replace(/^0+/, "");
     const candidates = await this.prisma.certificate.findMany({
       where: { serial },
-      include: { profile: true },
+      include: { profileVersion: true },
     });
     const certificate = candidates.find((c) => {
       const extension = new x509.X509Certificate(
@@ -53,8 +53,11 @@ export class AcmeRenewalInfoService {
     }
     const notBefore = certificate.notBefore.getTime();
     const notAfter = certificate.notAfter.getTime();
-    const start = certificate.profile
-      ? Math.min(notBefore + certificate.profile.renewAtDays * DAY, notAfter)
+    const start = certificate.profileVersion
+      ? Math.min(
+          notBefore + certificate.profileVersion.renewAtDays * DAY,
+          notAfter,
+        )
       : notBefore + ((notAfter - notBefore) * 2) / 3;
     return window(start, start + (notAfter - start) / 2);
   }

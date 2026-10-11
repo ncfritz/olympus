@@ -6289,6 +6289,10 @@
             "type": "string",
             "description": "The profile's name, e.g. internal-tls"
           },
+          "version": {
+            "type": "number",
+            "description": "The version these settings are: the latest, which new certificates take (ADR 0034)"
+          },
           "description": {
             "type": "string",
             "description": "What it is for"
@@ -6381,6 +6385,7 @@
         },
         "required": [
           "id",
+          "version",
           "description",
           "issuerPurpose",
           "keyAlgorithm",
