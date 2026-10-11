@@ -198,7 +198,7 @@ export function NewRootPage() {
             issuerId={created.id}
             encryptedKey={created.key}
             doneLabel="Next: prove the backup"
-            onDone={() => router.push(`/ceremonies/new?issuerId=${created.id}`)}
+            onDone={() => router.push(`/ca?id=${created.id}&ceremony=open`)}
           />
         </Card>
       )}

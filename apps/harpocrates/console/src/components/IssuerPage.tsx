@@ -32,6 +32,7 @@ import {
   useIssued,
   useIssuer,
   useIssuerCrls,
+  useSignerStatus,
   useIssuers,
 } from "@/lib/api/queries";
 import type { NameConstraints, RevocationList } from "@/lib/api/types";
@@ -53,8 +54,11 @@ import {
   CertificatePem,
   PemBlock,
 } from "./CertificateDetails";
+import { CeremonyList } from "./CeremonyList";
 import { ErrorAlert } from "./ErrorAlert";
 import { IssuedChart } from "./IssuedChart";
+import { OpenCeremonyAlert } from "./OpenCeremonyAlert";
+import { OpenCeremonyModal } from "./OpenCeremonyModal";
 import styles from "./IssuerPage.module.css";
 import { SignedList } from "./SignedList";
 
@@ -122,7 +126,12 @@ const PANEL_WIDTH = 560;
  * its certificate's details, its CSR and its PEM.
  */
 export function IssuerPage() {
-  const issuerId = useSearchParams().get("id") ?? undefined;
+  const query = useSearchParams();
+  const issuerId = query.get("id") ?? undefined;
+  // `?ceremony=open` comes from where a ceremony was asked for (a new
+  // root's handover, the roots page): the dialog opens with the page.
+  const [opening, setOpening] = useState(query.get("ceremony") === "open");
+  const { data: signer } = useSignerStatus();
   const { data: issuer, error: notFound } = useIssuer(issuerId);
   const { data: issuers } = useIssuers();
   const { data: crls } = useIssuerCrls(issuerId);
@@ -142,6 +151,8 @@ export function IssuerPage() {
     !(issuers ?? []).some((other) => other.parentId === issuer.id) &&
     (crls ?? []).length === 0;
   const constraints = constraintLines(issuer.nameConstraints);
+  /** An offline CA that can sit: its key comes back only in a ceremony. */
+  const ceremonial = issuer.offline && !discarded && issuer.status === "active";
 
   const [leftFields, rightFields] = columnsOf(
     [
@@ -335,12 +346,14 @@ export function IssuerPage() {
                 Certificate
               </Button>
             )}
-            {issuer.offline && !discarded && issuer.status === "active" && (
-              <Link href={`/ceremonies/new?issuerId=${issuer.id}`}>
-                <Button type="primary">
-                  {issuer.provedAt ? "Open a ceremony" : "Prove the backup"}
-                </Button>
-              </Link>
+            {ceremonial && (
+              <Button
+                type="primary"
+                disabled={Boolean(signer?.ceremonyId) || !isAdmin}
+                onClick={() => setOpening(true)}
+              >
+                {issuer.provedAt ? "Open a ceremony" : "Prove the backup"}
+              </Button>
             )}
             {unused && isAdmin && (
               <Popconfirm
@@ -358,6 +371,14 @@ export function IssuerPage() {
           </Flex>
         </Flex>
         <ErrorAlert error={error} />
+        {issuer.offline && !discarded && <OpenCeremonyAlert />}
+        {ceremonial && (
+          <OpenCeremonyModal
+            issuer={issuer}
+            open={opening && !signer?.ceremonyId}
+            onClose={() => setOpening(false)}
+          />
+        )}
         <Flex vertical gap="small">
           <Descriptions
             column={1}
@@ -396,6 +417,15 @@ export function IssuerPage() {
                 <SignedList issuerId={issuer.id} issuers={issuers ?? []} />
               ),
             },
+            ...(issuer.offline
+              ? [
+                  {
+                    key: "ceremonies",
+                    label: "Ceremonies",
+                    children: <CeremonyList issuerId={issuer.id} />,
+                  },
+                ]
+              : []),
             {
               key: "crls",
               label: "Revocation lists",

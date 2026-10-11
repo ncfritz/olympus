@@ -7,7 +7,6 @@ import {
   DashboardOutlined,
   FileProtectOutlined,
   GoogleOutlined,
-  KeyOutlined,
   ProfileOutlined,
   SafetyCertificateOutlined,
   ApartmentOutlined,
@@ -42,12 +41,6 @@ const PAGES: ShellPage[] = [
         label: "Roots",
         icon: <SafetyCertificateOutlined />,
         href: "/roots",
-      },
-      {
-        key: "/ceremonies",
-        label: "Ceremonies",
-        icon: <KeyOutlined />,
-        href: "/ceremonies",
       },
     ],
   },
@@ -88,10 +81,14 @@ function withBasePath(page: ShellPage): ShellPage {
 
 /** Which page a route belongs to: a CA is one of the roots' pages, and so on. */
 const activePageOf = (pathname: string): string => {
-  if (pathname.startsWith("/roots") || pathname.startsWith("/ca")) {
+  // A ceremony is held from its CA's page, so it is one of the roots' too.
+  if (
+    pathname.startsWith("/roots") ||
+    pathname.startsWith("/ca") ||
+    pathname.startsWith("/ceremony")
+  ) {
     return "/roots";
   }
-  if (pathname.startsWith("/ceremon")) return "/ceremonies";
   for (const page of [
     "/certificates",
     "/deploy-targets",

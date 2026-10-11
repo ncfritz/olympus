@@ -5,6 +5,7 @@ import type {
   AcmeCredential,
   AuditEvent,
   Ceremony,
+  CeremonySummary,
   Certificate,
   CertificateState,
   CurrentUser,
@@ -31,6 +32,7 @@ export const KEYS = {
   ceremony: (id: string) => `/ceremony/${id}`,
   crls: (issuerId: string) => `/issuer/${issuerId}/crls`,
   issued: (issuerId: string) => `/issuer/${issuerId}/issued`,
+  issuerCeremonies: (issuerId: string) => `/issuer/${issuerId}/ceremonies`,
   profiles: "/profiles",
   certificates: (filter: CertificateFilter) =>
     `/certificates?${new URLSearchParams(
@@ -114,6 +116,18 @@ export const useIssuerCrls = (issuerId: string | undefined) =>
           params: { path: { issuerId: issuerId! } },
         }),
       ).crls,
+  );
+
+/** An offline CA's ceremonies, newest first (admins only). */
+export const useIssuerCeremonies = (issuerId: string | undefined) =>
+  useSWR<CeremonySummary[]>(
+    issuerId ? KEYS.issuerCeremonies(issuerId) : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/issuer/{issuerId}/ceremonies", {
+          params: { path: { issuerId: issuerId! } },
+        }),
+      ).ceremonies,
   );
 
 export const useCeremony = (ceremonyId: string | undefined) =>

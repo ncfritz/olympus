@@ -18,6 +18,7 @@ export type NameConstraints = Schemas["NameConstraints"];
 export type Names = Schemas["Names"];
 export type SignerStatus = Schemas["SignerStatus"];
 export type Ceremony = Schemas["Ceremony"];
+export type CeremonySummary = Schemas["CeremonySummary"];
 export type Certificate = Schemas["Certificate"];
 export type FullCertificate = Schemas["FullCertificate"];
 export type CertificateState = Schemas["CertificateState"];

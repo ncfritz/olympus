@@ -104,7 +104,7 @@ function RootCard({ root, issuers }: { root: Issuer; issuers: Issuer[] }) {
         {!discarded && <IssuerTree issuers={issuers} rootId={root.id} />}
         {!discarded && (
           <Flex gap="small" wrap>
-            <Link href={`/ceremonies/new?issuerId=${root.id}`}>
+            <Link href={`/ca?id=${root.id}&ceremony=open`}>
               <Button>
                 {root.provedAt ? "Open a ceremony" : "Prove the backup"}
               </Button>

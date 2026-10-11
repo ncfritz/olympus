@@ -131,7 +131,7 @@ export function CeremonyPage() {
           showIcon
           title="This ceremony is closed"
           description={
-            <Link href={`/ceremonies/new?issuerId=${issuer.id}`}>
+            <Link href={`/ca?id=${issuer.id}&ceremony=open`}>
               Open another with the key file
             </Link>
           }
