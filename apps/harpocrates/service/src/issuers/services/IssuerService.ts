@@ -17,6 +17,8 @@ import type {
   CreateRootIssuerRequest,
   FullIssuer,
   ImportIssuerRequest,
+  IssuedCount,
+  IssuedTierName,
   Issuer,
   IssuerShapeName,
 } from "../../model/issuers";
@@ -85,6 +87,65 @@ export class IssuerService {
   async describe(issuerId: string): Promise<FullIssuer> {
     const row = await this.row(issuerId);
     return toFullIssuer(row, await this.chainPems(row));
+  }
+
+  /**
+   * What is beneath a CA, by tier and type: the CAs below it, at any
+   * depth, that are not discarded; and the leaves it or they signed that
+   * are in use (valid, unexpired, and not yet renewed, so a lineage counts
+   * once).
+   */
+  async countIssued(issuerId: string): Promise<IssuedCount[]> {
+    await this.row(issuerId);
+    const all = await this.prisma.issuer.findMany({
+      select: {
+        id: true,
+        parentId: true,
+        tier: true,
+        purpose: true,
+        discardedAt: true,
+      },
+    });
+    const beneath: typeof all = [];
+    let frontier = [issuerId];
+    while (frontier.length) {
+      const children = all.filter(
+        (issuer) => issuer.parentId && frontier.includes(issuer.parentId),
+      );
+      beneath.push(...children);
+      frontier = children.map((child) => child.id);
+    }
+    const counts = new Map<string, IssuedCount>();
+    const add = (tier: IssuedTierName, type: string, count = 1) => {
+      const key = `${tier}\u0000${type}`;
+      const current = counts.get(key) ?? { tier, type, count: 0 };
+      current.count += count;
+      counts.set(key, current);
+    };
+    for (const issuer of beneath) {
+      if (issuer.discardedAt || issuer.tier === "root") continue;
+      add(issuer.tier, issuer.purpose ?? "general");
+    }
+    const leaves = await this.prisma.certificate.groupBy({
+      by: ["profileId"],
+      where: {
+        issuerId: { in: [issuerId, ...beneath.map((issuer) => issuer.id)] },
+        status: "valid",
+        notAfter: { gt: new Date() },
+        renewedBy: { is: null },
+      },
+      _count: { _all: true },
+    });
+    for (const group of leaves) {
+      add("leaf", group.profileId ?? "other", group._count._all);
+    }
+    const order = { intermediate: 0, issuing: 1, leaf: 2 };
+    return [...counts.values()].sort(
+      (a, b) =>
+        order[a.tier] - order[b.tier] ||
+        b.count - a.count ||
+        a.type.localeCompare(b.type),
+    );
   }
 
   async row(

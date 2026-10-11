@@ -156,6 +156,50 @@ describe.skipIf(!E2E_DATABASE_URL)("the hierarchy", () => {
     }
   });
 
+  it("counts the CAs beneath a CA and the leaves in use, by tier and type", async () => {
+    const count = async (id: string) =>
+      (
+        (
+          await request(server())
+            .get(`/v1/issuer/${id}/issued`)
+            .set("Authorization", harness.operator)
+            .expect(200)
+        ).body as { counts: { tier: string; type: string; count: number }[] }
+      ).counts;
+    const issue = async (commonName: string) =>
+      (
+        (
+          await request(server())
+            .post("/v1/certificates")
+            .set("Authorization", harness.operator)
+            .send({ profileId: "service", subject: { commonName } })
+            .expect(201)
+        ).body as { certificate: { id: string } }
+      ).certificate;
+    const first = await issue("counted");
+    await issue("counted-too");
+    // A renewed certificate is still valid, but its lineage counts once.
+    await request(server())
+      .post(`/v1/certificate/${first.id}/renew`)
+      .set("Authorization", harness.operator)
+      .send({})
+      .expect(201);
+    expect(await count(hierarchy.root.id)).toEqual([
+      { tier: "intermediate", type: "general", count: 1 },
+      { tier: "issuing", type: "Service", count: 1 },
+      { tier: "issuing", type: "TLS", count: 1 },
+      { tier: "leaf", type: "service", count: 2 },
+    ]);
+    expect(await count("service-issuing-1-g1")).toEqual([
+      { tier: "leaf", type: "service", count: 2 },
+    ]);
+    expect(await count("tls-issuing-1-g1")).toEqual([]);
+    await request(server())
+      .get("/v1/issuer/nobody/issued")
+      .set("Authorization", harness.operator)
+      .expect(404);
+  });
+
   it("keeps offline keys out of the signer once the ceremony closes", async () => {
     const status = await request(server())
       .get("/v1/signer/status")

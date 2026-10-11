@@ -798,6 +798,74 @@
         ]
       }
     },
+    "/v1/issuer/{issuerId}/issued": {
+      "get": {
+        "description": "The CAs beneath it, at any depth, by tier and purpose, and the leaves it and they signed that are in use, by profile.",
+        "operationId": "CountIssued",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountIssuedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Counts what is beneath a certificate authority",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
     "/v1/issuer/{issuerId}": {
       "get": {
         "description": "A CA with its certificate and the chain above it, nearest first.",
@@ -4743,6 +4811,56 @@
         },
         "required": [
           "issuer"
+        ]
+      },
+      "IssuedTier": {
+        "type": "string",
+        "description": "Its tier",
+        "enum": [
+          "intermediate",
+          "issuing",
+          "leaf"
+        ]
+      },
+      "IssuedCount": {
+        "type": "object",
+        "properties": {
+          "tier": {
+            "description": "Its tier",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuedTier"
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Its type: a CA's purpose (`TLS`, `Service`, …; `general` for one without), or a leaf's profile (`internal-tls`, `code-signing`, …; `other` for one without)"
+          },
+          "count": {
+            "type": "number",
+            "description": "How many"
+          }
+        },
+        "required": [
+          "tier",
+          "type",
+          "count"
+        ]
+      },
+      "CountIssuedResponse": {
+        "type": "object",
+        "properties": {
+          "counts": {
+            "description": "The CAs beneath it that are not discarded, and the leaves it and they signed that are in use (valid, unexpired, not yet renewed), by tier and type",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssuedCount"
+            }
+          }
+        },
+        "required": [
+          "counts"
         ]
       },
       "DescribeIssuerResponse": {

@@ -784,6 +784,46 @@ export class DiscardIssuerResponse {
   issuer: FullIssuer;
 }
 
+export const ISSUED_TIER_VALUES = ["intermediate", "issuing", "leaf"] as const;
+export type IssuedTierName = (typeof ISSUED_TIER_VALUES)[number];
+
+export const ISSUED_TIER_ENUM = {
+  enum: [...ISSUED_TIER_VALUES],
+  enumName: "IssuedTier",
+  enumSchema: {
+    description:
+      "Where in a CA's hierarchy a certificate is: a CA beneath it (intermediate or issuing), or a leaf",
+  },
+};
+
+/** How many certificates of one tier and type are beneath a CA. */
+export class IssuedCount {
+  @ApiProperty({ ...ISSUED_TIER_ENUM, required: true, description: "Its tier" })
+  tier: IssuedTierName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "Its type: a CA's purpose (`TLS`, `Service`, …; `general` for one without), or a leaf's profile (`internal-tls`, `code-signing`, …; `other` for one without)",
+  })
+  type: string;
+
+  @ApiProperty({ type: Number, required: true, description: "How many" })
+  count: number;
+}
+
+export class CountIssuedResponse {
+  @ApiProperty({
+    type: () => IssuedCount,
+    isArray: true,
+    required: true,
+    description:
+      "The CAs beneath it that are not discarded, and the leaves it and they signed that are in use (valid, unexpired, not yet renewed), by tier and type",
+  })
+  counts: IssuedCount[];
+}
+
 export class DescribeIssuerResponse {
   @ApiProperty({
     type: () => FullIssuer,

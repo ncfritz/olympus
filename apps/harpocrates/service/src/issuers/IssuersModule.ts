@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { DiscardIssuerController } from "./controllers/DiscardIssuerController";
 import { CreateRootIssuerController } from "./controllers/CreateRootIssuerController";
+import { CountIssuedController } from "./controllers/CountIssuedController";
 import { DescribeIssuerController } from "./controllers/DescribeIssuerController";
 import { ImportIssuerController } from "./controllers/ImportIssuerController";
 import { ListIssuersController } from "./controllers/ListIssuersController";
@@ -13,6 +14,7 @@ import { IssuerService } from "./services/IssuerService";
     ListIssuersController,
     CreateRootIssuerController,
     ImportIssuerController,
+    CountIssuedController,
     DescribeIssuerController,
     DiscardIssuerController,
     PreviewIssuerController,

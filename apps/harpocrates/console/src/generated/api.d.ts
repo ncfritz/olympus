@@ -224,6 +224,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/issuer/{issuerId}/issued": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Counts what is beneath a certificate authority
+         * @description The CAs beneath it, at any depth, by tier and purpose, and the leaves it and they signed that are in use, by profile.
+         */
+        get: operations["CountIssued"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/issuer/{issuerId}": {
         parameters: {
             query?: never;
@@ -1073,6 +1093,23 @@ export interface components {
         ImportIssuerResponse: {
             /** @description The imported CA */
             issuer: components["schemas"]["FullIssuer"];
+        };
+        /**
+         * @description Its tier
+         * @enum {string}
+         */
+        IssuedTier: "intermediate" | "issuing" | "leaf";
+        IssuedCount: {
+            /** @description Its tier */
+            tier: components["schemas"]["IssuedTier"];
+            /** @description Its type: a CA's purpose (`TLS`, `Service`, …; `general` for one without), or a leaf's profile (`internal-tls`, `code-signing`, …; `other` for one without) */
+            type: string;
+            /** @description How many */
+            count: number;
+        };
+        CountIssuedResponse: {
+            /** @description The CAs beneath it that are not discarded, and the leaves it and they signed that are in use (valid, unexpired, not yet renewed), by tier and type */
+            counts: components["schemas"]["IssuedCount"][];
         };
         DescribeIssuerResponse: {
             /** @description The CA */
@@ -2432,6 +2469,56 @@ export interface operations {
             };
             /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CountIssued: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The CA's slug */
+                issuerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The counts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountIssuedResponse"];
+                };
+            };
+            /** @description No valid access token was presented */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The entity with the specified identifiers was not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
