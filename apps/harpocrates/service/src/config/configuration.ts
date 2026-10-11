@@ -130,6 +130,14 @@ export type AcmeConfig = {
    * and port.
    */
   baseUrl: string;
+  /** The ports challenges are validated on: http-01's (80), tls-alpn-01's (443). */
+  httpPort: number;
+  tlsAlpnPort: number;
+  /**
+   * An address every challenge connects to, whatever its name resolves
+   * to: for tests and staging only. Unset, names resolve as usual.
+   */
+  challengeResolve?: string;
 };
 
 export type HarpocratesConfig = {
@@ -262,7 +270,12 @@ export const readConfig = (
       scheduleSeconds: integer(read, "DEPLOY_SCHEDULE_SECONDS", 60, 0),
       checkSeconds: integer(read, "ENDPOINT_CHECK_SECONDS", 3600, 0),
     },
-    acme: { baseUrl: "" },
+    acme: {
+      baseUrl: "",
+      httpPort: integer(read, "ACME_HTTP_PORT", 80),
+      tlsAlpnPort: integer(read, "ACME_TLS_ALPN_PORT", 443),
+      challengeResolve: read.optional("ACME_CHALLENGE_RESOLVE"),
+    },
   };
   config.acme.baseUrl = withoutTrailingSlash(
     read.string(

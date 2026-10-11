@@ -35,6 +35,9 @@ export const AuditKind = {
   AcmeAccountCreated: "acme-account.created",
   AcmeAccountUpdated: "acme-account.updated",
   AcmeAccountDeactivated: "acme-account.deactivated",
+  AcmeOrderCreated: "acme-order.created",
+  AcmeChallengeValid: "acme-challenge.valid",
+  AcmeChallengeInvalid: "acme-challenge.invalid",
 } as const;
 
 export type AuditKindName = (typeof AuditKind)[keyof typeof AuditKind];

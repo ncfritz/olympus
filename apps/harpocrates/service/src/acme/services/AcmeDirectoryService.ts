@@ -10,6 +10,7 @@ export class AcmeDirectoryService {
     return {
       newNonce: this.urls.newNonce(),
       newAccount: this.urls.newAccount(),
+      newOrder: this.urls.newOrder(),
       meta: {
         externalAccountRequired: true,
         website: "https://pki.internal.ncfritz.net/",

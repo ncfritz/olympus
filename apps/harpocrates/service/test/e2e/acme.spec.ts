@@ -1,9 +1,12 @@
 import * as acme from "acme-client";
 import * as fs from "fs";
+import * as http from "http";
 import * as https from "https";
 import * as path from "path";
+import * as tls from "tls";
+import type { AddressInfo } from "net";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { OID } from "../../src/pki/x509";
 import { RenewalListener } from "../../src/renewal/services/RenewalListener";
 import {
@@ -39,6 +42,11 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
   let hierarchy: Hierarchy;
   let port: number;
   let directoryUrl: string;
+  /** What the hosts behind the names serve: http-01 answers and tls-alpn-01 certificates. */
+  const http01 = new Map<string, string>();
+  const alpn = new Map<string, tls.SecureContext>();
+  let httpServer: http.Server;
+  let alpnServer: tls.Server;
   const server = () => harness.app.getHttpServer();
 
   /** A request to the renewal listener, trusting the test root. */
@@ -96,11 +104,32 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
   beforeAll(async () => {
     port = await freePort();
     const dir = fs.mkdtempSync(path.join("/tmp", "hrp-acme-"));
+    // Every name a challenge is for is this host, on these ports.
+    httpServer = http.createServer((req, res) => {
+      const answer = http01.get(
+        req.url?.replace("/.well-known/acme-challenge/", "") ?? "",
+      );
+      res.statusCode = answer ? 200 : 404;
+      res.end(answer ?? "not here");
+    });
+    await new Promise<void>((resolve) =>
+      httpServer.listen(0, "127.0.0.1", resolve),
+    );
+    alpnServer = tls.createServer({
+      ALPNProtocols: ["acme-tls/1"],
+      SNICallback: (name, done) => done(null, alpn.get(name)),
+    });
+    await new Promise<void>((resolve) =>
+      alpnServer.listen(0, "127.0.0.1", resolve),
+    );
     harness = await startHarness({
       env: {
         RENEWAL_LISTEN_PORT: String(port),
         RENEWAL_TLS_DIR: path.join(dir, "tls"),
         RENEWAL_HOSTNAMES: "localhost",
+        ACME_CHALLENGE_RESOLVE: "127.0.0.1",
+        ACME_HTTP_PORT: String((httpServer.address() as AddressInfo).port),
+        ACME_TLS_ALPN_PORT: String((alpnServer.address() as AddressInfo).port),
       },
     });
     hierarchy = await buildHierarchy(harness, [
@@ -120,6 +149,8 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
 
   afterAll(async () => {
     await harness?.close();
+    httpServer?.close();
+    alpnServer?.close();
   });
 
   describe("the directory and nonces", () => {
@@ -329,6 +360,149 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
         .post(`/v1/acme/credential/${created.credential.id}/revoke`)
         .set("Authorization", harness.admin)
         .expect(409);
+    });
+  });
+
+  describe("orders", () => {
+    let client: acme.Client;
+
+    /** Serves a challenge as the host would, and says it is ready. */
+    const answer = async (
+      authorization: acme.Authorization,
+      type: "http-01" | "tls-alpn-01",
+      serve = true,
+    ) => {
+      const challenge = authorization.challenges.find((c) => c.type === type)!;
+      const keyAuthorization =
+        await client.getChallengeKeyAuthorization(challenge);
+      if (type === "http-01") {
+        http01.set(challenge.token, serve ? keyAuthorization : "wrong");
+      } else {
+        const [key, cert] = await acme.crypto.createAlpnCertificate(
+          authorization,
+          keyAuthorization,
+        );
+        alpn.set(
+          authorization.identifier.value,
+          tls.createSecureContext({ key, cert }),
+        );
+      }
+      await client.completeChallenge(challenge);
+      return challenge;
+    };
+
+    beforeAll(async () => {
+      const created = await createCredential({
+        exact: ["nas.internal.ncfritz.net"],
+        subtrees: ["lab.internal.ncfritz.net"],
+      });
+      client = await clientFor(created);
+      await client.createAccount({ termsOfServiceAgreed: true });
+    });
+
+    it("are for names the account's policy allows, and nothing else", async () => {
+      await expect(
+        client.createOrder({
+          identifiers: [
+            { type: "dns", value: "nas.internal.ncfritz.net" },
+            { type: "dns", value: "git.internal.ncfritz.net" },
+          ],
+        }),
+      ).rejects.toThrow(/git.internal.ncfritz.net is not among the names/);
+      await expect(
+        client.createOrder({
+          identifiers: [{ type: "ip", value: "10.0.0.1" }],
+        }),
+      ).rejects.toThrow(/only dns identifiers/);
+      await expect(
+        client.createOrder({
+          identifiers: [{ type: "dns", value: "*.lab.internal.ncfritz.net" }],
+        }),
+      ).rejects.toThrow(/wildcards need dns-01/);
+      await expect(
+        client.createOrder({
+          identifiers: [{ type: "dns", value: "nas.internal.ncfritz.net" }],
+          notAfter: new Date(Date.now() + 86_400_000).toISOString(),
+        }),
+      ).rejects.toThrow(/notBefore and notAfter are not taken/);
+    });
+
+    it("are ready once every name is proved, by http-01 or tls-alpn-01", async () => {
+      const order = await client.createOrder({
+        identifiers: [
+          { type: "dns", value: "NAS.internal.ncfritz.net" },
+          { type: "dns", value: "a.lab.internal.ncfritz.net" },
+        ],
+      });
+      expect(order).toMatchObject({
+        status: "pending",
+        identifiers: [
+          { type: "dns", value: "a.lab.internal.ncfritz.net" },
+          { type: "dns", value: "nas.internal.ncfritz.net" },
+        ],
+      });
+      const authorizations = await client.getAuthorizations(order);
+      expect(
+        authorizations.map((a) => a.challenges.map((c) => c.type)),
+      ).toEqual([
+        ["http-01", "tls-alpn-01"],
+        ["http-01", "tls-alpn-01"],
+      ]);
+      const [lab, nas] = authorizations;
+      await client.waitForValidStatus(await answer(nas, "http-01"));
+      await client.waitForValidStatus(await answer(lab, "tls-alpn-01"));
+      // The order settles just after its last challenge does.
+      await vi.waitFor(
+        async () => expect((await client.getOrder(order)).status).toBe("ready"),
+        { timeout: 5_000, interval: 100 },
+      );
+      const kinds = (
+        await harness.prisma.auditEvent.findMany({
+          where: { subjectType: "acme-order" },
+        })
+      ).map((e) => e.kind);
+      expect(kinds).toEqual(
+        expect.arrayContaining(["acme-order.created", "acme-challenge.valid"]),
+      );
+    });
+
+    it("are invalid when a host does not prove its name, with why", async () => {
+      const order = await client.createOrder({
+        identifiers: [{ type: "dns", value: "b.lab.internal.ncfritz.net" }],
+      });
+      const [authorization] = await client.getAuthorizations(order);
+      const challenge = await answer(authorization, "http-01", false);
+      await expect(client.waitForValidStatus(challenge)).rejects.toThrow(
+        /served something other than the key authorization/,
+      );
+      const failed = await client.getOrder(order);
+      expect(failed).toMatchObject({
+        status: "invalid",
+        error: { type: "urn:ietf:params:acme:error:incorrectResponse" },
+      });
+    }, 30_000);
+
+    it("are invalid when an authorization is deactivated", async () => {
+      const order = await client.createOrder({
+        identifiers: [{ type: "dns", value: "c.lab.internal.ncfritz.net" }],
+      });
+      const [authorization] = await client.getAuthorizations(order);
+      const deactivated = await client.deactivateAuthorization(authorization);
+      expect(deactivated.status).toBe("deactivated");
+      expect((await client.getOrder(order)).status).toBe("invalid");
+    });
+
+    it("are their account's alone", async () => {
+      const order = await client.createOrder({
+        identifiers: [{ type: "dns", value: "d.lab.internal.ncfritz.net" }],
+      });
+      const stranger = await clientFor(
+        await createCredential({ subtrees: ["lab.internal.ncfritz.net"] }),
+      );
+      await stranger.createAccount({ termsOfServiceAgreed: true });
+      await expect(stranger.getOrder(order)).rejects.toThrow(
+        /for this account/,
+      );
     });
   });
 });

@@ -1,4 +1,9 @@
 import { Module } from "@nestjs/common";
+import { AcmeNewOrderController } from "./controllers/AcmeNewOrderController";
+import { AcmeOrderController } from "./controllers/AcmeOrderController";
+import { AcmeAccountOrdersController } from "./controllers/AcmeAccountOrdersController";
+import { AcmeAuthorizationController } from "./controllers/AcmeAuthorizationController";
+import { AcmeChallengeController } from "./controllers/AcmeChallengeController";
 import { AcmeAccountController } from "./controllers/AcmeAccountController";
 import { AcmeDirectoryController } from "./controllers/AcmeDirectoryController";
 import { AcmeNewAccountController } from "./controllers/AcmeNewAccountController";
@@ -9,10 +14,12 @@ import { ListAcmeCredentialsController } from "./controllers/ListAcmeCredentials
 import { RevokeAcmeCredentialController } from "./controllers/RevokeAcmeCredentialController";
 import { AcmeExceptionFilter, AcmeHeadersInterceptor } from "./acmeRoute";
 import { AcmeAccountService } from "./services/AcmeAccountService";
+import { AcmeChallengeValidator } from "./services/AcmeChallengeValidator";
 import { AcmeCredentialService } from "./services/AcmeCredentialService";
 import { AcmeDirectoryService } from "./services/AcmeDirectoryService";
 import { AcmeJwsService } from "./services/AcmeJwsService";
 import { AcmeNonceService } from "./services/AcmeNonceService";
+import { AcmeOrderService } from "./services/AcmeOrderService";
 import { AcmeUrls } from "./services/AcmeUrls";
 
 /**
@@ -26,6 +33,11 @@ import { AcmeUrls } from "./services/AcmeUrls";
     AcmeNewNonceController,
     AcmeNewAccountController,
     AcmeAccountController,
+    AcmeAccountOrdersController,
+    AcmeNewOrderController,
+    AcmeOrderController,
+    AcmeAuthorizationController,
+    AcmeChallengeController,
     ListAcmeCredentialsController,
     CreateAcmeCredentialController,
     RevokeAcmeCredentialController,
@@ -37,6 +49,8 @@ import { AcmeUrls } from "./services/AcmeUrls";
     AcmeDirectoryService,
     AcmeAccountService,
     AcmeCredentialService,
+    AcmeOrderService,
+    AcmeChallengeValidator,
     AcmeExceptionFilter,
     AcmeHeadersInterceptor,
   ],

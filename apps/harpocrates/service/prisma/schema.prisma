@@ -167,22 +167,22 @@ enum KeyAlgorithm {
 
 /// What a certificate may be (ADR 0020, Profiles).
 model Profile {
-  id             String       @id
-  description    String
+  id                String       @id
+  description       String
   /// The default issuer; the operator may choose another that could sign.
-  issuerId       String?      @map("issuer_id")
-  issuer         Issuer?      @relation(fields: [issuerId], references: [id])
+  issuerId          String?      @map("issuer_id")
+  issuer            Issuer?      @relation(fields: [issuerId], references: [id])
   /// The issuing CA purpose this profile belongs to, to find an issuer.
-  issuerPurpose  String       @map("issuer_purpose")
-  keyAlgorithm   KeyAlgorithm @map("key_algorithm")
-  validityDays   Int          @map("validity_days")
-  renewAtDays    Int          @map("renew_at_days")
-  maxKeyAgeDays  Int          @map("max_key_age_days")
-  allowCsr       Boolean      @map("allow_csr")
-  allowGenerated Boolean      @map("allow_generated")
+  issuerPurpose     String       @map("issuer_purpose")
+  keyAlgorithm      KeyAlgorithm @map("key_algorithm")
+  validityDays      Int          @map("validity_days")
+  renewAtDays       Int          @map("renew_at_days")
+  maxKeyAgeDays     Int          @map("max_key_age_days")
+  allowCsr          Boolean      @map("allow_csr")
+  allowGenerated    Boolean      @map("allow_generated")
   /// PKCS#12 without the chain, SHA-1 and 3DES: the printer.
-  legacyExport   Boolean      @default(false) @map("legacy_export")
-  requireSan     Boolean      @map("require_san")
+  legacyExport      Boolean      @default(false) @map("legacy_export")
+  requireSan        Boolean      @map("require_san")
   /// A generated key is kept, exportable again (ADR 0032, escrow). Off, it
   /// can be exported once, then it is destroyed.
   escrow            Boolean      @default(true)
@@ -606,6 +606,7 @@ model AcmeAccount {
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
   contacts AcmeAccountContact[]
+  orders   AcmeOrder[]
 
   @@map("acme_accounts")
 }
@@ -621,6 +622,95 @@ model AcmeAccountContact {
 
   @@unique([accountId, uri])
   @@map("acme_account_contacts")
+}
+
+/// RFC 8555 §7.1.6: pending (authorizations to do), ready (to finalize),
+/// processing (being issued), valid (issued), invalid (failed or expired).
+enum AcmeOrderStatus {
+  pending
+  ready
+  processing
+  valid
+  invalid
+}
+
+/// A request for a certificate for some DNS names (RFC 8555 §7.4).
+model AcmeOrder {
+  id          String          @id @default(uuid()) @db.Uuid
+  accountId   String          @map("account_id") @db.Uuid
+  account     AcmeAccount     @relation(fields: [accountId], references: [id])
+  status      AcmeOrderStatus @default(pending)
+  expiresAt   DateTime        @map("expires_at")
+  /// Why it is invalid: an ACME error type and its detail.
+  errorType   String?         @map("error_type")
+  errorDetail String?         @map("error_detail")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  authorizations AcmeAuthorization[]
+
+  @@index([accountId, createdAt])
+  @@map("acme_orders")
+}
+
+/// RFC 8555 §7.1.4.
+enum AcmeAuthorizationStatus {
+  pending
+  valid
+  invalid
+  deactivated
+  expired
+  revoked
+}
+
+/// Proof the account controls one DNS name, for one order.
+model AcmeAuthorization {
+  id         String                  @id @default(uuid()) @db.Uuid
+  orderId    String                  @map("order_id") @db.Uuid
+  order      AcmeOrder               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// The DNS name, lower case.
+  identifier String
+  status     AcmeAuthorizationStatus @default(pending)
+  expiresAt  DateTime                @map("expires_at")
+  createdAt  DateTime                @default(now()) @map("created_at")
+  updatedAt  DateTime                @updatedAt @map("updated_at")
+
+  challenges AcmeChallenge[]
+
+  @@unique([orderId, identifier])
+  @@map("acme_authorizations")
+}
+
+/// http-01 (RFC 8555 §8.3) and tls-alpn-01 (RFC 8737). dns-01 is not
+/// offered (ADR 0020, ACME).
+enum AcmeChallengeType {
+  http_01     @map("http-01")
+  tls_alpn_01 @map("tls-alpn-01")
+}
+
+enum AcmeChallengeStatus {
+  pending
+  processing
+  valid
+  invalid
+}
+
+model AcmeChallenge {
+  id              String              @id @default(uuid()) @db.Uuid
+  authorizationId String              @map("authorization_id") @db.Uuid
+  authorization   AcmeAuthorization   @relation(fields: [authorizationId], references: [id], onDelete: Cascade)
+  type            AcmeChallengeType
+  /// Random, base64url: what the client serves, with its key's thumbprint.
+  token           String              @unique
+  status          AcmeChallengeStatus @default(pending)
+  validatedAt     DateTime?           @map("validated_at")
+  errorType       String?             @map("error_type")
+  errorDetail     String?             @map("error_detail")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@unique([authorizationId, type])
+  @@map("acme_challenges")
 }
 
 /// A Replay-Nonce handed out and not yet used: each is good once, briefly.

@@ -189,6 +189,17 @@ binding an account erases it, so a credential registers one account,
 and revoking the credential revokes that account. Accounts sign with
 ES256/384/512, RS256, PS256 or EdDSA; contacts are `mailto:` only.
 
+An order (up to 20 DNS names, no `notBefore`/`notAfter`: the profile sets
+the validity) is checked against its account's policy before anything is
+created; a refused name is a `rejectedIdentifier` subproblem. Each name
+gets an authorization with an `http-01` and a `tls-alpn-01` challenge.
+When the client says a challenge is ready, the service connects to the
+name, on `ACME_HTTP_PORT` (80) or `ACME_TLS_ALPN_PORT` (443), trusting no
+certificate (the key authorization is the proof), and tries three times,
+two seconds apart, before the challenge, its authorization and its order
+are invalid with the reason. An order is ready when every name is proved,
+and lasts 7 days. Orders, and each challenge's outcome, are audited.
+
 The CA console (`apps/harpocrates/console`) signs in through Olympus
 (ADR 0029, 0032) as the API client `harpocrates-ca-console`: this
 service completes the sign-in and keeps the tokens in httpOnly cookies
@@ -337,6 +348,9 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 | `DEPLOY_SCHEDULE_SECONDS`     | `60`                                                      | How often targets are renewed, followed and deployed; `0` turns it off                             |
 | `ENDPOINT_CHECK_SECONDS`      | `3600`                                                    | How often a target's endpoint is checked while it serves its certificate; `0` turns the checks off |
 | `ACME_BASE_URL`               | `https://<first RENEWAL_HOSTNAMES>:<RENEWAL_LISTEN_PORT>` | Where ACME clients reach the renewal listener: the start of every ACME URL                         |
+| `ACME_HTTP_PORT`              | `80`                                                      | The port `http-01` is validated on                                                                 |
+| `ACME_TLS_ALPN_PORT`          | `443`                                                     | The port `tls-alpn-01` is validated on                                                             |
+| `ACME_CHALLENGE_RESOLVE`      | —                                                         | An address every challenge connects to, whatever its name resolves to: tests only                  |
 
 Logging is the shared set (`LOKI_URL`, `CONSOLE_LOGGING_LEVEL`, ...) in
 `dev.env.example`.
