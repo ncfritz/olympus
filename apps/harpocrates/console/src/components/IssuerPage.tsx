@@ -4,11 +4,11 @@ import { DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
 import {
   Alert,
   Button,
-  Card,
   Descriptions,
   Flex,
   Popconfirm,
   Table,
+  Tabs,
   Tag,
   Typography,
 } from "antd";
@@ -39,6 +39,7 @@ import {
 } from "@/lib/labels";
 import { SIGNS_LABEL, signsOf } from "@/lib/signs";
 import { commonName } from "@/lib/tree";
+import { CertificateDetails } from "./CertificateDetails";
 import { ErrorAlert } from "./ErrorAlert";
 import styles from "./IssuerPage.module.css";
 import { IssuerTree } from "./IssuerTree";
@@ -281,83 +282,105 @@ export function IssuerPage() {
         </Flex>
       </Flex>
       <ErrorAlert error={error} />
-      <Card variant="borderless">
-        <Flex vertical gap="small">
-          <Descriptions
-            column={1}
-            size="small"
-            classNames={{ label: styles.label }}
-            items={[
-              {
-                key: "subject",
-                label: "Subject",
-                children: <Mono>{issuer.subject}</Mono>,
-              },
-            ]}
-          />
-          <Flex wrap>
-            {[leftFields, rightFields].map((fields, index) => (
-              <Descriptions
-                key={index}
-                className={index === 0 ? styles.left : styles.right}
-                column={1}
-                size="small"
-                classNames={{
-                  label: index === 0 ? styles.label : styles.rightLabel,
-                }}
-                items={fields}
-              />
-            ))}
-          </Flex>
-        </Flex>
-      </Card>
-      {issuer.tier !== "issuing" && (
-        <Card title="Beneath it" variant="borderless">
-          <IssuerTree issuers={issuers ?? []} rootId={issuer.id} />
-        </Card>
-      )}
-      {issuer.tier === "issuing" && (
-        <Link href={`/certificates?issuerId=${issuer.id}`}>
-          Certificates it issued
-        </Link>
-      )}
-      <Card title="Revocation lists" variant="borderless">
-        <Table<RevocationList>
-          rowKey="number"
+      <Flex vertical gap="small">
+        <Descriptions
+          column={1}
           size="small"
-          dataSource={crls ?? []}
-          pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          columns={[
-            { title: "Number", dataIndex: "number" },
-            { title: "Source", dataIndex: "source" },
-            { title: "Entries", dataIndex: "entries" },
+          classNames={{ label: styles.label }}
+          items={[
             {
-              title: "This update",
-              dataIndex: "thisUpdate",
-              render: formatDateTime,
-            },
-            {
-              title: "Next update",
-              dataIndex: "nextUpdate",
-              render: formatDate,
-            },
-            {
-              title: "Published",
-              dataIndex: "publishedAt",
-              render: (publishedAt: string | undefined, list) =>
-                publishedAt ? (
-                  formatDateTime(publishedAt)
-                ) : list.lastError ? (
-                  <Typography.Text type="danger">
-                    {list.lastError}
-                  </Typography.Text>
-                ) : (
-                  <Tag color="gold">waiting</Tag>
-                ),
+              key: "subject",
+              label: "Subject",
+              children: <Mono>{issuer.subject}</Mono>,
             },
           ]}
         />
-      </Card>
+        <Flex wrap gap={64}>
+          {[leftFields, rightFields].map((fields, index) => (
+            <Descriptions
+              key={index}
+              className={styles.column}
+              column={1}
+              size="small"
+              classNames={{
+                label: index === 0 ? styles.label : styles.rightLabel,
+              }}
+              items={fields}
+            />
+          ))}
+        </Flex>
+      </Flex>
+      <Tabs
+        items={[
+          {
+            key: "certificates",
+            label: "Certificates",
+            children:
+              issuer.tier === "issuing" ? (
+                <Link href={`/certificates?issuerId=${issuer.id}`}>
+                  The certificates it issued
+                </Link>
+              ) : (
+                <IssuerTree issuers={issuers ?? []} rootId={issuer.id} />
+              ),
+          },
+          {
+            key: "crls",
+            label: "Revocation lists",
+            children: (
+              <Table<RevocationList>
+                rowKey="number"
+                size="small"
+                dataSource={crls ?? []}
+                pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                columns={[
+                  { title: "Number", dataIndex: "number" },
+                  { title: "Source", dataIndex: "source" },
+                  { title: "Entries", dataIndex: "entries" },
+                  {
+                    title: "This update",
+                    dataIndex: "thisUpdate",
+                    render: formatDateTime,
+                  },
+                  {
+                    title: "Next update",
+                    dataIndex: "nextUpdate",
+                    render: formatDate,
+                  },
+                  {
+                    title: "Published",
+                    dataIndex: "publishedAt",
+                    render: (publishedAt: string | undefined, list) =>
+                      publishedAt ? (
+                        formatDateTime(publishedAt)
+                      ) : list.lastError ? (
+                        <Typography.Text type="danger">
+                          {list.lastError}
+                        </Typography.Text>
+                      ) : (
+                        <Tag color="gold">waiting</Tag>
+                      ),
+                  },
+                ]}
+              />
+            ),
+          },
+          {
+            key: "details",
+            label: "Details",
+            children: issuer.certificate ? (
+              <CertificateDetails
+                pem={issuer.certificate}
+                nameConstraints={constraints}
+              />
+            ) : (
+              <Typography.Text type="secondary">
+                It has no certificate yet.
+              </Typography.Text>
+            ),
+          },
+        ]}
+      />
     </Flex>
   );
 }

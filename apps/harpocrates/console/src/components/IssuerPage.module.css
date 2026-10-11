@@ -29,15 +29,15 @@
 }
 
 /*
- * The details' two columns, side by side, each running on by itself:
- * the right one as wide as its values, the left one, with the long values
- * (the published URLs), the rest. Narrower, they stack.
+ * The details' two columns, side by side, as wide as their values, 64px
+ * apart (the Flex's gap). Narrower, they stack.
  */
-.left {
-  flex: 1 1 0;
-  min-width: 560px;
+.column {
+  flex: 0 1 auto;
 }
 
-.right {
-  flex: 0 0 auto;
+/* A certificate's PEM, to read and copy. */
+.pem {
+  font-family: var(--ant-font-family-code);
+  margin: 0;
 }
