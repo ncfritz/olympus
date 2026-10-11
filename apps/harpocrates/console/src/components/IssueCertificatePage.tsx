@@ -48,6 +48,20 @@ const NAME_LABELS: Record<NameType, { label: string; placeholder: string }> = {
 };
 
 /** Where the key comes from: the key section's tabs. */
+/** The name types a profile's version allows, required ones first. */
+const nameTypes = (profile: Profile): NameType[] =>
+  [...profile.names]
+    .sort((a, b) =>
+      a.presence === b.presence ? 0 : a.presence === "required" ? -1 : 1,
+    )
+    .map((n) => n.type);
+
+/** The extended usages a certificate gets unless asked otherwise. */
+const issuedUsages = (profile: Profile): string[] =>
+  profile.extendedKeyUsages
+    .filter((u) => u.state === "forced" || u.state === "default")
+    .map((u) => u.oid);
+
 type Mode = "generated" | "imported" | "csr";
 
 interface Values {
@@ -136,7 +150,7 @@ export function IssueCertificatePage() {
       const kept = values.mode !== "csr";
       const escrow = kept ? (values.escrow ?? profile.escrow) : undefined;
       const names = Object.fromEntries(
-        profile.nameTypes
+        nameTypes(profile)
           .map((type) => [type, values[type]] as const)
           .filter(([, list]) => list && list.length > 0),
       );
@@ -281,10 +295,12 @@ export function IssueCertificatePage() {
                 title={profile.description}
                 description={[
                   `${profile.keyAlgorithm} keys by default, valid ${describeDays(profile.validityDays)}, renewed at ${describeDays(profile.renewAtDays)}`,
-                  profile.extendedKeyUsages.length
-                    ? `for ${profile.extendedKeyUsages.map(ekuName).join(", ")}`
+                  issuedUsages(profile).length
+                    ? `for ${issuedUsages(profile).map(ekuName).join(", ")}`
                     : undefined,
-                  profile.requireSan ? "it needs at least one name" : undefined,
+                  profile.minNames > 0
+                    ? `it needs at least ${profile.minNames === 1 ? "one name" : `${profile.minNames} names`}`
+                    : undefined,
                 ]
                   .filter(Boolean)
                   .join("; ")}
@@ -325,11 +341,11 @@ export function IssueCertificatePage() {
                     </Form.Item>
                   </Col>
                 </Row>
-                {profile.nameTypes.length > 0 && (
+                {nameTypes(profile).length > 0 && (
                   <>
                     <Typography.Title level={5}>Names</Typography.Title>
                     <Row gutter={16}>
-                      {profile.nameTypes.map((type) => (
+                      {nameTypes(profile).map((type) => (
                         <Col key={type} xs={24} md={12}>
                           <Form.Item
                             name={type}

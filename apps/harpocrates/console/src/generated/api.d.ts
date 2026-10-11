@@ -1410,13 +1410,21 @@ export interface components {
       /** @description The new issuing CA, registered with the signer */
       issuer: components["schemas"]["FullIssuer"];
     };
+    SubjectAttributeValue: {
+      /** @description The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID */
+      type: string;
+      /** @description Its value */
+      value: string;
+    };
     CertificateSubject: {
-      /** @description The common name: an app name, a person-device, a host */
-      commonName: string;
+      /** @description The common name: an app name, a person-device, a host (required unless the profile says otherwise) */
+      commonName?: string;
       /** @description The organizational unit: a service's deployment, a device kind */
       organizationalUnit?: string;
       /** @description The organization (the configured one by default) */
       organization?: string;
+      /** @description Any other attributes the profile allows (ADR 0034), each value its own; the fields above are shorthand for CN, OU and O */
+      attributes?: components["schemas"]["SubjectAttributeValue"][];
     };
     CreateCeremonyCertificateRequest: {
       /** @description A direct-only profile (direct-minimal by default) */
@@ -1626,6 +1634,10 @@ export interface components {
       key?: components["schemas"]["ImportedKey"];
       /** @description For a generated key: its type. By default the profile's */
       keyAlgorithm?: components["schemas"]["KeyAlgorithm"];
+      /** @description The key usages it should have, of those its profile does not exclude; the forced ones are added. By default its CSR's, else the profile's defaults */
+      keyUsages?: string[];
+      /** @description The extended key usages (dotted OIDs) it should have, as keyUsages */
+      extendedKeyUsages?: string[];
       /** @description For a generated or imported key: whether it stays escrowed, exportable again; off, a generated key is exported once and destroyed, an imported one destroyed after issuing. By default the profile's setting; another only where the profile allows */
       escrow?: boolean;
     };
@@ -1699,7 +1711,7 @@ export interface components {
       skipped: components["schemas"]["SkippedCertificate"][];
     };
     /**
-     * @description A key usage (RFC 5280, 4.2.1.3)
+     * @description The usage
      * @enum {string}
      */
     KeyUsage:
@@ -1711,10 +1723,69 @@ export interface components {
       | "key_cert_sign"
       | "crl_sign";
     /**
+     * @description forced: always; default: unless the request removes it; optional: only if the request (or its CSR) adds it; excluded: never
+     * @enum {string}
+     */
+    UsageState: "forced" | "default" | "optional" | "excluded";
+    ProfileKeyUsage: {
+      /** @description The usage */
+      usage: components["schemas"]["KeyUsage"];
+      /** @description Its state */
+      state: components["schemas"]["UsageState"];
+    };
+    ProfileExtendedKeyUsage: {
+      /** @description The usage, a dotted OID */
+      oid: string;
+      /** @description Its state */
+      state: components["schemas"]["UsageState"];
+    };
+    /**
      * @description A kind of name: DNS, IP address, email or URI
      * @enum {string}
      */
     NameType: "dns" | "ip" | "email" | "uri";
+    ProfileName: {
+      /** @description The type */
+      type: components["schemas"]["NameType"];
+      /**
+       * @description required: at least one; allowed: any number; excluded: none
+       * @enum {string}
+       */
+      presence: "required" | "allowed" | "excluded";
+    };
+    ProfileNamePolicy: {
+      /** @description The type */
+      type: components["schemas"]["NameType"];
+      /**
+       * @description permitted: names of the type must lie in one of these (when any is given); excluded: in none
+       * @enum {string}
+       */
+      kind: "permitted" | "excluded";
+      /** @description The subtree, as RFC 5280 reads one: example.com (it and below), .example.com (below only), 10.0.0.0/8, a mail host or mailbox */
+      value: string;
+    };
+    ProfileSubjectAttribute: {
+      /** @description The attribute: a name (C, ST, L, O, OU, CN, emailAddress, serialNumber, title, givenName, surname, initials, pseudonym, generationQualifier, dnQualifier, description, businessCategory, postalCode, street, UID, DC, jurisdictionCountryName, jurisdictionStateOrProvinceName, jurisdictionLocalityName) or a dotted OID */
+      attribute: string;
+      /**
+       * @description Whether a subject must hold it, may, or may not
+       * @enum {string}
+       */
+      presence: "required" | "optional" | "excluded";
+      /** @description Its value when the request gives none */
+      defaultValue?: string;
+      /** @description Whether the default is the only value it may take */
+      locked: boolean;
+      /** @description A regular expression each value must match, whole */
+      pattern?: string;
+      /** @description How many values it may take */
+      maxCount: number;
+    };
+    /**
+     * @description A signature's hash
+     * @enum {string}
+     */
+    SignatureHash: "sha1" | "sha224" | "sha256" | "sha384" | "sha512";
     Profile: {
       /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
       issuerId?: string | null;
@@ -1734,8 +1805,8 @@ export interface components {
       allowGenerated: boolean;
       /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
       legacyExport: boolean;
-      /** @description Whether a certificate needs at least one alternative name */
-      requireSan: boolean;
+      /** @description How many alternative names a certificate needs, at least */
+      minNames: number;
       /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
       escrow: boolean;
       /** @description Whether one request may choose escrow otherwise */
@@ -1745,12 +1816,20 @@ export interface components {
        * @enum {string}
        */
       extensions: "standard" | "minimal";
-      /** @description Its key usages */
-      keyUsages: components["schemas"]["KeyUsage"][];
-      /** @description Its extended key usages, dotted OIDs */
-      extendedKeyUsages: string[];
-      /** @description The alternative name types it allows */
-      nameTypes: components["schemas"]["NameType"][];
+      /** @description Its key usages' states; one not listed is excluded */
+      keyUsages: components["schemas"]["ProfileKeyUsage"][];
+      /** @description Its extended key usages' states; one not listed is excluded */
+      extendedKeyUsages: components["schemas"]["ProfileExtendedKeyUsage"][];
+      /** @description The alternative name types it allows or requires; one not listed is excluded */
+      names: components["schemas"]["ProfileName"][];
+      /** @description Its name policy: subtrees names must lie in or outside */
+      namePolicy: components["schemas"]["ProfileNamePolicy"][];
+      /** @description Its subject DN rules; an attribute not listed is excluded */
+      subjectAttributes: components["schemas"]["ProfileSubjectAttribute"][];
+      /** @description The key types a request may choose; none, any the signer generates */
+      keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
+      /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
+      csrSignatureHashes: components["schemas"]["SignatureHash"][];
       /** @description The profile's name, e.g. internal-tls */
       id: string;
       /** @description The version these settings are: the latest, which new certificates take (ADR 0034) */
@@ -1791,8 +1870,8 @@ export interface components {
       allowGenerated: boolean;
       /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
       legacyExport: boolean;
-      /** @description Whether a certificate needs at least one alternative name */
-      requireSan: boolean;
+      /** @description How many alternative names a certificate needs, at least */
+      minNames: number;
       /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
       escrow: boolean;
       /** @description Whether one request may choose escrow otherwise */
@@ -1802,12 +1881,20 @@ export interface components {
        * @enum {string}
        */
       extensions: "standard" | "minimal";
-      /** @description Its key usages */
-      keyUsages: components["schemas"]["KeyUsage"][];
-      /** @description Its extended key usages, dotted OIDs */
-      extendedKeyUsages: string[];
-      /** @description The alternative name types it allows */
-      nameTypes: components["schemas"]["NameType"][];
+      /** @description Its key usages' states; one not listed is excluded */
+      keyUsages: components["schemas"]["ProfileKeyUsage"][];
+      /** @description Its extended key usages' states; one not listed is excluded */
+      extendedKeyUsages: components["schemas"]["ProfileExtendedKeyUsage"][];
+      /** @description The alternative name types it allows or requires; one not listed is excluded */
+      names: components["schemas"]["ProfileName"][];
+      /** @description Its name policy: subtrees names must lie in or outside */
+      namePolicy: components["schemas"]["ProfileNamePolicy"][];
+      /** @description Its subject DN rules; an attribute not listed is excluded */
+      subjectAttributes: components["schemas"]["ProfileSubjectAttribute"][];
+      /** @description The key types a request may choose; none, any the signer generates */
+      keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
+      /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
+      csrSignatureHashes: components["schemas"]["SignatureHash"][];
       /** @description Its name: lower case, digits and hyphens, e.g. web-tls */
       id: string;
       /** @description What it is for */
@@ -1844,8 +1931,8 @@ export interface components {
       allowGenerated?: boolean;
       /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
       legacyExport?: boolean;
-      /** @description Whether a certificate needs at least one alternative name */
-      requireSan?: boolean;
+      /** @description How many alternative names a certificate needs, at least */
+      minNames?: number;
       /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
       escrow?: boolean;
       /** @description Whether one request may choose escrow otherwise */
@@ -1855,12 +1942,20 @@ export interface components {
        * @enum {string}
        */
       extensions?: "standard" | "minimal";
-      /** @description Its key usages */
-      keyUsages?: components["schemas"]["KeyUsage"][];
-      /** @description Its extended key usages, dotted OIDs */
-      extendedKeyUsages?: string[];
-      /** @description The alternative name types it allows */
-      nameTypes?: components["schemas"]["NameType"][];
+      /** @description Its key usages' states; one not listed is excluded */
+      keyUsages?: components["schemas"]["ProfileKeyUsage"][];
+      /** @description Its extended key usages' states; one not listed is excluded */
+      extendedKeyUsages?: components["schemas"]["ProfileExtendedKeyUsage"][];
+      /** @description The alternative name types it allows or requires; one not listed is excluded */
+      names?: components["schemas"]["ProfileName"][];
+      /** @description Its name policy: subtrees names must lie in or outside */
+      namePolicy?: components["schemas"]["ProfileNamePolicy"][];
+      /** @description Its subject DN rules; an attribute not listed is excluded */
+      subjectAttributes?: components["schemas"]["ProfileSubjectAttribute"][];
+      /** @description The key types a request may choose; none, any the signer generates */
+      keyAlgorithms?: components["schemas"]["KeyAlgorithm"][];
+      /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
+      csrSignatureHashes?: components["schemas"]["SignatureHash"][];
       /** @description What it is for */
       description?: string;
     };
@@ -1891,8 +1986,8 @@ export interface components {
       allowGenerated: boolean;
       /** @description Whether an escrowed key exports as legacy PKCS#12 (SHA-1, 3DES, no chain) */
       legacyExport: boolean;
-      /** @description Whether a certificate needs at least one alternative name */
-      requireSan: boolean;
+      /** @description How many alternative names a certificate needs, at least */
+      minNames: number;
       /** @description Whether a generated key stays escrowed, exportable again; off, it is exported once and destroyed */
       escrow: boolean;
       /** @description Whether one request may choose escrow otherwise */
@@ -1902,12 +1997,20 @@ export interface components {
        * @enum {string}
        */
       extensions: "standard" | "minimal";
-      /** @description Its key usages */
-      keyUsages: components["schemas"]["KeyUsage"][];
-      /** @description Its extended key usages, dotted OIDs */
-      extendedKeyUsages: string[];
-      /** @description The alternative name types it allows */
-      nameTypes: components["schemas"]["NameType"][];
+      /** @description Its key usages' states; one not listed is excluded */
+      keyUsages: components["schemas"]["ProfileKeyUsage"][];
+      /** @description Its extended key usages' states; one not listed is excluded */
+      extendedKeyUsages: components["schemas"]["ProfileExtendedKeyUsage"][];
+      /** @description The alternative name types it allows or requires; one not listed is excluded */
+      names: components["schemas"]["ProfileName"][];
+      /** @description Its name policy: subtrees names must lie in or outside */
+      namePolicy: components["schemas"]["ProfileNamePolicy"][];
+      /** @description Its subject DN rules; an attribute not listed is excluded */
+      subjectAttributes: components["schemas"]["ProfileSubjectAttribute"][];
+      /** @description The key types a request may choose; none, any the signer generates */
+      keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
+      /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
+      csrSignatureHashes: components["schemas"]["SignatureHash"][];
       /** @description v1, v2, … */
       version: number;
       /** @description Who made it: a principal, or `migration` for the seeds */

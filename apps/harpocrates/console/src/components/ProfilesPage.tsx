@@ -38,7 +38,11 @@ export function ProfilesPage() {
           {
             title: "Usages",
             dataIndex: "extendedKeyUsages",
-            render: (oids: string[]) => oids.map(ekuName).join(", ") || "—",
+            render: (usages: { oid: string; state: string }[]) =>
+              usages
+                .filter((u) => u.state === "forced" || u.state === "default")
+                .map((u) => ekuName(u.oid))
+                .join(", ") || "—",
           },
           {
             title: "Enrollment",
