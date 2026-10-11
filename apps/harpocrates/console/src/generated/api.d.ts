@@ -678,7 +678,7 @@ export interface paths {
     get: operations["DescribeDeployTarget"];
     /**
      * Updates a deploy target
-     * @description Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once. Renewals it follows by itself. pki-admin only, after a recent sign-in, as for any escrow export.
+     * @description Points a deploy target at another certificate, a reissue after a revocation say, and deploys it at once (renewals it follows by itself); or at another endpoint, checked from then on. pki-admin only, after a recent sign-in, as for any escrow export.
      */
     put: operations["UpdateDeployTarget"];
     post?: never;
@@ -706,6 +706,26 @@ export interface paths {
      * @description Deploys the target's certificate again, now, to the place it already has: after its files were lost, or rather than wait for a retry.
      */
     post: operations["DeployDeployTarget"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/deploy-target/{targetId}/check": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Checks a deploy target's endpoint
+     * @description Connects to the target's endpoint now and records which certificate it serves: the target's, one it deployed before, another, or none.
+     */
+    post: operations["CheckDeployTarget"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1525,6 +1545,39 @@ export interface components {
       /** @description An ISO-8601 formatted string: when it last changed */
       updatedAt: string;
     };
+    /**
+     * @description What it served
+     * @enum {string}
+     */
+    EndpointResult: "current" | "previous" | "other" | "unreachable";
+    EndpointObservation: {
+      /** @description Its ID */
+      id: string;
+      /** @description The host:port checked */
+      endpoint: string;
+      /** @description What it served */
+      result: components["schemas"]["EndpointResult"];
+      /** @description The target's certificate when it was checked */
+      expectedCertificateId: string;
+      /** @description The certificate served, when this target deployed it */
+      servedCertificateId?: string;
+      /** @description The served certificate's SHA-256 fingerprint, hex */
+      servedSha256?: string;
+      /** @description The served certificate's serial, hex */
+      servedSerial?: string;
+      /** @description The served certificate's subject, RFC 4514 */
+      servedSubject?: string;
+      /** @description An ISO-8601 formatted string: when the served certificate expires */
+      servedNotAfter?: string;
+      /** @description Why there was no handshake */
+      error?: string;
+      /** @description How many checks saw this */
+      checks: number;
+      /** @description An ISO-8601 formatted string: when it was first seen */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it was last seen */
+      updatedAt: string;
+    };
     DeployTarget: {
       /** @description Its ID */
       id: string;
@@ -1540,8 +1593,12 @@ export interface components {
       notAfter: string;
       /** @description An ISO-8601 formatted string: when Harpocrates renews that certificate */
       renewsAt: string;
+      /** @description The host:port it is served at, and checked */
+      endpoint: string;
       /** @description Its newest deployment */
       lastDeployment?: components["schemas"]["Deployment"];
+      /** @description What its endpoint served when last checked */
+      lastObservation?: components["schemas"]["EndpointObservation"];
       /** @description An ISO-8601 formatted string: when it was created */
       createdAt: string;
       /** @description An ISO-8601 formatted string: when it last changed */
@@ -1559,6 +1616,11 @@ export interface components {
       name: string;
       /** @description The certificate to deploy: its key generated and escrowed, so Harpocrates can install it */
       certificateId: string;
+      /**
+       * @description The host:port it is served at, and checked: its name on 443 by default
+       * @example nas.internal.ncfritz.net:443
+       */
+      endpoint?: string;
     };
     FullDeployTarget: {
       /** @description Its ID */
@@ -1575,14 +1637,20 @@ export interface components {
       notAfter: string;
       /** @description An ISO-8601 formatted string: when Harpocrates renews that certificate */
       renewsAt: string;
+      /** @description The host:port it is served at, and checked */
+      endpoint: string;
       /** @description Its newest deployment */
       lastDeployment?: components["schemas"]["Deployment"];
+      /** @description What its endpoint served when last checked */
+      lastObservation?: components["schemas"]["EndpointObservation"];
       /** @description An ISO-8601 formatted string: when it was created */
       createdAt: string;
       /** @description An ISO-8601 formatted string: when it last changed */
       updatedAt: string;
       /** @description Its deployments, newest first */
       deployments: components["schemas"]["Deployment"][];
+      /** @description What its endpoint served, newest first */
+      observations: components["schemas"]["EndpointObservation"][];
     };
     CreateDeployTargetResponse: {
       /** @description The target, and its first deployment as it went */
@@ -1594,7 +1662,12 @@ export interface components {
     };
     UpdateDeployTargetRequest: {
       /** @description The certificate to deploy from now on, deployed at once: a reissue, after a revocation */
-      certificateId: string;
+      certificateId?: string;
+      /**
+       * @description The host:port it is served at, and checked, from now on
+       * @example nas.internal.ncfritz.net:443
+       */
+      endpoint?: string;
     };
     UpdateDeployTargetResponse: {
       /** @description The target, and the deployment of its new certificate */
@@ -1602,6 +1675,10 @@ export interface components {
     };
     DeployDeployTargetResponse: {
       /** @description The target, and the deployment as it went */
+      deployTarget: components["schemas"]["FullDeployTarget"];
+    };
+    CheckDeployTargetResponse: {
+      /** @description The target, with what its endpoint served just now */
       deployTarget: components["schemas"]["FullDeployTarget"];
     };
   };
@@ -4116,7 +4193,7 @@ export interface operations {
       };
       cookie?: never;
     };
-    /** @description Its certificate from now on. */
+    /** @description Its certificate, its endpoint, or both, from now on. */
     requestBody: {
       content: {
         "application/json": components["schemas"]["UpdateDeployTargetRequest"];
@@ -4277,6 +4354,56 @@ export interface operations {
       };
       /** @description Refused: a profile rule or one of the signer's invariants */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CheckDeployTarget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The deploy target's ID */
+        targetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The endpoint was checked; its newest observation says what it served. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckDeployTargetResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };

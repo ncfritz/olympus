@@ -1,5 +1,6 @@
 import type {
   Deployment,
+  EndpointObservation,
   IssuerShape,
   IssuerStatus,
   IssuerTier,
@@ -95,5 +96,38 @@ export const deploymentState = (
       return deployment.lastError
         ? { label: "Failing", color: "red" }
         : { label: "Pending", color: "blue" };
+  }
+};
+
+/** What a target's endpoint served when last checked, as the console says it. */
+export const servingState = (
+  observation: EndpointObservation | undefined,
+): { label: string; color: string; detail?: string } => {
+  if (!observation) return { label: "Not checked", color: "default" };
+  switch (observation.result) {
+    case "current":
+      return {
+        label: "Serving it",
+        color: "green",
+        detail: `Serial ${observation.servedSerial}`,
+      };
+    case "previous":
+      return {
+        label: "Old certificate",
+        color: "gold",
+        detail: `Serial ${observation.servedSerial}, deployed here before: nginx has not reloaded`,
+      };
+    case "other":
+      return {
+        label: "Another certificate",
+        color: "red",
+        detail: `${observation.servedSubject ?? "Unreadable"}, serial ${observation.servedSerial ?? "unknown"}: never deployed here`,
+      };
+    default:
+      return {
+        label: "Unreachable",
+        color: "red",
+        detail: observation.error,
+      };
   }
 };

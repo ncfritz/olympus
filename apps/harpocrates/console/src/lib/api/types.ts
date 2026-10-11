@@ -30,3 +30,5 @@ export type DeployTarget = Schemas["DeployTarget"];
 export type FullDeployTarget = Schemas["FullDeployTarget"];
 export type Deployment = Schemas["Deployment"];
 export type DeploymentStatus = Schemas["DeploymentStatus"];
+export type EndpointObservation = Schemas["EndpointObservation"];
+export type EndpointResult = Schemas["EndpointResult"];

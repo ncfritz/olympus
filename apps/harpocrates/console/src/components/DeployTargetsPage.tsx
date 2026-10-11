@@ -29,9 +29,18 @@ import {
   useDeployTarget,
   useDeployTargets,
 } from "@/lib/api/queries";
-import type { DeployTarget, Deployment } from "@/lib/api/types";
-import { deploymentState, formatDate, formatDateTime } from "@/lib/labels";
-import { DeployTargetForm } from "./DeployTargetForm";
+import type {
+  DeployTarget,
+  Deployment,
+  EndpointObservation,
+} from "@/lib/api/types";
+import {
+  deploymentState,
+  formatDate,
+  formatDateTime,
+  servingState,
+} from "@/lib/labels";
+import { DeployTargetForm, ENDPOINT } from "./DeployTargetForm";
 import { ErrorAlert } from "./ErrorAlert";
 
 const DeploymentTag = ({ deployment }: { deployment?: Deployment }) => {
@@ -42,6 +51,12 @@ const DeploymentTag = ({ deployment }: { deployment?: Deployment }) => {
   ) : (
     tag
   );
+};
+
+const ServingTag = ({ observation }: { observation?: EndpointObservation }) => {
+  const { label, color, detail } = servingState(observation);
+  const tag = <Tag color={color}>{label}</Tag>;
+  return detail ? <Tooltip title={detail}>{tag}</Tooltip> : tag;
 };
 
 /**
@@ -76,7 +91,8 @@ export function DeployTargetsPage() {
       <Typography.Paragraph type="secondary">
         Certificates installed for what can neither renew over mutual TLS nor
         speak ACME. Harpocrates renews each when its profile says, and deploys
-        every new certificate; nginx reloads when one lands.
+        every new certificate; nginx reloads when one lands, and Harpocrates
+        then checks what the endpoint actually serves.
       </Typography.Paragraph>
       <ErrorAlert error={error} />
       <Table<DeployTarget>
@@ -94,6 +110,13 @@ export function DeployTargetsPage() {
             key: "deployed",
             render: (_, target) => (
               <DeploymentTag deployment={target.lastDeployment} />
+            ),
+          },
+          {
+            title: "Serving",
+            key: "serving",
+            render: (_, target) => (
+              <ServingTag observation={target.lastObservation} />
             ),
           },
           { title: "Renews", dataIndex: "renewsAt", render: formatDate },
@@ -131,8 +154,8 @@ function DeployTargetDrawer({
   const { isAdmin } = useCurrentUser();
   const { data: target, error } = useDeployTarget(targetId);
   const [failure, setFailure] = useState<unknown>();
-  const [busy, setBusy] = useState<"deploy" | "update" | "delete">();
-  const [moving, setMoving] = useState(false);
+  const [busy, setBusy] = useState<"deploy" | "check" | "update" | "delete">();
+  const [editing, setEditing] = useState(false);
 
   const refresh = () =>
     mutate(
@@ -142,7 +165,7 @@ function DeployTargetDrawer({
     );
 
   const act = async (
-    kind: "deploy" | "update" | "delete",
+    kind: "deploy" | "check" | "update" | "delete",
     run: () => Promise<string | undefined>,
   ) => {
     setBusy(kind);
@@ -167,7 +190,7 @@ function DeployTargetDrawer({
     <Drawer
       open={Boolean(targetId)}
       onClose={() => {
-        setMoving(false);
+        setEditing(false);
         setFailure(undefined);
         onClose();
       }}
@@ -185,6 +208,15 @@ function DeployTargetDrawer({
                 showIcon
                 title={`Failing after ${target.lastDeployment.attempts} attempts; retried`}
                 description={target.lastDeployment.lastError}
+              />
+            )}
+          {target.lastObservation &&
+            target.lastObservation.result !== "current" && (
+              <Alert
+                type="warning"
+                showIcon
+                title={`${target.endpoint}: ${servingState(target.lastObservation).label.toLowerCase()}`}
+                description={servingState(target.lastObservation).detail}
               />
             )}
           <Descriptions column={1} size="small" bordered>
@@ -209,6 +241,14 @@ function DeployTargetDrawer({
             </Descriptions.Item>
             <Descriptions.Item label="Deployed">
               <DeploymentTag deployment={target.lastDeployment} />
+            </Descriptions.Item>
+            <Descriptions.Item label="Endpoint">
+              <Typography.Text code>{target.endpoint}</Typography.Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Serving">
+              <ServingTag observation={target.lastObservation} />
+              {target.lastObservation &&
+                ` checked ${formatDateTime(target.lastObservation.updatedAt)}`}
             </Descriptions.Item>
             <Descriptions.Item label="Created">
               {formatDateTime(target.createdAt)}
@@ -237,9 +277,24 @@ function DeployTargetDrawer({
             >
               Deploy again
             </Button>
+            <Button
+              loading={busy === "check"}
+              onClick={() =>
+                act("check", async () => {
+                  const { deployTarget } = unwrap(
+                    await apiClient.POST("/v1/deploy-target/{targetId}/check", {
+                      params: { path: { targetId: target.id } },
+                    }),
+                  );
+                  return servingState(deployTarget.lastObservation).label;
+                })
+              }
+            >
+              Check now
+            </Button>
             {isAdmin && (
-              <Button onClick={() => setMoving((value) => !value)}>
-                Point at another certificate
+              <Button onClick={() => setEditing((value) => !value)}>
+                Edit
               </Button>
             )}
             {isAdmin && (
@@ -266,27 +321,47 @@ function DeployTargetDrawer({
               </Popconfirm>
             )}
           </Flex>
-          {moving && (
-            <Form<{ certificateId: string }>
+          {editing && (
+            <Form<{ certificateId?: string; endpoint: string }>
               layout="vertical"
-              onFinish={({ certificateId }) =>
+              initialValues={{ endpoint: target.endpoint }}
+              onFinish={({ certificateId, endpoint }) =>
                 act("update", async () => {
                   const { deployTarget } = unwrap(
                     await apiClient.PUT("/v1/deploy-target/{targetId}", {
                       params: { path: { targetId: target.id } },
-                      body: { certificateId },
+                      body: {
+                        certificateId: certificateId || undefined,
+                        endpoint,
+                      },
                     }),
                   );
-                  setMoving(false);
-                  return outcome(deployTarget.lastDeployment);
+                  setEditing(false);
+                  return certificateId
+                    ? outcome(deployTarget.lastDeployment)
+                    : "Saved";
                 })
               }
             >
               <Form.Item
                 name="certificateId"
-                label="Certificate ID"
-                extra="A reissue, after this one was revoked. Renewals the target follows by itself."
-                rules={[{ required: true, message: "The certificate's ID" }]}
+                label="Another certificate"
+                extra="Its ID: a reissue, after this one was revoked. Deployed at once; renewals the target follows by itself."
+              >
+                <Input placeholder="Keep this one" />
+              </Form.Item>
+              <Form.Item
+                name="endpoint"
+                label="Endpoint"
+                extra="host:port where it is served and checked."
+                rules={[
+                  { required: true, message: "host:port" },
+                  {
+                    pattern: ENDPOINT,
+                    message:
+                      "host:port, for example nas.internal.ncfritz.net:443",
+                  },
+                ]}
               >
                 <Input />
               </Form.Item>
@@ -295,7 +370,7 @@ function DeployTargetDrawer({
                 htmlType="submit"
                 loading={busy === "update"}
               >
-                Deploy it here
+                Save
               </Button>
             </Form>
           )}
@@ -327,6 +402,34 @@ function DeployTargetDrawer({
                 dataIndex: "deployedAt",
                 render: formatDateTime,
               },
+            ]}
+          />
+          <Typography.Title level={5}>What it served</Typography.Title>
+          <Table<EndpointObservation>
+            rowKey="id"
+            size="small"
+            pagination={false}
+            dataSource={target.observations}
+            columns={[
+              {
+                title: "First seen",
+                dataIndex: "createdAt",
+                render: formatDateTime,
+              },
+              {
+                title: "Last seen",
+                dataIndex: "updatedAt",
+                render: formatDateTime,
+              },
+              { title: "Endpoint", dataIndex: "endpoint", ellipsis: true },
+              {
+                title: "Served",
+                key: "served",
+                render: (_, observation) => (
+                  <ServingTag observation={observation} />
+                ),
+              },
+              { title: "Checks", dataIndex: "checks" },
             ]}
           />
         </Flex>

@@ -13,7 +13,12 @@ import { ErrorAlert } from "./ErrorAlert";
 interface Values {
   name: string;
   certificateId: string;
+  endpoint?: string;
 }
+
+/** host:port, as the service takes it. */
+export const ENDPOINT =
+  /^(?:[A-Za-z0-9][A-Za-z0-9.-]*|\[[0-9A-Fa-f:.]+\]):\d{1,5}$/;
 
 /** The service's rule for a target's name, which is also its directory. */
 const NAME = /^[a-z0-9][a-z0-9.-]{0,62}$/;
@@ -61,7 +66,9 @@ export function DeployTargetForm({
     setBusy(true);
     try {
       const { deployTarget } = unwrap(
-        await apiClient.POST("/v1/deploy-targets", { body: values }),
+        await apiClient.POST("/v1/deploy-targets", {
+          body: { ...values, endpoint: values.endpoint || undefined },
+        }),
       );
       setError(undefined);
       await mutate(KEYS.deployTargets);
@@ -130,6 +137,19 @@ export function DeployTargetForm({
         ]}
       >
         <Input placeholder="nas.internal.ncfritz.net" />
+      </Form.Item>
+      <Form.Item
+        name="endpoint"
+        label="Endpoint"
+        extra="host:port where it is served, checked after each deployment and hourly. Its name on 443 if left empty."
+        rules={[
+          {
+            pattern: ENDPOINT,
+            message: "host:port, for example nas.internal.ncfritz.net:443",
+          },
+        ]}
+      >
+        <Input placeholder="name:443" />
       </Form.Item>
       <Button type="primary" htmlType="submit" loading={busy}>
         Deploy it here
