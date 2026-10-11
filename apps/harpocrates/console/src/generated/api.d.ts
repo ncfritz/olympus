@@ -256,7 +256,11 @@ export interface paths {
      * @description A CA with its certificate and the chain above it, nearest first.
      */
     get: operations["DescribeIssuer"];
-    put?: never;
+    /**
+     * Edits a CA
+     * @description Changes what can change once a CA exists: its issuer alternative names (ADR 0034), which the certificates it signs carry where their profile version says. What is given replaces what it had; what is not given stays.
+     */
+    put: operations["UpdateIssuer"];
     post?: never;
     delete?: never;
     options?: never;
@@ -1054,6 +1058,12 @@ export interface components {
       /** @description Subtrees no name may fall within, by type */
       excluded?: components["schemas"]["Names"];
     };
+    ContactNames: {
+      /** @description Email addresses */
+      email?: string[];
+      /** @description URIs */
+      uri?: string[];
+    };
     Issuer: {
       /** @description The CA's slug, e.g. tls-issuing-1-g1 */
       id: string;
@@ -1099,6 +1109,8 @@ export interface components {
       crlUrl: string;
       /** @description Where its certificate is published */
       caIssuersUrl: string;
+      /** @description How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs */
+      alternativeNames: components["schemas"]["ContactNames"];
     };
     ListIssuersResponse: {
       /** @description Every CA, parents before children */
@@ -1176,6 +1188,8 @@ export interface components {
       crlUrl: string;
       /** @description Where its certificate is published */
       caIssuersUrl: string;
+      /** @description How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs */
+      alternativeNames: components["schemas"]["ContactNames"];
       /** @description Its certificate, PEM */
       certificate?: string;
       /** @description The request its certificate was made from, PEM, when Harpocrates keeps one: a CA whose parent is outside it. A root has none */
@@ -1242,6 +1256,14 @@ export interface components {
     };
     DiscardIssuerResponse: {
       /** @description The discarded root, revoked in the record */
+      issuer: components["schemas"]["FullIssuer"];
+    };
+    UpdateIssuerRequest: {
+      /** @description Its issuer alternative names (emails, URIs), replacing those it has */
+      alternativeNames?: components["schemas"]["ContactNames"];
+    };
+    UpdateIssuerResponse: {
+      /** @description The CA, as it now is */
       issuer: components["schemas"]["FullIssuer"];
     };
     PreviewIssuerRequest: {
@@ -1426,13 +1448,27 @@ export interface components {
       /** @description Any other attributes the profile allows (ADR 0034), each value its own; the fields above are shorthand for CN, OU and O */
       attributes?: components["schemas"]["SubjectAttributeValue"][];
     };
+    CertificateNames: {
+      /** @description DNS names */
+      dns?: string[];
+      /** @description IP addresses (for a CA's constraints, networks: 10.0.0.0/8) */
+      ip?: string[];
+      /** @description Email addresses (for a CA's constraints, domains) */
+      email?: string[];
+      /** @description URIs */
+      uri?: string[];
+      /** @description Microsoft user principal names (otherName): user@domain */
+      upn?: string[];
+      /** @description registeredIDs: dotted OIDs */
+      registeredId?: string[];
+    };
     CreateCeremonyCertificateRequest: {
       /** @description A direct-only profile (direct-minimal by default) */
       profileId?: string;
       /** @description Its subject; O is the root's organisation by default */
       subject: components["schemas"]["CertificateSubject"];
       /** @description Its alternative names, if the profile carries them */
-      names?: components["schemas"]["Names"];
+      names?: components["schemas"]["CertificateNames"];
       /** @description Its validity in days; by default the profile's, never past the root's limit */
       validityDays?: number;
       /** @description Whether its generated key stays escrowed; by default the profile's setting */
@@ -1482,7 +1518,7 @@ export interface components {
       /** @description Its subject, RFC 4514 */
       subject: string;
       /** @description Its alternative names */
-      names: components["schemas"]["Names"];
+      names: components["schemas"]["CertificateNames"];
       /** @description An ISO-8601 formatted string: when it becomes valid */
       notBefore: string;
       /** @description An ISO-8601 formatted string: when it expires */
@@ -1565,7 +1601,7 @@ export interface components {
       /** @description Its subject, RFC 4514 */
       subject: string;
       /** @description Its alternative names */
-      names: components["schemas"]["Names"];
+      names: components["schemas"]["CertificateNames"];
       /** @description An ISO-8601 formatted string: when it becomes valid */
       notBefore: string;
       /** @description An ISO-8601 formatted string: when it expires */
@@ -1627,7 +1663,7 @@ export interface components {
       /** @description Its subject */
       subject: components["schemas"]["CertificateSubject"];
       /** @description Its alternative names, of the types the profile allows */
-      names?: components["schemas"]["Names"];
+      names?: components["schemas"]["CertificateNames"];
       /** @description The subscriber's CSR, PEM; with neither it nor `key`, the signer generates the key, if the profile allows */
       csr?: string;
       /** @description A key the operator brings, instead of a CSR or a generated one; where the profile allows a generated key */
@@ -1740,10 +1776,10 @@ export interface components {
       state: components["schemas"]["UsageState"];
     };
     /**
-     * @description A kind of name: DNS, IP address, email or URI
+     * @description The type
      * @enum {string}
      */
-    NameType: "dns" | "ip" | "email" | "uri";
+    NameType: "dns" | "ip" | "email" | "uri" | "upn" | "registeredId";
     ProfileName: {
       /** @description The type */
       type: components["schemas"]["NameType"];
@@ -1753,9 +1789,14 @@ export interface components {
        */
       presence: "required" | "allowed" | "excluded";
     };
+    /**
+     * @description The type
+     * @enum {string}
+     */
+    SubtreeNameType: "dns" | "ip" | "email" | "uri";
     ProfileNamePolicy: {
       /** @description The type */
-      type: components["schemas"]["NameType"];
+      type: components["schemas"]["SubtreeNameType"];
       /**
        * @description permitted: names of the type must lie in one of these (when any is given); excluded: in none
        * @enum {string}
@@ -1786,6 +1827,22 @@ export interface components {
      * @enum {string}
      */
     SignatureHash: "sha1" | "sha224" | "sha256" | "sha384" | "sha512";
+    ProfilePolicy: {
+      /** @description The policy's OID */
+      oid: string;
+      /** @description Where its certification practice statement is published */
+      cpsUri?: string;
+      /** @description A notice for relying parties (explicit text) */
+      userNotice?: string;
+    };
+    ProfileCustomExtension: {
+      /** @description The extension's OID */
+      oid: string;
+      /** @description Whether a relying party that does not know it must reject the certificate */
+      critical: boolean;
+      /** @description Its value: one DER element, base64 */
+      value: string;
+    };
     Profile: {
       /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
       issuerId?: string | null;
@@ -1830,6 +1887,41 @@ export interface components {
       keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
       /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
       csrSignatureHashes: components["schemas"]["SignatureHash"][];
+      /**
+       * @description The hash the issuer signs its certificates with; an Ed25519 issuer has none
+       * @enum {string}
+       */
+      signatureHash: "sha256" | "sha384" | "sha512";
+      /**
+       * @description Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it
+       * @enum {string}
+       */
+      rsaPadding: "pkcs1v15" | "pss";
+      /**
+       * @description The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none
+       * @enum {string}
+       */
+      subjectKeyIdentifier: "sha1" | "sha256" | "none";
+      /**
+       * @description The authority key identifier: the issuer's key identifier, with its issuer and serial, or none
+       * @enum {string}
+       */
+      authorityKeyIdentifier: "key_id" | "key_id_and_issuer" | "none";
+      /**
+       * @description Basic constraints (CA:FALSE): critical, not, or left out
+       * @enum {string}
+       */
+      basicConstraints: "critical" | "non_critical" | "omitted";
+      /** @description Whether certificates name the issuer's CRL */
+      includeCrlDistribution: boolean;
+      /** @description Whether certificates say where the issuer's certificate is (AIA caIssuers) */
+      includeCaIssuers: boolean;
+      /** @description Whether certificates carry the issuer's alternative names, where it has any */
+      includeIssuerAltName: boolean;
+      /** @description The certificate policies its certificates assert, in order */
+      policies: components["schemas"]["ProfilePolicy"][];
+      /** @description Extensions the signer does not build itself */
+      customExtensions: components["schemas"]["ProfileCustomExtension"][];
       /** @description The profile's name, e.g. internal-tls */
       id: string;
       /** @description The version these settings are: the latest, which new certificates take (ADR 0034) */
@@ -1895,6 +1987,41 @@ export interface components {
       keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
       /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
       csrSignatureHashes: components["schemas"]["SignatureHash"][];
+      /**
+       * @description The hash the issuer signs its certificates with; an Ed25519 issuer has none
+       * @enum {string}
+       */
+      signatureHash: "sha256" | "sha384" | "sha512";
+      /**
+       * @description Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it
+       * @enum {string}
+       */
+      rsaPadding: "pkcs1v15" | "pss";
+      /**
+       * @description The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none
+       * @enum {string}
+       */
+      subjectKeyIdentifier: "sha1" | "sha256" | "none";
+      /**
+       * @description The authority key identifier: the issuer's key identifier, with its issuer and serial, or none
+       * @enum {string}
+       */
+      authorityKeyIdentifier: "key_id" | "key_id_and_issuer" | "none";
+      /**
+       * @description Basic constraints (CA:FALSE): critical, not, or left out
+       * @enum {string}
+       */
+      basicConstraints: "critical" | "non_critical" | "omitted";
+      /** @description Whether certificates name the issuer's CRL */
+      includeCrlDistribution: boolean;
+      /** @description Whether certificates say where the issuer's certificate is (AIA caIssuers) */
+      includeCaIssuers: boolean;
+      /** @description Whether certificates carry the issuer's alternative names, where it has any */
+      includeIssuerAltName: boolean;
+      /** @description The certificate policies its certificates assert, in order */
+      policies: components["schemas"]["ProfilePolicy"][];
+      /** @description Extensions the signer does not build itself */
+      customExtensions: components["schemas"]["ProfileCustomExtension"][];
       /** @description Its name: lower case, digits and hyphens, e.g. web-tls */
       id: string;
       /** @description What it is for */
@@ -1956,6 +2083,41 @@ export interface components {
       keyAlgorithms?: components["schemas"]["KeyAlgorithm"][];
       /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
       csrSignatureHashes?: components["schemas"]["SignatureHash"][];
+      /**
+       * @description The hash the issuer signs its certificates with; an Ed25519 issuer has none
+       * @enum {string}
+       */
+      signatureHash?: "sha256" | "sha384" | "sha512";
+      /**
+       * @description Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it
+       * @enum {string}
+       */
+      rsaPadding?: "pkcs1v15" | "pss";
+      /**
+       * @description The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none
+       * @enum {string}
+       */
+      subjectKeyIdentifier?: "sha1" | "sha256" | "none";
+      /**
+       * @description The authority key identifier: the issuer's key identifier, with its issuer and serial, or none
+       * @enum {string}
+       */
+      authorityKeyIdentifier?: "key_id" | "key_id_and_issuer" | "none";
+      /**
+       * @description Basic constraints (CA:FALSE): critical, not, or left out
+       * @enum {string}
+       */
+      basicConstraints?: "critical" | "non_critical" | "omitted";
+      /** @description Whether certificates name the issuer's CRL */
+      includeCrlDistribution?: boolean;
+      /** @description Whether certificates say where the issuer's certificate is (AIA caIssuers) */
+      includeCaIssuers?: boolean;
+      /** @description Whether certificates carry the issuer's alternative names, where it has any */
+      includeIssuerAltName?: boolean;
+      /** @description The certificate policies its certificates assert, in order */
+      policies?: components["schemas"]["ProfilePolicy"][];
+      /** @description Extensions the signer does not build itself */
+      customExtensions?: components["schemas"]["ProfileCustomExtension"][];
       /** @description What it is for */
       description?: string;
     };
@@ -2011,6 +2173,41 @@ export interface components {
       keyAlgorithms: components["schemas"]["KeyAlgorithm"][];
       /** @description The hashes a CSR's signature may use; none, any (an Ed25519 CSR has none and always passes) */
       csrSignatureHashes: components["schemas"]["SignatureHash"][];
+      /**
+       * @description The hash the issuer signs its certificates with; an Ed25519 issuer has none
+       * @enum {string}
+       */
+      signatureHash: "sha256" | "sha384" | "sha512";
+      /**
+       * @description Under an RSA issuer, PKCS#1 v1.5 or PSS; another issuer ignores it
+       * @enum {string}
+       */
+      rsaPadding: "pkcs1v15" | "pss";
+      /**
+       * @description The subject key identifier: RFC 5280's SHA-1, RFC 7093's truncated SHA-256, or none
+       * @enum {string}
+       */
+      subjectKeyIdentifier: "sha1" | "sha256" | "none";
+      /**
+       * @description The authority key identifier: the issuer's key identifier, with its issuer and serial, or none
+       * @enum {string}
+       */
+      authorityKeyIdentifier: "key_id" | "key_id_and_issuer" | "none";
+      /**
+       * @description Basic constraints (CA:FALSE): critical, not, or left out
+       * @enum {string}
+       */
+      basicConstraints: "critical" | "non_critical" | "omitted";
+      /** @description Whether certificates name the issuer's CRL */
+      includeCrlDistribution: boolean;
+      /** @description Whether certificates say where the issuer's certificate is (AIA caIssuers) */
+      includeCaIssuers: boolean;
+      /** @description Whether certificates carry the issuer's alternative names, where it has any */
+      includeIssuerAltName: boolean;
+      /** @description The certificate policies its certificates assert, in order */
+      policies: components["schemas"]["ProfilePolicy"][];
+      /** @description Extensions the signer does not build itself */
+      customExtensions: components["schemas"]["ProfileCustomExtension"][];
       /** @description v1, v2, … */
       version: number;
       /** @description Who made it: a principal, or `migration` for the seeds */
@@ -3021,6 +3218,79 @@ export interface operations {
       };
       /** @description The entity with the specified identifiers was not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  UpdateIssuer: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        issuerId: string;
+      };
+      cookie?: never;
+    };
+    /** @description What changes. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateIssuerRequest"];
+      };
+    };
+    responses: {
+      /** @description The CA, as it now is. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UpdateIssuerResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
         headers: {
           [name: string]: unknown;
         };

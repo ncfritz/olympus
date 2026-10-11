@@ -45,9 +45,10 @@ const NAME_LABELS: Record<NameType, { label: string; placeholder: string }> = {
   ip: { label: "IP addresses", placeholder: "10.0.0.10" },
   email: { label: "Email addresses", placeholder: "neil@ncfritz.net" },
   uri: { label: "URIs", placeholder: "spiffe://ncfritz.net/service" },
+  upn: { label: "User principal names", placeholder: "neil@ncfritz.net" },
+  registeredId: { label: "Registered IDs (OIDs)", placeholder: "1.3.6.1.4.1…" },
 };
 
-/** Where the key comes from: the key section's tabs. */
 /** The name types a profile's version allows, required ones first. */
 const nameTypes = (profile: Profile): NameType[] =>
   [...profile.names]
@@ -62,6 +63,7 @@ const issuedUsages = (profile: Profile): string[] =>
     .filter((u) => u.state === "forced" || u.state === "default")
     .map((u) => u.oid);
 
+/** Where the key comes from: the key section's tabs. */
 type Mode = "generated" | "imported" | "csr";
 
 interface Values {
@@ -74,6 +76,8 @@ interface Values {
   ip?: string[];
   email?: string[];
   uri?: string[];
+  upn?: string[];
+  registeredId?: string[];
   mode: Mode;
   keyFamily?: KeyFamily;
   keyAlgorithm?: KeyAlgorithm;
