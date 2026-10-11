@@ -17,13 +17,37 @@ export const NAME_TYPE_ENUM = {
   enumSchema: { description: "A kind of name: DNS, IP address, email or URI" },
 };
 
-export const KEY_ALGORITHM_VALUES = ["P-256", "RSA-2048"] as const;
+export const KEY_ALGORITHM_VALUES = [
+  "RSA-2048",
+  "RSA-3072",
+  "RSA-4096",
+  "RSA-8192",
+  "DSA-2048",
+  "DSA-3072",
+  "P-256",
+  "P-384",
+  "P-521",
+  "Ed25519",
+] as const;
 export type KeyAlgorithmName = (typeof KEY_ALGORITHM_VALUES)[number];
 
 export const KEY_ALGORITHM_ENUM = {
   enum: [...KEY_ALGORITHM_VALUES],
   enumName: "KeyAlgorithm",
-  enumSchema: { description: "A key type the signer generates" },
+  enumSchema: {
+    description:
+      "A key type the signer generates: RSA, DSA, an EC curve, or Ed25519",
+  },
+};
+
+/** A CA's key: still P-256, or RSA 2048 (ADR 0018, ADR 0020). */
+export const CA_KEY_ALGORITHM_VALUES = ["P-256", "RSA-2048"] as const;
+export type CaKeyAlgorithmName = (typeof CA_KEY_ALGORITHM_VALUES)[number];
+
+export const CA_KEY_ALGORITHM_ENUM = {
+  enum: [...CA_KEY_ALGORITHM_VALUES],
+  enumName: "CaKeyAlgorithm",
+  enumSchema: { description: "A CA's key type: P-256 or RSA 2048" },
 };
 
 /** Names by type, as a certificate carries them. */

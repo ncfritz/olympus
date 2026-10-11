@@ -368,6 +368,235 @@ describe.skipIf(!E2E_DATABASE_URL)("certificates", () => {
     });
   });
 
+  describe("key types and imported keys", () => {
+    /** Runs openssl in the harness's directory; the output file's text. */
+    const openssl = (args: string[], out: string, binary = false) => {
+      execFileSync("openssl", args, { cwd: harness.dir, stdio: "ignore" });
+      return fs.readFileSync(
+        path.join(harness.dir, out),
+        binary ? "base64" : "utf8",
+      );
+    };
+
+    it("generates the key type the operator chooses", async () => {
+      for (const keyAlgorithm of ["Ed25519", "P-521", "DSA-2048"]) {
+        const certificate = issued(
+          await create({
+            profileId: "service",
+            subject: { commonName: `typed-${keyAlgorithm.toLowerCase()}` },
+            keyAlgorithm,
+          }).expect(201),
+        );
+        expect(certificate).toMatchObject({
+          keyLocation: "signer",
+          keyAlgorithm,
+        });
+      }
+    });
+
+    it("certifies a DSA CSR, and refuses one that does not verify", async () => {
+      openssl(["dsaparam", "-out", "dsa-params.pem", "2048"], "dsa-params.pem");
+      openssl(["gendsa", "-out", "dsa.key", "dsa-params.pem"], "dsa.key");
+      const csr = openssl(
+        [
+          "req",
+          "-new",
+          "-key",
+          "dsa.key",
+          "-subj",
+          "/CN=dsa",
+          "-sha256",
+          "-out",
+          "dsa.csr",
+        ],
+        "dsa.csr",
+      );
+      const certificate = issued(
+        await create({
+          profileId: "service",
+          subject: { commonName: "dsa-csr" },
+          csr,
+        }).expect(201),
+      );
+      expect(certificate).toMatchObject({
+        keyLocation: "subscriber",
+        keyAlgorithm: "DSA-2048",
+      });
+      const der = Buffer.from(csr.replace(/-----[^-]+-----|\s/g, ""), "base64");
+      der[der.length - 2] ^= 0xff; // the signature's last bytes
+      const tampered = `-----BEGIN CERTIFICATE REQUEST-----\n${der.toString("base64")}\n-----END CERTIFICATE REQUEST-----\n`;
+      await create({
+        profileId: "service",
+        subject: { commonName: "dsa-tampered" },
+        csr: tampered,
+      }).expect(422);
+    });
+
+    it("refuses a key type for a CSR, and a CSR with a key", async () => {
+      const { csr } = await makeCsr("both");
+      await create({
+        profileId: "service",
+        subject: { commonName: "typed-csr" },
+        csr,
+        keyAlgorithm: "RSA-3072",
+      }).expect(400);
+      await create({
+        profileId: "service",
+        subject: { commonName: "both" },
+        csr,
+        key: { format: "pem", data: "x", passphrase: "y" },
+      }).expect(400);
+    });
+
+    it("escrows a key brought in PKCS#12, exportable again", async () => {
+      openssl(
+        [
+          "genpkey",
+          "-algorithm",
+          "RSA",
+          "-pkeyopt",
+          "rsa_keygen_bits:3072",
+          "-out",
+          "brought.key",
+        ],
+        "brought.key",
+      );
+      openssl(
+        [
+          "req",
+          "-new",
+          "-x509",
+          "-key",
+          "brought.key",
+          "-subj",
+          "/CN=brought",
+          "-days",
+          "1",
+          "-out",
+          "brought.crt",
+        ],
+        "brought.crt",
+      );
+      const data = openssl(
+        [
+          "pkcs12",
+          "-export",
+          "-inkey",
+          "brought.key",
+          "-in",
+          "brought.crt",
+          "-passout",
+          "pass:bring me",
+          "-out",
+          "brought.p12",
+        ],
+        "brought.p12",
+        true,
+      );
+      const certificate = issued(
+        await create({
+          profileId: "service",
+          subject: { commonName: "brought-p12" },
+          key: { format: "pkcs12", data, passphrase: "bring me" },
+          escrow: true,
+        }).expect(201),
+      );
+      expect(certificate).toMatchObject({
+        keyLocation: "signer",
+        keyAlgorithm: "RSA-3072",
+      });
+      const brought = execFileSync(
+        "openssl",
+        ["pkey", "-in", "brought.key", "-pubout"],
+        { cwd: harness.dir, encoding: "utf8" },
+      );
+      expect(
+        new X509Certificate(certificate.certificate).publicKey.export({
+          type: "spki",
+          format: "pem",
+        }),
+      ).toBe(brought);
+      const enrollment = await harness.prisma.enrollment.findFirst({
+        where: { certificates: { some: { id: certificate.id } } },
+      });
+      expect(enrollment?.mode).toBe("imported");
+      await request(server())
+        .post(`/v1/certificate/${certificate.id}/key-export`)
+        .set("Authorization", harness.admin)
+        .send({ format: "pem", passphrase: "export pass", reason: "a copy" })
+        .expect(200);
+    });
+
+    it("forgets a key brought not to be escrowed, and renews it from its public key", async () => {
+      openssl(
+        [
+          "genpkey",
+          "-algorithm",
+          "ED25519",
+          "-pass",
+          "pass:bring me",
+          "-aes-256-cbc",
+          "-out",
+          "loose.key",
+        ],
+        "loose.key",
+      );
+      const data = fs.readFileSync(path.join(harness.dir, "loose.key"), "utf8");
+      // The seeded profiles fix their escrow; this one lets a request choose.
+      await harness.prisma.profile.update({
+        where: { id: "service" },
+        data: { escrowOverridable: true },
+      });
+      const response = await create({
+        profileId: "service",
+        subject: { commonName: "brought-pem" },
+        key: { format: "pem", data, passphrase: "bring me" },
+        escrow: false,
+      });
+      await harness.prisma.profile.update({
+        where: { id: "service" },
+        data: { escrowOverridable: false },
+      });
+      expect(response.status).toBe(201);
+      const certificate = issued(response);
+      expect(certificate).toMatchObject({
+        keyLocation: "subscriber",
+        keyAlgorithm: "Ed25519",
+      });
+      const renewed = issued(
+        await request(server())
+          .post(`/v1/certificate/${certificate.id}/renew`)
+          .set("Authorization", harness.operator)
+          .send({})
+          .expect(201),
+      );
+      expect(spkiOf(renewed.certificate)).toBe(spkiOf(certificate.certificate));
+      // The signer has held it: it is not brought again.
+      await create({
+        profileId: "service",
+        subject: { commonName: "brought-again" },
+        key: { format: "pem", data, passphrase: "bring me" },
+      }).expect(409);
+    });
+
+    it("refuses a key brought to a profile that takes only CSRs", async () => {
+      await create({
+        profileId: "code-signing",
+        subject: { commonName: "signed" },
+        key: { format: "pem", data: "x", passphrase: "y" },
+      }).expect(422);
+    });
+
+    it("refuses the wrong passphrase", async () => {
+      const data = fs.readFileSync(path.join(harness.dir, "loose.key"), "utf8");
+      await create({
+        profileId: "service",
+        subject: { commonName: "wrong" },
+        key: { format: "pem", data, passphrase: "not it" },
+      }).expect(400);
+    });
+  });
+
   describe("renewing with a new key", () => {
     it("starts a new request that replaces the old one", async () => {
       const first = await makeCsr("ci", ["ci.internal.ncfritz.net"]);

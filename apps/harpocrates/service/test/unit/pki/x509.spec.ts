@@ -1,8 +1,13 @@
 import * as peculiar from "@peculiar/x509";
-import { generateKeyPairSync, webcrypto } from "crypto";
+import { generateKeyPairSync, type KeyObject, webcrypto } from "crypto";
+import * as fs from "fs";
+import * as path from "path";
 import { describe, expect, it } from "vitest";
 import {
+  certifiable,
+  generatable,
   keyAlgorithm,
+  parseCsr,
   parseCertificate,
   randomSerial,
   spkiFromPem,
@@ -28,6 +33,65 @@ describe("x509 helpers", () => {
     });
     expect(spkiFromPem(spkiPem(spki)).equals(spki)).toBe(true);
     expect(keyAlgorithm(spki)).toBe("P-256");
+  });
+
+  it("names each key type the signer takes", () => {
+    const spki = (key: { publicKey: KeyObject }) =>
+      key.publicKey.export({ type: "spki", format: "der" });
+    expect(
+      keyAlgorithm(spki(generateKeyPairSync("ec", { namedCurve: "P-521" }))),
+    ).toBe("P-521");
+    expect(keyAlgorithm(spki(generateKeyPairSync("ed25519")))).toBe("Ed25519");
+    expect(
+      keyAlgorithm(spki(generateKeyPairSync("rsa", { modulusLength: 3072 }))),
+    ).toBe("RSA-3072");
+    expect(
+      keyAlgorithm(
+        spki(
+          generateKeyPairSync("dsa", {
+            modulusLength: 2048,
+            divisorLength: 256,
+          }),
+        ),
+      ),
+    ).toBe("DSA-2048");
+  });
+
+  it("certifies RSA and DSA from 2048 bits, the NIST curves and Ed25519", () => {
+    for (const algorithm of [
+      "RSA-2048",
+      "RSA-2560",
+      "DSA-3072",
+      "P-256",
+      "P-384",
+      "P-521",
+      "Ed25519",
+    ]) {
+      expect(certifiable(algorithm)).toBe(true);
+    }
+    for (const algorithm of [
+      "RSA-1024",
+      "DSA-1024",
+      "EC-secp256k1",
+      "unknown",
+    ]) {
+      expect(certifiable(algorithm)).toBe(false);
+    }
+    expect(generatable("RSA-4096")).toBe("RSA-4096");
+    expect(generatable("RSA-2560")).toBeUndefined();
+  });
+
+  it("verifies a DSA CSR's signature, which Web Crypto cannot", async () => {
+    const pem = fs.readFileSync(
+      path.join(__dirname, "../../fixtures/dsa-2048.csr"),
+      "utf8",
+    );
+    const csr = await parseCsr(pem);
+    expect(csr).toMatchObject({ algorithm: "DSA-2048", signatureValid: true });
+    const der = Buffer.from(pem.replace(/-----[^-]+-----|\s/g, ""), "base64");
+    der[der.length - 2] ^= 0xff;
+    const tampered = `-----BEGIN CERTIFICATE REQUEST-----\n${der.toString("base64")}\n-----END CERTIFICATE REQUEST-----\n`;
+    expect((await parseCsr(tampered)).signatureValid).toBe(false);
   });
 
   it("escapes RFC 4514 special characters", () => {

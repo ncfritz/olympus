@@ -27,6 +27,7 @@ import type {
   CertificateSpec,
   CrlSpec,
   ExportFormatName,
+  ImportFormat,
   KeyAlgorithm,
   KeyPurpose,
   KeyResponse,
@@ -115,7 +116,12 @@ export class SignerService {
     algorithm: KeyAlgorithm,
   ): Promise<KeyResponse> {
     return this.call(() =>
-      signer.generateKey({ client: this.client, body: { purpose, algorithm } }),
+      signer.generateKey({
+        client: this.client,
+        body: { purpose, algorithm },
+        // RSA 8192 and DSA take a while to generate.
+        timeout: 180_000,
+      }),
     );
   }
 
@@ -123,11 +129,12 @@ export class SignerService {
     purpose: KeyPurpose,
     privateKey: string,
     passphrase: string,
+    format: ImportFormat = "pem",
   ): Promise<KeyResponse> {
     return this.call(() =>
       signer.importKey({
         client: this.client,
-        body: { purpose, privateKey, passphrase },
+        body: { purpose, privateKey, passphrase, format },
       }),
     );
   }

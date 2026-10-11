@@ -20,8 +20,16 @@ export const PROFILE_RULES = {
 } as const;
 
 const ALGORITHMS: Record<ProfileRow["keyAlgorithm"], KeyAlgorithmName> = {
-  P_256: "P-256",
   RSA_2048: "RSA-2048",
+  RSA_3072: "RSA-3072",
+  RSA_4096: "RSA-4096",
+  RSA_8192: "RSA-8192",
+  DSA_2048: "DSA-2048",
+  DSA_3072: "DSA-3072",
+  P_256: "P-256",
+  P_384: "P-384",
+  P_521: "P-521",
+  Ed25519: "Ed25519",
 };
 
 export const keyAlgorithmName = (row: ProfileRow): KeyAlgorithmName =>

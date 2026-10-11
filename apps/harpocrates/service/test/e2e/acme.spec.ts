@@ -548,7 +548,7 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
         );
       });
 
-      it("takes a P-256 CSR for exactly the order's names", async () => {
+      it("takes a CSR for exactly the order's names, of a type it certifies", async () => {
         const names = [
           "f.lab.internal.ncfritz.net",
           "nas.internal.ncfritz.net",
@@ -558,11 +558,14 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
         await expect(client.finalizeOrder(order, other.csr)).rejects.toThrow(
           /exactly the order's names/,
         );
-        const [, rsa] = await acme.crypto.createCsr({
-          commonName: names[0],
-          altNames: names,
-        });
-        await expect(client.finalizeOrder(order, rsa)).rejects.toThrow(/P-256/);
+        // Any type Harpocrates certifies (ADR 0020, amended), not a short RSA key.
+        const [, short] = await acme.crypto.createCsr(
+          { commonName: names[0], altNames: names },
+          await acme.crypto.createPrivateRsaKey(1024),
+        );
+        await expect(client.finalizeOrder(order, short)).rejects.toThrow(
+          /RSA-1024 keys are not certified/,
+        );
         // Still ready: a good CSR is issued.
         const { csr, privateKey } = await csrFor(names);
         const finalized = await client.finalizeOrder(order, csr);

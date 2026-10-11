@@ -17,9 +17,9 @@ import {
 } from "class-validator";
 import type { Moment } from "moment";
 import {
-  KEY_ALGORITHM_ENUM,
-  KEY_ALGORITHM_VALUES,
-  type KeyAlgorithmName,
+  CA_KEY_ALGORITHM_ENUM,
+  CA_KEY_ALGORITHM_VALUES,
+  type CaKeyAlgorithmName,
   NameConstraints,
 } from "./common";
 
@@ -310,11 +310,11 @@ export class IssuerPreview {
   notAfter: Moment;
 
   @ApiProperty({
-    ...KEY_ALGORITHM_ENUM,
+    ...CA_KEY_ALGORITHM_ENUM,
     required: true,
     description: "Its key type",
   })
-  algorithm: KeyAlgorithmName;
+  algorithm: CaKeyAlgorithmName;
 
   @ApiProperty({
     type: Number,
@@ -432,13 +432,13 @@ export class CaOverrides {
   validityDays?: number;
 
   @ApiProperty({
-    ...KEY_ALGORITHM_ENUM,
+    ...CA_KEY_ALGORITHM_ENUM,
     required: false,
     description: "Its key type (P-256 by default)",
   })
   @IsOptional()
-  @IsIn([...KEY_ALGORITHM_VALUES])
-  algorithm?: KeyAlgorithmName;
+  @IsIn([...CA_KEY_ALGORITHM_VALUES])
+  algorithm?: CaKeyAlgorithmName;
 
   @ApiProperty({
     type: () => NameConstraints,

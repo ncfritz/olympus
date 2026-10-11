@@ -4423,9 +4423,9 @@
           "issuers"
         ]
       },
-      "KeyAlgorithm": {
+      "CaKeyAlgorithm": {
         "type": "string",
-        "description": "A key type the signer generates",
+        "description": "A CA's key type: P-256 or RSA 2048",
         "enum": [
           "P-256",
           "RSA-2048"
@@ -4450,7 +4450,7 @@
             "description": "Its key type (P-256 by default)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/KeyAlgorithm"
+                "$ref": "#/components/schemas/CaKeyAlgorithm"
               }
             ]
           },
@@ -4792,7 +4792,7 @@
             "description": "Its key type (P-256 by default)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/KeyAlgorithm"
+                "$ref": "#/components/schemas/CaKeyAlgorithm"
               }
             ]
           },
@@ -4881,7 +4881,7 @@
             "description": "Its key type",
             "allOf": [
               {
-                "$ref": "#/components/schemas/KeyAlgorithm"
+                "$ref": "#/components/schemas/CaKeyAlgorithm"
               }
             ]
           },
@@ -5084,7 +5084,7 @@
             "description": "Its key type (P-256 by default)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/KeyAlgorithm"
+                "$ref": "#/components/schemas/CaKeyAlgorithm"
               }
             ]
           },
@@ -5159,7 +5159,7 @@
             "description": "Its key type (P-256 by default)",
             "allOf": [
               {
-                "$ref": "#/components/schemas/KeyAlgorithm"
+                "$ref": "#/components/schemas/CaKeyAlgorithm"
               }
             ]
           },
@@ -5700,6 +5700,56 @@
           "certificates"
         ]
       },
+      "KeyImportFormat": {
+        "type": "string",
+        "description": "What `data` is",
+        "enum": [
+          "pem",
+          "pkcs12"
+        ]
+      },
+      "ImportedKey": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "description": "What `data` is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyImportFormat"
+              }
+            ]
+          },
+          "data": {
+            "type": "string",
+            "description": "The key: encrypted PKCS#8 PEM, or a PKCS#12 file in base64 (only its key is used)"
+          },
+          "passphrase": {
+            "type": "string",
+            "description": "Its passphrase; used once, never kept"
+          }
+        },
+        "required": [
+          "format",
+          "data",
+          "passphrase"
+        ]
+      },
+      "KeyAlgorithm": {
+        "type": "string",
+        "description": "A key type the signer generates: RSA, DSA, an EC curve, or Ed25519",
+        "enum": [
+          "RSA-2048",
+          "RSA-3072",
+          "RSA-4096",
+          "RSA-8192",
+          "DSA-2048",
+          "DSA-3072",
+          "P-256",
+          "P-384",
+          "P-521",
+          "Ed25519"
+        ]
+      },
       "CreateCertificateRequest": {
         "type": "object",
         "properties": {
@@ -5729,11 +5779,27 @@
           },
           "csr": {
             "type": "string",
-            "description": "The subscriber's CSR, PEM; without one the signer generates the key, if the profile allows"
+            "description": "The subscriber's CSR, PEM; with neither it nor `key`, the signer generates the key, if the profile allows"
+          },
+          "key": {
+            "description": "A key the operator brings, instead of a CSR or a generated one; where the profile allows a generated key",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportedKey"
+              }
+            ]
+          },
+          "keyAlgorithm": {
+            "description": "For a generated key: its type. By default the profile's",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyAlgorithm"
+              }
+            ]
           },
           "escrow": {
             "type": "boolean",
-            "description": "For a generated key: whether it stays escrowed, exportable again; off, it is exported once and destroyed. By default the profile's setting; another only where the profile allows"
+            "description": "For a generated or imported key: whether it stays escrowed, exportable again; off, a generated key is exported once and destroyed, an imported one destroyed after issuing. By default the profile's setting; another only where the profile allows"
           }
         },
         "required": [
@@ -5995,7 +6061,7 @@
             "description": "The purpose of the issuing CA it issues from"
           },
           "keyAlgorithm": {
-            "description": "The key type its certificates certify",
+            "description": "The key type generated for its certificates unless the request chooses another",
             "allOf": [
               {
                 "$ref": "#/components/schemas/KeyAlgorithm"

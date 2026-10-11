@@ -17,7 +17,12 @@ import {
   ValidateNested,
 } from "class-validator";
 import type { Moment } from "moment";
-import { Names } from "./common";
+import {
+  KEY_ALGORITHM_ENUM,
+  KEY_ALGORITHM_VALUES,
+  type KeyAlgorithmName,
+  Names,
+} from "./common";
 
 export const CERTIFICATE_STATE_VALUES = [
   "valid",
@@ -246,6 +251,46 @@ export class CertificateSubject {
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
+export const KEY_IMPORT_FORMAT_VALUES = ["pem", "pkcs12"] as const;
+export type KeyImportFormatName = (typeof KEY_IMPORT_FORMAT_VALUES)[number];
+
+export const KEY_IMPORT_FORMAT_ENUM = {
+  enum: [...KEY_IMPORT_FORMAT_VALUES],
+  enumName: "KeyImportFormat",
+  enumSchema: {
+    description: "How a key is brought: encrypted PKCS#8 PEM, or PKCS#12",
+  },
+};
+
+/** A key the operator brings to be certified, encrypted. */
+export class ImportedKey {
+  @ApiProperty({
+    ...KEY_IMPORT_FORMAT_ENUM,
+    required: true,
+    description: "What `data` is",
+  })
+  @IsIn([...KEY_IMPORT_FORMAT_VALUES])
+  format: KeyImportFormatName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The key: encrypted PKCS#8 PEM, or a PKCS#12 file in base64 (only its key is used)",
+  })
+  @IsString()
+  @IsNotEmpty()
+  data: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its passphrase; used once, never kept",
+  })
+  @IsString()
+  passphrase: string;
+}
+
 export class CreateCertificateRequest {
   @ApiProperty({
     type: String,
@@ -289,17 +334,37 @@ export class CreateCertificateRequest {
     type: String,
     required: false,
     description:
-      "The subscriber's CSR, PEM; without one the signer generates the key, if the profile allows",
+      "The subscriber's CSR, PEM; with neither it nor `key`, the signer generates the key, if the profile allows",
   })
   @IsOptional()
   @IsString()
   csr?: string;
 
   @ApiProperty({
+    type: () => ImportedKey,
+    required: false,
+    description:
+      "A key the operator brings, instead of a CSR or a generated one; where the profile allows a generated key",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ImportedKey)
+  key?: ImportedKey;
+
+  @ApiProperty({
+    ...KEY_ALGORITHM_ENUM,
+    required: false,
+    description: "For a generated key: its type. By default the profile's",
+  })
+  @IsOptional()
+  @IsIn([...KEY_ALGORITHM_VALUES])
+  keyAlgorithm?: KeyAlgorithmName;
+
+  @ApiProperty({
     type: Boolean,
     required: false,
     description:
-      "For a generated key: whether it stays escrowed, exportable again; off, it is exported once and destroyed. By default the profile's setting; another only where the profile allows",
+      "For a generated or imported key: whether it stays escrowed, exportable again; off, a generated key is exported once and destroyed, an imported one destroyed after issuing. By default the profile's setting; another only where the profile allows",
   })
   @IsOptional()
   @IsBoolean()

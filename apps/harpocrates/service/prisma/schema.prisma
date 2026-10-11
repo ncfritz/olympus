@@ -161,8 +161,16 @@ model Ceremony {
 // ---- Profiles
 
 enum KeyAlgorithm {
-  P_256    @map("P-256")
   RSA_2048 @map("RSA-2048")
+  RSA_3072 @map("RSA-3072")
+  RSA_4096 @map("RSA-4096")
+  RSA_8192 @map("RSA-8192")
+  DSA_2048 @map("DSA-2048")
+  DSA_3072 @map("DSA-3072")
+  P_256    @map("P-256")
+  P_384    @map("P-384")
+  P_521    @map("P-521")
+  Ed25519
 }
 
 /// What a certificate may be (ADR 0020, Profiles).

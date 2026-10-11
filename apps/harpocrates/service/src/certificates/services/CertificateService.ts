@@ -36,11 +36,17 @@ import type {
   ExportCertificateKeyRequest,
   ExportCertificateKeyResponse,
   FullCertificate,
+  ImportedKey,
   ListCertificatesQuery,
   RenewCertificateRequest,
   RevokeCertificateRequest,
 } from "../../model/certificates";
-import { isNameType, type Names, type NameTypeName } from "../../model/common";
+import {
+  isNameType,
+  type KeyAlgorithmName,
+  type Names,
+  type NameTypeName,
+} from "../../model/common";
 import {
   keyAlgorithmName,
   type ProfileWithRules,
@@ -48,7 +54,9 @@ import {
 import { ProfileService } from "../../profiles/services/ProfileService";
 import {
   bytes,
+  certifiable,
   certificatePem,
+  generatable,
   parseCertificate,
   parseCsr,
   randomSerial,
@@ -87,7 +95,13 @@ type NameRow = { type: NameTypeName; value: string };
 type SubjectKey =
   | { kind: "csr"; csr: string; spki: Buffer }
   | { kind: "publicKey"; spki: Buffer }
-  | { kind: "signer"; signerKeyId: string; spki: Buffer };
+  | {
+      kind: "signer";
+      signerKeyId: string;
+      spki: Buffer;
+      /** Generated in the signer, or brought by the operator. */
+      origin: "generated" | "imported";
+    };
 
 type Lineage = { enrollment: Enrollment; key: Key; created: boolean };
 
@@ -244,6 +258,14 @@ export class CertificateService {
           `The ${profile.id} profile is issued only in a ceremony with a root that signs directly`,
         );
       }
+      if (request.csr && request.key) {
+        throw new BadRequestException("A CSR or a key, not both");
+      }
+      if (request.keyAlgorithm && (request.csr || request.key)) {
+        throw new BadRequestException(
+          "A key type is chosen only for a generated key",
+        );
+      }
       const escrow = this.escrowFor(profile, request);
       const names = nameRows(request.names);
       this.checkNames(profile, names);
@@ -257,7 +279,10 @@ export class CertificateService {
 
       const subjectKey = request.csr
         ? await this.submittedKey(profile, request.csr)
-        : await this.generatedKey(profile);
+        : request.key
+          ? await this.importedKey(profile, request.key)
+          : await this.generatedKey(profile, request.keyAlgorithm);
+      let issued: FullCertificate;
       try {
         const lineage = await this.lineageFor(
           profile,
@@ -265,7 +290,7 @@ export class CertificateService {
           names,
           subjectKey,
         );
-        return await this.issue(principal, {
+        issued = await this.issue(principal, {
           profile,
           issuer,
           subject,
@@ -276,12 +301,22 @@ export class CertificateService {
           kind: AuditKind.CertificateIssued,
         });
       } catch (error: unknown) {
-        // A key generated for a request that did not issue goes at once.
+        // A key generated (or imported) for a request that did not issue
+        // goes at once.
         if (subjectKey.kind === "signer") {
           await this.discardGenerated(subjectKey);
         }
         throw error;
       }
+      if (
+        subjectKey.kind === "signer" &&
+        subjectKey.origin === "imported" &&
+        escrow === false
+      ) {
+        await this.releaseImported(subjectKey);
+        return this.describe(issued.id);
+      }
+      return issued;
     });
   }
 
@@ -434,6 +469,7 @@ export class CertificateService {
             kind: "signer",
             signerKeyId: old.key.signerKeyId,
             spki: Buffer.from(old.key.publicKey),
+            origin: old.mode === "imported" ? "imported" : "generated",
           };
           lineage = { enrollment: old, key: old.key, created: false };
         } else if (young && old.key.location === "subscriber") {
@@ -443,7 +479,11 @@ export class CertificateService {
           };
           lineage = { enrollment: old, key: old.key, created: false };
         } else if (old.mode === "generated" && profile.allowGenerated) {
-          subjectKey = await this.generatedKey(profile);
+          // A new key of the same type as the one it replaces.
+          subjectKey = await this.generatedKey(
+            profile,
+            generatable(old.key.algorithm),
+          );
           lineage = await this.lineageFor(
             profile,
             current.subject,
@@ -788,7 +828,7 @@ export class CertificateService {
     if (request.escrow === undefined) return profile.escrow;
     if (request.csr) {
       throw new BadRequestException(
-        "Escrow is for generated keys: a CSR's key is the subscriber's",
+        "Escrow is for generated or imported keys: a CSR's key is the subscriber's",
       );
     }
     if (request.escrow !== profile.escrow && !profile.escrowOverridable) {
@@ -827,16 +867,20 @@ export class CertificateService {
         "The CSR's signature does not verify",
       );
     }
-    if (csr.algorithm !== keyAlgorithmName(profile)) {
+    if (!certifiable(csr.algorithm)) {
       throw new UnprocessableEntityException(
-        `The ${profile.id} profile certifies ${keyAlgorithmName(profile)} keys, not ${csr.algorithm}`,
+        `${csr.algorithm} keys are not certified: RSA or DSA of at least 2048 bits, P-256, P-384, P-521 or Ed25519`,
       );
     }
     this.keys.checkNotWeak(csr.spki);
     return { kind: "csr", csr: pem, spki: csr.spki };
   }
 
-  private async generatedKey(profile: ProfileWithRules): Promise<SubjectKey> {
+  /** A key generated in the signer: of the type asked for, or the profile's. */
+  private async generatedKey(
+    profile: ProfileWithRules,
+    algorithm?: KeyAlgorithmName,
+  ): Promise<SubjectKey> {
     if (!profile.allowGenerated) {
       throw new UnprocessableEntityException(
         `The ${profile.id} profile takes a CSR: its keys are the subscriber's`,
@@ -844,13 +888,62 @@ export class CertificateService {
     }
     const key = await this.signer.generateKey(
       "subject",
-      keyAlgorithmName(profile),
+      algorithm ?? keyAlgorithmName(profile),
     );
     return {
       kind: "signer",
       signerKeyId: key.id,
       spki: spkiFromPem(key.publicKey),
+      origin: "generated",
     };
+  }
+
+  /**
+   * A key the operator brings, decrypted and kept by the signer as a
+   * generated one is; so only where the profile allows a generated key
+   * (a CSR-only profile's keys never leave the subscriber).
+   */
+  private async importedKey(
+    profile: ProfileWithRules,
+    imported: ImportedKey,
+  ): Promise<SubjectKey> {
+    if (!profile.allowGenerated) {
+      throw new UnprocessableEntityException(
+        `The ${profile.id} profile takes a CSR: its keys are the subscriber's`,
+      );
+    }
+    const key = await this.signer
+      .importKey("subject", imported.data, imported.passphrase, imported.format)
+      .catch((error: unknown) => {
+        if (error instanceof ConflictException) {
+          throw new ConflictException(
+            "The signer has held this key before: bring a new one",
+          );
+        }
+        throw error;
+      });
+    const spki = spkiFromPem(key.publicKey);
+    try {
+      this.keys.checkNotWeak(spki);
+    } catch (error: unknown) {
+      await this.signer.destroyKey(key.id).catch(() => undefined);
+      throw error;
+    }
+    return { kind: "signer", signerKeyId: key.id, spki, origin: "imported" };
+  }
+
+  /**
+   * An imported key not to be escrowed: the signer forgets it once it is
+   * certified, and only the subscriber, who brought it, has it.
+   */
+  private async releaseImported(
+    subjectKey: Extract<SubjectKey, { kind: "signer" }>,
+  ): Promise<void> {
+    await this.signer.destroyKey(subjectKey.signerKeyId);
+    await this.prisma.key.update({
+      where: { signerKeyId: subjectKey.signerKeyId },
+      data: { location: "subscriber", signerKeyId: null },
+    });
   }
 
   /**
@@ -917,7 +1010,7 @@ export class CertificateService {
         data: {
           keyId: key.id,
           profileId: profile.id,
-          mode: subjectKey.kind === "signer" ? "generated" : "csr",
+          mode: subjectKey.kind === "signer" ? subjectKey.origin : "csr",
           subject,
           csr:
             subjectKey.kind === "csr"
@@ -989,6 +1082,7 @@ export class CertificateService {
     const id = await this.prisma.$transaction(async (tx) => {
       if (
         subjectKey.kind === "signer" &&
+        subjectKey.origin === "generated" &&
         issuance.escrow === false &&
         issuance.lineage.created
       ) {

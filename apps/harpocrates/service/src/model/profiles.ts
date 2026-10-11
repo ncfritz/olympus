@@ -45,7 +45,8 @@ export class Profile {
   @ApiProperty({
     ...KEY_ALGORITHM_ENUM,
     required: true,
-    description: "The key type its certificates certify",
+    description:
+      "The key type generated for its certificates unless the request chooses another",
   })
   keyAlgorithm: KeyAlgorithmName;
 

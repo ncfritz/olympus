@@ -1,7 +1,7 @@
 import type {
   IssuerShape,
   IssuerTier,
-  KeyAlgorithm,
+  CaKeyAlgorithm,
   NameConstraints,
   PreviewIssuerRequest,
 } from "./api/types";
@@ -16,7 +16,7 @@ export interface CaFormValues {
   customSubject?: boolean;
   subject?: string;
   validityDays?: number;
-  algorithm?: KeyAlgorithm;
+  algorithm?: CaKeyAlgorithm;
   permittedDns?: string[];
   excludedDns?: string[];
   permittedEmail?: string[];

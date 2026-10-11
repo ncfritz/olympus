@@ -7,9 +7,11 @@ import {
   createHash,
   createPublicKey,
   randomBytes,
+  verify as verifySignature,
   webcrypto,
   X509Certificate,
 } from "crypto";
+import { KEY_ALGORITHM_VALUES, type KeyAlgorithmName } from "../model/common";
 
 x509.cryptoProvider.set(webcrypto as unknown as Crypto);
 
@@ -164,21 +166,64 @@ export const splitCertificates = (data: string | Buffer): string[] => {
   return typeof data === "string" ? [] : [certificatePem(data)];
 };
 
+/** DSA's signature algorithms, by OID: Web Crypto has no DSA. */
+const DSA_HASHES: Record<string, string> = {
+  "2.16.840.1.101.3.4.3.1": "sha224",
+  "2.16.840.1.101.3.4.3.2": "sha256",
+  "2.16.840.1.101.3.4.3.3": "sha384",
+  "2.16.840.1.101.3.4.3.4": "sha512",
+};
+
+/** The first element inside a DER SEQUENCE, whole: a CSR's signed part. */
+const firstElement = (der: Buffer): Buffer => {
+  const lengthAt = (at: number): { length: number; start: number } => {
+    const first = der[at];
+    if (first < 0x80) return { length: first, start: at + 1 };
+    const count = first & 0x7f;
+    return { length: der.readUIntBE(at + 1, count), start: at + 1 + count };
+  };
+  const outer = lengthAt(1);
+  const inner = lengthAt(outer.start + 1);
+  return der.subarray(outer.start, inner.start + inner.length);
+};
+
+/** Whether a CSR is signed by its own key: proof of possession. */
+const verifyCsr = async (
+  csr: x509.Pkcs10CertificateRequest,
+  spki: Buffer,
+): Promise<boolean> => {
+  const key = createPublicKey({ key: spki, format: "der", type: "spki" });
+  if (key.asymmetricKeyType !== "dsa") return csr.verify();
+  const hash = DSA_HASHES[csr.signatureAlgorithm.name];
+  return hash
+    ? verifySignature(
+        hash,
+        firstElement(Buffer.from(csr.rawData)),
+        key,
+        Buffer.from(csr.signature),
+      )
+    : false;
+};
+
 export const parseCsr = async (pem: string): Promise<ParsedCsr> => {
   const csr = new x509.Pkcs10CertificateRequest(pem);
   const names = sanNames(csr.extensions);
+  const spki = Buffer.from(csr.publicKey.rawData);
   return {
     pem,
     der: Buffer.from(csr.rawData),
-    spki: Buffer.from(csr.publicKey.rawData),
+    spki,
     subject: rfc4514(csr.subjectName),
     names,
-    signatureValid: await csr.verify(),
-    algorithm: keyAlgorithm(Buffer.from(csr.publicKey.rawData)),
+    signatureValid: await verifyCsr(csr, spki),
+    algorithm: keyAlgorithm(spki),
   };
 };
 
-/** `P-256`, `P-384`, `RSA-<bits>` or `Ed25519`, from a SubjectPublicKeyInfo. */
+/**
+ * `P-256`, `P-384`, `P-521`, `RSA-<bits>`, `DSA-<bits>` or `Ed25519`, from
+ * a SubjectPublicKeyInfo.
+ */
 export const keyAlgorithm = (spki: Buffer): string => {
   const key = createPublicKey({ key: spki, format: "der", type: "spki" });
   const details = key.asymmetricKeyDetails ?? {};
@@ -186,12 +231,31 @@ export const keyAlgorithm = (spki: Buffer): string => {
     const curves: Record<string, string> = {
       prime256v1: "P-256",
       secp384r1: "P-384",
+      secp521r1: "P-521",
     };
     return curves[details.namedCurve ?? ""] ?? `EC-${details.namedCurve}`;
   }
   if (key.asymmetricKeyType === "rsa") return `RSA-${details.modulusLength}`;
+  if (key.asymmetricKeyType === "dsa") return `DSA-${details.modulusLength}`;
   return key.asymmetricKeyType === "ed25519" ? "Ed25519" : "unknown";
 };
+
+/**
+ * Whether Harpocrates certifies a key of this type (ADR 0020, amended): RSA
+ * or DSA of at least 2048 bits, a NIST curve, or Ed25519. What the signer
+ * accepts.
+ */
+export const certifiable = (algorithm: string): boolean => {
+  const sized = /^(RSA|DSA)-(\d+)$/.exec(algorithm);
+  if (sized) return Number(sized[2]) >= 2048;
+  return ["P-256", "P-384", "P-521", "Ed25519"].includes(algorithm);
+};
+
+/** The algorithm, if the signer generates keys of it. */
+export const generatable = (algorithm: string): KeyAlgorithmName | undefined =>
+  (KEY_ALGORITHM_VALUES as readonly string[]).includes(algorithm)
+    ? (algorithm as KeyAlgorithmName)
+    : undefined;
 
 /** The RSA modulus of a SubjectPublicKeyInfo, or undefined for other keys. */
 export const rsaModulus = (spki: Buffer): bigint | undefined => {
