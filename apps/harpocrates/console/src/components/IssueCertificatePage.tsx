@@ -105,7 +105,11 @@ export function IssueCertificatePage() {
   const keyAlgorithm = Form.useWatch("keyAlgorithm", form);
   const importFormat = Form.useWatch("importFormat", form);
   const issuable = useMemo(
-    () => (profiles ?? []).filter((profile) => !profile.directOnly),
+    // A deactivated profile takes no new certificates (ADR 0034).
+    () =>
+      (profiles ?? []).filter(
+        (profile) => !profile.directOnly && profile.active,
+      ),
     [profiles],
   );
   const profile = issuable.find((p) => p.id === profileId);

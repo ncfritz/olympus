@@ -65,6 +65,8 @@ export function ProfilesPage() {
             key: "flags",
             render: (_, p) => (
               <Flex gap={4} wrap>
+                <Tag>v{p.version}</Tag>
+                {!p.active && <Tag color="red">inactive</Tag>}
                 {p.directOnly && <Tag color="purple">root signs directly</Tag>}
                 {p.extensions === "minimal" && <Tag>key identifiers only</Tag>}
                 {p.legacyExport && <Tag>legacy export</Tag>}

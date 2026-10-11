@@ -53,7 +53,10 @@ export function CeremonyLeafPanel({
   const { mutate } = useSWRConfig();
   const [form] = Form.useForm<Values>();
   const direct = useMemo(
-    () => (profiles ?? []).filter((profile) => profile.directOnly),
+    () =>
+      (profiles ?? []).filter(
+        (profile) => profile.directOnly && profile.active,
+      ),
     [profiles],
   );
   const profileId = Form.useWatch("profileId", form);
