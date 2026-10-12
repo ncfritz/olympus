@@ -3432,23 +3432,43 @@ export interface components {
      * @enum {string}
      */
     Renewer: "acme" | "deploy-target" | "mtls" | "person";
-    ExpiringCertificate: {
+    /**
+     * @description Whether its renewal is in hand
+     * @enum {string}
+     */
+    CertificateHealth:
+      "healthy" | "renewing" | "needs-person" | "failing" | "expired";
+    DashboardCertificate: {
       /** @description Its ID */
       certificateId: string;
       /** @description Its common name, or its subject when it has none */
       name: string;
+      /** @description Its alternative names' values */
+      names: string[];
       /** @description The CA that issued it */
       issuerId: string;
       /** @description The profile it was issued under */
       profileId?: string;
+      /** @description The profile's version it was issued under */
+      profileVersion?: number;
+      /** @description Its serial, hex */
+      serial: string;
+      /** @description An ISO-8601 formatted string: when it becomes valid */
+      notBefore: string;
       /** @description An ISO-8601 formatted string: when it expires */
       notAfter: string;
+      /** @description An ISO-8601 formatted string: when it was issued */
+      issuedAt: string;
+      /** @description Whether it was issued as a renewal, or for a subject its CA had issued for before */
+      renewed: boolean;
       /** @description An ISO-8601 formatted string: its renewal point, from its profile version (30 days before expiry without one) */
       renewalDueAt: string;
       /** @description Whether something renews it */
       renewal: components["schemas"]["RenewalMode"];
       /** @description Who renews it */
       renewer: components["schemas"]["Renewer"];
+      /** @description Whether its renewal is in hand */
+      health: components["schemas"]["CertificateHealth"];
     };
     /**
      * @description What it is
@@ -3491,7 +3511,7 @@ export interface components {
       /** @description An ISO-8601 formatted string: when it breaks if nothing is done */
       dueAt?: string;
     };
-    DashboardCrl: {
+    DashboardAuthority: {
       /** @description The CA */
       issuerId: string;
       /** @description Its tier */
@@ -3504,6 +3524,14 @@ export interface components {
       nextUpdate?: string;
       /** @description An ISO-8601 formatted string: when its newest list was published; none while it waits */
       publishedAt?: string;
+      /** @description An ISO-8601 formatted string: when its OCSP responder in service lapses; none without one */
+      ocspResponderUntil?: string;
+      /** @description Whether that responder was issued in a ceremony */
+      ocspInCeremony?: boolean;
+      /** @description An ISO-8601 formatted string: when its soonest stored OCSP response lapses */
+      ocspSoonestLapse?: string;
+      /** @description Its certificates revoked and not yet expired */
+      revoked: number;
     };
     DashboardWeek: {
       /** @description Certificates issued, renewals and ACME's included */
@@ -3588,12 +3616,12 @@ export interface components {
       renewers: components["schemas"]["RenewerCounts"];
       /** @description Each of the last 90 days (UTC), oldest first */
       activity: components["schemas"]["ActivityDay"][];
-      /** @description Valid certificates expiring within 90 days that nothing has replaced yet, soonest first */
-      expiring: components["schemas"]["ExpiringCertificate"][];
+      /** @description Certificates nothing has replaced, valid or expired within the last year, soonest to expire first */
+      certificateList: components["schemas"]["DashboardCertificate"][];
       /** @description What needs a person, errors first, then soonest first */
       attention: components["schemas"]["AttentionItem"][];
-      /** @description Each active CA's newest revocation list, online CAs first */
-      crls: components["schemas"]["DashboardCrl"][];
+      /** @description Each CA in service: its newest revocation list and its OCSP, online CAs first */
+      authorities: components["schemas"]["DashboardAuthority"][];
       /** @description The last 7 days */
       week: components["schemas"]["DashboardWeek"];
       /** @description The CA itself */

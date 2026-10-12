@@ -205,11 +205,151 @@
   padding-inline: 24px;
 }
 
+/* Each tab's content reaches the edges; what is in it is padded. */
 .mainTabs > :global(.ant-tabs-body-holder) {
-  padding: 16px 24px 24px;
+  padding: 0;
 }
 
 /* The side panel's page is the tabs, which keep their own margin. */
 .lower > :global(.ant-layout-content) {
   padding: 0;
+}
+
+/* A tab's padded parts: headings, lanes, graphs' text. */
+.padded.padded {
+  padding: 16px 24px;
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.search.search {
+  width: 260px;
+}
+
+/* A subject's names stay to one line beneath it, cut short. */
+.subject {
+  max-width: 280px;
+}
+
+.filter.filter {
+  width: 180px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+.flushTable :global(.ant-table-pagination) {
+  padding-inline: 24px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.expires {
+  min-width: 130px;
+}
+
+.fitTag {
+  align-self: flex-start;
+  margin-inline-end: 0;
+}
+
+/* The CA lifetimes: the name, its life on the axis, its note. */
+.lifeRow {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.lifeTrack {
+  position: relative;
+  height: 16px;
+}
+
+/* A span's start (--from) and length (--width) come from the CA. */
+.span {
+  position: absolute;
+  top: 0;
+  left: var(--from);
+  width: var(--width);
+  height: 16px;
+  border-radius: 4px;
+}
+
+.valid {
+  background: var(--ant-color-fill-tertiary);
+  box-shadow: inset 0 0 0 1px var(--ant-color-border);
+}
+
+.issues {
+  background: var(--ant-color-primary);
+}
+
+.today {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: var(--from);
+  width: 2px;
+  background: var(--ant-color-text);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ant-color-text-secondary);
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.issuesSwatch {
+  background: var(--ant-color-primary);
+}
+
+.validSwatch {
+  background: var(--ant-color-fill-tertiary);
+  box-shadow: inset 0 0 0 1px var(--ant-color-border);
+}
+
+.todaySwatch {
+  width: 2px;
+  height: 12px;
+  background: var(--ant-color-text);
+}
+
+/*
+ * A tab's graphs: as many to a row as fit at 280px, since the side panel
+ * narrows the tabs; each box keeps a border on its right and below.
+ */
+.tabGraphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.tabGraphs > .box {
+  border-right: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  margin-bottom: -1px;
 }

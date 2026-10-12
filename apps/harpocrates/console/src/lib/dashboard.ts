@@ -1,27 +1,24 @@
 import type {
   AttentionItem,
   Dashboard,
+  CertificateHealth,
   DashboardEvent,
   DeployTarget,
-  ExpiringCertificate,
   HandledCount,
   Issuer,
+  Renewer,
   SignerStatus,
 } from "./api/types";
 
 /**
- * The dashboard as the console shows it (the canvas's "Operations"
- * design, with option C's health and handled-without-you and option D's
- * recent activity): how long until something, where a certificate sits
- * on the 90-day lanes, where an attention item leads, audit events in
- * words, and the CA's health.
+ * The dashboard as the console shows it: how long until something, a
+ * certificate's health and who renews it in words, where a certificate
+ * sits on a timeline's lanes, where an attention item leads, audit events
+ * in words, and the CA's health.
  */
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
-
-/** How far the expiry lanes look ahead, as the service does. */
-export const LANE_DAYS = 90;
 
 /** "5 h", "4 days", "11 months", "3 y 9 m": how long until a time. */
 export const timeUntil = (iso: string, now = Date.now()): string => {
@@ -37,55 +34,69 @@ export const timeUntil = (iso: string, now = Date.now()): string => {
   return rest ? `${years} y ${rest} m` : `${years} years`;
 };
 
-/** What a certificate on the lanes is: its band, colour and label. */
-export const band = (
-  certificate: ExpiringCertificate,
-  now = Date.now(),
-): { color: string; label: string } =>
-  Date.parse(certificate.renewalDueAt) <= now
-    ? { color: "red", label: "Past its renewal point" }
-    : certificate.renewal === "manual"
-      ? { color: "orange", label: "Needs a person" }
-      : { color: "blue", label: "Renews itself" };
+/** "3 days ago", "5 months ago": how long since a time. */
+export const timeSince = (iso: string, now = Date.now()): string =>
+  `${timeUntil(new Date(2 * now - Date.parse(iso)).toISOString(), now)} ago`;
 
-/** A certificate's short name on the lanes: its first DNS label. */
+/** A certificate's health, as the console names and colours it. */
+export const HEALTH: Record<
+  CertificateHealth,
+  { label: string; color: string; order: number }
+> = {
+  failing: { label: "Failing", color: "red", order: 0 },
+  "needs-person": { label: "Needs a person", color: "orange", order: 1 },
+  renewing: { label: "Renewing", color: "blue", order: 2 },
+  healthy: { label: "Healthy", color: "green", order: 3 },
+  expired: { label: "Expired", color: "default", order: 4 },
+};
+
+/** Who renews a certificate, in words. */
+export const RENEWERS: Record<Renewer, string> = {
+  acme: "ACME",
+  "deploy-target": "Deploy target",
+  mtls: "Itself, over mTLS",
+  person: "A person",
+};
+
+/** A certificate's short name on a lane: its first DNS label. */
 export const shortName = (name: string): string =>
   /^[a-z0-9-]+\.[a-z0-9.-]+$/i.test(name) ? name.split(".")[0] : name;
-
-/** How many days apart two chips on one row of a lane must be. */
-const ROW_GAP_DAYS = 12;
 
 /** The most rows a lane stacks its chips in before they overlap. */
 export const LANE_ROWS = 3;
 
-export type LaneChip = {
-  certificate: ExpiringCertificate;
+export type LaneChip<T> = {
+  item: T;
   /** Its position along the lane, 0 to 100. */
   left: number;
   row: number;
 };
 
 /**
- * A lane's chips, placed by time to expiry and stacked in rows so that
- * close ones do not overlap; past the last row they share it.
+ * A lane's chips over `days` ahead, placed by when each falls and stacked
+ * in rows so that close ones do not overlap (an eighth of the range
+ * apart); past the last row they share it.
  */
-export const placeChips = (
-  certificates: ExpiringCertificate[],
+export const placeChips = <T>(
+  items: T[],
+  at: (item: T) => string,
+  days: number,
   now = Date.now(),
-): LaneChip[] => {
+): LaneChip<T>[] => {
+  const gap = days / 8;
   const lastDay: number[] = [];
-  return [...certificates]
-    .sort((a, b) => Date.parse(a.notAfter) - Date.parse(b.notAfter))
-    .map((certificate) => {
-      const day = (Date.parse(certificate.notAfter) - now) / DAY;
-      let row = lastDay.findIndex((last) => day - last >= ROW_GAP_DAYS);
+  return [...items]
+    .sort((a, b) => Date.parse(at(a)) - Date.parse(at(b)))
+    .map((item) => {
+      const day = (Date.parse(at(item)) - now) / DAY;
+      let row = lastDay.findIndex((last) => day - last >= gap);
       if (row === -1) {
         row = Math.min(lastDay.length, LANE_ROWS - 1);
       }
       lastDay[row] = day;
       return {
-        certificate,
-        left: Math.min(Math.max((day / LANE_DAYS) * 100, 0), 100),
+        item,
+        left: Math.min(Math.max((day / days) * 100, 0), 100),
         row,
       };
     });
@@ -252,7 +263,7 @@ export const healthChecks = ({
           : { name: "Signer", detail: "Unsealed and signing", status: "ok" },
   );
 
-  const crls = dashboard.crls;
+  const crls = dashboard.authorities;
   const lapsed = crls.filter(
     (c) => !c.nextUpdate || Date.parse(c.nextUpdate) <= now,
   ).length;
@@ -348,7 +359,7 @@ export const healthChecks = ({
 
   checks.push({
     name: "Audit chain",
-    detail: `${dashboard.ca.auditEvents.toLocaleString()} events; verified on request, on The CA card`,
+    detail: `${dashboard.ca.auditEvents.toLocaleString()} events; verified on request`,
     status: "neutral",
   });
   return checks;

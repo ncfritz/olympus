@@ -2,16 +2,7 @@
 
 import { BellOutlined, HistoryOutlined } from "@ant-design/icons";
 import { SideTabPanel } from "@ncfritz/olympus-console";
-import {
-  Badge,
-  Col,
-  Row,
-  Skeleton,
-  Statistic,
-  Tabs,
-  Tooltip,
-  Typography,
-} from "antd";
+import { Badge, Skeleton, Statistic, Tabs, Tooltip, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import {
@@ -23,18 +14,15 @@ import {
 } from "@/lib/api/queries";
 import { healthChecks } from "@/lib/dashboard";
 import { ActivityChart } from "./dashboard/ActivityChart";
-import { CaCard } from "./dashboard/CaCard";
-import { CrlTable } from "./dashboard/CrlTable";
+import { AuthoritiesTable, CaLifetimes } from "./dashboard/Authorities";
+import { CertificateList } from "./dashboard/CertificateList";
 import styles from "./dashboard/Dashboard.module.css";
-import { EndpointsTable } from "./dashboard/EndpointsTable";
-import { ExpiryLanes } from "./dashboard/ExpiryLanes";
+import { ExpiryCharts } from "./dashboard/ExpiryCharts";
 import { HealthChart } from "./dashboard/HealthChart";
-import { IssuingWindows } from "./dashboard/IssuingWindows";
 import { RenewersCard } from "./dashboard/RenewersCard";
 import { ActivityTab, AttentionTab } from "./dashboard/SideTabs";
-import { WeekSummary } from "./dashboard/WeekSummary";
+import { TimelineView } from "./dashboard/TimelineView";
 import { ErrorAlert } from "./ErrorAlert";
-import { SignerCard } from "./SignerCard";
 
 /**
  * The console's home: the dashboard for the PKI roles; someone with none
@@ -209,56 +197,61 @@ export function DashboardPage() {
           className={styles.mainTabs}
           items={[
             {
-              key: "expiring",
-              label: "Expiring",
+              key: "certificates",
+              label: "Certificates",
               children: (
-                <ExpiryLanes
-                  expiring={dashboard.expiring}
+                <CertificateList
+                  certificates={dashboard.certificateList}
+                  issuers={issuers}
+                  now={now}
+                  order="health"
+                />
+              ),
+            },
+            {
+              key: "authorities",
+              label: "Authorities",
+              children: (
+                <>
+                  <CaLifetimes issuers={issuers} now={now} />
+                  <AuthoritiesTable
+                    authorities={dashboard.authorities}
+                    issuers={issuers}
+                    now={now}
+                  />
+                </>
+              ),
+            },
+            {
+              key: "expirations",
+              label: "Expirations",
+              children: (
+                <>
+                  <ExpiryCharts
+                    certificates={dashboard.certificateList}
+                    issuers={issuers}
+                    now={now}
+                  />
+                  <CertificateList
+                    certificates={dashboard.certificateList}
+                    issuers={issuers}
+                    now={now}
+                    order="expiry"
+                  />
+                </>
+              ),
+            },
+            {
+              key: "timeline",
+              label: "Timeline",
+              children: (
+                <TimelineView
+                  certificates={dashboard.certificateList}
+                  authorities={dashboard.authorities}
                   issuers={issuers}
                   now={now}
                 />
               ),
-            },
-            {
-              key: "windows",
-              label: "Issuing windows",
-              children: <IssuingWindows issuers={issuers} now={now} />,
-            },
-            {
-              key: "lists",
-              label: "Revocation lists",
-              children: (
-                <CrlTable crls={dashboard.crls} issuers={issuers} now={now} />
-              ),
-            },
-            {
-              key: "ca",
-              label: "The CA",
-              children: (
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} lg={12}>
-                    <SignerCard />
-                  </Col>
-                  <Col xs={24} lg={12}>
-                    <CaCard ca={dashboard.ca} issuers={issuers} />
-                  </Col>
-                </Row>
-              ),
-            },
-            {
-              key: "week",
-              label: "This week",
-              children: (
-                <WeekSummary
-                  week={dashboard.week}
-                  revoked={certificates.revokedThisWeek}
-                />
-              ),
-            },
-            {
-              key: "targets",
-              label: "Deploy targets",
-              children: <EndpointsTable targets={targets ?? []} />,
             },
           ]}
         />

@@ -4,9 +4,12 @@ import {
   ExclamationCircleFilled,
   MinusCircleFilled,
 } from "@ant-design/icons";
-import { Flex, Tag, Timeline, Typography } from "antd";
+import { Button, Flex, Tag, Timeline, Typography } from "antd";
 import Link from "next/link";
-import type { Dashboard } from "@/lib/api/types";
+import { useState } from "react";
+import { apiClient } from "@/lib/api/client";
+import { unwrap } from "@/lib/api/errors";
+import type { AuditVerification, Dashboard } from "@/lib/api/types";
 import {
   describeActor,
   describeEvent,
@@ -16,6 +19,7 @@ import {
   type HealthStatus,
 } from "@/lib/dashboard";
 import { formatDateTime } from "@/lib/labels";
+import { ErrorAlert } from "../ErrorAlert";
 import { AttentionList } from "./AttentionList";
 import styles from "./Dashboard.module.css";
 
@@ -63,6 +67,44 @@ const Section = ({
   </Flex>
 );
 
+/** The audit chain, verified on request: it walks every event. */
+function AuditVerify() {
+  const [verification, setVerification] = useState<AuditVerification>();
+  const [error, setError] = useState<unknown>();
+  const [busy, setBusy] = useState(false);
+  const verify = async () => {
+    setBusy(true);
+    try {
+      setVerification(
+        unwrap(await apiClient.GET("/v1/audit/verification")).verification,
+      );
+      setError(undefined);
+    } catch (failure) {
+      setError(failure);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Flex vertical gap={4} align="flex-start">
+      {verification ? (
+        verification.valid ? (
+          <Tag color="green">
+            Verified, {verification.events.toLocaleString()} events
+          </Tag>
+        ) : (
+          <Tag color="red">Broken at {verification.brokenAt}</Tag>
+        )
+      ) : (
+        <Button size="small" onClick={verify} loading={busy}>
+          Verify
+        </Button>
+      )}
+      <ErrorAlert error={error} />
+    </Flex>
+  );
+}
+
 /** The CA's health, line by line, then what needs a person. */
 export function AttentionTab({
   dashboard,
@@ -99,6 +141,7 @@ export function AttentionTab({
                 <Typography.Text type="secondary" className={styles.small}>
                   {check.detail}
                 </Typography.Text>
+                {check.name === "Audit chain" && <AuditVerify />}
               </Flex>
             </Flex>
           ))}
