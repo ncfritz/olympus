@@ -1,5 +1,10 @@
 import { IssueCertificatePage } from "@/components/IssueCertificatePage";
+import { PaddedPage } from "@/components/PaddedPage";
 
 export default function IssueCertificate() {
-  return <IssueCertificatePage />;
+  return (
+    <PaddedPage>
+      <IssueCertificatePage />
+    </PaddedPage>
+  );
 }

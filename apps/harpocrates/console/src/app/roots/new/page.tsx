@@ -1,5 +1,10 @@
 import { NewRootPage } from "@/components/NewRootPage";
+import { PaddedPage } from "@/components/PaddedPage";
 
 export default function NewRoot() {
-  return <NewRootPage />;
+  return (
+    <PaddedPage>
+      <NewRootPage />
+    </PaddedPage>
+  );
 }

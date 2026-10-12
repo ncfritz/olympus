@@ -1,0 +1,4 @@
+/* The margin the layout once gave every page. */
+.padded {
+  padding: 24px;
+}

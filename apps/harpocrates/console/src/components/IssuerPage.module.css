@@ -38,11 +38,9 @@
 
 /*
  * The page fills the shell's content area to its edges, so the side
- * panel runs its full height: out through the layout's 24px margin, and
- * as tall as the window below the header (64px) and breadcrumbs (28px).
- * The panel's page keeps the margin itself.
+ * panel runs its full height: as tall as the window below the header
+ * (64px) and breadcrumbs (28px). The panel's page keeps a margin itself.
  */
 .page {
-  margin: -24px;
   height: calc(100vh - 92px);
 }

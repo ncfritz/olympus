@@ -102,6 +102,15 @@ _Target_ rules:
 6. Every visual constant has one definition. A magic number in two places
    becomes a token.
 
+## Page edges
+
+_Target_: a page's contents flow to the edges of the shell's content area.
+The layout adds no padding around a page. Tables, statistic strips, graph
+containers and side panels abut the page's edges and each other, divided
+by borders rather than set apart as cards; the elements inside them carry
+the padding that keeps their content off those edges. A page not yet
+reworked to this keeps its old margin in a padded wrapper until it is.
+
 ## Accessibility
 
 - Icon-only buttons carry `aria-label` (or AntD `title`).

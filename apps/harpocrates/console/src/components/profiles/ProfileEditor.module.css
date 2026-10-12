@@ -1,6 +1,5 @@
 /* The page fills the shell's content area, as a CA's page does. */
 .page {
-  margin: -24px;
   height: calc(100vh - 92px);
 }
 

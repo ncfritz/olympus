@@ -1,4 +1,7 @@
-/* Every page's margin inside the shell's content area. */
+/*
+ * A page fills the shell's content area to its edges (docs/conventions/
+ * ux.md, Page edges): what is inside it keeps its content off them.
+ */
 .page {
-  padding: 24px;
+  min-width: 0;
 }

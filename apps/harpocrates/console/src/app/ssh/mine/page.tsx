@@ -1,5 +1,10 @@
 import { MySshPage } from "@/components/ssh/MySshPage";
+import { PaddedPage } from "@/components/PaddedPage";
 
 export default function MySsh() {
-  return <MySshPage />;
+  return (
+    <PaddedPage>
+      <MySshPage />
+    </PaddedPage>
+  );
 }
