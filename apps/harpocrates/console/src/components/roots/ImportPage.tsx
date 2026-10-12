@@ -49,6 +49,9 @@ import { ErrorAlert } from "../ErrorAlert";
 import { PemInput } from "../PemInput";
 import styles from "./Roots.module.css";
 
+/** The longest certificate an imported issuing CA signs, by default. */
+const ISSUING_MAX_VALIDITY_DAYS = 825;
+
 /** The import's tabs, by `?what=`. */
 const WHATS = ["ca", "crl", "certificates"] as const;
 type What = (typeof WHATS)[number];
@@ -257,7 +260,13 @@ function ImportCa({
             purpose: issuing ? values.purpose : undefined,
             number: values.number,
             generation: values.generation,
-            maxValidityDays: values.maxValidityDays,
+            // The field is shown for an issuing CA only, and a form leaves
+            // out what it does not show. An offline CA's is set by the
+            // service from its tier, whatever is sent; the API still
+            // requires one, so it gets the issuing default.
+            maxValidityDays: issuing
+              ? values.maxValidityDays
+              : ISSUING_MAX_VALIDITY_DAYS,
             extendedKeyUsages: issuing ? values.extendedKeyUsages : [],
             privateKey: issuing ? values.privateKey : undefined,
             passphrase: issuing ? values.passphrase : undefined,
@@ -321,8 +330,9 @@ function ImportCa({
       disabled={!isAdmin}
       initialValues={{
         tier: "issuing",
+        number: 1,
         generation: 1,
-        maxValidityDays: 825,
+        maxValidityDays: ISSUING_MAX_VALIDITY_DAYS,
         extendedKeyUsages: ["1.3.6.1.5.5.7.3.1", "1.3.6.1.5.5.7.3.2"],
         closed: true,
       }}
