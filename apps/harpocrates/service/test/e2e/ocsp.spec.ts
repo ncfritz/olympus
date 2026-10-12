@@ -523,6 +523,9 @@ describe.skipIf(!E2E_DATABASE_URL)("ocsp", () => {
           })
           .expect(200);
         expect(read(lapsed.body as Buffer)).toMatch(/trylater \(3\)/i);
+        // The next run signs it again.
+        await scheduler.run();
+        expect(await client(good.certificate)).toMatch(/: good/);
       },
     );
   });

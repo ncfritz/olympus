@@ -75,7 +75,8 @@ export class OcspResponseService {
 
   /**
    * Signs what a CA needs signed: responses missing, saying another
-   * status, signed by another responder, or a refresh interval old. Drops
+   * status, signed by another responder, a refresh interval old, or within
+   * an hour of lapsing. Drops
    * those for certificates no longer current once they have lapsed.
    */
   async refresh(issuerId: string, now = new Date()): Promise<OcspRefresh> {
@@ -92,11 +93,15 @@ export class OcspResponseService {
             status: true,
             responderId: true,
             thisUpdate: true,
+            nextUpdate: true,
           },
         })
       ).map((r) => [key(r.serial, r.hash), r]),
     );
     const stale = new Date(now.getTime() - this.config.refreshHours * HOUR);
+    // However recently signed, one this close to lapsing (its responder's
+    // end came first) is signed again.
+    const lapsing = new Date(now.getTime() + HOUR);
     const due = wanted.flatMap((w) =>
       HASHES.flatMap((hash) => {
         const row = stored.get(key(w.serial, hash));
@@ -104,7 +109,9 @@ export class OcspResponseService {
           row &&
           row.status === w.status &&
           row.responderId === responder.id &&
-          row.thisUpdate > stale;
+          row.thisUpdate > stale &&
+          // ...unless it already lasts as long as its responder does.
+          (row.nextUpdate > lapsing || row.nextUpdate >= responder.notAfter);
         return fresh ? [] : [{ ...w, hash }];
       }),
     );
