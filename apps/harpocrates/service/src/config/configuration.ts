@@ -75,6 +75,11 @@ export type PkiConfig = {
    * `harpocrates-published` volume): `crl/<slug>.crl`, `ca/<slug>.crt`.
    */
   publishedDir: string;
+  /**
+   * The hosts a host CA vouches for, as a known_hosts pattern: what its
+   * `@cert-authority` line names (ADR 0035).
+   */
+  sshHostPattern: string;
 };
 
 export type CrlConfig = {
@@ -251,6 +256,7 @@ export const readConfig = (
         .string("PKI_DISTRIBUTION_URL", "http://pki.internal.ncfritz.net")
         .replace(/\/+$/, ""),
       publishedDir: read.string("PKI_PUBLISHED_DIR"),
+      sshHostPattern: read.string("SSH_HOST_PATTERN", "*.internal.ncfritz.net"),
     },
     crl: {
       validityHours: integer(read, "CRL_VALIDITY_HOURS", 7 * 24),

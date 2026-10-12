@@ -14,6 +14,7 @@ import { AcmeModule } from "./acme/AcmeModule";
 import { DeployModule } from "./deploy/DeployModule";
 import { RenewalModule } from "./renewal/RenewalModule";
 import { SignerModule } from "./signer/SignerModule";
+import { SshModule } from "./ssh/SshModule";
 import { StoreModule } from "./store/StoreModule";
 
 @Module({
@@ -39,6 +40,7 @@ import { StoreModule } from "./store/StoreModule";
     RenewalModule,
     DeployModule,
     AcmeModule,
+    SshModule,
   ],
 })
 export class AppModule {}

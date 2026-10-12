@@ -37,6 +37,7 @@ describe("readConfig", () => {
       organization: "ncfritz.net",
       distributionUrl: "http://pki.internal.ncfritz.net",
       publishedDir: "/srv/harpocrates/published",
+      sshHostPattern: "*.internal.ncfritz.net",
     });
     expect(config.crl).toEqual({
       validityHours: 168,

@@ -8,6 +8,9 @@ import type {
   ProfileNamePolicy as ProfileNamePolicyRow,
   ProfileSubjectAttribute as ProfileSubjectAttributeRow,
   ProfilePolicy as ProfilePolicyRow,
+  ProfileSshExtension as ProfileSshExtensionRow,
+  ProfileSshSettings as ProfileSshSettingsRow,
+  ProfileSshSourceAddress as ProfileSshSourceAddressRow,
   ProfileCustomExtension as ProfileCustomExtensionRow,
   ProfileVersion as ProfileVersionRow,
   NamePresence,
@@ -20,6 +23,7 @@ import {
 } from "../subjectAttributes";
 import type { KeyAlgorithmName, SubtreeNameTypeName } from "../../model/common";
 import moment from "moment";
+import type { SshExtensionName } from "../../model/ssh";
 import type {
   HashName,
   KeyUsageName,
@@ -42,6 +46,9 @@ type VersionRules = {
   csrHashes: ProfileCsrHashRow[];
   policies: ProfilePolicyRow[];
   customExtensions: ProfileCustomExtensionRow[];
+  ssh: ProfileSshSettingsRow | null;
+  sshSourceAddresses: ProfileSshSourceAddressRow[];
+  sshExtensions: ProfileSshExtensionRow[];
 };
 
 /** A version's rules, to include with it. */
@@ -55,6 +62,9 @@ export const VERSION_RULES = {
   csrHashes: true,
   policies: true,
   customExtensions: true,
+  ssh: true,
+  sshSourceAddresses: true,
+  sshExtensions: true,
 } as const;
 
 /** A profile with a version's rules: its latest, or another's to renew. */
@@ -74,6 +84,7 @@ export type ProfileWithRules = Omit<
   "id" | "profileId" | "createdAt" | "updatedAt" | "createdBy"
 > & {
   id: string;
+  kind: ProfileRow["kind"];
   description: string;
   directOnly: boolean;
   deactivatedAt: Date | null;
@@ -99,6 +110,7 @@ export const asProfileWithRules = (
   return {
     ...settings,
     id: profile.id,
+    kind: profile.kind,
     description: profile.description,
     directOnly: profile.directOnly,
     deactivatedAt: profile.deactivatedAt,
@@ -221,10 +233,28 @@ export const toSettings = (
       critical: e.critical,
       value: Buffer.from(e.value).toString("base64"),
     })),
+  ...(row.ssh
+    ? {
+        ssh: {
+          certificateType: row.ssh.certificateType,
+          sshCaId: row.ssh.sshCaId ?? undefined,
+          validityHours: row.ssh.validityHours,
+          renewAtHours: row.ssh.renewAtHours,
+          forceCommand: row.ssh.forceCommand ?? undefined,
+          sourceAddresses: [...row.sshSourceAddresses]
+            .sort((a, b) => a.id - b.id)
+            .map((a) => a.value),
+          extensions: row.sshExtensions
+            .map((e) => e.extension as SshExtensionName)
+            .sort(),
+        },
+      }
+    : {}),
 });
 
 export const toDomainObject = (row: ProfileWithRules): Profile => ({
   id: row.id,
+  kind: row.kind,
   version: row.version,
   description: row.description,
   directOnly: row.directOnly,
@@ -260,12 +290,18 @@ const UNSAVED = "00000000-0000-0000-0000-000000000000";
  */
 export const unsavedVersion = (
   settings: ProfileSettings,
-  profile: { id: string; description: string; directOnly: boolean },
+  profile: {
+    id: string;
+    kind?: ProfileWithRules["kind"];
+    description: string;
+    directOnly: boolean;
+  },
 ): ProfileWithRules => {
   const now = new Date();
   const pv = { profileVersionId: UNSAVED };
   return {
     id: profile.id,
+    kind: profile.kind ?? "x509",
     description: profile.description,
     directOnly: profile.directOnly,
     deactivatedAt: null,
@@ -349,6 +385,23 @@ export const unsavedVersion = (
       oid: e.oid,
       critical: e.critical,
       value: new Uint8Array(Buffer.from(e.value, "base64")),
+    })),
+    ssh: settings.ssh
+      ? {
+          ...pv,
+          certificateType: settings.ssh.certificateType,
+          sshCaId: settings.ssh.sshCaId ?? null,
+          validityHours: settings.ssh.validityHours,
+          renewAtHours: settings.ssh.renewAtHours,
+          forceCommand: settings.ssh.forceCommand || null,
+        }
+      : null,
+    sshSourceAddresses: (settings.ssh?.sourceAddresses ?? []).map(
+      (value, i) => ({ ...pv, id: i, value }),
+    ),
+    sshExtensions: (settings.ssh?.extensions ?? []).map((extension) => ({
+      ...pv,
+      extension,
     })),
   };
 };

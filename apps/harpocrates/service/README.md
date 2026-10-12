@@ -26,7 +26,19 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
   description alone is not), copies any version into a new profile,
   deactivates it (nothing new may choose it; what it issued renews) or
   reactivates it, and moves chosen certificates' enrollments to another
-  of its versions, which their next renewal uses.
+  of its versions, which their next renewal uses. A profile has a kind
+  (ADR 0035): `x509`, or `ssh`, whose versions hold SSH settings (user
+  or host certificates, their CA, validity and renewal in hours,
+  `force-command`, `source-address`, the `permit-*` extensions); the
+  seeded `ssh-user` (16 hours) and `ssh-host` (90 days) are v1.
+- **SSH CAs** (ADR 0035): online Ed25519 keys in the signer, one type
+  each (`ssh-user-1-g1`, `ssh-host-1-g1`), created by an admin with no
+  ceremony; a rotation is the next generation beside the old, which is
+  retired and trusted until its certificates expire. Each gives the line
+  that trusts it: for `TrustedUserCAKeys`, or an `@cert-authority` line
+  for `known_hosts`.
+- **SSH principals**: which Unix user names each Olympus identity (its
+  email) may log in as, set by an admin.
 - **Keys, enrollments, certificates**: every key once, by its
   SubjectPublicKeyInfo hash; one enrollment (the request) per key; the
   key's certificates as its lineage, first issue and renewals.
@@ -144,6 +156,10 @@ from it.
 | `GET /profile/{id}/versions`                                                                                                     | either role           |
 | `POST /profiles/preview` (the certificate a version would produce, signed by a throwaway key)                                    | admin                 |
 | `POST /profiles`, `PUT /profile/{id}` (a new version), `POST /profile/{id}/copy`, `.../deactivate`, `.../reactivate`, `.../move` | admin, recent sign-in |
+| `GET /ssh/cas`, `GET /ssh/ca/{id}`                                                                                               | either role           |
+| `POST /ssh/cas` (a CA, or its next generation), `POST /ssh/ca/{id}/retire`                                                       | admin, recent sign-in |
+| `GET /ssh/principals`                                                                                                            | admin                 |
+| `PUT /ssh/principals/{identity}` (who an identity may log in as)                                                                 | admin, recent sign-in |
 | `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`                                                               | either role           |
 | `GET /certificate/{id}/download` (`pem`, `der`, `chain`)                                                                         | either role           |
 | `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`                                                                  | either role           |
@@ -409,6 +425,7 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 | `PKI_REALM`                   | `ncfritz.net`                                             | The prefix of CA names: `<realm> TLS Issuing CA 1 - G1`                                            |
 | `PKI_ORGANIZATION`            | `ncfritz.net`                                             | `O=` in the names it issues                                                                        |
 | `PKI_DISTRIBUTION_URL`        | `http://pki.internal.ncfritz.net`                         | Where lists and CA certificates are served, and read back from                                     |
+| `SSH_HOST_PATTERN`            | `*.internal.ncfritz.net`                                  | The hosts an SSH host CA vouches for: its `@cert-authority` line's pattern (ADR 0035)              |
 | `PKI_PUBLISHED_DIR`           | —                                                         | The directory the distribution host serves                                                         |
 | `CRL_VALIDITY_HOURS`          | `168`                                                     | An online CA's list's validity                                                                     |
 | `CRL_REFRESH_HOURS`           | `24`                                                      | How old an online CA's list gets before it is re-signed                                            |

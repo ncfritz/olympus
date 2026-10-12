@@ -4694,6 +4694,412 @@
           "ACME Credentials"
         ]
       }
+    },
+    "/v1/ssh/cas": {
+      "get": {
+        "description": "Every SSH CA (ADR 0035), user CAs first, newest generation first, with the line that trusts each.",
+        "operationId": "ListSshCas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The SSH CAs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSshCasResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists the SSH CAs",
+        "tags": [
+          "SSH"
+        ]
+      },
+      "post": {
+        "description": "An online Ed25519 key in the signer that signs one type of SSH certificate (ADR 0035), with no ceremony. For a type and number that has one, it is the next generation: a rotation, trusted beside the old until the old is retired and its certificates expire.",
+        "operationId": "CreateSshCa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Its type, and its number and longest certificate if not the defaults.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSshCaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The CA was created.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The CA"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSshCaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Creates an SSH CA",
+        "tags": [
+          "SSH"
+        ]
+      }
+    },
+    "/v1/ssh/ca/{caId}": {
+      "get": {
+        "description": "Its type, generation, status, public key and the line that trusts it.",
+        "operationId": "DescribeSshCa",
+        "parameters": [
+          {
+            "name": "caId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The CA.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DescribeSshCaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describes an SSH CA",
+        "tags": [
+          "SSH"
+        ]
+      }
+    },
+    "/v1/ssh/ca/{caId}/retire": {
+      "post": {
+        "description": "It signs nothing more; hosts and clients keep trusting it until its last certificate expires, then its line can go.",
+        "operationId": "RetireSshCa",
+        "parameters": [
+          {
+            "name": "caId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The CA.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetireSshCaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retires an SSH CA",
+        "tags": [
+          "SSH"
+        ]
+      }
+    },
+    "/v1/ssh/principals": {
+      "get": {
+        "description": "Every Olympus identity mapped to SSH principals (ADR 0035): its user certificates carry those and no others.",
+        "operationId": "ListSshPrincipals",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The mappings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSshPrincipalsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists who may log in as whom",
+        "tags": [
+          "SSH"
+        ]
+      }
+    },
+    "/v1/ssh/principals/{identity}": {
+      "put": {
+        "description": "Replaces an Olympus identity's SSH principals (ADR 0035); none removes its mapping. Certificates already issued keep theirs until they expire or are revoked.",
+        "operationId": "SetSshPrincipals",
+        "parameters": [
+          {
+            "name": "identity",
+            "required": true,
+            "in": "path",
+            "description": "The identity's email",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Its principals.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSshPrincipalsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mapping, as it now is.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetSshPrincipalsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sets who an identity may log in as",
+        "tags": [
+          "SSH"
+        ]
+      }
     }
   },
   "info": {
@@ -4736,6 +5142,9 @@
     },
     {
       "name": "Revocation Lists"
+    },
+    {
+      "name": "SSH"
     },
     {
       "name": "Signer"
@@ -7361,6 +7770,76 @@
           "value"
         ]
       },
+      "SshCertificateType": {
+        "type": "string",
+        "description": "user: logs its holder in as its principals; host: vouches for a host's names",
+        "enum": [
+          "user",
+          "host"
+        ]
+      },
+      "SshExtension": {
+        "type": "string",
+        "description": "What a user certificate permits",
+        "enum": [
+          "permit-pty",
+          "permit-port-forwarding",
+          "permit-agent-forwarding",
+          "permit-X11-forwarding",
+          "permit-user-rc"
+        ]
+      },
+      "SshProfileSettings": {
+        "type": "object",
+        "properties": {
+          "certificateType": {
+            "description": "What its certificates are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCertificateType"
+              }
+            ]
+          },
+          "sshCaId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The SSH CA it is pinned to; unset, the newest active one of its type"
+          },
+          "validityHours": {
+            "type": "number",
+            "description": "How long its certificates are valid, in hours"
+          },
+          "renewAtHours": {
+            "type": "number",
+            "description": "How many hours into a certificate's life it is due for renewal: less than its validity"
+          },
+          "forceCommand": {
+            "type": "string",
+            "description": "The force-command critical option: the one command a user certificate may run"
+          },
+          "sourceAddresses": {
+            "description": "The source-address critical option: the addresses or networks a user certificate is used from; none, anywhere",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extensions": {
+            "type": "array",
+            "description": "What a user certificate permits",
+            "items": {
+              "$ref": "#/components/schemas/SshExtension"
+            }
+          }
+        },
+        "required": [
+          "certificateType",
+          "validityHours",
+          "renewAtHours",
+          "sourceAddresses",
+          "extensions"
+        ]
+      },
       "ProfileSettings": {
         "type": "object",
         "properties": {
@@ -7543,6 +8022,14 @@
             "items": {
               "$ref": "#/components/schemas/ProfileCustomExtension"
             }
+          },
+          "ssh": {
+            "description": "An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshProfileSettings"
+              }
+            ]
           }
         },
         "required": [
@@ -7575,6 +8062,14 @@
           "includeIssuerAltName",
           "policies",
           "customExtensions"
+        ]
+      },
+      "ProfileKind": {
+        "type": "string",
+        "description": "What a profile issues (ADR 0035): X.509 certificates, or OpenSSH ones",
+        "enum": [
+          "x509",
+          "ssh"
         ]
       },
       "ProfilePreviewSample": {
@@ -7638,6 +8133,14 @@
           "directOnly": {
             "type": "boolean",
             "description": "Whether it is issued only in a ceremony with a root that signs directly: previewed under that root"
+          },
+          "kind": {
+            "description": "What it issues; by default X.509",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileKind"
+              }
+            ]
           },
           "sample": {
             "description": "The request to preview; made up where left out",
@@ -7909,9 +8412,25 @@
               "$ref": "#/components/schemas/ProfileCustomExtension"
             }
           },
+          "ssh": {
+            "description": "An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshProfileSettings"
+              }
+            ]
+          },
           "id": {
             "type": "string",
             "description": "The profile's name, e.g. internal-tls"
+          },
+          "kind": {
+            "description": "What it issues",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileKind"
+              }
+            ]
           },
           "version": {
             "type": "number",
@@ -7973,6 +8492,7 @@
           "policies",
           "customExtensions",
           "id",
+          "kind",
           "version",
           "description",
           "directOnly",
@@ -8178,6 +8698,22 @@
             "items": {
               "$ref": "#/components/schemas/ProfileCustomExtension"
             }
+          },
+          "ssh": {
+            "description": "An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshProfileSettings"
+              }
+            ]
+          },
+          "kind": {
+            "description": "What it issues, for good; by default X.509",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileKind"
+              }
+            ]
           },
           "id": {
             "type": "string",
@@ -8453,6 +8989,14 @@
               "$ref": "#/components/schemas/ProfileCustomExtension"
             }
           },
+          "ssh": {
+            "description": "An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshProfileSettings"
+              }
+            ]
+          },
           "description": {
             "type": "string",
             "description": "What it is for"
@@ -8673,6 +9217,14 @@
             "items": {
               "$ref": "#/components/schemas/ProfileCustomExtension"
             }
+          },
+          "ssh": {
+            "description": "An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshProfileSettings"
+              }
+            ]
           },
           "version": {
             "type": "number",
@@ -9529,6 +10081,245 @@
         "required": [
           "credential"
         ]
+      },
+      "SshCa": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its slug, e.g. ssh-user-1-g1"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its name, e.g. ncfritz.net SSH User CA 1 - G1"
+          },
+          "type": {
+            "description": "What it signs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCertificateType"
+              }
+            ]
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number"
+          },
+          "generation": {
+            "type": "number",
+            "description": "Its generation: a rotation is the next"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "retired"
+            ],
+            "description": "active: signs; retired: signs nothing more, trusted until its certificates expire"
+          },
+          "publicKey": {
+            "type": "string",
+            "description": "Its key, OpenSSH format"
+          },
+          "trustLine": {
+            "type": "string",
+            "description": "The line that trusts it: for a user CA, one for the file sshd_config's TrustedUserCAKeys names; for a host CA, one for known_hosts"
+          },
+          "maxValidityHours": {
+            "type": "number",
+            "description": "The longest certificate it signs, in hours"
+          },
+          "krlUrl": {
+            "type": "string",
+            "description": "Where its KRL is published"
+          },
+          "retiredAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was retired"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "number",
+          "generation",
+          "status",
+          "publicKey",
+          "trustLine",
+          "maxValidityHours",
+          "krlUrl",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ListSshCasResponse": {
+        "type": "object",
+        "properties": {
+          "cas": {
+            "description": "Every SSH CA, users' first, newest generation first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SshCa"
+            }
+          }
+        },
+        "required": [
+          "cas"
+        ]
+      },
+      "CreateSshCaRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "What it signs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCertificateType"
+              }
+            ]
+          },
+          "number": {
+            "type": "number",
+            "description": "Its number; by default 1. Its generation is the next of that type and number: a rotation"
+          },
+          "maxValidityHours": {
+            "type": "number",
+            "description": "The longest certificate it signs, in hours; by default a week for users, a year for hosts"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "CreateSshCaResponse": {
+        "type": "object",
+        "properties": {
+          "ca": {
+            "description": "The new CA",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCa"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ca"
+        ]
+      },
+      "DescribeSshCaResponse": {
+        "type": "object",
+        "properties": {
+          "ca": {
+            "description": "The CA",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCa"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ca"
+        ]
+      },
+      "RetireSshCaResponse": {
+        "type": "object",
+        "properties": {
+          "ca": {
+            "description": "The CA, retired",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCa"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ca"
+        ]
+      },
+      "SshPrincipalMapping": {
+        "type": "object",
+        "properties": {
+          "identity": {
+            "type": "string",
+            "description": "The identity's email"
+          },
+          "principals": {
+            "description": "Its principals: Unix user names",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was first mapped"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "identity",
+          "principals",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ListSshPrincipalsResponse": {
+        "type": "object",
+        "properties": {
+          "mappings": {
+            "description": "Every mapped identity, by email",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SshPrincipalMapping"
+            }
+          }
+        },
+        "required": [
+          "mappings"
+        ]
+      },
+      "SetSshPrincipalsRequest": {
+        "type": "object",
+        "properties": {
+          "principals": {
+            "description": "The identity's principals, replacing those it had; none removes the mapping",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "principals"
+        ]
+      },
+      "SetSshPrincipalsResponse": {
+        "type": "object",
+        "properties": {
+          "mapping": {
+            "description": "The mapping as it now is; none when it was removed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshPrincipalMapping"
+              }
+            ]
+          }
+        }
       }
     }
   }

@@ -33,11 +33,15 @@ import type {
   KeyResponse,
   OfflineCaResponse,
   PreviewCertificateRequest,
+  RegisterSshCaRequest,
   RevocationReason,
+  SshCaResponse,
+  SshCertificateSpec,
   StatusResponse,
 } from "../../generated/signer/types.gen";
 
 export type {
+  SshCertificateSpec,
   CeremonyResponse as SignerCeremony,
   CertificateSpec,
   CrlSpec,
@@ -197,6 +201,25 @@ export class SignerService {
       signer.preview({ client: this.client, body }),
     );
     return previewed.certificate;
+  }
+
+  /** An SSH CA: an issuer's Ed25519 key that signs one type (ADR 0035). */
+  registerSshCa(body: RegisterSshCaRequest): Promise<SshCaResponse> {
+    return this.call(() => signer.registerSshCa({ client: this.client, body }));
+  }
+
+  async signSshCertificate(
+    caId: string,
+    spec: SshCertificateSpec,
+  ): Promise<string> {
+    const signed = await this.call(() =>
+      signer.signSshCertificate({
+        client: this.client,
+        path: { ca_id: caId },
+        body: spec,
+      }),
+    );
+    return signed.certificate;
   }
 
   async signCrl(issuerId: string, spec: CrlSpec): Promise<string> {

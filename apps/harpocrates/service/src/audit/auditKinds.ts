@@ -44,6 +44,9 @@ export const AuditKind = {
   AcmeOrderCreated: "acme-order.created",
   AcmeChallengeValid: "acme-challenge.valid",
   AcmeChallengeInvalid: "acme-challenge.invalid",
+  SshCaCreated: "ssh-ca.created",
+  SshCaRetired: "ssh-ca.retired",
+  SshPrincipalsSet: "ssh-principals.set",
 } as const;
 
 export type AuditKindName = (typeof AuditKind)[keyof typeof AuditKind];

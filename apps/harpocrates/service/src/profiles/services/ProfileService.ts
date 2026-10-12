@@ -7,6 +7,7 @@ import {
 import type { NamePresence, Prisma, UsageState } from "../../store/prisma";
 import { customExtensionProblem, subtreeProblem } from "../rules";
 import { attributeOid } from "../subjectAttributes";
+import { isIP } from "net";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";
@@ -16,6 +17,7 @@ import type {
   MoveProfileEnrollmentsRequest,
   PartialProfile,
   Profile,
+  ProfileKindName,
   ProfileSettings,
   ProfileVersion,
 } from "../../model/profiles";
@@ -63,6 +65,7 @@ const SETTINGS: (keyof ProfileSettings)[] = [
   "includeIssuerAltName",
   "policies",
   "customExtensions",
+  "ssh",
 ];
 
 /** The settings whose order counts: a certificate lists them as given. */
@@ -104,6 +107,61 @@ const stored = (settings: ProfileSettings): ProfileSettings => ({
   ),
   names: settings.names.filter((n) => n.presence !== "excluded"),
 });
+
+/** The key types an SSH certificate may certify (ADR 0035). */
+const SSH_KEY_ALGORITHMS = new Set([
+  "Ed25519",
+  "P-256",
+  "P-384",
+  "P-521",
+  "RSA-3072",
+  "RSA-4096",
+  "RSA-8192",
+]);
+
+/**
+ * What an SSH version must be (ADR 0035): renewal before expiry, no
+ * critical options or extensions on host certificates, source addresses
+ * that are addresses or networks, and key types OpenSSH takes.
+ */
+const sshRuleProblems = (settings: ProfileSettings): string[] => {
+  const ssh = settings.ssh;
+  if (!ssh) return ["an SSH profile's version needs its SSH settings"];
+  const problems: string[] = [];
+  if (ssh.renewAtHours >= ssh.validityHours) {
+    problems.push(
+      `it renews at ${ssh.renewAtHours} hours, not before its ${ssh.validityHours}-hour validity ends`,
+    );
+  }
+  if (
+    ssh.certificateType === "host" &&
+    (ssh.forceCommand || ssh.sourceAddresses.length || ssh.extensions.length)
+  ) {
+    problems.push(
+      "a host certificate carries no critical options or extensions",
+    );
+  }
+  for (const address of ssh.sourceAddresses) {
+    const [network, bits] = address.split("/");
+    const family = isIP(network);
+    const max = family === 6 ? 128 : 32;
+    if (
+      !family ||
+      (bits !== undefined && (!/^\d+$/.test(bits) || Number(bits) > max))
+    ) {
+      problems.push(`${address} is not an address or network`);
+    }
+  }
+  const refused = settings.keyAlgorithms.filter(
+    (k) => !SSH_KEY_ALGORITHMS.has(k),
+  );
+  if (refused.length) {
+    problems.push(
+      `OpenSSH takes no ${refused.join(", ")} key: Ed25519, ECDSA, or RSA from 3072 bits`,
+    );
+  }
+  return problems;
+};
 
 /**
  * What a version's rules must be, together (ADR 0034): every attribute
@@ -270,6 +328,11 @@ export class ProfileService {
         `The ${profileId} profile is deactivated: no new certificate may choose it`,
       );
     }
+    if (profile.kind !== "x509") {
+      throw new UnprocessableEntityException(
+        `The ${profileId} profile issues SSH certificates, not X.509 ones`,
+      );
+    }
     return profile;
   }
 
@@ -301,13 +364,13 @@ export class ProfileService {
   // ---- changes
 
   async create(principal: Principal, base: BaseProfile): Promise<Profile> {
-    const { id, description, ...settings } = base;
-    await this.checkSettings(settings);
+    const { id, description, kind = "x509", ...settings } = base;
+    await this.checkSettings(settings, kind);
     await this.prisma.$transaction(async (tx) => {
       if (await tx.profile.findUnique({ where: { id } })) {
         throw new ConflictException(`A profile named ${id} already exists`);
       }
-      await tx.profile.create({ data: { id, description } });
+      await tx.profile.create({ data: { id, kind, description } });
       await this.writeVersion(tx, principal, id, 1, settings);
       await this.audit.record(
         {
@@ -350,7 +413,7 @@ export class ProfileService {
     const describes =
       description !== undefined && description !== latest.description;
     if (changed.length === 0 && !describes) return this.describe(profileId);
-    if (changed.length) await this.checkSettings(next);
+    if (changed.length) await this.checkSettings(next, latest.kind);
 
     await this.prisma.$transaction(async (tx) => {
       if (describes) {
@@ -416,6 +479,7 @@ export class ProfileService {
       await tx.profile.create({
         data: {
           id: request.id,
+          kind: source.kind,
           description: request.description ?? source.description,
           directOnly: source.directOnly,
         },
@@ -633,6 +697,29 @@ export class ProfileService {
             value: Buffer.from(e.value, "base64"),
           })),
         },
+        ...(kept.ssh
+          ? {
+              ssh: {
+                create: {
+                  certificateType: kept.ssh.certificateType,
+                  sshCaId: kept.ssh.sshCaId || null,
+                  validityHours: kept.ssh.validityHours,
+                  renewAtHours: kept.ssh.renewAtHours,
+                  forceCommand: kept.ssh.forceCommand?.trim() || null,
+                },
+              },
+              sshSourceAddresses: {
+                create: kept.ssh.sourceAddresses.map((value) => ({
+                  value: value.trim(),
+                })),
+              },
+              sshExtensions: {
+                create: kept.ssh.extensions.map((extension) => ({
+                  extension,
+                })),
+              },
+            }
+          : {}),
       },
     });
   }
@@ -642,8 +729,15 @@ export class ProfileService {
    * not before expiry, a pinned issuer missing or of another purpose, and
    * its rules not holding together. None, they would be.
    */
-  async settingsProblems(settings: ProfileSettings): Promise<string[]> {
+  async settingsProblems(
+    settings: ProfileSettings,
+    kind: ProfileKindName = "x509",
+  ): Promise<string[]> {
+    if (kind === "ssh") return this.sshSettingsProblems(settings);
     const problems: string[] = [];
+    if (settings.ssh) {
+      problems.push("an X.509 profile's version has no SSH settings");
+    }
     if (!settings.allowCsr && !settings.allowGenerated) {
       problems.push("it allows neither a CSR nor a generated key");
     }
@@ -668,9 +762,39 @@ export class ProfileService {
     return problems;
   }
 
+  /** An SSH version's problems, its pinned CA's among them. */
+  private async sshSettingsProblems(
+    settings: ProfileSettings,
+  ): Promise<string[]> {
+    const problems = sshRuleProblems(settings);
+    const pinned = settings.ssh?.sshCaId;
+    if (pinned) {
+      const ca = await this.prisma.sshCa.findUnique({ where: { id: pinned } });
+      if (!ca) {
+        problems.push(`there is no SSH CA ${pinned}`);
+      } else {
+        if (ca.type !== settings.ssh!.certificateType) {
+          problems.push(
+            `its CA ${pinned} signs ${ca.type} certificates, not ${settings.ssh!.certificateType} ones`,
+          );
+        }
+        if (settings.ssh!.validityHours > ca.maxValidityHours) {
+          problems.push(
+            `its CA ${pinned} signs for at most ${ca.maxValidityHours} hours`,
+          );
+        }
+      }
+    }
+    return problems;
+  }
+
   /** The settings as `settingsProblems` reads them, or why not (422). */
-  private async checkSettings(settings: ProfileSettings): Promise<void> {
+  private async checkSettings(
+    settings: ProfileSettings,
+    kind: ProfileKindName,
+  ): Promise<void> {
     if (
+      kind === "x509" &&
       settings.issuerId &&
       !(await this.prisma.issuer.findUnique({
         where: { id: settings.issuerId },
@@ -680,7 +804,7 @@ export class ProfileService {
         `Issuer with id ${settings.issuerId} not found`,
       );
     }
-    const problems = await this.settingsProblems(settings);
+    const problems = await this.settingsProblems(settings, kind);
     if (problems.length) {
       throw new UnprocessableEntityException(
         `The profile cannot be saved: ${problems.join("; ")}`,

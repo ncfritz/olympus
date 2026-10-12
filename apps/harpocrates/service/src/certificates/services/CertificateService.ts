@@ -980,7 +980,18 @@ export class CertificateService {
   ): Promise<ProfilePreview> {
     const settings = request.profile;
     const sample = request.sample ?? {};
-    const problems = await this.profiles.settingsProblems(settings);
+    const kind = request.kind ?? "x509";
+    const problems = await this.profiles.settingsProblems(settings, kind);
+    if (kind === "ssh") {
+      // SSH issuance comes with phase 9's step 3, and its preview with it.
+      return {
+        problems,
+        refusals: ["An SSH version's certificate is not previewed yet"],
+        sampleSubject: {},
+        sampleNames: {},
+        keyAlgorithm: settings.keyAlgorithm,
+      };
+    }
     const profile = unsavedVersion(settings, {
       id: "preview",
       description: "",

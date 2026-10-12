@@ -35,6 +35,15 @@ import {
   type SubtreeNameTypeName,
 } from "./common";
 import { CertificateSubject } from "./certificates";
+import {
+  SSH_CERTIFICATE_TYPE_ENUM,
+  SSH_CERTIFICATE_TYPE_VALUES,
+  SSH_EXTENSION_ENUM,
+  SSH_EXTENSION_VALUES,
+  SSH_MAX_VALIDITY_HOURS,
+  type SshCertificateTypeName,
+  type SshExtensionName,
+} from "./ssh";
 
 export const KEY_USAGE_VALUES = [
   "digital_signature",
@@ -107,6 +116,18 @@ export const HASH_ENUM = {
 
 /** A profile's slug: lower case, digits and hyphens. */
 export const PROFILE_SLUG = /^[a-z][a-z0-9-]{0,62}$/;
+
+export const PROFILE_KIND_VALUES = ["x509", "ssh"] as const;
+export type ProfileKindName = (typeof PROFILE_KIND_VALUES)[number];
+
+export const PROFILE_KIND_ENUM = {
+  enum: [...PROFILE_KIND_VALUES],
+  enumName: "ProfileKind",
+  enumSchema: {
+    description:
+      "What a profile issues (ADR 0035): X.509 certificates, or OpenSSH ones",
+  },
+};
 
 export const CERTIFICATE_HASH_VALUES = ["sha256", "sha384", "sha512"] as const;
 export type CertificateHashName = (typeof CERTIFICATE_HASH_VALUES)[number];
@@ -340,6 +361,87 @@ export class ProfileCustomExtension {
   @IsBase64()
   @MaxLength(8192)
   value: string;
+}
+
+/**
+ * An SSH version's own settings (ADR 0035). Its certificates' principals
+ * are the requester's mapped ones (user) or the host's names (host).
+ */
+export class SshProfileSettings {
+  @ApiProperty({
+    ...SSH_CERTIFICATE_TYPE_ENUM,
+    required: true,
+    description: "What its certificates are",
+  })
+  @IsIn([...SSH_CERTIFICATE_TYPE_VALUES])
+  certificateType: SshCertificateTypeName;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    nullable: true,
+    description:
+      "The SSH CA it is pinned to; unset, the newest active one of its type",
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Matches(PROFILE_SLUG)
+  sshCaId?: string | null;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "How long its certificates are valid, in hours",
+  })
+  @IsInt()
+  @Min(1)
+  @Max(SSH_MAX_VALIDITY_HOURS)
+  validityHours: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "How many hours into a certificate's life it is due for renewal: less than its validity",
+  })
+  @IsInt()
+  @Min(1)
+  renewAtHours: number;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The force-command critical option: the one command a user certificate may run",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  forceCommand?: string;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "The source-address critical option: the addresses or networks a user certificate is used from; none, anywhere",
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  sourceAddresses: string[];
+
+  @ApiProperty({
+    ...SSH_EXTENSION_ENUM,
+    isArray: true,
+    required: true,
+    description: "What a user certificate permits",
+  })
+  @IsArray()
+  @ArrayUnique()
+  @IsIn([...SSH_EXTENSION_VALUES], { each: true })
+  extensions: SshExtensionName[];
 }
 
 /**
@@ -653,6 +755,17 @@ export class ProfileSettings {
   @ValidateNested({ each: true })
   @Type(() => ProfileCustomExtension)
   customExtensions: ProfileCustomExtension[];
+
+  @ApiProperty({
+    type: () => SshProfileSettings,
+    required: false,
+    description:
+      "An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SshProfileSettings)
+  ssh?: SshProfileSettings;
 }
 
 /** One version of a profile, frozen once made (ADR 0034). */
@@ -691,6 +804,13 @@ export class Profile extends ProfileSettings {
     description: "The profile's name, e.g. internal-tls",
   })
   id: string;
+
+  @ApiProperty({
+    ...PROFILE_KIND_ENUM,
+    required: true,
+    description: "What it issues",
+  })
+  kind: ProfileKindName;
 
   @ApiProperty({
     type: Number,
@@ -745,6 +865,15 @@ export class Profile extends ProfileSettings {
 /** A new profile: its name, what it is for, and its v1. */
 export class BaseProfile extends ProfileSettings {
   @ApiProperty({
+    ...PROFILE_KIND_ENUM,
+    required: false,
+    description: "What it issues, for good; by default X.509",
+  })
+  @IsOptional()
+  @IsIn([...PROFILE_KIND_VALUES])
+  kind?: ProfileKindName;
+
+  @ApiProperty({
     type: String,
     required: true,
     description: "Its name: lower case, digits and hyphens, e.g. web-tls",
@@ -765,7 +894,7 @@ export class BaseProfile extends ProfileSettings {
  * changed setting makes its next version; a description alone does not.
  */
 export class PartialProfile extends PartialType(
-  OmitType(BaseProfile, ["id"] as const),
+  OmitType(BaseProfile, ["id", "kind"] as const),
 ) {}
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -959,6 +1088,15 @@ export class PreviewProfileRequest {
   @IsOptional()
   @IsBoolean()
   directOnly?: boolean;
+
+  @ApiProperty({
+    ...PROFILE_KIND_ENUM,
+    required: false,
+    description: "What it issues; by default X.509",
+  })
+  @IsOptional()
+  @IsIn([...PROFILE_KIND_VALUES])
+  kind?: ProfileKindName;
 
   @ApiProperty({
     type: () => ProfilePreviewSample,

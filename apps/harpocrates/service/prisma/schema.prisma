@@ -193,15 +193,23 @@ enum KeyAlgorithm {
 
 /// What a certificate may be (ADR 0020, Profiles): a stable slug, whether
 /// it may be chosen, and its versions (ADR 0034).
+/// What a profile issues (ADR 0035): X.509 certificates, or OpenSSH ones.
+enum ProfileKind {
+  x509
+  ssh
+}
+
 model Profile {
-  id            String    @id
+  id            String      @id
+  /// Fixed when it is made; a copy keeps it.
+  kind          ProfileKind @default(x509)
   description   String
   /// Only for leaves a root signs directly, in its ceremonies.
-  directOnly    Boolean   @default(false) @map("direct_only")
+  directOnly    Boolean     @default(false) @map("direct_only")
   /// Deactivated: nothing new chooses it; what was issued renews as before.
-  deactivatedAt DateTime? @map("deactivated_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deactivatedAt DateTime?   @map("deactivated_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
 
   versions     ProfileVersion[]
   enrollments  Enrollment[]
@@ -256,17 +264,21 @@ model ProfileVersion {
   createdAt              DateTime                   @default(now()) @map("created_at")
   updatedAt              DateTime                   @updatedAt @map("updated_at")
 
-  keyUsages         ProfileKeyUsage[]
-  extendedKeyUsages ProfileExtendedKeyUsage[]
-  nameTypes         ProfileNameType[]
-  subjectAttributes ProfileSubjectAttribute[]
-  namePolicies      ProfileNamePolicy[]
-  keyAlgorithms     ProfileKeyAlgorithm[]
-  csrHashes         ProfileCsrHash[]
-  policies          ProfilePolicy[]
-  customExtensions  ProfileCustomExtension[]
-  enrollments       Enrollment[]
-  certificates      Certificate[]
+  keyUsages          ProfileKeyUsage[]
+  extendedKeyUsages  ProfileExtendedKeyUsage[]
+  nameTypes          ProfileNameType[]
+  subjectAttributes  ProfileSubjectAttribute[]
+  namePolicies       ProfileNamePolicy[]
+  keyAlgorithms      ProfileKeyAlgorithm[]
+  csrHashes          ProfileCsrHash[]
+  policies           ProfilePolicy[]
+  customExtensions   ProfileCustomExtension[]
+  /// An SSH version's own settings; none for an X.509 one.
+  ssh                ProfileSshSettings?
+  sshSourceAddresses ProfileSshSourceAddress[]
+  sshExtensions      ProfileSshExtension[]
+  enrollments        Enrollment[]
+  certificates       Certificate[]
 
   @@unique([profileId, version])
   @@map("profile_versions")
@@ -442,6 +454,104 @@ model ProfileCustomExtension {
   @@map("profile_custom_extensions")
 }
 
+// ---- SSH (ADR 0035)
+
+/// A user certificate lets its holder log in as its principals; a host
+/// certificate vouches for a host's names.
+enum SshCertificateType {
+  user
+  host
+}
+
+enum SshCaStatus {
+  /// New certificates come from the newest active generation of a type.
+  active
+  /// Signs nothing more; trusted until its certificates have expired.
+  retired
+}
+
+/// An SSH CA: an online Ed25519 key in the signer that signs one type of
+/// OpenSSH certificate. No chain, no ceremony; rotation is a new generation
+/// beside the old.
+model SshCa {
+  /// `ssh-user-1-g1`.
+  id               String             @id
+  /// `ncfritz.net SSH User CA 1 - G1`.
+  name             String             @unique
+  type             SshCertificateType
+  number           Int
+  generation       Int
+  status           SshCaStatus        @default(active)
+  keyId            String             @unique @map("key_id") @db.Uuid
+  key              Key                @relation(fields: [keyId], references: [id])
+  /// Its key, OpenSSH format: what hosts and clients install.
+  publicKey        String             @map("public_key")
+  /// The longest certificate it signs, in hours.
+  maxValidityHours Int                @map("max_validity_hours")
+  /// Where its KRL is published.
+  krlUrl           String             @map("krl_url")
+  retiredAt        DateTime?          @map("retired_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  profileSettings ProfileSshSettings[]
+
+  @@unique([type, number, generation])
+  @@map("ssh_cas")
+}
+
+/// An SSH version's settings (ADR 0035).
+model ProfileSshSettings {
+  profileVersionId String             @id @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion     @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  certificateType  SshCertificateType @map("certificate_type")
+  /// The CA it is pinned to; unset, the newest active one of its type.
+  sshCaId          String?            @map("ssh_ca_id")
+  sshCa            SshCa?             @relation(fields: [sshCaId], references: [id])
+  validityHours    Int                @map("validity_hours")
+  /// Due for renewal this many hours into its life.
+  renewAtHours     Int                @map("renew_at_hours")
+  /// The force-command critical option: the one command it may run.
+  forceCommand     String?            @map("force_command")
+
+  @@map("profile_ssh_settings")
+}
+
+/// The source-address critical option: where a user certificate is used from.
+model ProfileSshSourceAddress {
+  id               Int            @id @default(autoincrement())
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  value            String
+
+  @@unique([profileVersionId, value])
+  @@map("profile_ssh_source_addresses")
+}
+
+/// An OpenSSH extension a version's user certificates carry (permit-pty, …).
+model ProfileSshExtension {
+  profileVersionId String         @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion @relation(fields: [profileVersionId], references: [id], onDelete: Cascade)
+  extension        String
+
+  @@id([profileVersionId, extension])
+  @@map("profile_ssh_extensions")
+}
+
+/// The principals (Unix user names) an Olympus identity may log in as with
+/// a user certificate: set by an admin (ADR 0035).
+model SshPrincipalMapping {
+  id        Int      @id @default(autoincrement())
+  /// The identity's email, lower case.
+  identity  String
+  principal String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([identity, principal])
+  @@map("ssh_principal_mappings")
+}
+
 // ---- Keys, enrollments, certificates
 
 enum KeyPurpose {
@@ -478,6 +588,7 @@ model Key {
   blockedAt   DateTime?   @map("blocked_at")
 
   issuer        Issuer?
+  sshCa         SshCa?
   enrollment    Enrollment?
   escrowExports EscrowExport[]
 
