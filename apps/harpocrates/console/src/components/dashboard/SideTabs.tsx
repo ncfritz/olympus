@@ -154,28 +154,11 @@ export function AttentionTab({
   );
 }
 
-/** The latest audit events, then what was handled without a person. */
+/** What was handled without a person this week, then the latest audit events. */
 export function ActivityTab({ dashboard }: { dashboard: Dashboard }) {
   const handled = handledRows(dashboard.handled);
   return (
     <Flex vertical gap="large">
-      <Section title="Recent activity" extra={<Link href="/audit">Audit</Link>}>
-        <Timeline
-          className={styles.timeline}
-          items={dashboard.recent.map((event) => ({
-            key: event.sequence,
-            color: eventColor(event),
-            content: (
-              <Flex vertical className={styles.shrink}>
-                <Typography.Text>{describeEvent(event)}</Typography.Text>
-                <Typography.Text type="secondary" className={styles.small}>
-                  {describeActor(event)} · {formatDateTime(event.occurredAt)}
-                </Typography.Text>
-              </Flex>
-            ),
-          }))}
-        />
-      </Section>
       <Section title="Handled without you, this week">
         {handled.length === 0 ? (
           <Typography.Text type="secondary">
@@ -192,6 +175,23 @@ export function ActivityTab({ dashboard }: { dashboard: Dashboard }) {
           </Flex>
         )}
         <Link href="/audit">See them in the audit log</Link>
+      </Section>
+      <Section title="Recent activity" extra={<Link href="/audit">Audit</Link>}>
+        <Timeline
+          className={styles.timeline}
+          items={dashboard.recent.map((event) => ({
+            key: event.sequence,
+            color: eventColor(event),
+            content: (
+              <Flex vertical className={styles.shrink}>
+                <Typography.Text>{describeEvent(event)}</Typography.Text>
+                <Typography.Text type="secondary" className={styles.small}>
+                  {describeActor(event)} · {formatDateTime(event.occurredAt)}
+                </Typography.Text>
+              </Flex>
+            ),
+          }))}
+        />
       </Section>
     </Flex>
   );

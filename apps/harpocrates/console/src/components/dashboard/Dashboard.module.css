@@ -194,9 +194,20 @@
  * The lower half: the tabs, and the side panel beside them, running the
  * window's height below the shell's header and breadcrumbs.
  */
-.lower {
+.lower.lower {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+/*
+ * The dashboard fills the window below the shell's header and breadcrumbs
+ * (92px): the title and counts stay, and beneath them the graphs and tabs
+ * scroll on their own, as does the side panel beside them.
+ */
+.fill {
   height: calc(100vh - 92px);
-  min-height: 560px;
+  min-height: 600px;
 }
 
 /* The tabs' bar keeps off the page's left edge; their content too. */
@@ -213,6 +224,23 @@
 /* The side panel's page is the tabs, which keep their own margin. */
 .lower > :global(.ant-layout-content) {
   padding: 0;
+  container-type: inline-size;
+}
+
+/* Beside the side panel the graphs are narrow: stack them. */
+@container (max-width: 900px) {
+  .graphs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .graphs > .box {
+    border-right: none;
+    border-bottom: 1px solid var(--ant-color-border-secondary);
+  }
+
+  .graphs > .box:last-child {
+    border-bottom: none;
+  }
 }
 
 /* A tab's padded parts: headings, lanes, graphs' text. */
@@ -352,4 +380,24 @@
   border-right: 1px solid var(--ant-color-border-secondary);
   border-bottom: 1px solid var(--ant-color-border-secondary);
   margin-bottom: -1px;
+}
+
+/* Option E's health tiles: a count over its swatch and name. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  padding: 8px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: var(--ant-border-radius);
+  text-align: center;
+}
+
+.tileCount.tileCount {
+  display: block;
+  font-size: 22px;
+  line-height: 1.3;
 }

@@ -105,28 +105,44 @@ export function HealthChart({ health }: { health: Dashboard["health"] }) {
   );
 
   return (
-    <GraphBox title="Certificates">
+    <GraphBox
+      title="Certificates"
+      extra={
+        <Typography.Text type="secondary" className={styles.small}>
+          valid now, by renewal health
+        </Typography.Text>
+      }
+    >
       <Flex gap="middle" align="center">
+        <Flex vertical gap="small" className={styles.legend}>
+          <div className={styles.tiles}>
+            {parts.map((p) => (
+              <Tooltip key={p.key} title={p.note}>
+                <div className={styles.tile}>
+                  <Typography.Text strong className={styles.tileCount}>
+                    {p.count}
+                  </Typography.Text>
+                  <Flex align="center" gap={6} justify="center">
+                    <svg width={10} height={10} aria-hidden>
+                      <rect width={10} height={10} rx={2} fill={p.color} />
+                    </svg>
+                    <Typography.Text className={styles.small}>
+                      {p.label}
+                    </Typography.Text>
+                  </Flex>
+                </div>
+              </Tooltip>
+            ))}
+          </div>
+          <Typography.Text type="secondary" className={styles.small}>
+            Healthy: before its renewal point. Renewing: past it, renewing
+            itself. Needs a person: nothing renews it. Failing: a week or less
+            left.
+          </Typography.Text>
+        </Flex>
         <div className={styles.ring}>
           <HighchartsReact highcharts={Highcharts} options={options} />
         </div>
-        <Flex vertical gap={10} className={styles.legend}>
-          {parts.map((p) => (
-            <Flex key={p.key} align="center" gap="small">
-              <svg width={10} height={10} aria-hidden>
-                <rect width={10} height={10} rx={2} fill={p.color} />
-              </svg>
-              <Tooltip title={p.note} placement="left">
-                <Typography.Text className={styles.grow}>
-                  {p.label}
-                </Typography.Text>
-              </Tooltip>
-              <Typography.Text strong className={styles.count}>
-                {p.count}
-              </Typography.Text>
-            </Flex>
-          ))}
-        </Flex>
       </Flex>
     </GraphBox>
   );

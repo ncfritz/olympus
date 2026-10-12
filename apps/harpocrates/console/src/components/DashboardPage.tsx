@@ -115,7 +115,7 @@ export function DashboardPage() {
   const errors = dashboard.attention.some((a) => a.severity === "error");
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.fill}`}>
       {title}
       <div className={styles.strip}>
         <Count
@@ -144,11 +144,6 @@ export function DashboardPage() {
           note={certificates.expiredNames.join(", ") || undefined}
         />
         <Count title="Profiles" value={counts.profiles} />
-      </div>
-      <div className={styles.graphs}>
-        <ActivityChart days={dashboard.activity} />
-        <HealthChart health={dashboard.health} />
-        <RenewersCard renewers={dashboard.renewers} />
       </div>
       <SideTabPanel
         panelId="harpocrates.dashboard"
@@ -193,6 +188,11 @@ export function DashboardPage() {
           },
         ]}
       >
+        <div className={styles.graphs}>
+          <ActivityChart days={dashboard.activity} />
+          <HealthChart health={dashboard.health} />
+          <RenewersCard renewers={dashboard.renewers} />
+        </div>
         <Tabs
           className={styles.mainTabs}
           items={[
