@@ -26,13 +26,19 @@ type Dashboard = {
     revoked: number;
     revokedThisWeek: number;
   };
-  expiring: {
+  certificateList: {
     certificateId: string;
     name: string;
+    names: string[];
     issuerId: string;
+    profileId?: string;
+    profileVersion?: number;
     notAfter: string;
     renewalDueAt: string;
     renewal: string;
+    renewer: string;
+    renewed: boolean;
+    health: string;
   }[];
   attention: {
     kind: string;
@@ -41,7 +47,15 @@ type Dashboard = {
     subjectId: string;
     title: string;
   }[];
-  crls: { issuerId: string; tier: string; offline: boolean; number?: string }[];
+  authorities: {
+    issuerId: string;
+    tier: string;
+    offline: boolean;
+    number?: string;
+    ocspResponderUntil?: string;
+    ocspInCeremony?: boolean;
+    revoked: number;
+  }[];
   week: { issued: number; renewals: number };
   counts: {
     cas: number;
@@ -173,12 +187,16 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
       renewed: 0,
     });
     // Online CAs first.
-    expect(read.crls[0]).toMatchObject({
+    expect(read.authorities[0]).toMatchObject({
       issuerId: tls,
       offline: false,
       number: expect.any(String),
+      // The scheduler's run issued its OCSP responder.
+      ocspResponderUntil: expect.any(String),
+      ocspInCeremony: false,
+      revoked: 0,
     });
-    expect(read.crls.map((c) => c.issuerId)).toEqual(
+    expect(read.authorities.map((c) => c.issuerId)).toEqual(
       expect.arrayContaining([hierarchy.root.id, hierarchy.intermediate.id]),
     );
     expect(read.ca.auditEvents).toBeGreaterThan(0);
@@ -211,13 +229,19 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
     const certificate = await issue("dash-b.internal.ncfritz.net");
     // internal-tls: 90 days, renewed at 60: due 30 days before expiry.
     const soon = await later(40);
-    const expiring = soon.expiring.find(
+    const expiring = soon.certificateList.find(
       (e) => e.certificateId === certificate.id,
     );
     expect(expiring).toMatchObject({
       name: "dash-b.internal.ncfritz.net",
+      names: ["dash-b.internal.ncfritz.net"],
       issuerId: tls,
+      profileId: "internal-tls",
+      profileVersion: expect.any(Number),
       renewal: "manual",
+      renewer: "person",
+      renewed: false,
+      health: "healthy",
     });
     expect(
       Date.parse(expiring!.notAfter) - Date.parse(expiring!.renewalDueAt),
@@ -228,6 +252,10 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
 
     const due = await later(65);
     expect(due.health.needsPerson).toBeGreaterThanOrEqual(1);
+    expect(
+      due.certificateList.find((e) => e.certificateId === certificate.id)
+        ?.health,
+    ).toBe("needs-person");
     expect(due.certificates.dueWithin30Days).toBeGreaterThanOrEqual(1);
     expect(due.certificates.dueManual).toBe(due.certificates.dueWithin30Days);
     expect(due.attention).toContainEqual(
@@ -251,6 +279,11 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
     expect(gone.certificates.expiredNames).toContain(
       "dash-b.internal.ncfritz.net",
     );
+    // Listed for a year after, as expired.
+    expect(
+      gone.certificateList.find((e) => e.certificateId === certificate.id)
+        ?.health,
+    ).toBe("expired");
   });
 
   it("leaves out a certificate its CA has replaced for the same subject", async () => {
@@ -259,9 +292,12 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
     await new Promise((resolve) => setTimeout(resolve, 1100));
     const second = await issue("dash-c.internal.ncfritz.net");
     const read = await later(40);
-    const ids = read.expiring.map((e) => e.certificateId);
+    const ids = read.certificateList.map((e) => e.certificateId);
     expect(ids).toContain(second.id);
     expect(ids).not.toContain(first.id);
+    expect(
+      read.certificateList.find((e) => e.certificateId === second.id)?.renewed,
+    ).toBe(true);
     // The second is counted as a renewal the day it was issued.
     const today = (await dashboard()).activity.at(-1)!;
     expect(today.renewed).toBe(1);
@@ -276,9 +312,10 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
       .expect(200);
     const read = await dashboard();
     expect(read.certificates).toMatchObject({ revoked: 1, revokedThisWeek: 1 });
-    expect(read.expiring.map((e) => e.certificateId)).not.toContain(
+    expect(read.certificateList.map((e) => e.certificateId)).not.toContain(
       certificate.id,
     );
+    expect(read.authorities.find((a) => a.issuerId === tls)?.revoked).toBe(1);
   });
 
   it("needs a PKI role", async () => {

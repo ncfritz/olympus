@@ -5,6 +5,7 @@ import type {
   AttentionSubjectName,
   RenewalModeName,
   RenewerName,
+  CertificateHealthName,
 } from "../../model/dashboard";
 import { issuingWindowClosesAt } from "../../issuers/issuingWindow";
 import { PrismaService } from "../../store/PrismaService";
@@ -12,6 +13,9 @@ import type { IssuerTier } from "../../store/prisma";
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
+
+/** How far back the expired certificates in the list go. */
+export const EXPIRED_DAYS = 365;
 
 /** How far ahead the expiring certificates look. */
 export const EXPIRING_DAYS = 90;
@@ -48,6 +52,16 @@ export type ExpiringRow = {
   renewer: RenewerName;
 };
 
+export type CertificateRow = ExpiringRow & {
+  names: string[];
+  serial: string;
+  profileVersion?: number;
+  notBefore: Date;
+  issuedAt: Date;
+  renewed: boolean;
+  health: CertificateHealthName;
+};
+
 export type AttentionRow = {
   kind: AttentionKindName;
   severity: AttentionSeverityName;
@@ -65,6 +79,10 @@ export type CrlRow = {
   number?: bigint;
   nextUpdate?: Date;
   publishedAt?: Date;
+  ocspResponderUntil?: Date;
+  ocspInCeremony?: boolean;
+  ocspSoonestLapse?: Date;
+  revoked: number;
 };
 
 export type DashboardRow = {
@@ -95,9 +113,9 @@ export type DashboardRow = {
   };
   renewers: Record<RenewerName, number>;
   activity: { day: string; issued: number; renewed: number; revoked: number }[];
-  expiring: ExpiringRow[];
+  certificateList: CertificateRow[];
   attention: AttentionRow[];
-  crls: CrlRow[];
+  authorities: CrlRow[];
   week: {
     issued: number;
     renewals: number;
@@ -173,7 +191,7 @@ export class DashboardService {
       (
         await this.prisma.certificate.groupBy({
           by: ["issuerId", "subject"],
-          where: { status: "valid", notAfter: { gt: ago(30) } },
+          where: { status: "valid", notAfter: { gt: ago(EXPIRED_DAYS) } },
           _max: { notAfter: true },
         })
       ).map((row) => [
@@ -201,19 +219,24 @@ export class DashboardService {
           where: { status: "valid", notAfter: { gt: now } },
         }),
         this.prisma.certificate.findMany({
-          where: { status: "valid", notAfter: { gt: now } },
+          where: { status: "valid", notAfter: { gt: ago(EXPIRED_DAYS) } },
           select: {
             id: true,
             issuerId: true,
             profileId: true,
             subject: true,
+            serial: true,
+            notBefore: true,
             notAfter: true,
+            createdAt: true,
+            renewsId: true,
             renewedBy: { select: { id: true } },
             deployTargets: { select: { id: true }, take: 1 },
             acmeOrder: { select: { id: true } },
             profileVersion: {
-              select: { validityDays: true, renewAtDays: true },
+              select: { version: true, validityDays: true, renewAtDays: true },
             },
+            enrollment: { select: { names: { select: { value: true } } } },
           },
           orderBy: [{ notAfter: "asc" }, { id: "asc" }],
         }),
@@ -249,7 +272,16 @@ export class DashboardService {
         })
       ).map((event) => event.subjectId),
     );
-    const unreplaced: ExpiringRow[] = current
+    // When each CA first issued for a subject: a later one is a renewal.
+    const firstFor = new Map<string, number>();
+    for (const row of current) {
+      const key = `${row.issuerId}\n${row.subject}`;
+      firstFor.set(
+        key,
+        Math.min(firstFor.get(key) ?? Infinity, row.createdAt.getTime()),
+      );
+    }
+    const listed: CertificateRow[] = current
       .filter((row) => !replaced(row))
       .map((row) => {
         const version = row.profileVersion;
@@ -263,18 +295,42 @@ export class DashboardService {
             : overMtls.has(row.id)
               ? "mtls"
               : "person";
+        const renewal: RenewalModeName =
+          renewer === "person" ? "manual" : "automatic";
+        const renewalDueAt = new Date(row.notAfter.getTime() - dueDays * DAY);
+        const health: CertificateHealthName =
+          row.notAfter <= now
+            ? "expired"
+            : renewalDueAt > now
+              ? "healthy"
+              : renewal === "manual"
+                ? "needs-person"
+                : row.notAfter.getTime() - now.getTime() <= URGENT_DAYS * DAY
+                  ? "failing"
+                  : "renewing";
         return {
           certificateId: row.id,
           name: nameOf(row.subject),
+          names: row.enrollment?.names.map((n) => n.value) ?? [],
           issuerId: row.issuerId,
           profileId: row.profileId ?? undefined,
+          profileVersion: version?.version,
+          serial: row.serial,
+          notBefore: row.notBefore,
           notAfter: row.notAfter,
-          renewalDueAt: new Date(row.notAfter.getTime() - dueDays * DAY),
-          renewal: renewer === "person" ? "manual" : "automatic",
+          issuedAt: row.createdAt,
+          renewed:
+            row.renewsId !== null ||
+            (firstFor.get(`${row.issuerId}\n${row.subject}`) ?? Infinity) <
+              row.createdAt.getTime(),
+          renewalDueAt,
+          renewal,
           renewer,
+          health,
         };
       });
-    const expiring = unreplaced.filter(
+    const unreplaced = listed.filter((row) => row.health !== "expired");
+    const expiring: ExpiringRow[] = unreplaced.filter(
       (row) => row.notAfter <= ahead(EXPIRING_DAYS),
     );
     const health = { healthy: 0, renewing: 0, needsPerson: 0, failing: 0 };
@@ -286,10 +342,9 @@ export class DashboardService {
     };
     for (const row of unreplaced) {
       renewers[row.renewer] += 1;
-      if (row.renewalDueAt > now) health.healthy += 1;
-      else if (row.renewal === "manual") health.needsPerson += 1;
-      else if (row.notAfter.getTime() - now.getTime() <= URGENT_DAYS * DAY)
-        health.failing += 1;
+      if (row.health === "healthy") health.healthy += 1;
+      else if (row.health === "needs-person") health.needsPerson += 1;
+      else if (row.health === "failing") health.failing += 1;
       else health.renewing += 1;
     }
     const due30 = expiring.filter((e) => e.notAfter <= ahead(30));
@@ -306,7 +361,7 @@ export class DashboardService {
       counts,
       activity,
     ] = await Promise.all([
-      this.crls(),
+      this.crls(now),
       this.casNeedingAPerson(now),
       this.week(now),
       this.ca(now),
@@ -360,15 +415,19 @@ export class DashboardService {
       health,
       renewers,
       activity,
-      expiring,
+      certificateList: listed,
       attention,
-      crls: crls.map((crl) => ({
+      authorities: crls.map((crl) => ({
         issuerId: crl.issuerId,
         tier: crl.tier,
         offline: crl.offline,
         number: crl.number,
         nextUpdate: crl.nextUpdate,
         publishedAt: crl.publishedAt,
+        ocspResponderUntil: crl.ocspResponderUntil,
+        ocspInCeremony: crl.ocspInCeremony,
+        ocspSoonestLapse: crl.ocspSoonestLapse,
+        revoked: crl.revoked,
       })),
       week,
       ca,
@@ -672,9 +731,9 @@ export class DashboardService {
    * Each active CA's newest list, published or waiting, online CAs first;
    * `waitingSince` is for the attention items only.
    */
-  private async crls(): Promise<
-    (CrlRow & { name: string; waitingSince?: Date })[]
-  > {
+  private async crls(
+    now: Date,
+  ): Promise<(CrlRow & { name: string; waitingSince?: Date })[]> {
     const issuers = await this.prisma.issuer.findMany({
       where: {
         status: { in: ["active", "closed"] },
@@ -690,9 +749,30 @@ export class DashboardService {
           take: 1,
           select: { number: true, createdAt: true, publishedAt: true },
         },
+        ocspResponders: {
+          where: {
+            status: "active",
+            notBefore: { lte: now },
+            notAfter: { gt: now },
+          },
+          orderBy: { notAfter: "desc" },
+          take: 1,
+          select: { notAfter: true, ceremonyId: true },
+        },
       },
       orderBy: { id: "asc" },
     });
+    const [soonest, revoked] = await Promise.all([
+      this.prisma.ocspResponse.groupBy({
+        by: ["issuerId"],
+        _min: { nextUpdate: true },
+      }),
+      this.prisma.certificate.groupBy({
+        by: ["issuerId"],
+        where: { status: "revoked", notAfter: { gt: now } },
+        _count: { _all: true },
+      }),
+    ]);
     const published = await Promise.all(
       issuers.map((issuer) =>
         this.prisma.crl.findFirst({
@@ -715,6 +795,15 @@ export class DashboardService {
           publishedAt: newest?.publishedAt ?? undefined,
           waitingSince:
             newest && !newest.publishedAt ? newest.createdAt : undefined,
+          ocspResponderUntil: issuer.ocspResponders[0]?.notAfter,
+          ocspInCeremony: issuer.ocspResponders[0]
+            ? issuer.ocspResponders[0].ceremonyId !== null
+            : undefined,
+          ocspSoonestLapse:
+            soonest.find((row) => row.issuerId === issuer.id)?._min
+              .nextUpdate ?? undefined,
+          revoked:
+            revoked.find((row) => row.issuerId === issuer.id)?._count._all ?? 0,
         };
       })
       .sort((a, b) => Number(a.offline) - Number(b.offline));

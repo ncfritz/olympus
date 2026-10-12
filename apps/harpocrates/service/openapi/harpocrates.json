@@ -12207,7 +12207,18 @@
           "person"
         ]
       },
-      "ExpiringCertificate": {
+      "CertificateHealth": {
+        "type": "string",
+        "description": "Whether its renewal is in hand",
+        "enum": [
+          "healthy",
+          "renewing",
+          "needs-person",
+          "failing",
+          "expired"
+        ]
+      },
+      "DashboardCertificate": {
         "type": "object",
         "properties": {
           "certificateId": {
@@ -12218,6 +12229,13 @@
             "type": "string",
             "description": "Its common name, or its subject when it has none"
           },
+          "names": {
+            "description": "Its alternative names' values",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "issuerId": {
             "type": "string",
             "description": "The CA that issued it"
@@ -12226,9 +12244,29 @@
             "type": "string",
             "description": "The profile it was issued under"
           },
+          "profileVersion": {
+            "type": "number",
+            "description": "The profile's version it was issued under"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its serial, hex"
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it becomes valid"
+          },
           "notAfter": {
             "type": "string",
             "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "issuedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was issued"
+          },
+          "renewed": {
+            "type": "boolean",
+            "description": "Whether it was issued as a renewal, or for a subject its CA had issued for before"
           },
           "renewalDueAt": {
             "type": "string",
@@ -12249,16 +12287,30 @@
                 "$ref": "#/components/schemas/Renewer"
               }
             ]
+          },
+          "health": {
+            "description": "Whether its renewal is in hand",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateHealth"
+              }
+            ]
           }
         },
         "required": [
           "certificateId",
           "name",
+          "names",
           "issuerId",
+          "serial",
+          "notBefore",
           "notAfter",
+          "issuedAt",
+          "renewed",
           "renewalDueAt",
           "renewal",
-          "renewer"
+          "renewer",
+          "health"
         ]
       },
       "AttentionKind": {
@@ -12347,7 +12399,7 @@
           "detail"
         ]
       },
-      "DashboardCrl": {
+      "DashboardAuthority": {
         "type": "object",
         "properties": {
           "issuerId": {
@@ -12377,12 +12429,29 @@
           "publishedAt": {
             "type": "string",
             "description": "An ISO-8601 formatted string: when its newest list was published; none while it waits"
+          },
+          "ocspResponderUntil": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its OCSP responder in service lapses; none without one"
+          },
+          "ocspInCeremony": {
+            "type": "boolean",
+            "description": "Whether that responder was issued in a ceremony"
+          },
+          "ocspSoonestLapse": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its soonest stored OCSP response lapses"
+          },
+          "revoked": {
+            "type": "number",
+            "description": "Its certificates revoked and not yet expired"
           }
         },
         "required": [
           "issuerId",
           "tier",
-          "offline"
+          "offline",
+          "revoked"
         ]
       },
       "DashboardWeek": {
@@ -12613,11 +12682,11 @@
               "$ref": "#/components/schemas/ActivityDay"
             }
           },
-          "expiring": {
-            "description": "Valid certificates expiring within 90 days that nothing has replaced yet, soonest first",
+          "certificateList": {
+            "description": "Certificates nothing has replaced, valid or expired within the last year, soonest to expire first",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ExpiringCertificate"
+              "$ref": "#/components/schemas/DashboardCertificate"
             }
           },
           "attention": {
@@ -12627,11 +12696,11 @@
               "$ref": "#/components/schemas/AttentionItem"
             }
           },
-          "crls": {
-            "description": "Each active CA's newest revocation list, online CAs first",
+          "authorities": {
+            "description": "Each CA in service: its newest revocation list and its OCSP, online CAs first",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/DashboardCrl"
+              "$ref": "#/components/schemas/DashboardAuthority"
             }
           },
           "week": {
@@ -12680,9 +12749,9 @@
           "health",
           "renewers",
           "activity",
-          "expiring",
+          "certificateList",
           "attention",
-          "crls",
+          "authorities",
           "week",
           "ca",
           "ocsp",

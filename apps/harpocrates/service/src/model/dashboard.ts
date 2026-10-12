@@ -32,6 +32,24 @@ export const RENEWER_ENUM = {
   },
 };
 
+export const CERTIFICATE_HEALTH_VALUES = [
+  "healthy",
+  "renewing",
+  "needs-person",
+  "failing",
+  "expired",
+] as const;
+export type CertificateHealthName = (typeof CERTIFICATE_HEALTH_VALUES)[number];
+
+export const CERTIFICATE_HEALTH_ENUM = {
+  enum: [...CERTIFICATE_HEALTH_VALUES],
+  enumName: "CertificateHealth",
+  enumSchema: {
+    description:
+      "healthy: not yet at its renewal point; renewing: past it, something renews it, more than a week left; failing: the same with a week or less; needs-person: past it, nothing renews it; expired: expired without being replaced",
+  },
+};
+
 export const ATTENTION_KIND_VALUES = [
   "certificate-due",
   "renewal-overdue",
@@ -146,11 +164,11 @@ export class DashboardCertificates {
 }
 
 /**
- * A certificate expiring within 90 days that nothing has replaced yet: no
- * renewal of it, and no later certificate from its CA for its subject (an
- * ACME client's next order).
+ * A certificate nothing has replaced (no renewal of it, and no later one
+ * from its CA for its subject, as an ACME client's next order is): valid,
+ * or expired within the last year.
  */
-export class ExpiringCertificate {
+export class DashboardCertificate {
   @ApiProperty({ type: String, required: true, description: "Its ID" })
   certificateId: string;
 
@@ -160,6 +178,14 @@ export class ExpiringCertificate {
     description: "Its common name, or its subject when it has none",
   })
   name: string;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Its alternative names' values",
+  })
+  names: string[];
 
   @ApiProperty({
     type: String,
@@ -175,11 +201,45 @@ export class ExpiringCertificate {
   })
   profileId?: string;
 
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "The profile's version it was issued under",
+  })
+  profileVersion?: number;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its serial, hex",
+  })
+  serial: string;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it becomes valid",
+  })
+  notBefore: Moment;
+
   @ApiTimestamp({
     required: true,
     description: "An ISO-8601 formatted string: when it expires",
   })
   notAfter: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it was issued",
+  })
+  issuedAt: Moment;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description:
+      "Whether it was issued as a renewal, or for a subject its CA had issued for before",
+  })
+  renewed: boolean;
 
   @ApiTimestamp({
     required: true,
@@ -201,6 +261,13 @@ export class ExpiringCertificate {
     description: "Who renews it",
   })
   renewer: RenewerName;
+
+  @ApiProperty({
+    ...CERTIFICATE_HEALTH_ENUM,
+    required: true,
+    description: "Whether its renewal is in hand",
+  })
+  health: CertificateHealthName;
 }
 
 /** The headline counts beyond the certificates'. */
@@ -363,8 +430,8 @@ export class AttentionItem {
   dueAt?: Moment;
 }
 
-/** A CA's newest revocation list. */
-export class DashboardCrl {
+/** A CA in service: its newest revocation list and its OCSP. */
+export class DashboardAuthority {
   @ApiProperty({ type: String, required: true, description: "The CA" })
   issuerId: string;
 
@@ -403,6 +470,34 @@ export class DashboardCrl {
       "An ISO-8601 formatted string: when its newest list was published; none while it waits",
   })
   publishedAt?: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when its OCSP responder in service lapses; none without one",
+  })
+  ocspResponderUntil?: Moment;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description: "Whether that responder was issued in a ceremony",
+  })
+  ocspInCeremony?: boolean;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when its soonest stored OCSP response lapses",
+  })
+  ocspSoonestLapse?: Moment;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its certificates revoked and not yet expired",
+  })
+  revoked: number;
 }
 
 /** What the CA did in the last 7 days. */
@@ -653,13 +748,13 @@ export class Dashboard {
   activity: ActivityDay[];
 
   @ApiProperty({
-    type: () => ExpiringCertificate,
+    type: () => DashboardCertificate,
     isArray: true,
     required: true,
     description:
-      "Valid certificates expiring within 90 days that nothing has replaced yet, soonest first",
+      "Certificates nothing has replaced, valid or expired within the last year, soonest to expire first",
   })
-  expiring: ExpiringCertificate[];
+  certificateList: DashboardCertificate[];
 
   @ApiProperty({
     type: () => AttentionItem,
@@ -670,12 +765,13 @@ export class Dashboard {
   attention: AttentionItem[];
 
   @ApiProperty({
-    type: () => DashboardCrl,
+    type: () => DashboardAuthority,
     isArray: true,
     required: true,
-    description: "Each active CA's newest revocation list, online CAs first",
+    description:
+      "Each CA in service: its newest revocation list and its OCSP, online CAs first",
   })
-  crls: DashboardCrl[];
+  authorities: DashboardAuthority[];
 
   @ApiProperty({
     type: () => DashboardWeek,
