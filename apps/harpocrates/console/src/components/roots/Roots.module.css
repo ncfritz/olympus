@@ -1,0 +1,108 @@
+/*
+ * The roots page: its contents run to the shell's edges; what is in them
+ * keeps the page's 24px margin (docs/conventions/ux.md, Page edges).
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 16px 24px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+/* The tabs' bar keeps off the page's left edge; their content does not. */
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+/* A CA's mark: its tier's colour (--tier), as a square tile. */
+.icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ant-border-radius);
+  color: var(--tier);
+  background: color-mix(in srgb, var(--tier) 14%, transparent);
+}
+
+.tags :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.shrink {
+  min-width: 0;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* A bar across the page: the chains, the lists, OCSP. */
+.bar.bar {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.chains {
+  width: 220px;
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.search.search {
+  width: 280px;
+}
+
+.filter.filter {
+  width: 160px;
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+/* A group's heading across the page: the CAs outside the roots. */
+.section {
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-fill-quaternary);
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-secondary);
+}
+
+.padded.padded {
+  padding: 16px 24px;
+}
+
+.fitTag {
+  margin-inline-end: 0;
+}

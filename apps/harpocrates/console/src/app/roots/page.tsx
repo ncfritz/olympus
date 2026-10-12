@@ -1,10 +1,11 @@
-import { RootsPage } from "@/components/RootsPage";
-import { PaddedPage } from "@/components/PaddedPage";
+import { Suspense } from "react";
+import { RootsPage } from "@/components/roots/RootsPage";
 
+// It reads its tab from its query (useSearchParams): a Suspense boundary.
 export default function Roots() {
   return (
-    <PaddedPage>
+    <Suspense>
       <RootsPage />
-    </PaddedPage>
+    </Suspense>
   );
 }
