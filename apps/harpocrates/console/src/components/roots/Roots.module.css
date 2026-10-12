@@ -449,3 +449,12 @@
 .todaySwatch {
   height: 12px;
 }
+
+/* The import's forms: their inputs fill their column; one alone, a column. */
+.fill.fill {
+  width: 100%;
+}
+
+.narrow.narrow {
+  max-width: 720px;
+}

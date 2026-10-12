@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
+import { ImportOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Empty, Flex, Skeleton, Tabs, Typography } from "antd";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -66,11 +66,18 @@ export function RootsPage() {
           of another.
         </Typography.Text>
       </div>
-      <Link href="/roots/new">
-        <Button type="primary" icon={<PlusOutlined />} disabled={!isAdmin}>
-          New root
-        </Button>
-      </Link>
+      <Flex gap="small">
+        <Link href="/roots/import">
+          <Button icon={<ImportOutlined />} disabled={!isAdmin}>
+            Import
+          </Button>
+        </Link>
+        <Link href="/roots/new">
+          <Button type="primary" icon={<PlusOutlined />} disabled={!isAdmin}>
+            New root
+          </Button>
+        </Link>
+      </Flex>
     </Flex>
   );
 

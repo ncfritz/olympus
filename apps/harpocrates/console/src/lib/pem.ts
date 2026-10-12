@@ -146,3 +146,69 @@ export const summarise = (value: string, kind: PemKind): PemSummary => {
     return { lines: [], problem: "This could not be read" };
   }
 };
+
+/** A CA's certificate as the import form fills itself from it. */
+export type CaCertificate = {
+  commonName: string;
+  issuerName: string;
+  selfSigned: boolean;
+  ca: boolean;
+  pathLength?: number;
+  extendedKeyUsages: string[];
+};
+
+/** A CA's certificate, read; undefined when it is not one certificate. */
+export const readCaCertificate = (pem: string): CaCertificate | undefined => {
+  const blocks = blocksOf(pem).filter((b) => b.label === "CERTIFICATE");
+  if (blocks.length !== 1) return undefined;
+  try {
+    const c = new x509.X509Certificate(blocks[0].pem);
+    const constraints = c.getExtension(x509.BasicConstraintsExtension);
+    return {
+      commonName: commonName(c.subject.replace(/, /g, ",")),
+      issuerName: commonName(c.issuer.replace(/, /g, ",")),
+      selfSigned: c.subject === c.issuer,
+      ca: Boolean(constraints?.ca),
+      pathLength: constraints?.pathLength,
+      extendedKeyUsages:
+        c
+          .getExtension(x509.ExtendedKeyUsageExtension)
+          ?.usages.map((u) => String(u)) ?? [],
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+/** The issuer's name a list carries, read; undefined when it is not one. */
+export const readCrlIssuer = (pem: string): string | undefined => {
+  const block = blocksOf(pem).find((b) => b.label === "X509 CRL");
+  if (!block) return undefined;
+  try {
+    return commonName(new x509.X509Crl(block.pem).issuer.replace(/, /g, ","));
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * A slug for a CA from its name, as ids are written: "XCA Issuing CA 1"
+ * becomes "xca-issuing-ca-1".
+ */
+export const slugOf = (name: string): string => {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return (/^[a-z]/.test(slug) ? slug : `ca-${slug}`).slice(0, 63);
+};
+
+/** A CA's number and generation from its name: "CA 2 - G1" is 2 and 1. */
+export const numberingOf = (
+  name: string,
+): { number?: number; generation?: number } => {
+  const match = /(\d+)\s*-\s*G(\d+)\s*$/i.exec(name);
+  if (match) return { number: Number(match[1]), generation: Number(match[2]) };
+  const number = /(\d+)\s*$/.exec(name);
+  return number ? { number: Number(number[1]), generation: 1 } : {};
+};
