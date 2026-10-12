@@ -14,6 +14,7 @@ import type {
   FullIssuer,
   IssuedCount,
   Issuer,
+  IssuerOcsp,
   PkiRole,
   Profile,
   ProfileVersion,
@@ -39,6 +40,7 @@ export const KEYS = {
   crls: (issuerId: string) => `/issuer/${issuerId}/crls`,
   issued: (issuerId: string) => `/issuer/${issuerId}/issued`,
   issuerCeremonies: (issuerId: string) => `/issuer/${issuerId}/ceremonies`,
+  issuerOcsp: (issuerId: string) => `/issuer/${issuerId}/ocsp-responders`,
   profiles: "/profiles",
   profileVersions: (id: string) => `/profile/${id}/versions`,
   certificates: (filter: CertificateFilter) =>
@@ -143,6 +145,25 @@ export const useIssuerCrls = (issuerId: string | undefined) =>
           params: { path: { issuerId: issuerId! } },
         }),
       ).crls,
+  );
+
+/**
+ * A CA's OCSP responders, newest first, and how fresh its responses are
+ * (ADR 0036). Polled: the scheduler signs and renews unasked.
+ */
+export const useIssuerOcsp = (
+  issuerId: string | undefined,
+  refreshInterval = 60_000,
+) =>
+  useSWR<IssuerOcsp>(
+    issuerId ? KEYS.issuerOcsp(issuerId) : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/issuer/{issuerId}/ocsp-responders", {
+          params: { path: { issuerId: issuerId! } },
+        }),
+      ),
+    { refreshInterval },
   );
 
 /** An offline CA's ceremonies, newest first (admins only). */

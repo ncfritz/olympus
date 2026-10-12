@@ -58,6 +58,8 @@ import { CeremonyList } from "./CeremonyList";
 import { ErrorAlert } from "./ErrorAlert";
 import { IssuedChart } from "./IssuedChart";
 import { IssuerAltNamesModal } from "./IssuerAltNamesModal";
+import { IssuerOcspPanel } from "./IssuerOcspPanel";
+import { OcspUrlModal } from "./OcspUrlModal";
 import { OpenCeremonyAlert } from "./OpenCeremonyAlert";
 import { OpenCeremonyModal } from "./OpenCeremonyModal";
 import styles from "./IssuerPage.module.css";
@@ -141,6 +143,7 @@ export function IssuerPage() {
   const { mutate } = useSWRConfig();
   const [error, setError] = useState<unknown>();
   const [editingNames, setEditingNames] = useState(false);
+  const [editingOcspUrl, setEditingOcspUrl] = useState(false);
 
   if (!issuerId) return <Alert type="error" title="Which CA?" />;
   if (notFound) return <ErrorAlert error={notFound} />;
@@ -257,6 +260,24 @@ export function IssuerPage() {
           <Flex vertical>
             <Mono>{issuer.caIssuersUrl}</Mono>
             <Mono>{issuer.crlUrl}</Mono>
+          </Flex>
+        ),
+      },
+      {
+        key: "ocsp",
+        label: "OCSP",
+        children: (
+          <Flex gap="small" align="baseline" wrap>
+            <Mono>{issuer.ocspUrl}</Mono>
+            {isAdmin && !discarded && (
+              <Button
+                type="link"
+                size="small"
+                onClick={() => setEditingOcspUrl(true)}
+              >
+                Edit
+              </Button>
+            )}
           </Flex>
         ),
       },
@@ -452,6 +473,15 @@ export function IssuerPage() {
                   },
                 ]
               : []),
+            ...(issuer.certificate && !discarded
+              ? [
+                  {
+                    key: "ocsp",
+                    label: "OCSP",
+                    children: <IssuerOcspPanel issuer={issuer} />,
+                  },
+                ]
+              : []),
             {
               key: "crls",
               label: "Revocation lists",
@@ -500,6 +530,11 @@ export function IssuerPage() {
         issuer={issuer}
         open={editingNames}
         onClose={() => setEditingNames(false)}
+      />
+      <OcspUrlModal
+        issuer={issuer}
+        open={editingOcspUrl}
+        onClose={() => setEditingOcspUrl(false)}
       />
     </SideTabPanel>
   );

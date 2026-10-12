@@ -24,12 +24,13 @@ import { SIGNS_LABEL, signsOf } from "@/lib/signs";
 import { commonName } from "@/lib/tree";
 import { CeremonyCaPanel } from "./CeremonyCaPanel";
 import { CeremonyLeafPanel } from "./CeremonyLeafPanel";
+import { CeremonyOcspPanel } from "./CeremonyOcspPanel";
 import { ErrorAlert } from "./ErrorAlert";
 
 /**
- * An open ceremony (ADR 0020, 0032): what its CA signs, offered by its
- * shape; its revocation list; and closing it, which the signer would do
- * on its own after its timeout.
+ * An open ceremony (ADR 0020, 0032, 0036): what its CA signs, offered by
+ * its shape; its revocation list and OCSP responder; and closing it, which
+ * the signer would do on its own after its timeout.
  */
 export function CeremonyPage() {
   const ceremonyId = useSearchParams().get("id") ?? undefined;
@@ -188,6 +189,16 @@ export function CeremonyPage() {
                       </Descriptions>
                     )}
                   </Flex>
+                ),
+              },
+              {
+                key: "ocsp",
+                label: "OCSP responder",
+                children: (
+                  <CeremonyOcspPanel
+                    ceremonyId={ceremonyId}
+                    issuerId={issuer.id}
+                  />
                 ),
               },
             ]}

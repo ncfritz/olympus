@@ -58,3 +58,6 @@ export type SshExtension = Schemas["SshExtension"];
 export type SshProfileSettings = Schemas["SshProfileSettings"];
 export type SshPrincipalMapping = Schemas["SshPrincipalMapping"];
 export type MySsh = Schemas["DescribeMySshResponse"];
+export type OcspResponder = Schemas["OcspResponder"];
+export type OcspResponsesSummary = Schemas["OcspResponsesSummary"];
+export type IssuerOcsp = Schemas["ListIssuerOcspRespondersResponse"];

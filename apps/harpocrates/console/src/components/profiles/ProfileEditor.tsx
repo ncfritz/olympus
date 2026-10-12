@@ -3,6 +3,7 @@
 import { DeleteOutlined, EyeOutlined, PlusOutlined } from "@ant-design/icons";
 import { SideTabPanel } from "@ncfritz/olympus-console";
 import {
+  Alert,
   AutoComplete,
   Button,
   Card,
@@ -24,7 +25,13 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
-import { KEYS, useIssuers, useProfiles, useSshCas } from "@/lib/api/queries";
+import {
+  KEYS,
+  useIssuerOcsp,
+  useIssuers,
+  useProfiles,
+  useSshCas,
+} from "@/lib/api/queries";
 import type { ProfileKind, SshCertificateType } from "@/lib/api/types";
 import {
   choicesOf,
@@ -46,6 +53,7 @@ import {
   toForm,
   USAGE_STATES,
 } from "@/lib/profileSettings";
+import { currentResponder } from "@/lib/ocsp";
 import { NEW_SSH_SETTINGS, SSH_EXTENSIONS, SSH_TYPES } from "@/lib/ssh";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
 import { ErrorAlert } from "../ErrorAlert";
@@ -172,6 +180,14 @@ export function ProfileEditor() {
     form,
   );
   const { data: sshCas } = useSshCas();
+  // Its CA's OCSP, while its certificates would carry the URL: the service
+  // refuses to issue them with no responder in service (ADR 0036).
+  const { data: ocsp } = useIssuerOcsp(
+    kind === "x509" && settings.includeOcsp
+      ? (settings.issuerId ?? undefined)
+      : undefined,
+  );
+  const noResponder = Boolean(ocsp && !currentResponder(ocsp.responders));
   const issuing = (issuers ?? []).filter(
     (i) => i.tier === "issuing" && i.status === "active",
   );
@@ -540,6 +556,14 @@ export function ProfileEditor() {
             <Switch />
           </Setting>
         </Flex>
+        {noResponder && (
+          <Alert
+            type="warning"
+            showIcon
+            title="Its CA has no OCSP responder in service"
+            description="Certificates that carry the OCSP URL are refused until it has one: an online CA's is issued by the service on its next run, an offline CA's in one of its ceremonies."
+          />
+        )}
         <Rows
           setting="policies"
           add={{ label: "Add a policy", value: {} }}
