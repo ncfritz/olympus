@@ -47,6 +47,9 @@ export class PkiGaugeService implements OnModuleInit {
       "harpocrates_deployment_pending_seconds",
       "harpocrates_deploy_target_checked_timestamp_seconds",
       "harpocrates_deploy_target_served_expiry_timestamp_seconds",
+      "harpocrates_ocsp_next_update_timestamp_seconds",
+      "harpocrates_ocsp_responder_expiry_timestamp_seconds",
+      "harpocrates_ocsp_responder_missing",
     ]) {
       register.removeSingleMetric(name);
     }
@@ -311,6 +314,114 @@ export class PkiGaugeService implements OnModuleInit {
           if (served) {
             this.set({ target: row.name }, served.getTime() / 1000);
           }
+        }
+      },
+    });
+
+    // OCSP (ADR 0036). Times, like the lists', so the alerts still fire
+    // from the last value scraped while the service is down.
+    new Gauge({
+      name: "harpocrates_ocsp_next_update_timestamp_seconds",
+      help: "When each CA's soonest-lapsing OCSP response lapses, as a Unix time",
+      labelNames: ["issuer", "tier"],
+      async collect() {
+        this.reset();
+        const [soonest, issuers] = await Promise.all([
+          quietly(async () =>
+            prisma.ocspResponse.groupBy({
+              by: ["issuerId"],
+              _min: { nextUpdate: true },
+            }),
+          ),
+          quietly(() =>
+            prisma.issuer.findMany({ select: { id: true, tier: true } }),
+          ),
+        ]);
+        const tiers = new Map(issuers.map((i) => [i.id, i.tier]));
+        for (const row of soonest) {
+          const tier = tiers.get(row.issuerId);
+          if (!row._min.nextUpdate || !tier) continue;
+          this.set(
+            { issuer: row.issuerId, tier },
+            Math.floor(row._min.nextUpdate.getTime() / 1000),
+          );
+        }
+      },
+    });
+
+    // Its newest active responder's, lapsed or not: one that lapses still
+    // shows, and alerts, until another takes over.
+    new Gauge({
+      name: "harpocrates_ocsp_responder_expiry_timestamp_seconds",
+      help: "When each CA's OCSP responder lapses, as a Unix time",
+      labelNames: ["issuer", "tier"],
+      async collect() {
+        this.reset();
+        const rows = await quietly(() =>
+          prisma.issuer.findMany({
+            where: {
+              discardedAt: null,
+              ocspResponders: { some: { status: "active" } },
+            },
+            select: {
+              id: true,
+              tier: true,
+              ocspResponders: {
+                where: { status: "active" },
+                orderBy: { notAfter: "desc" },
+                take: 1,
+                select: { notAfter: true },
+              },
+            },
+          }),
+        );
+        for (const row of rows) {
+          const newest = row.ocspResponders[0];
+          if (!newest) continue;
+          this.set(
+            { issuer: row.id, tier: row.tier },
+            Math.floor(newest.notAfter.getTime() / 1000),
+          );
+        }
+      },
+    });
+
+    new Gauge({
+      name: "harpocrates_ocsp_responder_missing",
+      help: "1 for each active CA with no OCSP responder in service, 0 for one with",
+      labelNames: ["issuer", "tier"],
+      async collect() {
+        this.reset();
+        const now = new Date();
+        const rows = await quietly(() =>
+          prisma.issuer.findMany({
+            where: {
+              status: "active",
+              discardedAt: null,
+              certificate: { not: null },
+            },
+            select: {
+              id: true,
+              tier: true,
+              _count: {
+                select: {
+                  ocspResponders: {
+                    where: {
+                      status: "active",
+                      notBefore: { lte: now },
+                      notAfter: { gt: now },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+        );
+        for (const row of rows) {
+          this.set(
+            { issuer: row.id, tier: row.tier },
+            row._count.ocspResponders > 0 ? 0 : 1,
+          );
         }
       },
     });

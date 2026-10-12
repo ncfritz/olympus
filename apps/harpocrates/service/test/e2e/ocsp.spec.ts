@@ -668,6 +668,52 @@ describe.skipIf(!E2E_DATABASE_URL)("ocsp", () => {
     });
   });
 
+  it("exposes the gauges and counters the alerts are written against", async () => {
+    const { text } = await request(server()).get("/metrics").expect(200);
+    // The registry adds its own labels (app, environment) after these.
+    const value = (name: string, labels: string) =>
+      Number(
+        new RegExp(`${name}\\{${labels}[^}]*\\} (\\S+)\\n`).exec(text)?.[1],
+      );
+    const now = Date.now() / 1000;
+    const soonest = value(
+      "harpocrates_ocsp_next_update_timestamp_seconds",
+      `issuer="${tls}",tier="issuing"`,
+    );
+    expect(soonest).toBeGreaterThan(now + 3 * 86400);
+    const responder = value(
+      "harpocrates_ocsp_responder_expiry_timestamp_seconds",
+      `issuer="${tls}",tier="issuing"`,
+    );
+    expect(responder).toBeGreaterThan(now + 20 * 86400);
+    expect(
+      value(
+        "harpocrates_ocsp_responder_missing",
+        `issuer="${tls}",tier="issuing"`,
+      ),
+    ).toBe(0);
+    // The root never had a responder issued here.
+    expect(
+      value(
+        "harpocrates_ocsp_responder_missing",
+        `issuer="${hierarchy.root.id}",tier="root"`,
+      ),
+    ).toBe(1);
+    expect(
+      value("harpocrates_ocsp_requests_total", 'result="good"'),
+    ).toBeGreaterThan(0);
+    expect(
+      value("harpocrates_ocsp_responses_signed_total", `issuer="${tls}"`),
+    ).toBeGreaterThan(0);
+    // The sealed run counted, as sealed.
+    expect(
+      value(
+        "harpocrates_ocsp_refresh_failures_total",
+        `issuer="${tls}",reason="sealed"`,
+      ),
+    ).toBeGreaterThan(0);
+  });
+
   it("answers 404 for a CA it does not know", async () => {
     await request(server())
       .get("/v1/issuer/no-such-ca/ocsp-responders")

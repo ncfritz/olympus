@@ -427,15 +427,21 @@ taken.
 | `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                                                |
 | `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                                                 |
 | `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`                            |
+| `harpocrates_ocsp_requests_total{result}`                           | OCSP requests answered: `good`, `revoked`, `unauthorized`, `malformed`, `tryLater`                      |
+| `harpocrates_ocsp_responses_signed_total{issuer}`                   | OCSP responses signed ahead                                                                             |
+| `harpocrates_ocsp_refresh_failures_total{issuer,reason}`            | Scheduled OCSP signing that failed: `sealed`, `refused`, `error`                                        |
+| `harpocrates_ocsp_next_update_timestamp_seconds{issuer,tier}`       | When each CA's soonest-lapsing OCSP response lapses (Unix time)                                         |
+| `harpocrates_ocsp_responder_expiry_timestamp_seconds{issuer,tier}`  | When each CA's OCSP responder lapses (Unix time)                                                        |
+| `harpocrates_ocsp_responder_missing{issuer,tier}`                   | 1 for an active CA with no OCSP responder in service                                                    |
 | `harpocrates_issuing_window_days{issuer}`                           | Days until each active CA stops issuing                                                                 |
 | `harpocrates_profile_renewal_due_days{profile}`                     | Days before expiry a profile's certificates are due for renewal                                         |
 | `harpocrates_signer_sealed`                                         | 1 when the signer is sealed or unreachable                                                              |
 | `certificate_expiry_days{issuer,profile,subject,serial,renewal}`    | Days left on every valid certificate; `renewal`: `manual`, `automatic` (a deploy target's) or `renewed` |
 
 The gauges are read at scrape time; a scrape never fails because the
-database or the signer is down. A list's lapse is a timestamp, not days
-left, so its alert still fires from the last value scraped after the
-service stops.
+database or the signer is down. A list's lapse, like an OCSP response's
+or responder's, is a timestamp, not days left, so its alert still fires
+from the last value scraped after the service stops.
 
 The alert rules are `monitoring/harpocrates.rules.yml`, for the
 monitoring stack's Prometheus to load from a checkout (`rule_files`),
@@ -447,7 +453,11 @@ year, certificates past their profile's renewal point that nothing
 renews, and anything within a week of expiry; and for deploy targets, a
 deployment waiting an hour, a renewal failing for half an hour, an
 endpoint not serving its certificate for 15 minutes, and an endpoint
-serving one within a week of expiry. `pnpm check:alerts` (in
+serving one within a week of expiry; and for OCSP, a CA's responses
+within 2 days of lapsing, signing either failing, the
+responder answering `tryLater`, an online CA's responder within a week
+of lapsing and an offline CA's within 60 days, and an online CA with no
+responder for an hour. `pnpm check:alerts` (in
 `check:conventions`) runs their tests with `promtool`, and says so when
 `promtool` is missing (`brew install prometheus`).
 

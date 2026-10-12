@@ -326,3 +326,119 @@ tests:
             exp_annotations:
               summary: web serves a certificate that expires within a week
               description: "What its endpoint served at its last check expires in 5d 0h 0m 0s, whatever Harpocrates has issued since: clients will refuse it then. Renewal, deployment or the reload has been failing for weeks."
+  # Responses that lapse 3 days after the start; the series stops at 30
+  # minutes, and the alert fires regardless.
+  - name: OCSP responses lapsing, with the service stopped
+    interval: 30m
+    input_series:
+      - series: harpocrates_ocsp_next_update_timestamp_seconds{issuer="tls-issuing-1-g1",tier="issuing"}
+        values: 259200 259200
+    alert_rule_test:
+      - eval_time: 12h
+        alertname: HarpocratesOcspResponsesLapsing
+        exp_alerts: []
+      - eval_time: 36h
+        alertname: HarpocratesOcspResponsesLapsing
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              issuer: tls-issuing-1-g1
+              tier: issuing
+            exp_annotations:
+              summary: tls-issuing-1-g1's OCSP responses lapse within 2 days
+              description: "Its soonest lapses in 1d 12h 0m 0s; after that the responder answers tryLater for it, and clients that require OCSP (a must-staple certificate's) refuse it. The refresh, the signer or the CA's responder has been failing for days."
+  - name: an OCSP refresh refused, but not for being sealed
+    interval: 1m
+    input_series:
+      - series: harpocrates_ocsp_refresh_failures_total{issuer="tls-issuing-1-g1",reason="sealed"}
+        values: 0 1 2 3
+      - series: harpocrates_ocsp_refresh_failures_total{issuer="service-issuing-1-g1",reason="refused"}
+        values: 0 0 1 1
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HarpocratesOcspRefreshFailing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: service-issuing-1-g1
+              reason: refused
+            exp_annotations:
+              summary: service-issuing-1-g1's OCSP responder or responses could not be signed
+              description: "The signer refused it or the call failed (refused); the service's log has the message. What is stored is still served until it lapses. Sealed signers alert on their own."
+  - name: the responder answering tryLater
+    interval: 1m
+    input_series:
+      - series: harpocrates_ocsp_requests_total{result="good"}
+        values: 0 5 10 15
+      - series: harpocrates_ocsp_requests_total{result="tryLater"}
+        values: 0 0 1 1
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: HarpocratesOcspAnsweringTryLater
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: HarpocratesOcspAnsweringTryLater
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              result: tryLater
+            exp_annotations:
+              summary: The OCSP responder is answering tryLater
+              description: "A client asked about a certificate whose stored response has lapsed. The CA's OCSP tab in the console shows which responses are lapsed; the responses lapsing alert says why."
+  # An online CA's responder lapsing 9 days after the start, an offline
+  # CA's 70 days after.
+  - name: OCSP responders lapsing
+    interval: 1d
+    input_series:
+      - series: harpocrates_ocsp_responder_expiry_timestamp_seconds{issuer="tls-issuing-1-g1",tier="issuing"}
+        values: 777600x20
+      - series: harpocrates_ocsp_responder_expiry_timestamp_seconds{issuer="intermediate-1-g1",tier="intermediate"}
+        values: 6048000x20
+    alert_rule_test:
+      - eval_time: 1d
+        alertname: HarpocratesOcspResponderExpiring
+        exp_alerts: []
+      - eval_time: 3d
+        alertname: HarpocratesOcspResponderExpiring
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: tls-issuing-1-g1
+              tier: issuing
+            exp_annotations:
+              summary: tls-issuing-1-g1's OCSP responder lapses within a week
+              description: "It lapses in 6d 0h 0m 0s and should have been renewed with 10 days left; the service's log says why it was not. Its responses last no longer than it does."
+      - eval_time: 5d
+        alertname: HarpocratesOfflineOcspResponderExpiring
+        exp_alerts: []
+      - eval_time: 15d
+        alertname: HarpocratesOfflineOcspResponderExpiring
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: intermediate-1-g1
+              tier: intermediate
+            exp_annotations:
+              summary: intermediate-1-g1's OCSP responder lapses within 60 days
+              description: "It lapses in 55d 0h 0m 0s, and its successor can only be issued in a ceremony (POST /v1/ceremony/{id}/ocsp-responder), with the offline media and the passphrase: best in the ceremony that signs its next list."
+  - name: an online CA with no responder for an hour, but not an offline one
+    interval: 1m
+    input_series:
+      - series: harpocrates_ocsp_responder_missing{issuer="tls-issuing-1-g1",tier="issuing"}
+        values: 1x80
+      - series: harpocrates_ocsp_responder_missing{issuer="root-1-g1",tier="root"}
+        values: 1x80
+    alert_rule_test:
+      - eval_time: 50m
+        alertname: HarpocratesOcspResponderMissing
+        exp_alerts: []
+      - eval_time: 70m
+        alertname: HarpocratesOcspResponderMissing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              issuer: tls-issuing-1-g1
+              tier: issuing
+            exp_annotations:
+              summary: tls-issuing-1-g1 has no OCSP responder in service
+              description: "Nothing answers for its certificates, and none may be issued with its OCSP URL. The service issues an online CA's on its next run: the signer sealed, or the CA within 10 days of its end, stops it."

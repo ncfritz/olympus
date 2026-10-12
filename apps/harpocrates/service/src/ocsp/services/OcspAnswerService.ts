@@ -7,6 +7,7 @@ import {
   parseOcspRequest,
   unsignedOcspResponse,
 } from "../../pki/ocsp";
+import { ocspRequests } from "../../metrics/pkiMetrics";
 import { PrismaService } from "../../store/PrismaService";
 
 /** How long the CAs' CertID hashes are kept before they are read again. */
@@ -51,6 +52,12 @@ export class OcspAnswerService {
   constructor(private readonly prisma: PrismaService) {}
 
   async answer(der: Buffer, now = new Date()): Promise<OcspAnswer> {
+    const answer = await this.lookup(der, now);
+    ocspRequests.inc({ result: answer.result });
+    return answer;
+  }
+
+  private async lookup(der: Buffer, now: Date): Promise<OcspAnswer> {
     let question;
     try {
       question = parseOcspRequest(der);

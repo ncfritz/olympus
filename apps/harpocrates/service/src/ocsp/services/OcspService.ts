@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
   UnprocessableEntityException,
 } from "@nestjs/common";
+import { ocspRefreshFailures } from "../../metrics/pkiMetrics";
 import { OcspResponderService } from "./OcspResponderService";
 import { type OcspRefresh, OcspResponseService } from "./OcspResponseService";
 
@@ -55,6 +56,7 @@ export class OcspService {
     const fail = (issuerId: string, error: unknown): boolean => {
       const reason = reasonOf(error);
       result.failed.push({ issuerId, reason, message: messageOf(error) });
+      ocspRefreshFailures.inc({ issuer: issuerId, reason });
       if (reason !== "sealed") {
         this.logger.error(`OCSP for ${issuerId} failed: ${messageOf(error)}`);
       }
@@ -84,7 +86,7 @@ export class OcspService {
     try {
       result.retired = await this.responders.retireExpired(now);
     } catch (error: unknown) {
-      fail("retired responders", error);
+      fail("none", error);
     }
     return result;
   }

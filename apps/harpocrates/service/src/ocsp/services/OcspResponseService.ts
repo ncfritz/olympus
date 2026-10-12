@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import moment from "moment";
 import { ocspConfig, type OcspConfigType } from "../../config/configuration";
 import { startNow } from "../../issuers/services/IssuerService";
+import { ocspResponsesSigned } from "../../metrics/pkiMetrics";
 import { bytes } from "../../pki/x509";
 import type { OcspResponsesSummary } from "../../model/ocsp";
 import {
@@ -173,6 +174,7 @@ export class OcspResponseService {
         }),
       );
       signed += batch.length;
+      ocspResponsesSigned.inc({ issuer: issuerId }, batch.length);
     }
 
     // A certificate no longer current (expired, or a CA discarded) is not

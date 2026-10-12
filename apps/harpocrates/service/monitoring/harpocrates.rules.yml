@@ -197,3 +197,88 @@ groups:
             {{ $value | humanizeDuration }}, whatever Harpocrates has
             issued since: clients will refuse it then. Renewal, deployment
             or the reload has been failing for weeks.
+
+      # OCSP (ADR 0036): responses signed ahead, valid 4 days and
+      # re-signed daily, so under 2 days left is two refreshes missed. The
+      # last value scraped, as for the lists: they lapse with the service
+      # down too.
+      - alert: HarpocratesOcspResponsesLapsing
+        expr: >-
+          max_over_time(harpocrates_ocsp_next_update_timestamp_seconds[8d])
+          - time() < 2 * 86400
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.issuer }}'s OCSP responses lapse within 2 days"
+          description: >-
+            Its soonest lapses in {{ $value | humanizeDuration }}; after
+            that the responder answers tryLater for it, and clients that
+            require OCSP (a must-staple certificate's) refuse it. The
+            refresh, the signer or the CA's responder has been failing for
+            days.
+
+      - alert: HarpocratesOcspRefreshFailing
+        expr: increase(harpocrates_ocsp_refresh_failures_total{reason!="sealed"}[30m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }}'s OCSP responder or responses could not be signed"
+          description: >-
+            The signer refused it or the call failed ({{ $labels.reason }});
+            the service's log has the message. What is stored is still
+            served until it lapses. Sealed signers alert on their own.
+
+      - alert: HarpocratesOcspAnsweringTryLater
+        expr: increase(harpocrates_ocsp_requests_total{result="tryLater"}[15m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: The OCSP responder is answering tryLater
+          description: >-
+            A client asked about a certificate whose stored response has
+            lapsed. The CA's OCSP tab in the console shows which responses
+            are lapsed; the responses lapsing alert says why.
+
+      # An online CA's responder is renewed with 10 days left: a week left
+      # is three days of renewals failing.
+      - alert: HarpocratesOcspResponderExpiring
+        expr: >-
+          max_over_time(harpocrates_ocsp_responder_expiry_timestamp_seconds{tier="issuing"}[8d])
+          - time() < 7 * 86400
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }}'s OCSP responder lapses within a week"
+          description: >-
+            It lapses in {{ $value | humanizeDuration }} and should have
+            been renewed with 10 days left; the service's log says why it
+            was not. Its responses last no longer than it does.
+
+      - alert: HarpocratesOfflineOcspResponderExpiring
+        expr: >-
+          max_over_time(harpocrates_ocsp_responder_expiry_timestamp_seconds{tier!="issuing"}[30d])
+          - time() < 60 * 86400
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }}'s OCSP responder lapses within 60 days"
+          description: >-
+            It lapses in {{ $value | humanizeDuration }}, and its successor
+            can only be issued in a ceremony (POST
+            /v1/ceremony/{id}/ocsp-responder), with the offline media and
+            the passphrase: best in the ceremony that signs its next list.
+
+      # An online CA's is issued on the scheduler's first run; an offline
+      # CA's needs a ceremony, which its lapsing responder alerts ahead of.
+      - alert: HarpocratesOcspResponderMissing
+        expr: harpocrates_ocsp_responder_missing{tier="issuing"} == 1
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.issuer }} has no OCSP responder in service"
+          description: >-
+            Nothing answers for its certificates, and none may be issued
+            with its OCSP URL. The service issues an online CA's on its next
+            run: the signer sealed, or the CA within 10 days of its end,
+            stops it.

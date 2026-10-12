@@ -61,3 +61,21 @@ export const targetRenewalFailures = counter(
   "Renewals of a deploy target's certificate that failed, by target and reason (sealed, refused, error)",
   ["target", "reason"],
 );
+
+export const ocspRequests = counter(
+  "harpocrates_ocsp_requests_total",
+  "OCSP requests answered, by result (good, revoked, unauthorized, malformed, tryLater)",
+  ["result"],
+);
+
+export const ocspResponsesSigned = counter(
+  "harpocrates_ocsp_responses_signed_total",
+  "OCSP responses signed ahead, by issuer",
+  ["issuer"],
+);
+
+export const ocspRefreshFailures = counter(
+  "harpocrates_ocsp_refresh_failures_total",
+  "Scheduled OCSP work that failed (responders and responses), by issuer and reason (sealed, refused, error)",
+  ["issuer", "reason"],
+);
