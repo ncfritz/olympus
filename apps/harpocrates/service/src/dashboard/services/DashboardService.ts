@@ -7,6 +7,13 @@ import type {
   RenewerName,
   CertificateHealthName,
 } from "../../model/dashboard";
+import {
+  healthOf,
+  renewalDueAt,
+  renewedOverMtls,
+  renewerOf,
+  URGENT_DAYS,
+} from "../../certificates/renewal";
 import { issuingWindowClosesAt } from "../../issuers/issuingWindow";
 import { PrismaService } from "../../store/PrismaService";
 import type { IssuerTier, Prisma } from "../../store/prisma";
@@ -19,9 +26,6 @@ export const EXPIRED_DAYS = 365;
 
 /** How far ahead the expiring certificates look. */
 export const EXPIRING_DAYS = 90;
-
-/** Without a profile version, a certificate is due this long before expiry. */
-const DEFAULT_RENEWAL_DAYS = 30;
 
 /** An offline CA's list or responder is due a ceremony this far ahead. */
 const CEREMONY_DAYS = 60;
@@ -37,9 +41,6 @@ const RECENT_EVENTS = 12;
 
 /** How many days of activity the dashboard charts. */
 export const ACTIVITY_DAYS = 90;
-
-/** Errors are what break within this. */
-const URGENT_DAYS = 7;
 
 export type ExpiringRow = {
   certificateId: string;
@@ -261,18 +262,9 @@ export class DashboardService {
       ]);
 
     // Certificates issued as a renewal over mTLS: their holder renews them.
-    const overMtls = new Set(
-      (
-        await this.prisma.auditEvent.findMany({
-          where: {
-            kind: "certificate.renewed",
-            surface: "renewal",
-            subjectType: "certificate",
-            subjectId: { in: current.map((row) => row.id) },
-          },
-          select: { subjectId: true },
-        })
-      ).map((event) => event.subjectId),
+    const overMtls = await renewedOverMtls(
+      this.prisma,
+      current.map((row) => row.id),
     );
     // When each CA first issued for a subject: a later one is a renewal.
     const firstFor = new Map<string, number>();
@@ -287,29 +279,11 @@ export class DashboardService {
       .filter((row) => !replaced(row))
       .map((row) => {
         const version = row.profileVersion;
-        const dueDays = version
-          ? version.validityDays - version.renewAtDays
-          : DEFAULT_RENEWAL_DAYS;
-        const renewer: RenewerName = row.acmeOrder
-          ? "acme"
-          : row.deployTargets.length > 0
-            ? "deploy-target"
-            : overMtls.has(row.id)
-              ? "mtls"
-              : "person";
+        const renewer = renewerOf(row, overMtls);
         const renewal: RenewalModeName =
           renewer === "person" ? "manual" : "automatic";
-        const renewalDueAt = new Date(row.notAfter.getTime() - dueDays * DAY);
-        const health: CertificateHealthName =
-          row.notAfter <= now
-            ? "expired"
-            : renewalDueAt > now
-              ? "healthy"
-              : renewal === "manual"
-                ? "needs-person"
-                : row.notAfter.getTime() - now.getTime() <= URGENT_DAYS * DAY
-                  ? "failing"
-                  : "renewing";
+        const dueAt = renewalDueAt(row.notAfter, version);
+        const health = healthOf(row.notAfter, dueAt, renewal, now);
         return {
           certificateId: row.id,
           name: nameOf(row.subject),
@@ -325,7 +299,7 @@ export class DashboardService {
             row.renewsId !== null ||
             (firstFor.get(`${row.issuerId}\n${row.subject}`) ?? Infinity) <
               row.createdAt.getTime(),
-          renewalDueAt,
+          renewalDueAt: dueAt,
           renewal,
           renewer,
           health,
