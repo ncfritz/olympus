@@ -3,8 +3,11 @@ import type {
   NameType,
   ProfileSettings,
   ProfileVersion,
+  SshCertificateType,
+  SshProfileSettings,
 } from "./api/types";
 import { describeDays, ekuName } from "./labels";
+import { NEW_SSH_SETTINGS } from "./ssh";
 
 /**
  * A profile version's settings as the console explains them (ADR 0034):
@@ -609,6 +612,43 @@ export const NEW_PROFILE_SETTINGS: ProfileSettings = {
   customExtensions: [],
 };
 
+/** The key types OpenSSH certifies: the service's rule for SSH versions. */
+export const SSH_KEY_ALGORITHMS: KeyAlgorithm[] = [
+  "Ed25519",
+  "P-256",
+  "P-384",
+  "P-521",
+  "RSA-3072",
+  "RSA-4096",
+];
+
+/**
+ * A new SSH profile's settings: its SSH settings for the type, and the
+ * rest as the seeded ssh-user and ssh-host have them (a key always
+ * submitted, never generated or escrowed), which an SSH version does not
+ * otherwise use.
+ */
+export const newSshProfileSettings = (
+  type: SshCertificateType,
+): ProfileSettings => ({
+  ...NEW_PROFILE_SETTINGS,
+  issuerPurpose: type === "user" ? "SSH User" : "SSH Host",
+  keyAlgorithm: "Ed25519",
+  validityDays: 1,
+  renewAtDays: 1,
+  maxKeyAgeDays: type === "user" ? 365 : 3650,
+  allowCsr: true,
+  allowGenerated: false,
+  escrow: false,
+  minNames: 0,
+  keyUsages: [],
+  extendedKeyUsages: [],
+  names: [],
+  subjectAttributes: [],
+  csrSignatureHashes: [],
+  ssh: NEW_SSH_SETTINGS[type],
+});
+
 /**
  * The editor's form: the settings, with the key usages and name types as
  * one state per usage or type (so each has a row), the rest as they are.
@@ -647,6 +687,20 @@ export const toForm = (
 /** Blank text as absent, so the service sees what was not given. */
 const optional = (value: string | null | undefined) =>
   value?.trim() ? value.trim() : undefined;
+
+/** An SSH version's settings as the service takes them: blanks absent. */
+const sshFromForm = (ssh: SshProfileSettings): SshProfileSettings => {
+  const user = ssh.certificateType === "user";
+  return {
+    ...ssh,
+    sshCaId: optional(ssh.sshCaId) ?? null,
+    forceCommand: user ? optional(ssh.forceCommand) : undefined,
+    sourceAddresses: user
+      ? (ssh.sourceAddresses ?? []).map((a) => a.trim()).filter(Boolean)
+      : [],
+    extensions: user ? (ssh.extensions ?? []) : [],
+  };
+};
 
 export const fromForm = (form: ProfileForm): ProfileSettings => {
   const settings = settingsOf({
@@ -691,5 +745,6 @@ export const fromForm = (form: ProfileForm): ProfileSettings => {
         critical: e.critical ?? false,
         value: e.value?.trim() ?? "",
       })),
+    ssh: form.ssh ? sshFromForm(form.ssh) : undefined,
   };
 };

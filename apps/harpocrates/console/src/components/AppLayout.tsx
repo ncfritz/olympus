@@ -10,6 +10,11 @@ import {
   ProfileOutlined,
   SafetyCertificateOutlined,
   ApartmentOutlined,
+  CodeOutlined,
+  IdcardOutlined,
+  KeyOutlined,
+  TeamOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import {
   ControlShell,
@@ -20,6 +25,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { API_URL, BASE_PATH, CONSOLE_KEY } from "@/lib/api/client";
+import { useCurrentUser } from "@/lib/api/queries";
 import styles from "./AppLayout.module.css";
 import { SealedBanner } from "./SealedBanner";
 import { SignerStatusTag } from "./SignerStatusTag";
@@ -29,6 +35,13 @@ import { SignerStatusTag } from "./SignerStatusTag";
  * route, matched against the path; the href is the address, with the
  * base path the console is published under.
  */
+const MY_SSH: ShellPage = {
+  key: "/ssh/mine",
+  label: "My SSH certificate",
+  icon: <UserOutlined />,
+  href: "/ssh/mine",
+};
+
 const PAGES: ShellPage[] = [
   { key: "/", label: "Dashboard", icon: <DashboardOutlined />, href: "/" },
   {
@@ -63,6 +76,32 @@ const PAGES: ShellPage[] = [
     href: "/acme",
   },
   {
+    key: "ssh",
+    label: "SSH",
+    icon: <CodeOutlined />,
+    children: [
+      {
+        key: "/ssh/cas",
+        label: "SSH CAs",
+        icon: <KeyOutlined />,
+        href: "/ssh/cas",
+      },
+      {
+        key: "/ssh/certificates",
+        label: "SSH certificates",
+        icon: <IdcardOutlined />,
+        href: "/ssh/certificates",
+      },
+      {
+        key: "/ssh/principals",
+        label: "Principals",
+        icon: <TeamOutlined />,
+        href: "/ssh/principals",
+      },
+      MY_SSH,
+    ],
+  },
+  {
     key: "/profiles",
     label: "Profiles",
     icon: <ProfileOutlined />,
@@ -70,6 +109,22 @@ const PAGES: ShellPage[] = [
   },
   { key: "/audit", label: "Audit", icon: <AuditOutlined />, href: "/audit" },
 ].map(withBasePath);
+
+/** What someone signed in with no PKI role may use: their own SSH certificate. */
+const NO_ROLE_PAGES: ShellPage[] = [MY_SSH].map(withBasePath);
+
+/** The pages a role may use: principals are for admins. */
+const pagesFor = (isAdmin: boolean, isOperator: boolean): ShellPage[] =>
+  !isOperator
+    ? NO_ROLE_PAGES
+    : isAdmin
+      ? PAGES
+      : PAGES.map((page) => ({
+          ...page,
+          children: page.children?.filter(
+            (child) => child.key !== "/ssh/principals",
+          ),
+        }));
 
 function withBasePath(page: ShellPage): ShellPage {
   return {
@@ -90,6 +145,10 @@ const activePageOf = (pathname: string): string => {
     return "/roots";
   }
   for (const page of [
+    "/ssh/cas",
+    "/ssh/certificates",
+    "/ssh/principals",
+    "/ssh/mine",
     "/certificates",
     "/deploy-targets",
     "/acme",
@@ -115,6 +174,10 @@ export interface AppLayoutProps {
  */
 export function AppLayout({ nav, origin, children }: AppLayoutProps) {
   const auth = useConsoleAuth({ apiUrl: API_URL });
+  const user = useCurrentUser();
+  // Until the user is known, the full sider; with no PKI role, only one's
+  // own SSH certificate, and no signer (its status is the roles').
+  const operator = !user.data || user.isOperator;
   const pathname = usePathname();
   const router = useRouter();
 
@@ -124,12 +187,14 @@ export function AppLayout({ nav, origin, children }: AppLayoutProps) {
       current={CONSOLE_KEY}
       origin={origin}
       auth={auth}
-      pages={PAGES}
+      pages={pagesFor(user.isAdmin, operator)}
       activePage={activePageOf(pathname)}
       // The router takes the route, without the base path the anchor
       // carries for a new tab.
       onNavigate={(href) => router.push(href.slice(BASE_PATH.length) || "/")}
-      actions={auth.status === "authenticated" ? <SignerStatusTag /> : null}
+      actions={
+        auth.status === "authenticated" && operator ? <SignerStatusTag /> : null
+      }
       signIn={[
         {
           name: "google",
@@ -138,7 +203,7 @@ export function AppLayout({ nav, origin, children }: AppLayoutProps) {
         },
       ]}
     >
-      <SealedBanner />
+      {operator && <SealedBanner />}
       <div className={styles.page}>{children}</div>
     </ControlShell>
   );

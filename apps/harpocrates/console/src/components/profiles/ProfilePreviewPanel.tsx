@@ -3,9 +3,14 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
-import type { ProfilePreview, ProfileSettings } from "@/lib/api/types";
+import type {
+  ProfileKind,
+  ProfilePreview,
+  ProfileSettings,
+} from "@/lib/api/types";
 import { CertificateDetails } from "../CertificateDetails";
 import { ErrorAlert } from "../ErrorAlert";
+import { SshCertificateView } from "../ssh/SshCertificateView";
 
 /** How long the settings must rest before they are previewed again. */
 const SETTLE_MS = 600;
@@ -31,12 +36,16 @@ const namesText = (names: ProfilePreview["sampleNames"]): string =>
  */
 export function ProfilePreviewPanel({
   settings,
+  kind = "x509",
   directOnly = false,
 }: {
   settings: ProfileSettings;
+  kind?: ProfileKind;
   directOnly?: boolean;
 }) {
-  const body = useSettled(JSON.stringify({ profile: settings, directOnly }));
+  const body = useSettled(
+    JSON.stringify({ profile: settings, kind, directOnly }),
+  );
   const { data, error, isLoading } = useSWR<ProfilePreview>(
     ["profile-preview", body],
     async () =>
@@ -89,38 +98,67 @@ export function ProfilePreviewPanel({
               }
             />
           )}
-          <Descriptions
-            column={1}
-            size="small"
-            items={[
-              {
-                key: "issuer",
-                label: "Issued by",
-                children: data.issuerId ?? "No CA",
-              },
-              {
-                key: "subject",
-                label: "Sample subject",
-                children:
-                  [
-                    data.sampleSubject.commonName &&
-                      `CN=${data.sampleSubject.commonName}`,
-                    ...(data.sampleSubject.attributes ?? []).map(
-                      (a) => `${a.type}=${a.value}`,
-                    ),
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "None",
-              },
-              {
-                key: "names",
-                label: "Sample names",
-                children: namesText(data.sampleNames),
-              },
-              { key: "key", label: "Sample key", children: data.keyAlgorithm },
-            ]}
-          />
-          {data.certificate && (
+          {kind === "ssh" ? (
+            <Descriptions
+              column={1}
+              size="small"
+              items={[
+                {
+                  key: "issuer",
+                  label: "CA",
+                  children: data.issuerId ?? "No CA",
+                },
+                {
+                  key: "key",
+                  label: "Sample key",
+                  children: data.keyAlgorithm,
+                },
+              ]}
+            />
+          ) : (
+            <Descriptions
+              column={1}
+              size="small"
+              items={[
+                {
+                  key: "issuer",
+                  label: "Issued by",
+                  children: data.issuerId ?? "No CA",
+                },
+                {
+                  key: "subject",
+                  label: "Sample subject",
+                  children:
+                    [
+                      data.sampleSubject.commonName &&
+                        `CN=${data.sampleSubject.commonName}`,
+                      ...(data.sampleSubject.attributes ?? []).map(
+                        (a) => `${a.type}=${a.value}`,
+                      ),
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "None",
+                },
+                {
+                  key: "names",
+                  label: "Sample names",
+                  children: namesText(data.sampleNames),
+                },
+                {
+                  key: "key",
+                  label: "Sample key",
+                  children: data.keyAlgorithm,
+                },
+              ]}
+            />
+          )}
+          {data.sshCertificate && (
+            <>
+              <Divider titlePlacement="start">Certificate</Divider>
+              <SshCertificateView contents={data.sshCertificate} />
+            </>
+          )}
+          {kind === "x509" && data.certificate && (
             <>
               <Divider titlePlacement="start">Certificate</Divider>
               <CertificateDetails pem={data.certificate} nameConstraints={[]} />

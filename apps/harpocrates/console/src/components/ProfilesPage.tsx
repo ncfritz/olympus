@@ -44,11 +44,16 @@ export function ProfilesPage() {
             ]}
           />
           {isAdmin && (
-            <Link href="/profiles/new">
-              <Button type="primary" icon={<PlusOutlined />}>
-                New profile
-              </Button>
-            </Link>
+            <Flex gap="small" wrap>
+              <Link href="/profiles/new?kind=ssh">
+                <Button icon={<PlusOutlined />}>New SSH profile</Button>
+              </Link>
+              <Link href="/profiles/new">
+                <Button type="primary" icon={<PlusOutlined />}>
+                  New profile
+                </Button>
+              </Link>
+            </Flex>
           )}
         </Flex>
       </Flex>

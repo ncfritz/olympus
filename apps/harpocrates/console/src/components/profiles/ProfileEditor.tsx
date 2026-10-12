@@ -24,7 +24,8 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
-import { KEYS, useIssuers, useProfiles } from "@/lib/api/queries";
+import { KEYS, useIssuers, useProfiles, useSshCas } from "@/lib/api/queries";
+import type { ProfileKind, SshCertificateType } from "@/lib/api/types";
 import {
   choicesOf,
   CSR_HASHES,
@@ -34,20 +35,23 @@ import {
   KNOWN_EKUS,
   NAME_TYPES,
   NEW_PROFILE_SETTINGS,
+  newSshProfileSettings,
   type ProfileForm,
   SECTIONS,
   type SettingKey,
   settingsOf,
   SUBJECT_ATTRIBUTES,
+  SSH_KEY_ALGORITHMS,
   SUBTREE_TYPES,
   toForm,
   USAGE_STATES,
 } from "@/lib/profileSettings";
+import { NEW_SSH_SETTINGS, SSH_EXTENSIONS, SSH_TYPES } from "@/lib/ssh";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
 import { ErrorAlert } from "../ErrorAlert";
 import styles from "./ProfileEditor.module.css";
 import { ProfilePreviewPanel } from "./ProfilePreviewPanel";
-import { SettingLabel } from "./SettingLabel";
+import { SettingLabel, SshSettingLabel } from "./SettingLabel";
 
 /** The service's rule for a profile's name. */
 const PROFILE_SLUG = /^[a-z][a-z0-9-]{0,62}$/;
@@ -56,6 +60,7 @@ const OID = /^[0-2](\.(0|[1-9][0-9]*))+$/;
 const PANEL_WIDTH = 600;
 
 const days = { addonAfter: "days", min: 1, className: styles.number };
+const hours = { addonAfter: "hours", min: 1, className: styles.number };
 
 /** A form item labelled by its setting, with the setting's help. */
 const Setting = ({
@@ -122,11 +127,11 @@ const usageOptions = USAGE_STATES.map((s) => ({
 }));
 
 /**
- * A profile's editor (ADR 0034): a new profile, or the next version of
- * one (`?id=`), in the settings' sections, each setting with its help;
- * beside it, the certificate the settings would produce, as they change.
- * Saving a change of settings makes the profile's next version; the
- * description alone makes none.
+ * A profile's editor (ADR 0034): a new profile (`?kind=ssh` for an SSH
+ * one, ADR 0035), or the next version of one (`?id=`), in the settings'
+ * sections, each setting with its help; beside it, the certificate the
+ * settings would produce, as they change. Saving a change of settings
+ * makes the profile's next version; the description alone makes none.
  */
 export function ProfileEditor() {
   const query = useSearchParams();
@@ -136,9 +141,22 @@ export function ProfileEditor() {
   const { data: profiles, error: loadError } = useProfiles();
   const { data: issuers } = useIssuers();
   const profile = profiles?.find((p) => p.id === editing);
+  const kind: ProfileKind = editing
+    ? (profile?.kind ?? "x509")
+    : query.get("kind") === "ssh"
+      ? "ssh"
+      : "x509";
   const initial = useMemo(
-    () => toForm(profile ? settingsOf(profile) : NEW_PROFILE_SETTINGS, profile),
-    [profile],
+    () =>
+      toForm(
+        profile
+          ? settingsOf(profile)
+          : kind === "ssh"
+            ? newSshProfileSettings("user")
+            : NEW_PROFILE_SETTINGS,
+        profile,
+      ),
+    [profile, kind],
   );
   const [form] = Form.useForm<ProfileForm>();
   const [values, setValues] = useState<ProfileForm>();
@@ -149,6 +167,11 @@ export function ProfileEditor() {
 
   const settings = fromForm(values ?? initial);
   const purpose = Form.useWatch("issuerPurpose", form);
+  const sshType: SshCertificateType | undefined = Form.useWatch(
+    ["ssh", "certificateType"],
+    form,
+  );
+  const { data: sshCas } = useSshCas();
   const issuing = (issuers ?? []).filter(
     (i) => i.tier === "issuing" && i.status === "active",
   );
@@ -186,6 +209,7 @@ export function ProfileEditor() {
               body: {
                 profile: {
                   ...body,
+                  kind,
                   id: all.id!,
                   description: all.description!,
                 },
@@ -578,6 +602,116 @@ export function ProfileEditor() {
     ),
   };
 
+  const sshSections = (
+    <>
+      <Card size="small" title="SSH certificates" className={styles.section}>
+        <Flex gap="middle" wrap>
+          <Form.Item
+            name={["ssh", "certificateType"]}
+            label={<SshSettingLabel setting="certificateType" />}
+          >
+            <Select
+              className={styles.choice}
+              options={(["user", "host"] as const).map((t) => ({
+                value: t,
+                label: `${SSH_TYPES[t].label} certificates`,
+              }))}
+              onChange={(type: SshCertificateType) => {
+                // A type's own defaults: a host's validity is months, and it
+                // carries no options or extensions.
+                form.setFieldsValue({ ssh: NEW_SSH_SETTINGS[type] });
+                const all = { ...initial, ...form.getFieldsValue(true) };
+                setValues(all);
+                setDirty(true);
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            name={["ssh", "sshCaId"]}
+            label={<SshSettingLabel setting="sshCaId" />}
+          >
+            <Select
+              allowClear
+              className={styles.choice}
+              placeholder="The newest active CA of its type"
+              options={(sshCas ?? [])
+                .filter((ca) => ca.status === "active" && ca.type === sshType)
+                .map((ca) => ({ value: ca.id, label: ca.name }))}
+            />
+          </Form.Item>
+        </Flex>
+        <Flex gap="middle" wrap>
+          <Form.Item
+            name={["ssh", "validityHours"]}
+            label={<SshSettingLabel setting="validityHours" />}
+          >
+            <InputNumber {...hours} max={400 * 24} />
+          </Form.Item>
+          <Form.Item
+            name={["ssh", "renewAtHours"]}
+            label={<SshSettingLabel setting="renewAtHours" />}
+          >
+            <InputNumber {...hours} max={400 * 24} />
+          </Form.Item>
+          <Setting setting="maxKeyAgeDays">
+            <InputNumber {...days} />
+          </Setting>
+        </Flex>
+        <Setting setting="keyAlgorithms">
+          <Select
+            mode="multiple"
+            allowClear
+            className={styles.wide}
+            placeholder="Any OpenSSH certifies"
+            options={SSH_KEY_ALGORITHMS.map((k) => ({ value: k }))}
+          />
+        </Setting>
+      </Card>
+      {sshType === "user" && (
+        <Card
+          size="small"
+          title="What a user certificate allows"
+          className={styles.section}
+        >
+          <Form.Item
+            name={["ssh", "extensions"]}
+            label={<SshSettingLabel setting="extensions" />}
+          >
+            <Checkbox.Group>
+              <Flex vertical gap="small">
+                {SSH_EXTENSIONS.map((e) => (
+                  <Checkbox key={e.value} value={e.value}>
+                    <Tooltip title={e.help}>
+                      <span>{e.label}</span>
+                    </Tooltip>
+                  </Checkbox>
+                ))}
+              </Flex>
+            </Checkbox.Group>
+          </Form.Item>
+          <Form.Item
+            name={["ssh", "sourceAddresses"]}
+            label={<SshSettingLabel setting="sourceAddresses" />}
+          >
+            <Select
+              mode="tags"
+              open={false}
+              tokenSeparators={[",", " "]}
+              className={styles.wide}
+              placeholder="Anywhere"
+            />
+          </Form.Item>
+          <Form.Item
+            name={["ssh", "forceCommand"]}
+            label={<SshSettingLabel setting="forceCommand" />}
+          >
+            <Input className={styles.wide} placeholder="Any command" />
+          </Form.Item>
+        </Card>
+      )}
+    </>
+  );
+
   return (
     <SideTabPanel
       panelId="harpocrates.profile-editor"
@@ -597,6 +731,7 @@ export function ProfileEditor() {
           children: (
             <ProfilePreviewPanel
               settings={settings}
+              kind={kind}
               directOnly={profile?.directOnly}
             />
           ),
@@ -605,7 +740,11 @@ export function ProfileEditor() {
     >
       <Flex vertical gap="large">
         <Typography.Title level={3}>
-          {editing ? `Edit ${editing}` : "New profile"}
+          {editing
+            ? `Edit ${editing}`
+            : kind === "ssh"
+              ? "New SSH profile"
+              : "New profile"}
         </Typography.Title>
         {editing && (
           <Typography.Text type="secondary">
@@ -637,7 +776,10 @@ export function ProfileEditor() {
                     },
                   ]}
                 >
-                  <Input className={styles.text} placeholder="web-tls" />
+                  <Input
+                    className={styles.text}
+                    placeholder={kind === "ssh" ? "ssh-admin" : "web-tls"}
+                  />
                 </Form.Item>
               )}
               <Form.Item
@@ -651,16 +793,18 @@ export function ProfileEditor() {
               </Form.Item>
             </Flex>
           </Card>
-          {SECTIONS.map((section) => (
-            <Card
-              key={section.key}
-              size="small"
-              title={section.title}
-              className={styles.section}
-            >
-              {sections[section.key]}
-            </Card>
-          ))}
+          {kind === "ssh"
+            ? sshSections
+            : SECTIONS.map((section) => (
+                <Card
+                  key={section.key}
+                  size="small"
+                  title={section.title}
+                  className={styles.section}
+                >
+                  {sections[section.key]}
+                </Card>
+              ))}
         </Form>
         <ErrorAlert error={error} />
         <Flex gap="small">

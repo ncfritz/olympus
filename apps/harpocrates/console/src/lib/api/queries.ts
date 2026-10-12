@@ -19,6 +19,11 @@ import type {
   ProfileVersion,
   RevocationList,
   SignerStatus,
+  MySsh,
+  SshCa,
+  SshCertificate,
+  SshCertificateType,
+  SshPrincipalMapping,
 } from "./types";
 
 /**
@@ -46,7 +51,27 @@ export const KEYS = {
   deployTargets: "/deploy-targets",
   deployTarget: (id: string) => `/deploy-target/${id}`,
   acmeCredentials: "/acme/credentials",
+  sshCas: "/ssh/cas",
+  sshCertificates: (filter: SshCertificateFilter) =>
+    `/ssh/certificates?${new URLSearchParams(
+      Object.entries(filter).flatMap(([key, value]) =>
+        value === undefined ? [] : [[key, String(value)]],
+      ),
+    ).toString()}`,
+  sshCertificate: (id: string) => `/ssh/certificate/${id}`,
+  sshPrincipals: "/ssh/principals",
+  mySsh: "/ssh/mine",
 } as const;
+
+export type SshCertificateFilter = {
+  type?: SshCertificateType;
+  current?: "true" | "false";
+};
+
+/** Whether an SWR key is one of the SSH certificates' answers. */
+export const isSshCertificateKey = (key: unknown): boolean =>
+  typeof key === "string" &&
+  (key.startsWith("/ssh/certificate") || key === "/ssh/mine");
 
 export type CertificateFilter = {
   issuerId?: string;
@@ -209,4 +234,47 @@ export const useAcmeCredentials = () =>
   useSWR<AcmeCredential[]>(
     KEYS.acmeCredentials,
     async () => unwrap(await apiClient.GET("/v1/acme/credentials")).credentials,
+  );
+
+/** The SSH CAs, users' first, newest generation first. */
+export const useSshCas = () =>
+  useSWR<SshCa[]>(
+    KEYS.sshCas,
+    async () => unwrap(await apiClient.GET("/v1/ssh/cas")).cas,
+  );
+
+/** SSH certificates, newest first (the latest 500). */
+export const useSshCertificates = (filter: SshCertificateFilter) =>
+  useSWR<SshCertificate[]>(
+    KEYS.sshCertificates(filter),
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/ssh/certificates", {
+          params: { query: filter },
+        }),
+      ).certificates,
+  );
+
+export const useSshCertificate = (certificateId: string | undefined) =>
+  useSWR<SshCertificate>(
+    certificateId ? KEYS.sshCertificate(certificateId) : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/ssh/certificate/{certificateId}", {
+          params: { path: { certificateId: certificateId! } },
+        }),
+      ).certificate,
+  );
+
+/** Who may log in as whom (admins only). */
+export const useSshPrincipals = (enabled = true) =>
+  useSWR<SshPrincipalMapping[]>(
+    enabled ? KEYS.sshPrincipals : null,
+    async () => unwrap(await apiClient.GET("/v1/ssh/principals")).mappings,
+  );
+
+/** One's own principals and user certificates: anyone signed in. */
+export const useMySsh = () =>
+  useSWR<MySsh>(KEYS.mySsh, async () =>
+    unwrap(await apiClient.GET("/v1/ssh/mine")),
   );

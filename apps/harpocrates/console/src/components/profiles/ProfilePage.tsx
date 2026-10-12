@@ -97,12 +97,9 @@ export function ProfilePage({ profileId }: { profileId: string }) {
         </Flex>
         {isAdmin && (
           <Flex gap="small" wrap>
-            {/* SSH versions get their editor with the SSH console pages. */}
-            {profile.kind === "x509" && (
-              <Link href={`/profiles/edit?id=${profile.id}`}>
-                <Button icon={<EditOutlined />}>Edit</Button>
-              </Link>
-            )}
+            <Link href={`/profiles/edit?id=${profile.id}`}>
+              <Button icon={<EditOutlined />}>Edit</Button>
+            </Link>
             <Button icon={<CopyOutlined />} onClick={() => setCopying(true)}>
               Copy
             </Button>
@@ -146,7 +143,7 @@ export function ProfilePage({ profileId }: { profileId: string }) {
             label: `History (${versions?.length ?? "…"})`,
             children: versions && <ProfileHistory versions={versions} />,
           },
-          ...(isAdmin && profile.kind === "x509"
+          ...(isAdmin
             ? [
                 {
                   key: "preview",
@@ -154,6 +151,7 @@ export function ProfilePage({ profileId }: { profileId: string }) {
                   children: (
                     <ProfilePreviewPanel
                       settings={settingsOf(profile)}
+                      kind={profile.kind}
                       directOnly={profile.directOnly}
                     />
                   ),

@@ -2,12 +2,28 @@
 
 import { Button, Card, Col, Flex, Row, Statistic, Typography } from "antd";
 import Link from "next/link";
-import { useCertificates, useIssuers } from "@/lib/api/queries";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useCertificates, useCurrentUser, useIssuers } from "@/lib/api/queries";
 import { ErrorAlert } from "./ErrorAlert";
 import { SignerCard } from "./SignerCard";
 
 /** Renewal looks this far ahead (ADR 0020: internal-tls renews at 60 days of 90). */
 const EXPIRING_DAYS = 30;
+
+/**
+ * The console's home: the dashboard for the PKI roles; someone with none
+ * has only their own SSH certificate here, and goes there.
+ */
+export function HomePage() {
+  const router = useRouter();
+  const { data: user, isOperator } = useCurrentUser();
+  const noRole = Boolean(user) && !isOperator;
+  useEffect(() => {
+    if (noRole) router.replace("/ssh/mine");
+  }, [noRole, router]);
+  return user && isOperator ? <DashboardPage /> : null;
+}
 
 /** The CA at a glance: the signer, the hierarchy, what is about to expire. */
 export function DashboardPage() {

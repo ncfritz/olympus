@@ -7,7 +7,7 @@ import { unwrap } from "@/lib/api/errors";
 import type { Certificate, RevocationReason } from "@/lib/api/types";
 import { ErrorAlert } from "./ErrorAlert";
 
-const REASONS: { value: RevocationReason; label: string }[] = [
+export const REASONS: { value: RevocationReason; label: string }[] = [
   { value: "superseded", label: "Superseded: replaced by another" },
   {
     value: "cessationOfOperation",
