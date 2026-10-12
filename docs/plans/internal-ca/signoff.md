@@ -222,12 +222,15 @@ recovery passphrase is used.
 
 ## C15 — SSH certificates
 
-| Id    | Env | Steps                                                                             | Expected                                           | Evidence                  |
-| ----- | --- | --------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------- |
-| C15.1 | DEV | Issue `ssh-user` for `ssh-user-key`; log in to a host trusting the User CA        | accepted; valid 16 hours with the principals asked | `ssh -v`; `ssh-keygen -L` |
-| C15.2 | DEV | Issue `ssh-host` for `ssh-host-key`; connect from a client with `@cert-authority` | no host-key prompt                                 | `ssh -v`                  |
-| C15.3 | DEV | Revoke the user certificate; the host fetches the KRL                             | the login is refused                               | `sshd` log                |
-| C15.4 | DEV | Ask the Host CA to sign a user certificate                                        | refused                                            | response                  |
+| Id    | Env | Steps                                                                                                                | Expected                                                                 | Evidence                       |
+| ----- | --- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------ |
+| C15.1 | DEV | Issue `ssh-user` for `ssh-user-key`; log in to a host trusting the User CA                                           | accepted; valid 16 hours with the principals asked                       | `ssh -v`; `ssh-keygen -L`      |
+| C15.2 | DEV | Issue `ssh-host` for `ssh-host-key`; connect from a client with `@cert-authority`                                    | no host-key prompt                                                       | `ssh -v`                       |
+| C15.3 | DEV | Revoke the user certificate; the host fetches the KRL                                                                | the login is refused                                                     | `sshd` log                     |
+| C15.4 | DEV | Ask the Host CA to sign a user certificate                                                                           | refused                                                                  | response                       |
+| C15.5 | DEV | Request a user certificate as an identity with no mapping; then with one, asking for a principal it is not mapped to | refused both times; with the mapping and its own principals, issued      | console                        |
+| C15.6 | DEV | Run the host renewal script on a host with a current certificate; then with an expired one                           | renewed with the same principals; the expired one is refused             | script output; `ssh-keygen -L` |
+| C15.7 | DEV | Create the User CA's G2; issue; log in with a G1 and a G2 certificate                                                | both accepted while both keys are trusted; new certificates come from G2 | `ssh -v`                       |
 
 ## C16 — Monitoring and the dashboard
 

@@ -1,6 +1,6 @@
 # 0034. Harpocrates: profiles as versioned, editable presets
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR 0035](0035-harpocrates-ssh-certificates.md) (2026-10-11): a profile has a kind, `x509` or `ssh`, and an SSH version holds SSH settings
 - **Date:** 2026-10-11; accepted 2026-10-11 (Neil)
 - **Amends:** [ADR 0020](0020-internal-certificate-authority.md) (Profiles),
   [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (key types)
@@ -42,7 +42,8 @@ certificate already issued under it was, nor break its renewal.
 - Making, versioning, copying, deactivating and reactivating a profile,
   and moving enrollments, are a pki-admin's, after a recent sign-in, and
   audited.
-- Profiles are for **leaf certificates**. A CA's settings stay with its
+- Profiles are for **leaf certificates** (and, by ADR 0035, SSH
+  certificates, as profiles of the `ssh` kind). A CA's settings stay with its
   ceremony (ADR 0032); more flexibility there is later work.
 
 ### What a version holds

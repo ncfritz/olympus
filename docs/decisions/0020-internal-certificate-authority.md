@@ -1,6 +1,6 @@
 # 0020. An internal certificate authority: Harpocrates
 
-- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in; by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): profiles as versioned, editable presets
+- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in; by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): profiles as versioned, editable presets; by [ADR 0035](0035-harpocrates-ssh-certificates.md) (2026-10-11): SSH profiles as a kind of profile, principals mapped by an admin, hosts renewing by proving their host key
 - **Date:** 2026-09-21; amended and accepted 2026-09-25
 
 ## Context
@@ -267,6 +267,12 @@ trust it with `TrustedUserCAKeys`) and **ncfritz.net SSH Host CA 1 - G1**
 trusted beside the old. Revocation is a KRL per CA, published beside the
 CRLs; user certificates are short enough that it is rarely needed.
 
+> **Amended by [ADR 0035](0035-harpocrates-ssh-certificates.md).** SSH
+> profiles are profiles of the `ssh` kind, versioned as X.509 ones are;
+> a user certificate's principals come from an admin's mapping of
+> identities to principals; the KRL is the service's, unsigned, since
+> `sshd` does not check its signature.
+
 ### Profiles
 
 A profile is what a certificate may be: issuer, key type, key usage and
@@ -396,6 +402,9 @@ is deleted after a day.
   `POST /v1/renew` on `9443`, with a CSR (or with none, keeping the key)
   returns a certificate with the same subject. `harpocrates` checks
   status from its own records, not a revocation list.
+  _Amended by [ADR 0035](0035-harpocrates-ssh-certificates.md):_ SSH
+  hosts renew by signing a challenge with their own host key, not over
+  mutual TLS.
 - **ACME** subscribers renew as ACME clients do.
 - **Deploy targets**, per certificate, run on issue and renewal for what
   can do neither: write to a host path and reload nginx, DSM through its

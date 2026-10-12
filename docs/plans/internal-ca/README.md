@@ -417,19 +417,37 @@ the signer and the service. The mockups are the design canvas
 
 ## Phase 9 — SSH certificates
 
-1. **Signer**: `sign/ssh` (user and host certificates, Ed25519 CA keys)
-   and `sign/krl`; the invariants: a CA signs only its own kind, within
-   its maximum validity.
-2. **CAs**: the SSH User CA and SSH Host CA; rotation by a new
-   generation trusted beside the old.
-3. **Profiles**: `ssh-user` (principals from the operator's identity,
-   16 hours) and `ssh-host` (hostnames, 90 days, renewed over mTLS);
-   keys under the same uniqueness as X.509.
-4. **Revocation**: a KRL per CA, published at `/krl/<slug>.krl`, and a
-   schedule for hosts to fetch it (`RevokedKeys`).
-5. **Console**: issue, revoke, current user certificates, and the
-   `TrustedUserCAKeys` and `@cert-authority` lines to install.
-6. **First consumers**: the Mac Mini, the NAS and the laptop.
+[ADR 0035](../../decisions/0035-harpocrates-ssh-certificates.md),
+amending ADR 0020's outline.
+
+1. **Signer**: SSH CAs registered (an Ed25519 key, user or host, a
+   maximum validity) and SSH certificates signed; the invariants: a CA
+   signs only its own kind, within its maximum validity, at least one
+   principal, an OpenSSH key type (RSA from 3072 bits, `rsa-sha2-512`),
+   never an issuer's key, no critical options on a host certificate;
+   its document and the service's client regenerated.
+2. **CAs and profiles**: `ssh_cas` (creation by an admin, a new
+   generation beside the old, retirement); profiles gain a kind, SSH
+   versions their own settings (type, CA, validity and renewal in hours,
+   key types, critical options, extensions), `ssh-user` and `ssh-host`
+   seeded as v1; the identity-to-principals mapping, administered and
+   audited.
+3. **Issuance and revocation**: a user certificate for one's own key
+   with one's mapped principals, or by an admin for any mapped
+   identity; a host certificate by an admin; `ssh_certificates` and the
+   key model shared with X.509; revocation, and a KRL per CA rebuilt at
+   once and daily, published at `/krl/<slug>.krl`.
+4. **Host renewal**: a challenge, the host's signature with its host
+   key (`ssh-keygen -Y sign`) verified, renewal on `9443` with the same
+   principals under its version; the renewal script for `cron` and
+   `launchd`.
+5. **Console**: the SSH CAs with the lines to install
+   (`TrustedUserCAKeys`, `@cert-authority`), certificates (issue,
+   revoke, who holds a current one), one's own certificate, the
+   principal mappings, and the SSH sections of the profile editor.
+6. **First consumers and docs**: a guide for the Mac Mini, the NAS and
+   the laptop (`sshd_config`, the renewal script, the KRL fetch,
+   `known_hosts`), the READMEs.
 
 **Sign-off:** C15.
 
