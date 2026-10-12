@@ -1,0 +1,46 @@
+/*
+ * The signer's state in the shell's dark header, as the design canvas
+ * draws it: a pill with a dot, opening its menu.
+ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  font: inherit;
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.pill:hover,
+.pill:focus-visible {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.unsealed {
+  background: var(--ant-color-success);
+}
+
+.sealed {
+  background: var(--ant-color-error);
+}
+
+.uninitialised {
+  background: var(--ant-color-warning);
+}
+
+.caret {
+  font-size: 10px;
+  opacity: 0.7;
+}
