@@ -68,7 +68,8 @@ export class OcspResponderService {
     }
     const rows = await this.prisma.ocspResponder.findMany({
       where: { issuerId },
-      orderBy: { notBefore: "desc" },
+      // Certificates' times are whole seconds: two within one tie.
+      orderBy: [{ notBefore: "desc" }, { createdAt: "desc" }],
     });
     return rows.map(toOcspResponder);
   }
