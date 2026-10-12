@@ -197,3 +197,125 @@
   width: 2px;
   background: var(--ant-color-text);
 }
+
+/*
+ * The Board tab's graphs: three to a row, the checks' grid the widest,
+ * stacking when narrow; each box divided from the next by a border on
+ * its right and below.
+ */
+.boardGraphs {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 6fr);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+@media (max-width: 1200px) {
+  .boardGraphs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.boardGraphs > * {
+  margin-bottom: -1px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.ring {
+  flex: none;
+  width: 140px;
+  height: 140px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.ringLegend {
+  flex: 1 1 160px;
+  min-width: 160px;
+}
+
+.checks :global(.ant-table-cell) {
+  padding-block: 4px !important;
+}
+
+.checks :global(.ant-table-thead .ant-table-cell) {
+  font-size: var(--ant-font-size-sm, 12px);
+  white-space: nowrap;
+}
+
+/* The board's columns: the path to the CA chosen, then the CA. */
+.crumbs {
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+
+.column:last-child {
+  border-right: none;
+}
+
+.column .section {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* One CA in a column, or one certificate: a row to choose. */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--ant-color-fill-quaternary);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: -2px;
+}
+
+.itemOn.itemOn {
+  background: var(--ant-color-primary-bg);
+  box-shadow: inset 3px 0 0 var(--ant-color-primary);
+}
+
+.chevron {
+  color: var(--ant-color-text-tertiary);
+  font-size: 10px;
+}
+
+.chevronNone {
+  visibility: hidden;
+  font-size: 10px;
+}
