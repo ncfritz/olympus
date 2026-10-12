@@ -1,15 +1,37 @@
 "use client";
 
-import { Button, Card, Col, Flex, Row, Statistic, Typography } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Col,
+  Flex,
+  Row,
+  Skeleton,
+  Statistic,
+  Tag,
+  Typography,
+} from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useCertificates, useCurrentUser, useIssuers } from "@/lib/api/queries";
+import { type ReactNode, useEffect } from "react";
+import {
+  useCurrentUser,
+  useDashboard,
+  useDeployTargets,
+  useIssuers,
+} from "@/lib/api/queries";
+import { formatDateTime } from "@/lib/labels";
+import { AttentionList } from "./dashboard/AttentionList";
+import { CaCard } from "./dashboard/CaCard";
+import { CrlTable } from "./dashboard/CrlTable";
+import { EndpointsTable } from "./dashboard/EndpointsTable";
+import { ExpiryLanes } from "./dashboard/ExpiryLanes";
+import { IssuingWindows } from "./dashboard/IssuingWindows";
+import { WeekCard } from "./dashboard/WeekCard";
 import { ErrorAlert } from "./ErrorAlert";
 import { SignerCard } from "./SignerCard";
-
-/** Renewal looks this far ahead (ADR 0020: internal-tls renews at 60 days of 90). */
-const EXPIRING_DAYS = 30;
+import styles from "./dashboard/Dashboard.module.css";
 
 /**
  * The console's home: the dashboard for the PKI roles; someone with none
@@ -25,79 +47,188 @@ export function HomePage() {
   return user && isOperator ? <DashboardPage /> : null;
 }
 
-/** The CA at a glance: the signer, the hierarchy, what is about to expire. */
+/** One headline number, with a line beneath it. */
+const Kpi = ({
+  title,
+  value,
+  footer,
+  href,
+}: {
+  title: string;
+  value: ReactNode;
+  footer: ReactNode;
+  href: string;
+}) => (
+  <Link href={href} className={styles.kpiLink}>
+    <Card hoverable className={styles.kpiCard}>
+      <Statistic title={title} value={value as string} />
+      <div className={styles.kpiFooter}>{footer}</div>
+    </Card>
+  </Link>
+);
+
+const note = (text: string) => (
+  <Typography.Text type="secondary" className={styles.small}>
+    {text}
+  </Typography.Text>
+);
+
+/**
+ * The CA at a glance (the canvas's "Operations" design): what expires,
+ * what needs a person, and whether the CA is healthy.
+ */
 export function DashboardPage() {
-  const { data: issuers, error } = useIssuers();
-  const { data: valid } = useCertificates({ state: "valid", pageSize: 1 });
-  const { data: expiring } = useCertificates({
-    state: "valid",
-    expiringWithinDays: EXPIRING_DAYS,
-    pageSize: 1,
-  });
-  const live = (issuers ?? []).filter((issuer) => !issuer.discardedAt);
-  const count = (tier: string) =>
-    live.filter((issuer) => issuer.tier === tier).length;
-  const unproved = live.filter(
-    (issuer) => issuer.offline && !issuer.provedAt,
+  const { data: dashboard, error } = useDashboard();
+  const { data: issuers } = useIssuers();
+  const { data: targets } = useDeployTargets();
+
+  const header = (
+    <Flex justify="space-between" align="flex-end" gap="middle" wrap>
+      <div>
+        <Typography.Title level={3} className={styles.title}>
+          Dashboard
+        </Typography.Title>
+        <Typography.Text type="secondary">
+          What expires, what needs you, and whether the CA is healthy.
+          {dashboard && ` As of ${formatDateTime(dashboard.asOf)}.`}
+        </Typography.Text>
+      </div>
+      <Link href="/certificates/new">
+        <Button type="primary" icon={<PlusOutlined />}>
+          Issue certificate
+        </Button>
+      </Link>
+    </Flex>
+  );
+
+  if (error) {
+    return (
+      <Flex vertical gap="large">
+        {header}
+        <ErrorAlert error={error} title="The dashboard could not be read" />
+      </Flex>
+    );
+  }
+  if (!dashboard || !issuers) {
+    return (
+      <Flex vertical gap="large">
+        {header}
+        <Skeleton active />
+      </Flex>
+    );
+  }
+
+  const now = Date.parse(dashboard.asOf);
+  const { certificates, crls } = dashboard;
+  const published = crls.filter(
+    (crl) =>
+      crl.publishedAt && crl.nextUpdate && Date.parse(crl.nextUpdate) > now,
+  ).length;
+  const waiting = crls.filter(
+    (crl) => crl.number !== undefined && !crl.publishedAt,
   ).length;
 
   return (
     <Flex vertical gap="large">
-      <Typography.Title level={3}>Harpocrates</Typography.Title>
-      <ErrorAlert error={error} title="The CAs could not be listed" />
+      {header}
+      <div className={styles.kpis}>
+        <Kpi
+          title="Valid certificates"
+          value={certificates.valid}
+          href="/certificates"
+          footer={note(
+            `across ${certificates.issuers} CA${certificates.issuers === 1 ? "" : "s"}`,
+          )}
+        />
+        <Kpi
+          title="Due within 30 days"
+          value={certificates.dueWithin30Days}
+          href="/certificates"
+          footer={
+            certificates.dueManual > 0 ? (
+              <Tag color="orange">
+                {certificates.dueManual} need
+                {certificates.dueManual === 1 ? "s" : ""} a person
+              </Tag>
+            ) : (
+              note("all renew themselves")
+            )
+          }
+        />
+        <Kpi
+          title="Expired, last 30 days"
+          value={certificates.expiredRecently}
+          href="/certificates"
+          footer={
+            certificates.expiredNames.length > 0 ? (
+              <Flex gap={4} wrap>
+                {certificates.expiredNames.map((name) => (
+                  <Tag key={name} color="red">
+                    {name}
+                  </Tag>
+                ))}
+              </Flex>
+            ) : (
+              note("none unreplaced")
+            )
+          }
+        />
+        <Kpi
+          title="Revoked"
+          value={certificates.revoked}
+          href="/certificates"
+          footer={note(`${certificates.revokedThisWeek} this week`)}
+        />
+        <Kpi
+          title="Revocation lists"
+          value={`${published} / ${crls.length}`}
+          href="/roots"
+          footer={
+            waiting > 0 ? (
+              <Tag color="gold">{waiting} waiting</Tag>
+            ) : published === crls.length ? (
+              <Tag color="green">all published</Tag>
+            ) : (
+              <Tag color="red">{crls.length - published} lapsed or none</Tag>
+            )
+          }
+        />
+      </div>
       <Row gutter={[16, 16]}>
-        <Col xs={24} lg={10}>
-          <SignerCard />
+        <Col xs={24} xl={16}>
+          <ExpiryLanes
+            expiring={dashboard.expiring}
+            issuers={issuers}
+            now={now}
+          />
         </Col>
-        <Col xs={24} lg={14}>
-          <Card
-            title="Hierarchy"
-            extra={
-              <Link href="/roots">
-                <Button type="link">Roots</Button>
-              </Link>
-            }
-          >
-            <Row gutter={16}>
-              <Col span={6}>
-                <Statistic title="Roots" value={count("root")} />
-              </Col>
-              <Col span={6}>
-                <Statistic
-                  title="Intermediates"
-                  value={count("intermediate")}
-                />
-              </Col>
-              <Col span={6}>
-                <Statistic title="Issuing CAs" value={count("issuing")} />
-              </Col>
-              <Col span={6}>
-                <Statistic title="Backups not proved" value={unproved} />
-              </Col>
-            </Row>
-          </Card>
+        <Col xs={24} xl={8}>
+          <AttentionList items={dashboard.attention} now={now} />
         </Col>
-        <Col xs={24} lg={14}>
-          <Card
-            title="Certificates"
-            extra={
-              <Link href="/certificates">
-                <Button type="link">All</Button>
-              </Link>
-            }
-          >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Statistic title="Valid" value={valid?.count ?? "—"} />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title={`Expiring within ${EXPIRING_DAYS} days`}
-                  value={expiring?.count ?? "—"}
-                />
-              </Col>
-            </Row>
-          </Card>
+      </Row>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12} xl={7}>
+          <IssuingWindows issuers={issuers} now={now} />
+        </Col>
+        <Col xs={24} lg={12} xl={9}>
+          <CrlTable crls={crls} issuers={issuers} now={now} />
+        </Col>
+        <Col xs={24} xl={8}>
+          <Flex vertical gap="middle">
+            <SignerCard />
+            <CaCard ca={dashboard.ca} issuers={issuers} />
+          </Flex>
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} xl={10}>
+          <WeekCard
+            week={dashboard.week}
+            revoked={certificates.revokedThisWeek}
+          />
+        </Col>
+        <Col xs={24} xl={14}>
+          <EndpointsTable targets={targets ?? []} />
         </Col>
       </Row>
     </Flex>

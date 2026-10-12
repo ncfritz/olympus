@@ -15,3 +15,16 @@ export const descendantsOf = (issuers: Issuer[], parentId: string): Issuer[] =>
 export const commonName = (subject: string): string =>
   /(?:^|,)CN=((?:\\.|[^,])*)/.exec(subject)?.[1]?.replace(/\\(.)/g, "$1") ??
   subject;
+
+/**
+ * A CA's name without its realm, where space is short: "TLS Issuing CA 1 -
+ * G1" for "ncfritz.net TLS Issuing CA 1 - G1".
+ */
+export const shortCaName = (issuer: {
+  subject: string;
+  organization?: string;
+}): string => {
+  const name = commonName(issuer.subject);
+  const realm = issuer.organization ? `${issuer.organization} ` : "";
+  return realm && name.startsWith(realm) ? name.slice(realm.length) : name;
+};

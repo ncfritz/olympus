@@ -61,3 +61,9 @@ export type MySsh = Schemas["DescribeMySshResponse"];
 export type OcspResponder = Schemas["OcspResponder"];
 export type OcspResponsesSummary = Schemas["OcspResponsesSummary"];
 export type IssuerOcsp = Schemas["ListIssuerOcspRespondersResponse"];
+export type Dashboard = Schemas["Dashboard"];
+export type ExpiringCertificate = Schemas["ExpiringCertificate"];
+export type AttentionItem = Schemas["AttentionItem"];
+export type DashboardCrl = Schemas["DashboardCrl"];
+export type AuditVerification =
+  Schemas["GetAuditVerificationResponse"]["verification"];

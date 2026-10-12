@@ -9,6 +9,7 @@ import type {
   Certificate,
   CertificateState,
   CurrentUser,
+  Dashboard,
   DeployTarget,
   FullDeployTarget,
   FullIssuer,
@@ -50,6 +51,7 @@ export const KEYS = {
       ),
     ).toString()}`,
   audit: "/audit/events",
+  dashboard: "/dashboard",
   deployTargets: "/deploy-targets",
   deployTarget: (id: string) => `/deploy-target/${id}`,
   acmeCredentials: "/acme/credentials",
@@ -103,6 +105,14 @@ export const useSignerStatus = (refreshInterval = 15_000) =>
   useSWR<SignerStatus>(
     KEYS.signer,
     async () => unwrap(await apiClient.GET("/v1/signer/status")).status,
+    { refreshInterval },
+  );
+
+/** The CA at a glance, polled: renewals and checks run unasked. */
+export const useDashboard = (refreshInterval = 60_000) =>
+  useSWR<Dashboard>(
+    KEYS.dashboard,
+    async () => unwrap(await apiClient.GET("/v1/dashboard")).dashboard,
     { refreshInterval },
   );
 

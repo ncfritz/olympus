@@ -1268,6 +1268,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/dashboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The CA at a glance
+     * @description The console's dashboard: the certificates counted, those expiring within 90 days that nothing has replaced, what needs a person, each CA's newest list, the last 7 days, and the CA itself. The signer's state is GET /signer/status.
+     */
+    get: operations["GetDashboard"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3339,6 +3359,156 @@ export interface components {
     RevokeAcmeCredentialResponse: {
       /** @description The credential, revoked, with its account */
       credential: components["schemas"]["AcmeCredential"];
+    };
+    DashboardCertificates: {
+      /** @description Valid: unexpired and not revoked */
+      valid: number;
+      /** @description The CAs that issued them */
+      issuers: number;
+      /** @description Valid, not yet replaced, and expiring within 30 days */
+      dueWithin30Days: number;
+      /** @description Of those, how many nothing renews: a person must */
+      dueManual: number;
+      /** @description Expired in the last 30 days without being replaced or revoked */
+      expiredRecently: number;
+      /** @description Their common names, soonest expired first, at most 3 */
+      expiredNames: string[];
+      /** @description Revoked and not yet expired */
+      revoked: number;
+      /** @description Revoked in the last 7 days */
+      revokedThisWeek: number;
+    };
+    /**
+     * @description Whether something renews it
+     * @enum {string}
+     */
+    RenewalMode: "automatic" | "manual";
+    ExpiringCertificate: {
+      /** @description Its ID */
+      certificateId: string;
+      /** @description Its common name, or its subject when it has none */
+      name: string;
+      /** @description The CA that issued it */
+      issuerId: string;
+      /** @description The profile it was issued under */
+      profileId?: string;
+      /** @description An ISO-8601 formatted string: when it expires */
+      notAfter: string;
+      /** @description An ISO-8601 formatted string: its renewal point, from its profile version (30 days before expiry without one) */
+      renewalDueAt: string;
+      /** @description Whether something renews it */
+      renewal: components["schemas"]["RenewalMode"];
+    };
+    /**
+     * @description What it is
+     * @enum {string}
+     */
+    AttentionKind:
+      | "certificate-due"
+      | "renewal-overdue"
+      | "deployment-failing"
+      | "endpoint-stale"
+      | "endpoint-not-stapling"
+      | "crl-unpublished"
+      | "offline-crl-due"
+      | "offline-ocsp-due"
+      | "issuing-window"
+      | "backup-unproved";
+    /**
+     * @description How urgent
+     * @enum {string}
+     */
+    AttentionSeverity: "error" | "warning";
+    /**
+     * @description What it concerns
+     * @enum {string}
+     */
+    AttentionSubject: "certificate" | "issuer" | "deploy-target";
+    AttentionItem: {
+      /** @description What it is */
+      kind: components["schemas"]["AttentionKind"];
+      /** @description How urgent */
+      severity: components["schemas"]["AttentionSeverity"];
+      /** @description What it concerns */
+      subjectType: components["schemas"]["AttentionSubject"];
+      /** @description Its ID: a certificate's, a CA's or a deploy target's */
+      subjectId: string;
+      /** @description What it concerns, by name */
+      title: string;
+      /** @description What is wrong and what to do */
+      detail: string;
+      /** @description An ISO-8601 formatted string: when it breaks if nothing is done */
+      dueAt?: string;
+    };
+    DashboardCrl: {
+      /** @description The CA */
+      issuerId: string;
+      /** @description Its tier */
+      tier: components["schemas"]["IssuerTier"];
+      /** @description Whether its key is offline: its lists are signed in ceremonies */
+      offline: boolean;
+      /** @description Its newest list's number; none when it has none */
+      number?: string;
+      /** @description An ISO-8601 formatted string: when its newest published list lapses */
+      nextUpdate?: string;
+      /** @description An ISO-8601 formatted string: when its newest list was published; none while it waits */
+      publishedAt?: string;
+    };
+    DashboardWeek: {
+      /** @description Certificates issued, renewals and ACME's included */
+      issued: number;
+      /** @description Of those, renewals of a certificate it names */
+      renewals: number;
+      /** @description ACME orders */
+      acmeOrders: number;
+      /** @description ACME orders that failed */
+      acmeOrdersFailed: number;
+      /** @description Certificates deployed to deploy targets */
+      deployed: number;
+      /** @description Deployments still failing */
+      deploymentsFailing: number;
+    };
+    DashboardCeremony: {
+      /** @description Its ID */
+      id: string;
+      /** @description Its CA */
+      issuerId: string;
+      /** @description An ISO-8601 formatted string: when it opened */
+      openedAt: string;
+      /** @description An ISO-8601 formatted string: when it closed */
+      closedAt?: string;
+    };
+    DashboardCa: {
+      /** @description An ISO-8601 formatted string: when a list was last published */
+      lastPublishedAt?: string;
+      /** @description Events in the audit log */
+      auditEvents: number;
+      /** @description The newest ceremony */
+      lastCeremony?: components["schemas"]["DashboardCeremony"];
+      /** @description An ISO-8601 formatted string: when an offline CA's list or OCSP responder next lapses, which a ceremony renews */
+      nextCeremonyDueAt?: string;
+      /** @description The offline CA it is for */
+      nextCeremonyIssuerId?: string;
+    };
+    Dashboard: {
+      /** @description An ISO-8601 formatted string: when it was read */
+      asOf: string;
+      /** @description The certificates, counted */
+      certificates: components["schemas"]["DashboardCertificates"];
+      /** @description Valid certificates expiring within 90 days that nothing has replaced yet, soonest first */
+      expiring: components["schemas"]["ExpiringCertificate"][];
+      /** @description What needs a person, errors first, then soonest first */
+      attention: components["schemas"]["AttentionItem"][];
+      /** @description Each active CA's newest revocation list, online CAs first */
+      crls: components["schemas"]["DashboardCrl"][];
+      /** @description The last 7 days */
+      week: components["schemas"]["DashboardWeek"];
+      /** @description The CA itself */
+      ca: components["schemas"]["DashboardCa"];
+    };
+    GetDashboardResponse: {
+      /** @description The dashboard */
+      dashboard: components["schemas"]["Dashboard"];
     };
   };
   responses: never;
@@ -7876,6 +8046,44 @@ export interface operations {
       };
       /** @description The request conflicts with the current state */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  GetDashboard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The dashboard. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetDashboardResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
         headers: {
           [name: string]: unknown;
         };
