@@ -4,18 +4,6 @@
   font-size: var(--ant-font-size-sm, 12px);
 }
 
-.kpiCard {
-  height: 100%;
-}
-
-.kpiFooter {
-  min-height: 22px;
-}
-
-.flushBody {
-  padding: 0 !important;
-}
-
 /* Needs a person: one row per item, divided. */
 .attention {
   padding: 12px 0;
@@ -86,19 +74,6 @@
   margin: 0 !important;
 }
 
-.kpiLink {
-  display: block;
-  height: 100%;
-  color: inherit;
-}
-
-/* The headline numbers: as many to a row as fit, at least 180px each. */
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-}
-
 .detail {
   margin: 0 !important;
   font-size: var(--ant-font-size-sm, 12px);
@@ -119,4 +94,63 @@
 
 .timeline {
   margin-top: 8px;
+}
+
+/* The headline counts, as the main site's Goals summary strip. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  border-top: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.cell {
+  padding: 16px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+
+/* The graphs: 40%, 35% and the rest, stacking when narrow. */
+.graphs {
+  display: grid;
+  grid-template-columns: minmax(0, 40fr) minmax(0, 35fr) minmax(0, 25fr);
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .graphs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.graph {
+  height: 100%;
+}
+
+.ring {
+  flex: none;
+  width: 160px;
+  height: 160px;
+}
+
+.legend {
+  flex: 1;
+  min-width: 160px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The lower half: the tabs, and the side panel beside them. */
+.lower {
+  height: calc(100vh - 140px);
+  min-height: 560px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: var(--ant-border-radius-lg);
+  overflow: hidden;
 }

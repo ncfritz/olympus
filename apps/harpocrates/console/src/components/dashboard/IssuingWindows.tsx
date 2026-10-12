@@ -1,4 +1,4 @@
-import { Card, Empty, Flex, Progress, theme, Typography } from "antd";
+import { Empty, Flex, Progress, theme, Typography } from "antd";
 import Link from "next/link";
 import type { Issuer } from "@/lib/api/types";
 import { timeUntil } from "@/lib/dashboard";
@@ -41,7 +41,7 @@ export function IssuingWindows({
     .sort((a, b) => a.closes - b.closes);
 
   return (
-    <Card title="Issuing windows">
+    <>
       {windows.length === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -77,6 +77,6 @@ export function IssuingWindows({
           </Typography.Text>
         </Flex>
       )}
-    </Card>
+    </>
   );
 }

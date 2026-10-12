@@ -1,18 +1,18 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
+import { BellOutlined, HistoryOutlined } from "@ant-design/icons";
+import { SideTabPanel } from "@ncfritz/olympus-console";
 import {
-  Button,
-  Card,
+  Badge,
   Col,
   Flex,
   Row,
   Skeleton,
   Statistic,
-  Tag,
+  Tabs,
+  Tooltip,
   Typography,
 } from "antd";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import {
@@ -23,17 +23,19 @@ import {
   useSignerStatus,
 } from "@/lib/api/queries";
 import { healthChecks } from "@/lib/dashboard";
-import { formatDateTime } from "@/lib/labels";
+import { ActivityChart } from "./dashboard/ActivityChart";
 import { CaCard } from "./dashboard/CaCard";
 import { CrlTable } from "./dashboard/CrlTable";
+import styles from "./dashboard/Dashboard.module.css";
 import { EndpointsTable } from "./dashboard/EndpointsTable";
 import { ExpiryLanes } from "./dashboard/ExpiryLanes";
+import { HealthChart } from "./dashboard/HealthChart";
 import { IssuingWindows } from "./dashboard/IssuingWindows";
-import { SidePanel } from "./dashboard/SidePanel";
-import { WeekCard } from "./dashboard/WeekCard";
+import { RenewersCard } from "./dashboard/RenewersCard";
+import { ActivityTab, AttentionTab } from "./dashboard/SideTabs";
+import { WeekSummary } from "./dashboard/WeekSummary";
 import { ErrorAlert } from "./ErrorAlert";
 import { SignerCard } from "./SignerCard";
-import styles from "./dashboard/Dashboard.module.css";
 
 /**
  * The console's home: the dashboard for the PKI roles; someone with none
@@ -49,35 +51,39 @@ export function HomePage() {
   return user && isOperator ? <DashboardPage /> : null;
 }
 
-/** One headline number, with a line beneath it. */
-const Kpi = ({
-  title,
-  value,
-  footer,
-  href,
-}: {
-  title: string;
-  value: ReactNode;
-  footer: ReactNode;
-  href: string;
-}) => (
-  <Link href={href} className={styles.kpiLink}>
-    <Card hoverable className={styles.kpiCard}>
-      <Statistic title={title} value={value as string} />
-      <div className={styles.kpiFooter}>{footer}</div>
-    </Card>
-  </Link>
+/** The side panel's width, open. */
+const PANEL_WIDTH = 380;
+
+const TabIcon = ({ title, icon }: { title: string; icon: ReactNode }) => (
+  <Tooltip title={title} placement="left">
+    <span aria-label={title}>{icon}</span>
+  </Tooltip>
 );
 
-const note = (text: string) => (
-  <Typography.Text type="secondary" className={styles.small}>
-    {text}
-  </Typography.Text>
+/** One headline count, as the main site's Goals summary strip has them. */
+const Count = ({
+  title,
+  value,
+  note,
+}: {
+  title: string;
+  value: number;
+  note?: string;
+}) => (
+  <div className={styles.cell}>
+    <Statistic title={title} value={value} />
+    {note && (
+      <Typography.Text type="secondary" className={styles.small}>
+        {note}
+      </Typography.Text>
+    )}
+  </div>
 );
 
 /**
- * The CA at a glance (the canvas's "Operations" design): what expires,
- * what needs a person, and whether the CA is healthy.
+ * The CA at a glance: the counts, three graphs (activity, certificates by
+ * renewal health, who renews them), the rest in tabs beneath, and beside
+ * those a collapsible panel of what needs attention and what happened.
  */
 export function DashboardPage() {
   const { data: dashboard, error } = useDashboard();
@@ -85,29 +91,15 @@ export function DashboardPage() {
   const { data: targets } = useDeployTargets();
   const { data: signer } = useSignerStatus();
 
-  const header = (
-    <Flex justify="space-between" align="flex-end" gap="middle" wrap>
-      <div>
-        <Typography.Title level={3} className={styles.title}>
-          Dashboard
-        </Typography.Title>
-        <Typography.Text type="secondary">
-          What expires, what needs you, and whether the CA is healthy.
-          {dashboard && ` As of ${formatDateTime(dashboard.asOf)}.`}
-        </Typography.Text>
-      </div>
-      <Link href="/certificates/new">
-        <Button type="primary" icon={<PlusOutlined />}>
-          Issue certificate
-        </Button>
-      </Link>
-    </Flex>
+  const title = (
+    <Typography.Title level={3} className={styles.title}>
+      PKI Dashboard
+    </Typography.Title>
   );
-
   if (error) {
     return (
       <Flex vertical gap="large">
-        {header}
+        {title}
         <ErrorAlert error={error} title="The dashboard could not be read" />
       </Flex>
     );
@@ -115,135 +107,152 @@ export function DashboardPage() {
   if (!dashboard || !issuers) {
     return (
       <Flex vertical gap="large">
-        {header}
+        {title}
         <Skeleton active />
       </Flex>
     );
   }
 
   const now = Date.parse(dashboard.asOf);
-  const { certificates, crls } = dashboard;
-  const published = crls.filter(
-    (crl) =>
-      crl.publishedAt && crl.nextUpdate && Date.parse(crl.nextUpdate) > now,
-  ).length;
-  const waiting = crls.filter(
-    (crl) => crl.number !== undefined && !crl.publishedAt,
-  ).length;
+  const { certificates, counts } = dashboard;
+  const errors = dashboard.attention.some((a) => a.severity === "error");
 
   return (
     <Flex vertical gap="large">
-      {header}
-      <div className={styles.kpis}>
-        <Kpi
+      {title}
+      <div className={styles.strip}>
+        <Count
+          title="CAs"
+          value={counts.cas}
+          note={`${counts.offlineCas} offline · ${counts.cas - counts.offlineCas} online`}
+        />
+        <Count
           title="Valid certificates"
           value={certificates.valid}
-          href="/certificates"
-          footer={note(
-            `across ${certificates.issuers} CA${certificates.issuers === 1 ? "" : "s"}`,
-          )}
+          note={`${certificates.dueWithin30Days} due within 30 days`}
         />
-        <Kpi
-          title="Due within 30 days"
-          value={certificates.dueWithin30Days}
-          href="/certificates"
-          footer={
-            certificates.dueManual > 0 ? (
-              <Tag color="orange">
-                {certificates.dueManual} need
-                {certificates.dueManual === 1 ? "s" : ""} a person
-              </Tag>
-            ) : (
-              note("all renew themselves")
-            )
-          }
+        <Count
+          title="SSH certificates"
+          value={counts.sshValid}
+          note={`${counts.sshUser} user · ${counts.sshHost} host`}
         />
-        <Kpi
-          title="Expired, last 30 days"
-          value={certificates.expiredRecently}
-          href="/certificates"
-          footer={
-            certificates.expiredNames.length > 0 ? (
-              <Flex gap={4} wrap>
-                {certificates.expiredNames.map((name) => (
-                  <Tag key={name} color="red">
-                    {name}
-                  </Tag>
-                ))}
-              </Flex>
-            ) : (
-              note("none unreplaced")
-            )
-          }
-        />
-        <Kpi
+        <Count
           title="Revoked"
           value={certificates.revoked}
-          href="/certificates"
-          footer={note(`${certificates.revokedThisWeek} this week`)}
+          note={`${certificates.revokedThisWeek} this week`}
         />
-        <Kpi
-          title="Revocation lists"
-          value={`${published} / ${crls.length}`}
-          href="/roots"
-          footer={
-            waiting > 0 ? (
-              <Tag color="gold">{waiting} waiting</Tag>
-            ) : published === crls.length ? (
-              <Tag color="green">all published</Tag>
-            ) : (
-              <Tag color="red">{crls.length - published} lapsed or none</Tag>
-            )
-          }
+        <Count
+          title="Expired, last 30 days"
+          value={certificates.expiredRecently}
+          note={certificates.expiredNames.join(", ") || undefined}
         />
+        <Count title="Profiles" value={counts.profiles} />
       </div>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} xl={16}>
-          <ExpiryLanes
-            expiring={dashboard.expiring}
-            issuers={issuers}
-            now={now}
-          />
-        </Col>
-        <Col xs={24} xl={8}>
-          <SidePanel
-            dashboard={dashboard}
-            now={now}
-            health={healthChecks({
-              dashboard,
-              signer,
-              issuers,
-              targets: targets ?? [],
-              now,
-            })}
-          />
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12} xl={7}>
-          <IssuingWindows issuers={issuers} now={now} />
-        </Col>
-        <Col xs={24} lg={12} xl={9}>
-          <CrlTable crls={crls} issuers={issuers} now={now} />
-        </Col>
-        <Col xs={24} xl={8}>
-          <Flex vertical gap="middle">
-            <SignerCard />
-            <CaCard ca={dashboard.ca} issuers={issuers} />
-          </Flex>
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} xl={10}>
-          <WeekCard
-            week={dashboard.week}
-            revoked={certificates.revokedThisWeek}
-          />
-        </Col>
-        <Col xs={24} xl={14}>
-          <EndpointsTable targets={targets ?? []} />
-        </Col>
-      </Row>
+      <div className={styles.graphs}>
+        <ActivityChart days={dashboard.activity} />
+        <HealthChart health={dashboard.health} />
+        <RenewersCard renewers={dashboard.renewers} />
+      </div>
+      <SideTabPanel
+        panelId="harpocrates.dashboard"
+        width={PANEL_WIDTH}
+        defaultExpanded
+        className={styles.lower}
+        tabs={[
+          {
+            key: "attention",
+            label: (
+              <TabIcon
+                title="Needs attention"
+                icon={
+                  <Badge
+                    count={dashboard.attention.length}
+                    size="small"
+                    color={errors ? "red" : "orange"}
+                  >
+                    <BellOutlined />
+                  </Badge>
+                }
+              />
+            ),
+            children: (
+              <AttentionTab
+                dashboard={dashboard}
+                now={now}
+                health={healthChecks({
+                  dashboard,
+                  signer,
+                  issuers,
+                  targets: targets ?? [],
+                  now,
+                })}
+              />
+            ),
+          },
+          {
+            key: "activity",
+            label: <TabIcon title="Activity" icon={<HistoryOutlined />} />,
+            children: <ActivityTab dashboard={dashboard} />,
+          },
+        ]}
+      >
+        <Tabs
+          items={[
+            {
+              key: "expiring",
+              label: "Expiring",
+              children: (
+                <ExpiryLanes
+                  expiring={dashboard.expiring}
+                  issuers={issuers}
+                  now={now}
+                />
+              ),
+            },
+            {
+              key: "windows",
+              label: "Issuing windows",
+              children: <IssuingWindows issuers={issuers} now={now} />,
+            },
+            {
+              key: "lists",
+              label: "Revocation lists",
+              children: (
+                <CrlTable crls={dashboard.crls} issuers={issuers} now={now} />
+              ),
+            },
+            {
+              key: "ca",
+              label: "The CA",
+              children: (
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} lg={12}>
+                    <SignerCard />
+                  </Col>
+                  <Col xs={24} lg={12}>
+                    <CaCard ca={dashboard.ca} issuers={issuers} />
+                  </Col>
+                </Row>
+              ),
+            },
+            {
+              key: "week",
+              label: "This week",
+              children: (
+                <WeekSummary
+                  week={dashboard.week}
+                  revoked={certificates.revokedThisWeek}
+                />
+              ),
+            },
+            {
+              key: "targets",
+              label: "Deploy targets",
+              children: <EndpointsTable targets={targets ?? []} />,
+            },
+          ]}
+        />
+      </SideTabPanel>
     </Flex>
   );
 }

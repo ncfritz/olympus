@@ -1,4 +1,4 @@
-import { Card, Empty, Flex, Tag, Tooltip, Typography } from "antd";
+import { Empty, Flex, Tag, Tooltip, Typography } from "antd";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { ExpiringCertificate, Issuer } from "@/lib/api/types";
@@ -50,16 +50,18 @@ export function ExpiryLanes({
     .filter((lane) => lane.chips.length > 0);
 
   return (
-    <Card
-      title={`Expiring in the next ${LANE_DAYS} days`}
-      extra={
+    <Flex vertical gap="middle">
+      <Flex justify="space-between" align="center" gap="small" wrap>
+        <Typography.Text type="secondary">
+          What expires in the next {LANE_DAYS} days that nothing has replaced,
+          one lane per CA.
+        </Typography.Text>
         <Flex gap={4} wrap>
           <Tag color="red">Past its renewal point</Tag>
           <Tag color="orange">Needs a person</Tag>
           <Tag color="blue">Renews itself</Tag>
         </Flex>
-      }
-    >
+      </Flex>
       {lanes.length === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -126,6 +128,6 @@ export function ExpiryLanes({
           })}
         </Flex>
       )}
-    </Card>
+    </Flex>
   );
 }

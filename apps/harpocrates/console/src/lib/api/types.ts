@@ -69,3 +69,4 @@ export type AuditVerification =
   Schemas["GetAuditVerificationResponse"]["verification"];
 export type DashboardEvent = Schemas["DashboardEvent"];
 export type HandledCount = Schemas["HandledCount"];
+export type ActivityDay = Schemas["ActivityDay"];

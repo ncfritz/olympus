@@ -3378,11 +3378,60 @@ export interface components {
       /** @description Revoked in the last 7 days */
       revokedThisWeek: number;
     };
+    DashboardCounts: {
+      /** @description CAs in service: active or closed, with a certificate */
+      cas: number;
+      /** @description Of those, roots and intermediates: offline */
+      offlineCas: number;
+      /** @description Valid SSH certificates */
+      sshValid: number;
+      /** @description Of those, user */
+      sshUser: number;
+      /** @description Of those, host */
+      sshHost: number;
+      /** @description Active profiles, X.509 and SSH */
+      profiles: number;
+    };
+    RenewalHealth: {
+      /** @description Healthy */
+      healthy: number;
+      /** @description Renewing */
+      renewing: number;
+      /** @description Needs a person */
+      needsPerson: number;
+      /** @description Failing */
+      failing: number;
+    };
+    RenewerCounts: {
+      /** @description ACME clients */
+      acme: number;
+      /** @description Harpocrates, to deploy targets */
+      deployTarget: number;
+      /** @description Their holders, over mutual TLS */
+      mtls: number;
+      /** @description A person */
+      person: number;
+    };
+    ActivityDay: {
+      /** @description The day, YYYY-MM-DD, UTC */
+      day: string;
+      /** @description Issued, not as a renewal */
+      issued: number;
+      /** @description Issued as a renewal, or for a subject its CA had issued for before */
+      renewed: number;
+      /** @description Revoked */
+      revoked: number;
+    };
     /**
      * @description Whether something renews it
      * @enum {string}
      */
     RenewalMode: "automatic" | "manual";
+    /**
+     * @description Who renews it
+     * @enum {string}
+     */
+    Renewer: "acme" | "deploy-target" | "mtls" | "person";
     ExpiringCertificate: {
       /** @description Its ID */
       certificateId: string;
@@ -3398,6 +3447,8 @@ export interface components {
       renewalDueAt: string;
       /** @description Whether something renews it */
       renewal: components["schemas"]["RenewalMode"];
+      /** @description Who renews it */
+      renewer: components["schemas"]["Renewer"];
     };
     /**
      * @description What it is
@@ -3529,6 +3580,14 @@ export interface components {
       asOf: string;
       /** @description The certificates, counted */
       certificates: components["schemas"]["DashboardCertificates"];
+      /** @description The headline counts beyond the certificates' */
+      counts: components["schemas"]["DashboardCounts"];
+      /** @description Valid certificates by whether their renewal is in hand */
+      health: components["schemas"]["RenewalHealth"];
+      /** @description Valid certificates by who renews them */
+      renewers: components["schemas"]["RenewerCounts"];
+      /** @description Each of the last 90 days (UTC), oldest first */
+      activity: components["schemas"]["ActivityDay"][];
       /** @description Valid certificates expiring within 90 days that nothing has replaced yet, soonest first */
       expiring: components["schemas"]["ExpiringCertificate"][];
       /** @description What needs a person, errors first, then soonest first */

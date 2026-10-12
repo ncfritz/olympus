@@ -4,9 +4,8 @@ import {
   ExclamationCircleFilled,
   MinusCircleFilled,
 } from "@ant-design/icons";
-import { Badge, Card, Flex, Tag, Timeline, Typography } from "antd";
+import { Flex, Tag, Timeline, Typography } from "antd";
 import Link from "next/link";
-import { useState } from "react";
 import type { Dashboard } from "@/lib/api/types";
 import {
   describeActor,
@@ -64,12 +63,8 @@ const Section = ({
   </Flex>
 );
 
-/**
- * The dashboard's side: what needs attention (the CA's health and what
- * needs a person), and activity (the latest audit events and what was
- * handled without a person this week).
- */
-export function SidePanel({
+/** The CA's health, line by line, then what needs a person. */
+export function AttentionTab({
   dashboard,
   health,
   now,
@@ -78,110 +73,83 @@ export function SidePanel({
   health: HealthCheck[];
   now: number;
 }) {
-  const [tab, setTab] = useState("attention");
   const fine = health.filter((check) => check.status === "ok").length;
   const judged = health.filter((check) => check.status !== "neutral").length;
-  const handled = handledRows(dashboard.handled);
-
   return (
-    <Card
-      activeTabKey={tab}
-      onTabChange={setTab}
-      tabList={[
-        {
-          key: "attention",
-          label: (
-            <Flex gap="small" align="center">
-              Needs attention
-              <Badge
-                count={dashboard.attention.length}
-                color={
-                  dashboard.attention.some((a) => a.severity === "error")
-                    ? "red"
-                    : "orange"
-                }
-              />
-            </Flex>
-          ),
-        },
-        { key: "activity", label: "Activity" },
-      ]}
-    >
-      {tab === "attention" ? (
-        <Flex vertical gap="large">
-          <Section
-            title="Health"
-            extra={
-              <Tag color={fine === judged ? "green" : "orange"}>
-                {fine} of {judged} fine
-              </Tag>
-            }
-          >
-            <Flex vertical>
-              {health.map((check) => (
-                <Flex
-                  key={check.name}
-                  gap="small"
-                  align="flex-start"
-                  className={styles.check}
-                >
-                  {STATUS_ICON[check.status]}
-                  <Flex vertical className={styles.shrink}>
-                    <Typography.Text strong>{check.name}</Typography.Text>
-                    <Typography.Text type="secondary" className={styles.small}>
-                      {check.detail}
-                    </Typography.Text>
-                  </Flex>
-                </Flex>
-              ))}
-            </Flex>
-          </Section>
-          <Section title="Needs a person">
-            <AttentionList items={dashboard.attention} now={now} />
-          </Section>
-        </Flex>
-      ) : (
-        <Flex vertical gap="large">
-          <Section
-            title="Recent activity"
-            extra={<Link href="/audit">Audit</Link>}
-          >
-            <Timeline
-              className={styles.timeline}
-              items={dashboard.recent.map((event) => ({
-                key: event.sequence,
-                color: eventColor(event),
-                content: (
-                  <Flex vertical className={styles.shrink}>
-                    <Typography.Text>{describeEvent(event)}</Typography.Text>
-                    <Typography.Text type="secondary" className={styles.small}>
-                      {describeActor(event)} ·{" "}
-                      {formatDateTime(event.occurredAt)}
-                    </Typography.Text>
-                  </Flex>
-                ),
-              }))}
-            />
-          </Section>
-          <Section title="Handled without you, this week">
-            {handled.length === 0 ? (
-              <Typography.Text type="secondary">
-                Nothing yet this week.
-              </Typography.Text>
-            ) : (
-              <Flex vertical gap="small">
-                {handled.map((row) => (
-                  <Flex key={row.label} justify="space-between" gap="small">
-                    <Typography.Text>{row.label}</Typography.Text>
-                    <Typography.Text strong>{row.count}</Typography.Text>
-                  </Flex>
-                ))}
+    <Flex vertical gap="large">
+      <Section
+        title="Health"
+        extra={
+          <Tag color={fine === judged ? "green" : "orange"}>
+            {fine} of {judged} fine
+          </Tag>
+        }
+      >
+        <Flex vertical>
+          {health.map((check) => (
+            <Flex
+              key={check.name}
+              gap="small"
+              align="flex-start"
+              className={styles.check}
+            >
+              {STATUS_ICON[check.status]}
+              <Flex vertical className={styles.shrink}>
+                <Typography.Text strong>{check.name}</Typography.Text>
+                <Typography.Text type="secondary" className={styles.small}>
+                  {check.detail}
+                </Typography.Text>
               </Flex>
-            )}
-            <Link href="/audit">See them in the audit log</Link>
-          </Section>
+            </Flex>
+          ))}
         </Flex>
-      )}
-    </Card>
+      </Section>
+      <Section title="Needs a person">
+        <AttentionList items={dashboard.attention} now={now} />
+      </Section>
+    </Flex>
+  );
+}
+
+/** The latest audit events, then what was handled without a person. */
+export function ActivityTab({ dashboard }: { dashboard: Dashboard }) {
+  const handled = handledRows(dashboard.handled);
+  return (
+    <Flex vertical gap="large">
+      <Section title="Recent activity" extra={<Link href="/audit">Audit</Link>}>
+        <Timeline
+          className={styles.timeline}
+          items={dashboard.recent.map((event) => ({
+            key: event.sequence,
+            color: eventColor(event),
+            content: (
+              <Flex vertical className={styles.shrink}>
+                <Typography.Text>{describeEvent(event)}</Typography.Text>
+                <Typography.Text type="secondary" className={styles.small}>
+                  {describeActor(event)} · {formatDateTime(event.occurredAt)}
+                </Typography.Text>
+              </Flex>
+            ),
+          }))}
+        />
+      </Section>
+      <Section title="Handled without you, this week">
+        {handled.length === 0 ? (
+          <Typography.Text type="secondary">
+            Nothing yet this week.
+          </Typography.Text>
+        ) : (
+          <Flex vertical gap="small">
+            {handled.map((row) => (
+              <Flex key={row.label} justify="space-between" gap="small">
+                <Typography.Text>{row.label}</Typography.Text>
+                <Typography.Text strong>{row.count}</Typography.Text>
+              </Flex>
+            ))}
+          </Flex>
+        )}
+        <Link href="/audit">See them in the audit log</Link>
+      </Section>
+    </Flex>
   );
 }
