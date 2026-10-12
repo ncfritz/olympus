@@ -7,7 +7,8 @@
   flex-direction: column;
 }
 
-.header {
+/* Doubled: antd's Flex resets its padding at the same specificity. */
+.header.header {
   padding: 16px 24px;
 }
 
