@@ -423,7 +423,7 @@ generation with escrow for devices that cannot make a CSR.
 | Compliance report: key sizes, lifetimes, algorithms                | pfSense, Keyfactor                  | Later         |
 | SSH user and host certificates (section 8)                         | step-ca, Vault                      | 8 (new)       |
 
-**Not worth it here:** OCSP, delta or partitioned CRLs, certificate hold,
+**Not worth it here:** OCSP (since added: ADR 0036, phase 11), delta or partitioned CRLs, certificate hold,
 multi-person approvals, LDAP publishing, EST/CMP/CMC, Windows
 autoenrollment, `device-attest-01` (needs MDM-supervised devices),
 post-quantum algorithms (keep the signer's algorithms swappable).

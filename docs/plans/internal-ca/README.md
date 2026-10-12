@@ -518,6 +518,19 @@ the API alone, no console page yet.
 [ADR 0036](../../decisions/0036-harpocrates-ocsp.md), amending ADR
 0020's "no OCSP".
 
+**Done 2026-10-12** (steps 1 to 6; the sign-off runs on DEV are
+outstanding). Described in
+[the certificates guide](../../guides/certificates.md),
+[the service's README](../../../apps/harpocrates/service/README.md),
+[the signer's](../../../apps/harpocrates/signer/README.md) and
+[the console's](../../../apps/harpocrates/console/README.md). What
+differs from the steps: a certificate's responses are dropped once it is
+no longer current rather than kept until they lapse; an offline CA
+missing a responder shows on its gauge but alerts only through its
+lapsing responder; and a must-staple endpoint that staples nothing is
+asked a second time before it is recorded, as nginx staples from its
+second handshake.
+
 1. **Signer**: the `ocsp` key purpose; a responder certificate from an
    online CA's key, or in a ceremony from an offline CA's
    (`id-kp-OCSPSigning` only, `ocsp-nocheck`, P-256); responses signed

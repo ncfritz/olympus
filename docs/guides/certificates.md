@@ -229,6 +229,63 @@ lists are the exception: 13 months, re-signed in a ceremony
 (`hcli ceremony --issuer <slug> --key <file> --crl`), with an alert two
 months ahead.
 
+## OCSP
+
+[ADR 0036](../decisions/0036-harpocrates-ocsp.md). The lists stay the
+check every relying party here uses; OCSP is for clients that want it
+and for nginx to staple. The responder is
+`http://pki.internal.ncfritz.net/ocsp` (GET and POST), and answers from
+responses signed ahead: each is valid four days and re-signed daily, or
+within a minute of a revocation. A sealed signer goes unnoticed by OCSP
+clients for up to three days.
+
+**Responders.** Each CA's responses are signed by a responder of its own:
+a P-256 key in the signer with an `OCSPSigning`, `ocsp-nocheck`
+certificate from the CA. An online CA's is issued and renewed by the
+service (30 days, renewed with 10 left). An offline CA's is issued in a
+ceremony, valid as long as its list: the console's ceremony page has an
+"OCSP responder" tab, best used in the ceremony that signs the CA's next
+list. A CA's page shows its responders and how fresh its responses are
+on its OCSP tab.
+
+**In certificates.** The OCSP URL (AIA) and must-staple are profile
+version settings, both off by default ("OCSP URL (AIA)", "OCSP
+must-staple"). Must-staple needs the OCSP URL, and neither goes with
+minimal extensions. A certificate with the OCSP URL is refused while its
+CA has no responder in service, and the editor warns of it.
+
+**Must-staple.** Only for a server that staples, since clients that
+honour it refuse the connection when nothing is stapled. For nginx:
+
+```nginx
+ssl_stapling on;
+ssl_stapling_verify on;
+# The issuing CA up to the root, to verify the responses.
+ssl_trusted_certificate /etc/nginx/certs/ca-chain.pem;
+# A DNS server that resolves pki.internal.ncfritz.net (127.0.0.11 in Docker).
+resolver <dns-server> valid=300s;
+```
+
+nginx fetches a response on the first handshake that asks for one and
+staples from the next. A deploy target's endpoint check records whether
+its endpoint staples, and alerts when a must-staple certificate is
+served without stapling for 15 minutes.
+
+**Checking by hand:**
+
+```sh
+openssl ocsp -issuer issuing-ca.pem -cert server.pem \
+  -url http://pki.internal.ncfritz.net/ocsp -CAfile root.pem -resp_text
+openssl s_client -connect host.internal.ncfritz.net:443 -status </dev/null | grep -A3 "OCSP response"
+```
+
+A serial the CA never issued, or a CA it does not know, is answered
+`unauthorized`; a response that has lapsed, `tryLater`. Alerts fire on
+responses within two days of lapsing, failing to sign, `tryLater`
+answers, an online CA's responder within a week of lapsing (it renews at
+10 days), an offline CA's within 60 days, and an online CA with no
+responder for an hour.
+
 ## Renewal
 
 Nothing renews on its own yet (phase 5). `certificate_expiry_days` and

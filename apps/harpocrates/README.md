@@ -6,7 +6,7 @@ console, built, versioned and deployed together:
 
 | Package                                      | Language         | Does                                                                               |
 | -------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `service/` `@ncfritz/harpocrates-service`    | NestJS, Prisma   | Management API, issuance policy, revocation lists, renewal and ACME                |
+| `service/` `@ncfritz/harpocrates-service`    | NestJS, Prisma   | Management API, issuance policy, revocation lists, OCSP, renewal and ACME          |
 | `signer/` `@ncfritz/harpocrates-signer`      | Python (FastAPI) | Holds the private keys; generates keys, signs certificates and lists; nothing else |
 | `console/` `@ncfritz/harpocrates-ca-console` | Next.js          | The operator's console on Olympus Control, `/harpocrates/ca` (ADR 0032, phase 5)   |
 
@@ -15,7 +15,7 @@ In production they run as the `harpocrates` stack
 brought up empty, with its roots created through the console
 ([ADR 0032](../../docs/decisions/0032-harpocrates-roots-and-migration.md);
 until then [the cutover guide](../../docs/guides/harpocrates-cutover.md)'s first two steps);
-issuing and revoking is [the certificates guide](../../docs/guides/certificates.md),
+issuing, revoking and OCSP is [the certificates guide](../../docs/guides/certificates.md),
 and SSH certificates [the SSH guide](../../docs/guides/ssh.md).
 
 The service reaches the signer over a Unix socket with a shared token;
