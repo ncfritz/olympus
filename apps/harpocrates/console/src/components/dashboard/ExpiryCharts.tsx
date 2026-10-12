@@ -1,5 +1,4 @@
-import { useThemeMode } from "@ncfritz/olympus-console";
-import { Flex, theme, Typography } from "antd";
+import { Flex, Typography } from "antd";
 import Highcharts from "highcharts";
 import "highcharts/modules/accessibility";
 import HighchartsReact from "highcharts-react-official";
@@ -7,6 +6,7 @@ import { useMemo } from "react";
 import type { DashboardCertificate, Issuer } from "@/lib/api/types";
 import { shortCaName } from "@/lib/tree";
 import { CATEGORICAL, HEALTH_COLORS } from "./chartColors";
+import { baseOptions, useChartTheme } from "./chartTheme";
 import styles from "./Dashboard.module.css";
 import { GraphBox } from "./GraphBox";
 
@@ -23,41 +23,6 @@ const BUCKETS: { label: string; within: (days: number) => boolean }[] = [
 
 /** The most profiles the doughnut names before the rest are "Other". */
 const MAX_SLICES = 5;
-
-const useChartTheme = () => {
-  const { token } = theme.useToken();
-  const { resolvedMode } = useThemeMode();
-  return { token, mode: resolvedMode };
-};
-
-const baseOptions = (
-  token: ReturnType<typeof theme.useToken>["token"],
-): Highcharts.Options => ({
-  title: { text: undefined },
-  credits: { enabled: false },
-  legend: { enabled: false },
-  chart: {
-    backgroundColor: "transparent",
-    spacing: [8, 0, 0, 0],
-    style: { fontFamily: token.fontFamily },
-  },
-  tooltip: {
-    backgroundColor: token.colorBgElevated,
-    borderColor: token.colorBorderSecondary,
-    style: { color: token.colorText },
-  },
-  xAxis: {
-    lineColor: token.colorBorderSecondary,
-    tickLength: 0,
-    labels: { style: { color: token.colorTextSecondary } },
-  },
-  yAxis: {
-    title: { text: undefined },
-    allowDecimals: false,
-    gridLineColor: token.colorBorderSecondary,
-    labels: { style: { color: token.colorTextSecondary } },
-  },
-});
 
 /**
  * The Expirations tab's graphs, as boxes in a row: how long the
