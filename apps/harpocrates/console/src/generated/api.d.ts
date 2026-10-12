@@ -540,6 +540,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/certificate-lineages": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists the certificates as lineages
+     * @description Each subject's certificates together, linked by renewal or issued again by the same CA for the same subject, newest first, with how the newest is renewed; those whose newest version is valid or ended within the last year, soonest to expire first.
+     */
+    get: operations["ListCertificateLineages"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/certificate/{certificateId}": {
     parameters: {
       query?: never;
@@ -2049,6 +2069,76 @@ export interface components {
       certificates: components["schemas"]["Certificate"][];
     };
     /**
+     * @description healthy: not yet at its renewal point; renewing: past it, something renews it, more than a week left; failing: the same with a week or less; needs-person: past it, nothing renews it; expired: expired without being replaced
+     * @enum {string}
+     */
+    CertificateHealth:
+      "healthy" | "renewing" | "needs-person" | "failing" | "expired";
+    /**
+     * @description automatic: Harpocrates or a client renews it (a deploy target's, or ACME's); manual: nothing does, a person must
+     * @enum {string}
+     */
+    RenewalMode: "automatic" | "manual";
+    /**
+     * @description acme: its ACME client orders the next; deploy-target: Harpocrates renews and deploys it; mtls: its holder renews it over mutual TLS, as it did to get it; person: nothing does
+     * @enum {string}
+     */
+    Renewer: "acme" | "deploy-target" | "mtls" | "person";
+    LineageVersion: {
+      /** @description Its ID */
+      certificateId: string;
+      /** @description The CA that issued it */
+      issuerId: string;
+      /** @description Its serial, hex */
+      serial: string;
+      /** @description An ISO-8601 formatted string: when it becomes valid */
+      notBefore: string;
+      /** @description An ISO-8601 formatted string: when it expires */
+      notAfter: string;
+      /** @description An ISO-8601 formatted string: when it was issued */
+      issuedAt: string;
+      /** @description Its state */
+      state: components["schemas"]["CertificateState"];
+      /** @description An ISO-8601 formatted string: when it was revoked */
+      revokedAt?: string;
+      /** @description Why it was revoked */
+      revocationReason?: components["schemas"]["RevocationReason"];
+      /** @description Whether it renews the version before it (renewed, or ordered again for the same subject); the first is new */
+      renews: boolean;
+    };
+    CertificateLineage: {
+      /** @description Its ID: its first version's */
+      lineageId: string;
+      /** @description Its newest version's common name, or its subject */
+      name: string;
+      /** @description Its newest version's alternative names' values */
+      names: string[];
+      /** @description The CA that issued its newest version */
+      issuerId: string;
+      /** @description The profile its newest version was issued under */
+      profileId?: string;
+      /** @description Its newest version's state */
+      state: components["schemas"]["CertificateState"];
+      /** @description Whether its renewal is in hand, as the dashboard reads it; none once its newest version is revoked */
+      health?: components["schemas"]["CertificateHealth"];
+      /** @description An ISO-8601 formatted string: its newest version's renewal point */
+      renewalDueAt: string;
+      /** @description Whether something renews it */
+      renewal: components["schemas"]["RenewalMode"];
+      /** @description Who renews it */
+      renewer: components["schemas"]["Renewer"];
+      /** @description The deploy targets its newest version is deployed to */
+      deployTargets: string[];
+      /** @description Its versions, newest first */
+      versions: components["schemas"]["LineageVersion"][];
+    };
+    ListCertificateLineagesResponse: {
+      /** @description An ISO-8601 formatted string: when they were read */
+      asOf: string;
+      /** @description The lineages whose newest version is valid, or ended within the last year; soonest to expire first */
+      lineages: components["schemas"]["CertificateLineage"][];
+    };
+    /**
      * @description What `data` is
      * @enum {string}
      */
@@ -3422,22 +3512,6 @@ export interface components {
       /** @description Revoked */
       revoked: number;
     };
-    /**
-     * @description Whether something renews it
-     * @enum {string}
-     */
-    RenewalMode: "automatic" | "manual";
-    /**
-     * @description Who renews it
-     * @enum {string}
-     */
-    Renewer: "acme" | "deploy-target" | "mtls" | "person";
-    /**
-     * @description Whether its renewal is in hand
-     * @enum {string}
-     */
-    CertificateHealth:
-      "healthy" | "renewing" | "needs-person" | "failing" | "expired";
     DashboardCertificate: {
       /** @description Its ID */
       certificateId: string;
@@ -5574,6 +5648,44 @@ export interface operations {
       };
       /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
       503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListCertificateLineages: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The lineages. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListCertificateLineagesResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
         headers: {
           [name: string]: unknown;
         };

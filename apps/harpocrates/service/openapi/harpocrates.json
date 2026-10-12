@@ -2601,6 +2601,54 @@
         ]
       }
     },
+    "/v1/certificate-lineages": {
+      "get": {
+        "description": "Each subject's certificates together, linked by renewal or issued again by the same CA for the same subject, newest first, with how the newest is renewed; those whose newest version is valid or ended within the last year, soonest to expire first.",
+        "operationId": "ListCertificateLineages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The lineages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListCertificateLineagesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists the certificates as lineages",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
     "/v1/certificate/{certificateId}": {
       "get": {
         "description": "A certificate with its PEM, chain, key history, renewals and revocation.",
@@ -8356,6 +8404,208 @@
           "certificates"
         ]
       },
+      "CertificateHealth": {
+        "type": "string",
+        "description": "healthy: not yet at its renewal point; renewing: past it, something renews it, more than a week left; failing: the same with a week or less; needs-person: past it, nothing renews it; expired: expired without being replaced",
+        "enum": [
+          "healthy",
+          "renewing",
+          "needs-person",
+          "failing",
+          "expired"
+        ]
+      },
+      "RenewalMode": {
+        "type": "string",
+        "description": "automatic: Harpocrates or a client renews it (a deploy target's, or ACME's); manual: nothing does, a person must",
+        "enum": [
+          "automatic",
+          "manual"
+        ]
+      },
+      "Renewer": {
+        "type": "string",
+        "description": "acme: its ACME client orders the next; deploy-target: Harpocrates renews and deploys it; mtls: its holder renews it over mutual TLS, as it did to get it; person: nothing does",
+        "enum": [
+          "acme",
+          "deploy-target",
+          "mtls",
+          "person"
+        ]
+      },
+      "LineageVersion": {
+        "type": "object",
+        "properties": {
+          "certificateId": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued it"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its serial, hex"
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it becomes valid"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "issuedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was issued"
+          },
+          "state": {
+            "description": "Its state",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateState"
+              }
+            ]
+          },
+          "revokedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was revoked"
+          },
+          "revocationReason": {
+            "description": "Why it was revoked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RevocationReason"
+              }
+            ]
+          },
+          "renews": {
+            "type": "boolean",
+            "description": "Whether it renews the version before it (renewed, or ordered again for the same subject); the first is new"
+          }
+        },
+        "required": [
+          "certificateId",
+          "issuerId",
+          "serial",
+          "notBefore",
+          "notAfter",
+          "issuedAt",
+          "state",
+          "renews"
+        ]
+      },
+      "CertificateLineage": {
+        "type": "object",
+        "properties": {
+          "lineageId": {
+            "type": "string",
+            "description": "Its ID: its first version's"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its newest version's common name, or its subject"
+          },
+          "names": {
+            "description": "Its newest version's alternative names' values",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued its newest version"
+          },
+          "profileId": {
+            "type": "string",
+            "description": "The profile its newest version was issued under"
+          },
+          "state": {
+            "description": "Its newest version's state",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateState"
+              }
+            ]
+          },
+          "health": {
+            "description": "Whether its renewal is in hand, as the dashboard reads it; none once its newest version is revoked",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CertificateHealth"
+              }
+            ]
+          },
+          "renewalDueAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: its newest version's renewal point"
+          },
+          "renewal": {
+            "description": "Whether something renews it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RenewalMode"
+              }
+            ]
+          },
+          "renewer": {
+            "description": "Who renews it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Renewer"
+              }
+            ]
+          },
+          "deployTargets": {
+            "description": "The deploy targets its newest version is deployed to",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "versions": {
+            "description": "Its versions, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineageVersion"
+            }
+          }
+        },
+        "required": [
+          "lineageId",
+          "name",
+          "names",
+          "issuerId",
+          "state",
+          "renewalDueAt",
+          "renewal",
+          "renewer",
+          "deployTargets",
+          "versions"
+        ]
+      },
+      "ListCertificateLineagesResponse": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when they were read"
+          },
+          "lineages": {
+            "description": "The lineages whose newest version is valid, or ended within the last year; soonest to expire first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateLineage"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "lineages"
+        ]
+      },
       "KeyImportFormat": {
         "type": "string",
         "description": "What `data` is",
@@ -12187,35 +12437,6 @@
           "issued",
           "renewed",
           "revoked"
-        ]
-      },
-      "RenewalMode": {
-        "type": "string",
-        "description": "Whether something renews it",
-        "enum": [
-          "automatic",
-          "manual"
-        ]
-      },
-      "Renewer": {
-        "type": "string",
-        "description": "Who renews it",
-        "enum": [
-          "acme",
-          "deploy-target",
-          "mtls",
-          "person"
-        ]
-      },
-      "CertificateHealth": {
-        "type": "string",
-        "description": "Whether its renewal is in hand",
-        "enum": [
-          "healthy",
-          "renewing",
-          "needs-person",
-          "failing",
-          "expired"
         ]
       },
       "DashboardCertificate": {
