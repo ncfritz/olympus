@@ -38,12 +38,13 @@ describe("issuer names (ADR 0020, Naming)", () => {
     ).toBe("ssh-user-issuing-1-g1");
   });
 
-  it("publishes by slug", () => {
+  it("publishes by slug, and answers OCSP at one URL for every CA", () => {
     expect(
       distributionUrls("http://pki.internal.ncfritz.net", "tls-issuing-1-g1"),
     ).toEqual({
       crlUrl: "http://pki.internal.ncfritz.net/crl/tls-issuing-1-g1.crl",
       caIssuersUrl: "http://pki.internal.ncfritz.net/ca/tls-issuing-1-g1.crt",
+      ocspUrl: "http://pki.internal.ncfritz.net/ocsp",
     });
   });
 });

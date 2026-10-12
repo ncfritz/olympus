@@ -533,6 +533,12 @@ export function ProfileEditor() {
           <Setting setting="includeIssuerAltName" switch>
             <Switch />
           </Setting>
+          <Setting setting="includeOcsp" switch>
+            <Switch />
+          </Setting>
+          <Setting setting="mustStaple" switch>
+            <Switch />
+          </Setting>
         </Flex>
         <Rows
           setting="policies"

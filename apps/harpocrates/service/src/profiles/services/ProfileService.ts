@@ -63,6 +63,8 @@ const SETTINGS: (keyof ProfileSettings)[] = [
   "includeCrlDistribution",
   "includeCaIssuers",
   "includeIssuerAltName",
+  "includeOcsp",
+  "mustStaple",
   "policies",
   "customExtensions",
   "ssh",
@@ -250,12 +252,19 @@ const ruleProblems = (settings: ProfileSettings): string[] => {
       settings.policies.length && "certificate policies",
       settings.customExtensions.length && "custom extensions",
       settings.includeIssuerAltName && "the issuer's alternative names",
+      settings.includeOcsp && "the OCSP URL",
+      settings.mustStaple && "must-staple",
     ].filter(Boolean);
     if (extra.length) {
       problems.push(
         `minimal extensions carry only the key identifiers, not ${extra.join(", ")}`,
       );
     }
+  }
+  if (settings.mustStaple && !settings.includeOcsp) {
+    problems.push(
+      "must-staple needs the OCSP URL in its certificates: a client must be able to find the status it insists on",
+    );
   }
   const forced = (usage: string) =>
     settings.keyUsages.some((u) => u.usage === usage && u.state === "forced");
@@ -665,6 +674,8 @@ export class ProfileService {
         includeCrlDistribution: settings.includeCrlDistribution,
         includeCaIssuers: settings.includeCaIssuers,
         includeIssuerAltName: settings.includeIssuerAltName,
+        includeOcsp: settings.includeOcsp ?? false,
+        mustStaple: settings.mustStaple ?? false,
         createdBy: principal.id,
         keyUsages: {
           create: kept.keyUsages.map(({ usage, state }) => ({

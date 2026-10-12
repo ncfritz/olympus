@@ -38,8 +38,12 @@ export const issuerSlug = (parts: IssuerNameParts) =>
     .filter((part) => part !== undefined)
     .join("-");
 
-/** Where an issuer's list and certificate are published. */
+/**
+ * Where an issuer's list and certificate are published, and where its
+ * OCSP responder answers: one /ocsp for every CA (ADR 0036).
+ */
 export const distributionUrls = (base: string, slug: string) => ({
   crlUrl: `${base}/crl/${slug}.crl`,
   caIssuersUrl: `${base}/ca/${slug}.crt`,
+  ocspUrl: `${base}/ocsp`,
 });

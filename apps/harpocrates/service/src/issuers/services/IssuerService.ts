@@ -308,13 +308,14 @@ export class IssuerService {
   ): Promise<FullIssuer> {
     const row = await this.row(issuerId);
     const names = request.alternativeNames;
-    if (!names) return this.describe(issuerId);
+    const ocspUrl = request.ocspUrl?.trim();
+    if (!names && ocspUrl === undefined) return this.describe(issuerId);
     const rows = [
-      ...(names.email ?? []).map((value) => ({
+      ...(names?.email ?? []).map((value) => ({
         type: "email" as const,
         value: value.trim(),
       })),
-      ...(names.uri ?? []).map((value) => ({
+      ...(names?.uri ?? []).map((value) => ({
         type: "uri" as const,
         value: value.trim(),
       })),
@@ -335,10 +336,15 @@ export class IssuerService {
       );
     }
     await this.prisma.$transaction(async (tx) => {
-      await tx.issuerAlternativeName.deleteMany({ where: { issuerId } });
+      if (names) {
+        await tx.issuerAlternativeName.deleteMany({ where: { issuerId } });
+      }
       await tx.issuer.update({
         where: { id: issuerId },
-        data: { alternativeNames: { create: rows } },
+        data: {
+          ...(names ? { alternativeNames: { create: rows } } : {}),
+          ...(ocspUrl !== undefined ? { ocspUrl } : {}),
+        },
       });
       await this.audit.record(
         {
@@ -348,7 +354,14 @@ export class IssuerService {
           subjectId: issuerId,
           attributes: {
             subject: row.subject,
-            alternativeNames: rows.map((r) => `${r.type}:${r.value}`).join(","),
+            ...(names
+              ? {
+                  alternativeNames: rows
+                    .map((r) => `${r.type}:${r.value}`)
+                    .join(","),
+                }
+              : {}),
+            ...(ocspUrl !== undefined ? { ocspUrl } : {}),
           },
         },
         tx,

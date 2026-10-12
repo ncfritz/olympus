@@ -1133,6 +1133,7 @@ export class CertificateService {
     const notBefore = startNow();
     const minimal = profile.extensions === "minimal";
     const settings = await this.certificateSettings(profile, issuer);
+    if (profile.includeOcsp && !minimal) await this.checkResponder(issuer);
     return {
       subject,
       serial: randomSerial(),
@@ -1151,6 +1152,8 @@ export class CertificateService {
               ? [issuer.crlUrl]
               : [],
             issuerUrls: profile.includeCaIssuers ? [issuer.caIssuersUrl] : [],
+            ocspUrls: profile.includeOcsp ? [issuer.ocspUrl] : [],
+            mustStaple: profile.mustStaple,
             basicConstraints: BASIC_CONSTRAINTS[profile.basicConstraints],
             issuerAlternativeNames: profile.includeIssuerAltName
               ? buildContactNames(issuer.alternativeNames)
@@ -1184,6 +1187,27 @@ export class CertificateService {
    * hash, unless the issuer's key is Ed25519, which has none; PSS only
    * under an RSA issuer, another ignoring it; its key identifier methods.
    */
+  /**
+   * A certificate carries its CA's OCSP URL only once something answers
+   * there for it (ADR 0036): a responder in service.
+   */
+  private async checkResponder(issuer: IssuerWithRules): Promise<void> {
+    const now = new Date();
+    const responders = await this.prisma.ocspResponder.count({
+      where: {
+        issuerId: issuer.id,
+        status: "active",
+        notBefore: { lte: now },
+        notAfter: { gt: now },
+      },
+    });
+    if (responders === 0) {
+      throw new UnprocessableEntityException(
+        `${issuer.id} has no OCSP responder in service yet, so its certificates cannot carry its OCSP URL`,
+      );
+    }
+  }
+
   private async certificateSettings(
     profile: ProfileWithRules,
     issuer: IssuerWithRules,

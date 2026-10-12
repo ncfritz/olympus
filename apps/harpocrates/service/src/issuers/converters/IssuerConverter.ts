@@ -86,6 +86,7 @@ export const toDomainObject = (row: IssuerWithRules): Issuer => ({
   nameConstraints: buildNameConstraints(row.nameConstraints),
   crlUrl: row.crlUrl,
   caIssuersUrl: row.caIssuersUrl,
+  ocspUrl: row.ocspUrl,
   alternativeNames: buildContactNames(row.alternativeNames),
 });
 

@@ -736,6 +736,26 @@ export class ProfileSettings {
   includeIssuerAltName: boolean;
 
   @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Whether certificates carry the issuing CA's OCSP URL in their AIA (ADR 0036); only once it has a responder. Absent, no",
+  })
+  @IsOptional()
+  @IsBoolean()
+  includeOcsp?: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "OCSP must-staple (the TLS feature, RFC 7633): a client refuses the certificate without a stapled status. Only with includeOcsp. Absent, no",
+  })
+  @IsOptional()
+  @IsBoolean()
+  mustStaple?: boolean;
+
+  @ApiProperty({
     type: () => ProfilePolicy,
     isArray: true,
     required: true,

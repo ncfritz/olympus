@@ -188,6 +188,15 @@ ADR 0036; each scheduler run, after the lists:
   its `nextUpdate`. A CA or serial it does not know is `unauthorized`,
   never `good`; a lapsed response is `tryLater`; what is not a request
   is `malformedRequest`. A nonce is not echoed.
+- **In certificates**: each CA has an OCSP URL, the distribution host's
+  `/ocsp` unless an admin sets another (`PUT /issuer/{id}`). A version
+  that sets `includeOcsp` puts it in its certificates' AIA, and one that
+  also sets `mustStaple` adds the TLS feature (`status_request`); both
+  are off by default and for every seeded version, must-staple needs the
+  OCSP URL, and neither goes with minimal extensions. A certificate is
+  issued with the OCSP URL only while its CA has a responder in service;
+  otherwise it is refused (`422`), and so is the version's preview. CA
+  certificates do not carry it yet.
 - `GET /issuer/{id}/ocsp-responders` lists a CA's responders and how
   fresh its responses are.
 
@@ -201,7 +210,7 @@ from it.
 | Operation                                                                                                                        | Who                   |
 | -------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | `GET /issuers`, `GET /issuer/{id}`                                                                                               | either role           |
-| `PUT /issuer/{id}` (its issuer alternative names)                                                                                | admin, recent sign-in |
+| `PUT /issuer/{id}` (its issuer alternative names, its OCSP URL)                                                                  | admin, recent sign-in |
 | `POST /issuers/roots`, `POST /issuers/import`                                                                                    | admin, recent sign-in |
 | `POST /issuers/preview` (a new CA's settings and defaults, unsigned)                                                             | admin                 |
 | `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing`                                                           | admin, recent sign-in |

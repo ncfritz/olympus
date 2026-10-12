@@ -11,6 +11,7 @@ import {
   IsString,
   Matches,
   Max,
+  MaxLength,
   Min,
   MinLength,
   ValidateNested,
@@ -233,6 +234,14 @@ export class Issuer {
   caIssuersUrl: string;
 
   @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "Where its OCSP responder answers (ADR 0036), which a profile version may put in the certificates it signs",
+  })
+  ocspUrl: string;
+
+  @ApiProperty({
     type: () => ContactNames,
     required: true,
     description:
@@ -386,6 +395,13 @@ export class IssuerPreview {
     description: "Where its certificate would be published",
   })
   caIssuersUrl: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Where its OCSP responder would answer",
+  })
+  ocspUrl: string;
 
   @ApiProperty({
     type: String,
@@ -891,6 +907,20 @@ export class UpdateIssuerRequest {
   @ValidateNested()
   @Type(() => ContactNames)
   alternativeNames?: ContactNames;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Where its OCSP responder answers: an http:// URL (ADR 0036). Certificates already issued keep the one they carry",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^http:\/\/[^\s/?#]+(\/\S*)?$/, {
+    message: "ocspUrl must be an http:// URL",
+  })
+  @MaxLength(512)
+  ocspUrl?: string;
 }
 
 export class UpdateIssuerResponse {

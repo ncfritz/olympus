@@ -330,6 +330,14 @@ export const SETTINGS: Record<SettingKey, Meta> = {
     label: "Issuer alternative name",
     help: "Whether certificates carry the issuing CA's own alternative names (set on the CA's page), where it has any.",
   },
+  includeOcsp: {
+    label: "OCSP URL (AIA)",
+    help: "Whether certificates say where their CA's OCSP responder answers (ADR 0036). Only once the CA has a responder in service: until then a certificate is refused.",
+  },
+  mustStaple: {
+    label: "OCSP must-staple",
+    help: "The TLS feature (RFC 7633): a client refuses the certificate unless the server staples a current OCSP response. Needs the OCSP URL; turn it on only once every server using the profile staples.",
+  },
   policies: {
     label: "Certificate policies",
     help: "Policy OIDs its certificates assert, in order, each with an optional CPS URI and a notice for relying parties.",
@@ -405,6 +413,8 @@ export const SECTIONS: {
       "includeCrlDistribution",
       "includeCaIssuers",
       "includeIssuerAltName",
+      "includeOcsp",
+      "mustStaple",
       "policies",
       "customExtensions",
     ],
@@ -608,6 +618,8 @@ export const NEW_PROFILE_SETTINGS: ProfileSettings = {
   includeCrlDistribution: true,
   includeCaIssuers: true,
   includeIssuerAltName: false,
+  includeOcsp: false,
+  mustStaple: false,
   policies: [],
   customExtensions: [],
 };

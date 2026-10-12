@@ -163,6 +163,8 @@ export const toSettings = (
     | "includeCrlDistribution"
     | "includeCaIssuers"
     | "includeIssuerAltName"
+    | "includeOcsp"
+    | "mustStaple"
   > &
     VersionRules,
 ): ProfileSettings => ({
@@ -219,6 +221,8 @@ export const toSettings = (
   includeCrlDistribution: row.includeCrlDistribution,
   includeCaIssuers: row.includeCaIssuers,
   includeIssuerAltName: row.includeIssuerAltName,
+  includeOcsp: row.includeOcsp,
+  mustStaple: row.mustStaple,
   policies: [...row.policies]
     .sort((a, b) => a.position - b.position)
     .map((p) => ({
@@ -330,6 +334,8 @@ export const unsavedVersion = (
     includeCrlDistribution: settings.includeCrlDistribution,
     includeCaIssuers: settings.includeCaIssuers,
     includeIssuerAltName: settings.includeIssuerAltName,
+    includeOcsp: settings.includeOcsp ?? false,
+    mustStaple: settings.mustStaple ?? false,
     keyUsages: settings.keyUsages
       .filter((u) => u.state !== "excluded")
       .map((u) => ({ ...pv, usage: u.usage, state: u.state as UsageState })),

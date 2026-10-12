@@ -105,6 +105,9 @@ model Issuer {
   maxValidityDays        Int          @map("max_validity_days")
   crlUrl                 String       @map("crl_url")
   caIssuersUrl           String       @map("ca_issuers_url")
+  /// Where its OCSP responder answers (ADR 0036): the distribution host's
+  /// /ocsp unless set otherwise; a version may put it in certificates.
+  ocspUrl                String       @map("ocsp_url")
   nextCrlNumber          BigInt       @default(1) @map("next_crl_number")
   /// A new list is wanted (a revocation, an imported list): the scheduler
   /// signs one at its next run and clears this.
@@ -263,6 +266,10 @@ model ProfileVersion {
   includeCaIssuers       Boolean                    @default(true) @map("include_ca_issuers")
   /// The issuer's alternative names, where it has any.
   includeIssuerAltName   Boolean                    @default(false) @map("include_issuer_alt_name")
+  /// The issuing CA's OCSP URL in the AIA (ADR 0036).
+  includeOcsp            Boolean                    @default(false) @map("include_ocsp")
+  /// OCSP must-staple: the TLS feature with status_request (RFC 7633).
+  mustStaple             Boolean                    @default(false) @map("must_staple")
   /// Who made this version: a principal, or `migration` for the seeds.
   createdBy              String                     @map("created_by")
   createdAt              DateTime                   @default(now()) @map("created_at")

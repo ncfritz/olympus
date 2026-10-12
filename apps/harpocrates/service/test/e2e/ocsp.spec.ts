@@ -530,6 +530,126 @@ describe.skipIf(!E2E_DATABASE_URL)("ocsp", () => {
     );
   });
 
+  describe("OCSP in certificates", () => {
+    const updateProfile = (profile: object) =>
+      request(server())
+        .put("/v1/profile/internal-tls")
+        .set("Authorization", harness.admin)
+        .send({ profile });
+
+    it("gives each CA its OCSP URL, which an admin may change", async () => {
+      const issuer = (
+        await request(server())
+          .get(`/v1/issuer/${tls}`)
+          .set("Authorization", harness.operator)
+          .expect(200)
+      ).body.issuer as { ocspUrl: string; crlUrl: string };
+      expect(issuer.ocspUrl).toBe(
+        issuer.crlUrl.replace(/\/crl\/[^/]+$/, "/ocsp"),
+      );
+      await request(server())
+        .put(`/v1/issuer/${tls}`)
+        .set("Authorization", harness.admin)
+        .send({ ocspUrl: "https://pki.internal.ncfritz.net/ocsp" })
+        .expect(400);
+      const changed = await request(server())
+        .put(`/v1/issuer/${tls}`)
+        .set("Authorization", harness.admin)
+        .send({ ocspUrl: "http://ocsp.internal.ncfritz.net/ocsp" })
+        .expect(200);
+      expect(changed.body.issuer.ocspUrl).toBe(
+        "http://ocsp.internal.ncfritz.net/ocsp",
+      );
+      const audited = await harness.prisma.auditEvent.findFirstOrThrow({
+        where: { kind: "issuer.updated", subjectId: tls },
+        orderBy: { sequence: "desc" },
+        include: { attributes: true },
+      });
+      expect(audited.attributes).toContainEqual(
+        expect.objectContaining({
+          name: "ocspUrl",
+          value: "http://ocsp.internal.ncfritz.net/ocsp",
+        }),
+      );
+      await request(server())
+        .put(`/v1/issuer/${tls}`)
+        .set("Authorization", harness.admin)
+        .send({ ocspUrl: issuer.ocspUrl })
+        .expect(200);
+    });
+
+    it("refuses must-staple without the OCSP URL, or either with minimal extensions", async () => {
+      const refused = await updateProfile({ mustStaple: true }).expect(422);
+      expect(refused.body.message).toMatch(/must-staple needs the OCSP URL/);
+      const minimal = await updateProfile({
+        includeOcsp: true,
+        extensions: "minimal",
+      }).expect(422);
+      expect(minimal.body.message).toMatch(/not .*the OCSP URL/);
+    });
+
+    it.skipIf(!hasOpenssl)(
+      "puts the CA's OCSP URL and must-staple in a version's certificates",
+      async () => {
+        const saved = await updateProfile({
+          includeOcsp: true,
+          mustStaple: true,
+        }).expect(200);
+        expect(saved.body.profile).toMatchObject({
+          includeOcsp: true,
+          mustStaple: true,
+        });
+        const certificate = await issue("staple.internal.ncfritz.net");
+        const text = execFileSync("openssl", ["x509", "-noout", "-text"], {
+          input: certificate.certificate,
+          encoding: "utf8",
+        });
+        const issuer = await harness.prisma.issuer.findUniqueOrThrow({
+          where: { id: tls },
+        });
+        expect(text).toContain(`OCSP - URI:${issuer.ocspUrl}`);
+        expect(text).toMatch(/TLS Feature:\s+status_request/);
+        // And the responder answers for it once the next run has signed.
+        await scheduler.run();
+        expect((await stored(tls, certificate.serial)).status).toBe("good");
+      },
+    );
+
+    it("refuses a certificate with the OCSP URL while its CA has no responder", async () => {
+      const active = await harness.prisma.ocspResponder.findMany({
+        where: { issuerId: tls, status: "active" },
+      });
+      await harness.prisma.ocspResponder.updateMany({
+        where: { id: { in: active.map((r) => r.id) } },
+        data: { status: "superseded" },
+      });
+      try {
+        const { csr } = await makeCsr("nostaple.internal.ncfritz.net", [
+          "nostaple.internal.ncfritz.net",
+        ]);
+        const refused = await request(server())
+          .post("/v1/certificates")
+          .set("Authorization", harness.operator)
+          .send({
+            profileId: "internal-tls",
+            subject: { commonName: "nostaple.internal.ncfritz.net" },
+            names: { dns: ["nostaple.internal.ncfritz.net"] },
+            csr,
+          })
+          .expect(422);
+        expect(refused.body.message).toMatch(/no OCSP responder in service/);
+      } finally {
+        await harness.prisma.ocspResponder.updateMany({
+          where: { id: { in: active.map((r) => r.id) } },
+          data: { status: "active" },
+        });
+      }
+      await updateProfile({ includeOcsp: false, mustStaple: false }).expect(
+        200,
+      );
+    });
+  });
+
   it("answers 404 for a CA it does not know", async () => {
     await request(server())
       .get("/v1/issuer/no-such-ca/ocsp-responders")

@@ -1453,6 +1453,8 @@ export interface components {
       crlUrl: string;
       /** @description Where its certificate is published */
       caIssuersUrl: string;
+      /** @description Where its OCSP responder answers (ADR 0036), which a profile version may put in the certificates it signs */
+      ocspUrl: string;
       /** @description How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs */
       alternativeNames: components["schemas"]["ContactNames"];
     };
@@ -1532,6 +1534,8 @@ export interface components {
       crlUrl: string;
       /** @description Where its certificate is published */
       caIssuersUrl: string;
+      /** @description Where its OCSP responder answers (ADR 0036), which a profile version may put in the certificates it signs */
+      ocspUrl: string;
       /** @description How whoever runs it is reached: its issuer alternative names, which a profile version may put in the certificates it signs */
       alternativeNames: components["schemas"]["ContactNames"];
       /** @description Its certificate, PEM */
@@ -1605,6 +1609,8 @@ export interface components {
     UpdateIssuerRequest: {
       /** @description Its issuer alternative names (emails, URIs), replacing those it has */
       alternativeNames?: components["schemas"]["ContactNames"];
+      /** @description Where its OCSP responder answers: an http:// URL (ADR 0036). Certificates already issued keep the one they carry */
+      ocspUrl?: string;
     };
     UpdateIssuerResponse: {
       /** @description The CA, as it now is */
@@ -1665,6 +1671,8 @@ export interface components {
       crlUrl: string;
       /** @description Where its certificate would be published */
       caIssuersUrl: string;
+      /** @description Where its OCSP responder would answer */
+      ocspUrl: string;
       /** @description The parent's list, written into its certificate as the distribution point; none for a root */
       crlDistributionPoint?: string;
       /** @description The parent's certificate, written into its certificate as the issuer URL; none for a root */
@@ -2342,6 +2350,10 @@ export interface components {
       includeCaIssuers: boolean;
       /** @description Whether certificates carry the issuer's alternative names, where it has any */
       includeIssuerAltName: boolean;
+      /** @description Whether certificates carry the issuing CA's OCSP URL in their AIA (ADR 0036); only once it has a responder. Absent, no */
+      includeOcsp?: boolean;
+      /** @description OCSP must-staple (the TLS feature, RFC 7633): a client refuses the certificate without a stapled status. Only with includeOcsp. Absent, no */
+      mustStaple?: boolean;
       /** @description The certificate policies its certificates assert, in order */
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
@@ -2503,6 +2515,10 @@ export interface components {
       includeCaIssuers: boolean;
       /** @description Whether certificates carry the issuer's alternative names, where it has any */
       includeIssuerAltName: boolean;
+      /** @description Whether certificates carry the issuing CA's OCSP URL in their AIA (ADR 0036); only once it has a responder. Absent, no */
+      includeOcsp?: boolean;
+      /** @description OCSP must-staple (the TLS feature, RFC 7633): a client refuses the certificate without a stapled status. Only with includeOcsp. Absent, no */
+      mustStaple?: boolean;
       /** @description The certificate policies its certificates assert, in order */
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
@@ -2607,6 +2623,10 @@ export interface components {
       includeCaIssuers: boolean;
       /** @description Whether certificates carry the issuer's alternative names, where it has any */
       includeIssuerAltName: boolean;
+      /** @description Whether certificates carry the issuing CA's OCSP URL in their AIA (ADR 0036); only once it has a responder. Absent, no */
+      includeOcsp?: boolean;
+      /** @description OCSP must-staple (the TLS feature, RFC 7633): a client refuses the certificate without a stapled status. Only with includeOcsp. Absent, no */
+      mustStaple?: boolean;
       /** @description The certificate policies its certificates assert, in order */
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
@@ -2707,6 +2727,10 @@ export interface components {
       includeCaIssuers?: boolean;
       /** @description Whether certificates carry the issuer's alternative names, where it has any */
       includeIssuerAltName?: boolean;
+      /** @description Whether certificates carry the issuing CA's OCSP URL in their AIA (ADR 0036); only once it has a responder. Absent, no */
+      includeOcsp?: boolean;
+      /** @description OCSP must-staple (the TLS feature, RFC 7633): a client refuses the certificate without a stapled status. Only with includeOcsp. Absent, no */
+      mustStaple?: boolean;
       /** @description The certificate policies its certificates assert, in order */
       policies?: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
@@ -2799,6 +2823,10 @@ export interface components {
       includeCaIssuers: boolean;
       /** @description Whether certificates carry the issuer's alternative names, where it has any */
       includeIssuerAltName: boolean;
+      /** @description Whether certificates carry the issuing CA's OCSP URL in their AIA (ADR 0036); only once it has a responder. Absent, no */
+      includeOcsp?: boolean;
+      /** @description OCSP must-staple (the TLS feature, RFC 7633): a client refuses the certificate without a stapled status. Only with includeOcsp. Absent, no */
+      mustStaple?: boolean;
       /** @description The certificate policies its certificates assert, in order */
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
