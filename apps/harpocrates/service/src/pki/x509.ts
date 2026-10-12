@@ -117,6 +117,35 @@ export const parseCertificate = (pem: string): ParsedCertificate => {
   };
 };
 
+/** The TLS feature extension (RFC 7633). */
+const TLS_FEATURE = "1.3.6.1.5.5.7.1.24";
+
+/** TLS feature status_request: OCSP must-staple. */
+const STATUS_REQUEST = 5;
+
+/**
+ * Whether a certificate requires its OCSP response stapled (RFC 7633):
+ * a TLS feature extension naming status_request. Its value is a SEQUENCE
+ * OF INTEGER; each small integer is 02 01 nn.
+ */
+export const isMustStaple = (der: Uint8Array): boolean => {
+  const extension = new x509.X509Certificate(new Uint8Array(der)).getExtension(
+    TLS_FEATURE,
+  );
+  if (!extension) return false;
+  const value = new Uint8Array(extension.value);
+  for (let i = 2; i + 2 < value.length; i++) {
+    if (
+      value[i] === 0x02 &&
+      value[i + 1] === 0x01 &&
+      value[i + 2] === STATUS_REQUEST
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
 /** Whether `child` is signed by `parent`'s key. */
 export const isIssuedBy = (childPem: string, parentPem: string): boolean => {
   const child = new X509Certificate(childPem);

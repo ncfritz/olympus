@@ -955,6 +955,10 @@ model EndpointObservation {
   servedSerial          String?        @map("served_serial")
   servedSubject         String?        @map("served_subject")
   servedNotAfter        DateTime?      @map("served_not_after")
+  /// Whether the served certificate requires a stapled OCSP response.
+  servedMustStaple      Boolean?       @map("served_must_staple")
+  /// Whether the endpoint stapled an OCSP response.
+  stapled               Boolean?
   /// Why there was no handshake.
   error                 String?
   /// How many checks saw this.

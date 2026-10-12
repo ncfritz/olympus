@@ -4,8 +4,11 @@ import * as tls from "tls";
 
 const TIMEOUT_MS = 10_000;
 
-/** What a TLS handshake with an endpoint showed. */
-export type Probe = { der: Buffer } | { error: string };
+/**
+ * What a TLS handshake with an endpoint showed: the certificate it
+ * served, and whether it stapled an OCSP response.
+ */
+export type Probe = { der: Buffer; stapled: boolean } | { error: string };
 
 /** host:port, split; a bracketed IPv6 host is unbracketed. */
 export const splitEndpoint = (
@@ -20,8 +23,9 @@ export const splitEndpoint = (
 
 /**
  * Asks an endpoint for its certificate: a TLS handshake that sends the
- * host as SNI and trusts anything, because the question is what it
- * serves, not whether that is any good. Nothing is sent after it.
+ * host as SNI, asks for a stapled OCSP response, and trusts anything,
+ * because the question is what it serves, not whether that is any good.
+ * Nothing is sent after it.
  */
 @Injectable()
 export class EndpointProbe {
@@ -33,7 +37,13 @@ export class EndpointProbe {
         port,
         servername: isIP(host) ? undefined : host,
         rejectUnauthorized: false,
+        requestOCSP: true,
         timeout: TIMEOUT_MS,
+      });
+      // Emitted before secureConnect: null when nothing was stapled.
+      let stapled = false;
+      socket.once("OCSPResponse", (response: Buffer | null) => {
+        stapled = Boolean(response?.length);
       });
       const done = (answer: Probe) => {
         socket.destroy();
@@ -41,7 +51,11 @@ export class EndpointProbe {
       };
       socket.once("secureConnect", () => {
         const raw = socket.getPeerCertificate().raw;
-        done(raw ? { der: raw } : { error: "It presented no certificate" });
+        done(
+          raw
+            ? { der: raw, stapled }
+            : { error: "It presented no certificate" },
+        );
       });
       socket.once("timeout", () =>
         done({ error: `No handshake within ${TIMEOUT_MS / 1000} seconds` }),

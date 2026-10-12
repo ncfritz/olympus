@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   certifiable,
   generatable,
+  isMustStaple,
   keyAlgorithm,
   parseCsr,
   parseCertificate,
@@ -15,6 +16,7 @@ import {
   subjectName,
   toPem,
 } from "../../../src/pki/x509";
+import { selfSignedTls } from "../../support/tls";
 
 describe("x509 helpers", () => {
   it("makes 159-bit positive serials", () => {
@@ -127,6 +129,14 @@ describe("x509 helpers", () => {
     const parsed = parseCertificate(certificate.toString("pem"));
     expect(parsed.subject).toBe(name);
     expect(parsed.issuer).toBe(name);
+  });
+
+  it("reads must-staple from a TLS feature naming status_request", async () => {
+    expect(isMustStaple((await selfSignedTls("a", [5])).der)).toBe(true);
+    expect(isMustStaple((await selfSignedTls("b", [17, 5])).der)).toBe(true);
+    // status_request_v2 alone is not must-staple.
+    expect(isMustStaple((await selfSignedTls("c", [17])).der)).toBe(false);
+    expect(isMustStaple((await selfSignedTls("d")).der)).toBe(false);
   });
 
   it("wraps PEM at 64 columns", () => {

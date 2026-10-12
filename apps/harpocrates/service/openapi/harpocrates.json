@@ -11419,6 +11419,14 @@
             "type": "string",
             "description": "An ISO-8601 formatted string: when the served certificate expires"
           },
+          "servedMustStaple": {
+            "type": "boolean",
+            "description": "Whether the served certificate requires a stapled OCSP response (must-staple)"
+          },
+          "stapled": {
+            "type": "boolean",
+            "description": "Whether the endpoint stapled an OCSP response"
+          },
           "error": {
             "type": "string",
             "description": "Why there was no handshake"

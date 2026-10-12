@@ -79,6 +79,8 @@ export const toObservation = (row: ObservationRow): EndpointObservation => ({
   servedSerial: row.servedSerial ?? undefined,
   servedSubject: row.servedSubject ?? undefined,
   servedNotAfter: row.servedNotAfter ? moment(row.servedNotAfter) : undefined,
+  servedMustStaple: row.servedMustStaple ?? undefined,
+  stapled: row.stapled ?? undefined,
   error: row.error ?? undefined,
   checks: row.checks,
   createdAt: moment(row.createdAt),

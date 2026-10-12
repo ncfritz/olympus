@@ -15,6 +15,7 @@ import {
   startHarness,
   type Harness,
 } from "../support/e2e";
+import { selfSignedTls } from "../support/tls";
 import { bearer } from "../support/tokens";
 
 type Deployment = {
@@ -638,6 +639,70 @@ describe.skipIf(!E2E_DATABASE_URL)("deploy targets", () => {
       expect(other.lastObservation).toMatchObject({ result: "other" });
       expect(other.lastObservation?.servedCertificateId).toBeUndefined();
       web.setSecureContext(serve("web"));
+    });
+
+    it("records whether it staples, asking a must-staple certificate's endpoint twice", async () => {
+      // What it staples is not checked: only that something is.
+      let asked = 0;
+      const staple = (
+        _certificate: Buffer,
+        _issuer: Buffer,
+        callback: (error: Error | null, response?: Buffer) => void,
+      ) => {
+        asked += 1;
+        // Like nginx: nothing on the first handshake, fetched for the next.
+        callback(
+          null,
+          asked > 1 ? Buffer.from([0x30, 0x03, 0x0a, 0x01, 0x00]) : undefined,
+        );
+      };
+      web.on("OCSPRequest", staple);
+      try {
+        // The target's certificate need not be stapled: asked once.
+        const plain = await check();
+        expect(plain.lastObservation).toMatchObject({
+          result: "current",
+          servedMustStaple: false,
+          stapled: false,
+        });
+        expect(asked).toBe(1);
+        const stapled = await check();
+        expect(stapled.lastObservation).toMatchObject({ stapled: true });
+
+        // A must-staple certificate: asked again when nothing came.
+        asked = 0;
+        const mustStaple = await selfSignedTls(
+          "staple.internal.ncfritz.net",
+          [5],
+        );
+        web.setSecureContext({ cert: mustStaple.cert, key: mustStaple.key });
+        const retried = await check();
+        expect(asked).toBe(2);
+        expect(retried.lastObservation).toMatchObject({
+          result: "other",
+          servedMustStaple: true,
+          stapled: true,
+        });
+        let metrics = await request(server()).get("/metrics").expect(200);
+        expect(metrics.text).toMatch(
+          /harpocrates_deploy_target_stapling\{target="web",must_staple="true"[^}]*\} 1\n/,
+        );
+
+        // Never stapled: recorded, and the gauge the alert reads says so.
+        web.off("OCSPRequest", staple);
+        const unstapled = await check();
+        expect(unstapled.lastObservation).toMatchObject({
+          servedMustStaple: true,
+          stapled: false,
+        });
+        metrics = await request(server()).get("/metrics").expect(200);
+        expect(metrics.text).toMatch(
+          /harpocrates_deploy_target_stapling\{target="web",must_staple="true"[^}]*\} 0\n/,
+        );
+      } finally {
+        web.off("OCSPRequest", staple);
+        web.setSecureContext(serve("web"));
+      }
     });
 
     it("says when nothing answers, and the gauges say so too", async () => {

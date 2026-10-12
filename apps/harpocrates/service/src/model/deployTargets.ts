@@ -193,6 +193,21 @@ export class EndpointObservation {
   servedNotAfter?: Moment;
 
   @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      "Whether the served certificate requires a stapled OCSP response (must-staple)",
+  })
+  servedMustStaple?: boolean;
+
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description: "Whether the endpoint stapled an OCSP response",
+  })
+  stapled?: boolean;
+
+  @ApiProperty({
     type: String,
     required: false,
     description: "Why there was no handshake",

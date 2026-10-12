@@ -60,6 +60,26 @@ const ServingTag = ({ observation }: { observation?: EndpointObservation }) => {
 };
 
 /**
+ * Whether the endpoint stapled an OCSP response at a check (ADR 0036):
+ * an error when its certificate is must-staple, which clients then refuse.
+ */
+const StaplingTag = ({
+  observation,
+}: {
+  observation?: EndpointObservation;
+}) => {
+  if (observation?.stapled === undefined) return <>—</>;
+  if (observation.stapled) return <Tag color="green">Stapled</Tag>;
+  return observation.servedMustStaple ? (
+    <Tooltip title="Its certificate is must-staple: clients that honour it refuse the connection">
+      <Tag color="red">Not stapled</Tag>
+    </Tooltip>
+  ) : (
+    <Tag>Not stapled</Tag>
+  );
+};
+
+/**
  * Deploy targets (ADR 0020, Renewal and delivery): where certificates are
  * installed for what cannot renew them, renewed and deployed by the
  * service. One at a time in a drawer, opened from `?id=`.
@@ -219,6 +239,15 @@ function DeployTargetDrawer({
                 description={servingState(target.lastObservation).detail}
               />
             )}
+          {target.lastObservation?.servedMustStaple &&
+            target.lastObservation.stapled === false && (
+              <Alert
+                type="error"
+                showIcon
+                title={`${target.endpoint} serves a must-staple certificate without stapling`}
+                description="Clients that honour must-staple refuse it. nginx needs ssl_stapling on, a resolver for the OCSP URL's host, and the responder answering for the certificate."
+              />
+            )}
           <Descriptions column={1} size="small" bordered>
             <Descriptions.Item label="Kind">
               Files for nginx, in{" "}
@@ -249,6 +278,9 @@ function DeployTargetDrawer({
               <ServingTag observation={target.lastObservation} />
               {target.lastObservation &&
                 ` checked ${formatDateTime(target.lastObservation.updatedAt)}`}
+            </Descriptions.Item>
+            <Descriptions.Item label="OCSP stapling">
+              <StaplingTag observation={target.lastObservation} />
             </Descriptions.Item>
             <Descriptions.Item label="Created">
               {formatDateTime(target.createdAt)}
@@ -427,6 +459,13 @@ function DeployTargetDrawer({
                 key: "served",
                 render: (_, observation) => (
                   <ServingTag observation={observation} />
+                ),
+              },
+              {
+                title: "Stapled",
+                key: "stapled",
+                render: (_, observation) => (
+                  <StaplingTag observation={observation} />
                 ),
               },
               { title: "Checks", dataIndex: "checks" },

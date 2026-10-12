@@ -47,6 +47,7 @@ export class PkiGaugeService implements OnModuleInit {
       "harpocrates_deployment_pending_seconds",
       "harpocrates_deploy_target_checked_timestamp_seconds",
       "harpocrates_deploy_target_served_expiry_timestamp_seconds",
+      "harpocrates_deploy_target_stapling",
       "harpocrates_ocsp_next_update_timestamp_seconds",
       "harpocrates_ocsp_responder_expiry_timestamp_seconds",
       "harpocrates_ocsp_responder_missing",
@@ -314,6 +315,28 @@ export class PkiGaugeService implements OnModuleInit {
           if (served) {
             this.set({ target: row.name }, served.getTime() / 1000);
           }
+        }
+      },
+    });
+
+    // Whether each endpoint stapled an OCSP response at its last check,
+    // and whether what it served requires one (ADR 0036).
+    new Gauge({
+      name: "harpocrates_deploy_target_stapling",
+      help: "1 when each deploy target's endpoint stapled an OCSP response at its last check, 0 when not; must_staple says whether the certificate it served requires one",
+      labelNames: ["target", "must_staple"],
+      async collect() {
+        this.reset();
+        for (const row of await latestObservations()) {
+          const last = row.observations[0];
+          if (last?.stapled === null || last?.stapled === undefined) continue;
+          this.set(
+            {
+              target: row.name,
+              must_staple: last.servedMustStaple ? "true" : "false",
+            },
+            last.stapled ? 1 : 0,
+          );
         }
       },
     });

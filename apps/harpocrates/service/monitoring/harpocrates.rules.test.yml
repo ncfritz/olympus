@@ -442,3 +442,24 @@ tests:
             exp_annotations:
               summary: tls-issuing-1-g1 has no OCSP responder in service
               description: "Nothing answers for its certificates, and none may be issued with its OCSP URL. The service issues an online CA's on its next run: the signer sealed, or the CA within 10 days of its end, stops it."
+  - name: a must-staple endpoint not stapling for 15 minutes, but not one that need not
+    interval: 1m
+    input_series:
+      - series: harpocrates_deploy_target_stapling{target="web",must_staple="true"}
+        values: 0x20
+      - series: harpocrates_deploy_target_stapling{target="nas",must_staple="false"}
+        values: 0x20
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: HarpocratesEndpointNotStapling
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: HarpocratesEndpointNotStapling
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              target: web
+              must_staple: "true"
+            exp_annotations:
+              summary: web's endpoint serves a must-staple certificate without stapling
+              description: "Its certificate requires a stapled OCSP response and its last check got none, though asked twice: clients that honour must-staple refuse it. nginx needs `ssl_stapling on`, a resolver for the OCSP URL's host, and the responder answering `good` for it."

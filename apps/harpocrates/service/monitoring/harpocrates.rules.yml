@@ -184,6 +184,22 @@ groups:
             The target's page in the console shows which, and Check now
             checks again.
 
+      # A must-staple certificate served without its OCSP response is
+      # refused by the clients that honour must-staple (Firefox, curl).
+      - alert: HarpocratesEndpointNotStapling
+        expr: harpocrates_deploy_target_stapling{must_staple="true"} == 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.target }}'s endpoint serves a must-staple certificate without stapling"
+          description: >-
+            Its certificate requires a stapled OCSP response and its last
+            check got none, though asked twice: clients that honour
+            must-staple refuse it. nginx needs `ssl_stapling on`, a
+            resolver for the OCSP URL's host, and the responder answering
+            `good` for it.
+
       - alert: HarpocratesServedCertificateExpiring
         expr: >-
           harpocrates_deploy_target_served_expiry_timestamp_seconds - time()

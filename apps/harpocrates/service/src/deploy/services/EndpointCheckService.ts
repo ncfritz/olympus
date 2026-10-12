@@ -4,7 +4,7 @@ import {
   deployConfig,
   type DeployConfigType,
 } from "../../config/configuration";
-import { certificatePem, parseCertificate } from "../../pki/x509";
+import { certificatePem, isMustStaple, parseCertificate } from "../../pki/x509";
 import type { EndpointResult } from "../../store/prisma";
 import { PrismaService } from "../../store/PrismaService";
 import { EndpointProbe } from "./EndpointProbe";
@@ -17,6 +17,13 @@ export const SETTLE_MS = 30_000;
 
 /** How often an endpoint serving the wrong certificate is checked again. */
 export const RECHECK_MS = 5 * 60_000;
+
+/**
+ * How long before a must-staple certificate's endpoint is asked again
+ * when it stapled nothing: nginx fetches the response on the first
+ * handshake that asks for it and staples from the next.
+ */
+export const STAPLE_RETRY_MS = 2_000;
 
 export type EndpointCheck = {
   target: string;
@@ -33,8 +40,9 @@ type Due = {
  * Endpoint checks (ADR 0020, Renewal and delivery): after a deployment,
  * and on a schedule, Harpocrates connects to each target's endpoint and
  * records which certificate it actually serves: the target's, one it
- * deployed before (nginx not reloaded), another, or none. An answer that
- * does not change stays one row, last seen when last checked.
+ * deployed before (nginx not reloaded), another, or none; and whether it
+ * staples an OCSP response (ADR 0036). An answer that does not change
+ * stays one row, last seen when last checked.
  */
 @Injectable()
 export class EndpointCheckService {
@@ -81,7 +89,11 @@ export class EndpointCheckService {
         `Deploy target with id ${targetId} not found`,
       );
     }
-    const probe = await this.probe.probe(target.endpoint);
+    let probe = await this.probe.probe(target.endpoint);
+    if (!("error" in probe) && !probe.stapled && mustStaple(probe.der)) {
+      await new Promise((resolve) => setTimeout(resolve, STAPLE_RETRY_MS));
+      probe = await this.probe.probe(target.endpoint);
+    }
     let observation: {
       result: EndpointResult;
       servedCertificateId?: string;
@@ -89,6 +101,8 @@ export class EndpointCheckService {
       servedSerial?: string;
       servedSubject?: string;
       servedNotAfter?: Date;
+      servedMustStaple?: boolean;
+      stapled?: boolean;
       error?: string;
     };
     if ("error" in probe) {
@@ -116,6 +130,8 @@ export class EndpointCheckService {
         servedSerial: parsed?.serial,
         servedSubject: parsed?.subject,
         servedNotAfter: parsed?.notAfter,
+        servedMustStaple: mustStaple(served),
+        stapled: probe.stapled,
       };
     }
 
@@ -126,6 +142,7 @@ export class EndpointCheckService {
       last.result === observation.result &&
       last.expectedCertificateId === target.certificateId &&
       last.servedSha256 === (observation.servedSha256 ?? null) &&
+      last.stapled === (observation.stapled ?? null) &&
       last.error === (observation.error ?? null)
     ) {
       await this.prisma.endpointObservation.update({
@@ -144,6 +161,11 @@ export class EndpointCheckService {
       if (observation.result !== "current") {
         this.logger.warn(
           `${target.endpoint} (${target.name}) serves ${describe(observation)}`,
+        );
+      }
+      if (observation.servedMustStaple && !observation.stapled) {
+        this.logger.warn(
+          `${target.endpoint} (${target.name}) serves a must-staple certificate without stapling its OCSP response`,
         );
       }
     }
@@ -189,6 +211,15 @@ export class EndpointCheckService {
     return match ? { id: match.id, current: false } : undefined;
   }
 }
+
+/** Whether a served certificate requires stapling; false if unreadable. */
+const mustStaple = (der: Uint8Array): boolean => {
+  try {
+    return isMustStaple(der);
+  } catch {
+    return false;
+  }
+};
 
 const describe = (observation: {
   result: EndpointResult;

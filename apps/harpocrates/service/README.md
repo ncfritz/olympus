@@ -334,7 +334,12 @@ reloaded), `other` (one it never deployed) or `unreachable`, kept in
 `endpoint_observations` as one row while it stays the same. An endpoint
 is checked 30 seconds after each deployment lands, then every
 `ENDPOINT_CHECK_SECONDS` while it is `current` and every 5 minutes while
-it is not; `POST /v1/deploy-target/:id/check` checks it now.
+it is not; `POST /v1/deploy-target/:id/check` checks it now. The
+handshake asks for a stapled OCSP response (ADR 0036), and the row
+records whether one came and whether the certificate served is
+must-staple; a must-staple certificate's endpoint that staples nothing
+is asked again 2 seconds later, as nginx fetches the response on the
+first handshake that asks and staples from the next.
 
 ### ACME
 
@@ -426,6 +431,7 @@ taken.
 | `harpocrates_deployment_pending_seconds{target}`                    | How long a target's pending deployment has waited; 0 when none                                          |
 | `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                                                |
 | `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                                                 |
+| `harpocrates_deploy_target_stapling{target,must_staple}`            | 1 when its endpoint stapled an OCSP response at its last check, 0 when not                              |
 | `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`                            |
 | `harpocrates_ocsp_requests_total{result}`                           | OCSP requests answered: `good`, `revoked`, `unauthorized`, `malformed`, `tryLater`                      |
 | `harpocrates_ocsp_responses_signed_total{issuer}`                   | OCSP responses signed ahead                                                                             |
@@ -452,8 +458,9 @@ CA's within 60, an active CA with no list, an issuing window under a
 year, certificates past their profile's renewal point that nothing
 renews, and anything within a week of expiry; and for deploy targets, a
 deployment waiting an hour, a renewal failing for half an hour, an
-endpoint not serving its certificate for 15 minutes, and an endpoint
-serving one within a week of expiry; and for OCSP, a CA's responses
+endpoint not serving its certificate for 15 minutes, an endpoint
+serving one within a week of expiry, and one serving a must-staple
+certificate without stapling for 15 minutes; and for OCSP, a CA's responses
 within 2 days of lapsing, signing either failing, the
 responder answering `tryLater`, an online CA's responder within a week
 of lapsing and an offline CA's within 60 days, and an online CA with no

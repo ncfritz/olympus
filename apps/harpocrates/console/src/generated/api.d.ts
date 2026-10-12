@@ -3144,6 +3144,10 @@ export interface components {
       servedSubject?: string;
       /** @description An ISO-8601 formatted string: when the served certificate expires */
       servedNotAfter?: string;
+      /** @description Whether the served certificate requires a stapled OCSP response (must-staple) */
+      servedMustStaple?: boolean;
+      /** @description Whether the endpoint stapled an OCSP response */
+      stapled?: boolean;
       /** @description Why there was no handshake */
       error?: string;
       /** @description How many checks saw this */
