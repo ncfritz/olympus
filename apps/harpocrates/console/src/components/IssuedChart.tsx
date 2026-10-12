@@ -204,7 +204,7 @@ export function IssuedChart({ counts }: { counts: IssuedCount[] }) {
   };
 
   return (
-    <Flex gap="large" align="center">
+    <Flex gap="large" align="center" wrap>
       <div className={styles.plot}>
         <HighchartsReact
           ref={chartRef}

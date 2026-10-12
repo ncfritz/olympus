@@ -207,3 +207,84 @@ export const comingUp = (
     ...later,
   ].sort((a, b) => (a.at ?? now) - (b.at ?? now));
 };
+
+/** A node of the graph: a CA, or the stand-in for a root outside. */
+export type GraphNode = {
+  id: string;
+  issuer?: Issuer;
+  depth: number;
+  row: number;
+  outside: boolean;
+};
+
+/** The id of the stand-in for the roots not in Harpocrates. */
+export const OUTSIDE = "outside";
+
+/**
+ * The graph's layout, roots on the left: each CA's depth (its column) and
+ * its row, a parent centred on its children; each root's tree a group of
+ * rows, a gap between groups, the CAs outside the roots last beneath a
+ * stand-in for their root. Rows are fractional where a parent sits
+ * between its children; `gaps` counts the gaps above each.
+ */
+export const layoutGraph = (
+  issuers: Issuer[],
+): {
+  nodes: (GraphNode & { gaps: number })[];
+  edges: { from: string; to: string }[];
+  rows: number;
+  groups: number;
+} => {
+  const { roots, outside } = groupsOf(issuers);
+  const nodes: (GraphNode & { gaps: number })[] = [];
+  const edges: { from: string; to: string }[] = [];
+  let next = 0;
+  let gaps = 0;
+  const place = (
+    id: string,
+    issuer: Issuer | undefined,
+    depth: number,
+    children: Issuer[],
+    isOutside: boolean,
+  ): number => {
+    const rows = children.map((child) => {
+      edges.push({ from: id, to: child.id });
+      return place(
+        child.id,
+        child,
+        depth + 1,
+        childrenOf(issuers, child.id),
+        isOutside,
+      );
+    });
+    const row = rows.length ? (rows[0] + rows[rows.length - 1]) / 2 : next++;
+    nodes.push({ id, issuer, depth, row, outside: isOutside, gaps });
+    return row;
+  };
+  const groups: [string, Issuer | undefined, Issuer[], boolean][] = [
+    ...roots.map(
+      (root) =>
+        [root.id, root, childrenOf(issuers, root.id), false] as [
+          string,
+          Issuer,
+          Issuer[],
+          boolean,
+        ],
+    ),
+    ...(outside.length
+      ? [
+          [OUTSIDE, undefined, outside, true] as [
+            string,
+            undefined,
+            Issuer[],
+            true,
+          ],
+        ]
+      : []),
+  ];
+  groups.forEach(([id, issuer, children, isOutside], i) => {
+    if (i > 0) gaps += 1;
+    place(id, issuer, 0, children, isOutside);
+  });
+  return { nodes, edges, rows: next, groups: groups.length };
+};

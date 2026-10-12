@@ -16,6 +16,7 @@ import {
 import { shortCaName } from "@/lib/tree";
 import { Count, CountStrip } from "../CountStrip";
 import { ErrorAlert } from "../ErrorAlert";
+import { CaDiagram } from "./CaDiagram";
 import { CaList } from "./CaList";
 import styles from "./Roots.module.css";
 
@@ -112,6 +113,18 @@ export function RootsPage() {
       label: "List",
       children: (
         <CaList
+          issuers={issuers}
+          authorities={authorities}
+          now={now}
+          isAdmin={isAdmin}
+        />
+      ),
+    },
+    {
+      key: "graph",
+      label: "Graph",
+      children: (
+        <CaDiagram
           issuers={issuers}
           authorities={authorities}
           now={now}

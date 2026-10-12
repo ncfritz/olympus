@@ -106,3 +106,94 @@
 .fitTag {
   margin-inline-end: 0;
 }
+
+/* The Graph tab: the graph, and the CA chosen beside it. */
+.graphRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.graph {
+  display: flex;
+  flex: 1 1 560px;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 24px;
+}
+
+.graphScroll {
+  overflow-x: auto;
+}
+
+.node {
+  cursor: pointer;
+  outline: none;
+}
+
+.node:focus-visible rect:first-of-type {
+  stroke: var(--ant-color-primary);
+  stroke-width: 2;
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ant-color-text-secondary);
+}
+
+.summary {
+  display: flex;
+  flex: 0 1 380px;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 320px;
+  padding: 16px 24px;
+  border-left: 1px solid var(--ant-color-border-secondary);
+}
+
+.summaryTitle.summaryTitle {
+  font-size: var(--ant-font-size-lg, 16px);
+}
+
+/*
+ * A CA's life: its validity the track, the part in which it issues
+ * filled, today a mark; each point's place (--at) comes from the CA.
+ */
+.life {
+  position: relative;
+  height: 14px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ant-color-fill-secondary) 0 4px,
+    transparent 4px 8px
+  );
+  box-shadow: inset 0 0 0 1px var(--ant-color-border-secondary);
+}
+
+.lifeIssues {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--at);
+  border-radius: 4px 0 0 4px;
+  background: var(--ant-color-primary);
+  opacity: 0.55;
+}
+
+.lifeToday {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: var(--at);
+  width: 2px;
+  background: var(--ant-color-text);
+}
