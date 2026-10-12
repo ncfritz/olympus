@@ -3532,6 +3532,10 @@ export interface components {
       ocspSoonestLapse?: string;
       /** @description Its certificates revoked and not yet expired */
       revoked: number;
+      /** @description Its certificates valid now: neither revoked nor expired */
+      valid: number;
+      /** @description Its certificates expired, unrevoked, ever */
+      expired: number;
     };
     DashboardWeek: {
       /** @description Certificates issued, renewals and ACME's included */

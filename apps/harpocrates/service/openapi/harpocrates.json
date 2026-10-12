@@ -12445,13 +12445,23 @@
           "revoked": {
             "type": "number",
             "description": "Its certificates revoked and not yet expired"
+          },
+          "valid": {
+            "type": "number",
+            "description": "Its certificates valid now: neither revoked nor expired"
+          },
+          "expired": {
+            "type": "number",
+            "description": "Its certificates expired, unrevoked, ever"
           }
         },
         "required": [
           "issuerId",
           "tier",
           "offline",
-          "revoked"
+          "revoked",
+          "valid",
+          "expired"
         ]
       },
       "DashboardWeek": {

@@ -9,7 +9,7 @@ import type {
 } from "../../model/dashboard";
 import { issuingWindowClosesAt } from "../../issuers/issuingWindow";
 import { PrismaService } from "../../store/PrismaService";
-import type { IssuerTier } from "../../store/prisma";
+import type { IssuerTier, Prisma } from "../../store/prisma";
 
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -83,6 +83,8 @@ export type CrlRow = {
   ocspInCeremony?: boolean;
   ocspSoonestLapse?: Date;
   revoked: number;
+  valid: number;
+  expired: number;
 };
 
 export type DashboardRow = {
@@ -428,6 +430,8 @@ export class DashboardService {
         ocspInCeremony: crl.ocspInCeremony,
         ocspSoonestLapse: crl.ocspSoonestLapse,
         revoked: crl.revoked,
+        valid: crl.valid,
+        expired: crl.expired,
       })),
       week,
       ca,
@@ -762,17 +766,25 @@ export class DashboardService {
       },
       orderBy: { id: "asc" },
     });
-    const [soonest, revoked] = await Promise.all([
+    const countOf = (where: Prisma.CertificateWhereInput) =>
+      this.prisma.certificate.groupBy({
+        by: ["issuerId"],
+        where,
+        _count: { _all: true },
+      });
+    const [soonest, revoked, valid, expired] = await Promise.all([
       this.prisma.ocspResponse.groupBy({
         by: ["issuerId"],
         _min: { nextUpdate: true },
       }),
-      this.prisma.certificate.groupBy({
-        by: ["issuerId"],
-        where: { status: "revoked", notAfter: { gt: now } },
-        _count: { _all: true },
-      }),
+      countOf({ status: "revoked", notAfter: { gt: now } }),
+      countOf({ status: "valid", notAfter: { gt: now } }),
+      countOf({ status: "valid", notAfter: { lte: now } }),
     ]);
+    const counted = (
+      rows: { issuerId: string; _count: { _all: number } }[],
+      issuerId: string,
+    ) => rows.find((row) => row.issuerId === issuerId)?._count._all ?? 0;
     const published = await Promise.all(
       issuers.map((issuer) =>
         this.prisma.crl.findFirst({
@@ -802,8 +814,9 @@ export class DashboardService {
           ocspSoonestLapse:
             soonest.find((row) => row.issuerId === issuer.id)?._min
               .nextUpdate ?? undefined,
-          revoked:
-            revoked.find((row) => row.issuerId === issuer.id)?._count._all ?? 0,
+          revoked: counted(revoked, issuer.id),
+          valid: counted(valid, issuer.id),
+          expired: counted(expired, issuer.id),
         };
       })
       .sort((a, b) => Number(a.offline) - Number(b.offline));

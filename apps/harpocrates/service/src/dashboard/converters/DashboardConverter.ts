@@ -53,6 +53,8 @@ export const toDashboard = (row: DashboardRow): Dashboard => ({
     ocspInCeremony: crl.ocspInCeremony,
     ocspSoonestLapse: when(crl.ocspSoonestLapse),
     revoked: crl.revoked,
+    valid: crl.valid,
+    expired: crl.expired,
   })),
   week: row.week,
   ocsp: {

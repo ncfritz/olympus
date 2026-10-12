@@ -498,6 +498,20 @@ export class DashboardAuthority {
     description: "Its certificates revoked and not yet expired",
   })
   revoked: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its certificates valid now: neither revoked nor expired",
+  })
+  valid: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its certificates expired, unrevoked, ever",
+  })
+  expired: number;
 }
 
 /** What the CA did in the last 7 days. */

@@ -55,6 +55,8 @@ type Dashboard = {
     ocspResponderUntil?: string;
     ocspInCeremony?: boolean;
     revoked: number;
+    valid: number;
+    expired: number;
   }[];
   week: { issued: number; renewals: number };
   counts: {
@@ -195,6 +197,8 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
       ocspResponderUntil: expect.any(String),
       ocspInCeremony: false,
       revoked: 0,
+      valid: 1,
+      expired: 0,
     });
     expect(read.authorities.map((c) => c.issuerId)).toEqual(
       expect.arrayContaining([hierarchy.root.id, hierarchy.intermediate.id]),
@@ -279,6 +283,14 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
     expect(gone.certificates.expiredNames).toContain(
       "dash-b.internal.ncfritz.net",
     );
+    // Its CA counts it expired, no longer valid.
+    const counted = (read: Dashboard) =>
+      read.authorities.find((a) => a.issuerId === tls)!;
+    expect(counted(soon).expired).toBe(0);
+    expect(counted(gone).expired).toBeGreaterThanOrEqual(1);
+    expect(counted(gone).valid + counted(gone).expired).toBe(
+      counted(soon).valid,
+    );
     // Listed for a year after, as expired.
     expect(
       gone.certificateList.find((e) => e.certificateId === certificate.id)
@@ -305,6 +317,9 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
 
   it("counts revocations", async () => {
     const certificate = await issue("dash-d.internal.ncfritz.net");
+    const valid = (read: Dashboard) =>
+      read.authorities.find((a) => a.issuerId === tls)!.valid;
+    const before = valid(await dashboard());
     await request(server())
       .post(`/v1/certificate/${certificate.id}/revoke`)
       .set("Authorization", harness.operator)
@@ -316,6 +331,7 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
       certificate.id,
     );
     expect(read.authorities.find((a) => a.issuerId === tls)?.revoked).toBe(1);
+    expect(valid(read)).toBe(before - 1);
   });
 
   it("needs a PKI role", async () => {
