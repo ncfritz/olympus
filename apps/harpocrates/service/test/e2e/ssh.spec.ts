@@ -391,6 +391,7 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
       fingerprint: string;
       validAfter: string;
       validBefore: string;
+      contents: Record<string, unknown>;
     };
     const certificateOf = (response: request.Response) =>
       (response.body as { certificate: Certificate }).certificate;
@@ -438,6 +439,16 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
         /^guest@ncfritz\.net:[0-9a-f]{16}$/,
       );
       expect(certificate.fingerprint).toMatch(/^SHA256:/);
+      expect(certificate.contents).toMatchObject({
+        type: "user",
+        keyId: certificate.keyIdentifier,
+        principals: ["guest", "backup"],
+        extensions: ["permit-port-forwarding", "permit-pty"],
+      });
+      // The certificate holds whole seconds.
+      expect(
+        Math.floor(Date.parse(certificate.validBefore) / 1000) * 1000,
+      ).toBe(Date.parse(certificate.contents.validBefore as string));
       const hours =
         (Date.parse(certificate.validBefore) -
           Date.parse(certificate.validAfter)) /
@@ -573,6 +584,13 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
       expect(preview.body.preview.issuerId).toBe("ssh-user-1-g2");
       const certificate = preview.body.preview.certificate as string;
       expect(certificate).toMatch(/^ssh-ed25519-cert-v01@openssh\.com /);
+      expect(preview.body.preview.sshCertificate).toMatchObject({
+        type: "user",
+        keyType: "ssh-ed25519",
+        principals: ["preview"],
+        criticalOptions: [{ name: "source-address", value: "192.168.15.0/24" }],
+        extensions: ["permit-pty"],
+      });
       if (hasKeygen) {
         const listing = keygen(certificate, "-L", "-f").stdout;
         expect(listing).toMatch(/source-address 192\.168\.15\.0\/24/);

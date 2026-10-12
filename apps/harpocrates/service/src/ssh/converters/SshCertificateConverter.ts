@@ -7,7 +7,20 @@ import type {
 } from "../../store/prisma";
 import type { CertificateStateName } from "../../model/certificates";
 import type { KeyAlgorithmName } from "../../model/common";
-import type { SshCertificate } from "../../model/ssh";
+import type { SshCertificate, SshCertificateContents } from "../../model/ssh";
+import { parseSshCertificate } from "../../pki/ssh";
+
+export const toSshCertificateContents = (
+  certificate: string,
+): SshCertificateContents => {
+  const read = parseSshCertificate(certificate);
+  return {
+    ...read,
+    serial: read.serial.toString(),
+    validAfter: moment(read.validAfter),
+    validBefore: moment(read.validBefore),
+  };
+};
 
 export type SshCertificateWithRelations = SshCertificateRow & {
   principals: SshCertificatePrincipal[];
@@ -53,6 +66,7 @@ export const toSshCertificate = (
   revokedAt: row.revokedAt ? moment(row.revokedAt) : undefined,
   revocationReason: row.revocationReason ?? undefined,
   certificate: row.certificate,
+  contents: toSshCertificateContents(row.certificate),
   renewsId: row.renewsId ?? undefined,
   createdAt: moment(row.createdAt),
   updatedAt: moment(row.updatedAt),

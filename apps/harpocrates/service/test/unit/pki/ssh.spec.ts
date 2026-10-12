@@ -5,6 +5,7 @@ import * as path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   buildKrl,
+  parseSshCertificate,
   parseSshPublicKey,
   verifySshSignature,
 } from "../../../src/pki/ssh";
@@ -130,5 +131,68 @@ describe.skipIf(!hasKeygen)("ssh", () => {
     expect(() =>
       verifySshSignature(signature, Buffer.from("a nonce"), "file"),
     ).toThrow(/signed for harpocrates-ssh-renew/);
+  });
+
+  it("reads back what a certificate says, as ssh-keygen -L does", () => {
+    const ca = key("reader-ca", "-t", "ed25519");
+    const user = key("reader-user", "-t", "ecdsa", "-b", "256");
+    keygen(
+      "-q",
+      "-s",
+      ca,
+      "-I",
+      "guest@ncfritz.net:42",
+      "-n",
+      "guest,backup",
+      "-z",
+      "42",
+      "-V",
+      "20260101000000Z:20260102000000Z",
+      "-O",
+      "clear",
+      "-O",
+      "permit-pty",
+      "-O",
+      "force-command=/usr/bin/true",
+      "-O",
+      "source-address=192.168.15.0/24",
+      `${user}.pub`,
+    );
+    const read = parseSshCertificate(
+      fs.readFileSync(`${user}-cert.pub`, "utf8"),
+    );
+    expect(read).toEqual({
+      type: "user",
+      keyType: "ecdsa-sha2-nistp256",
+      serial: 42n,
+      keyId: "guest@ncfritz.net:42",
+      principals: ["guest", "backup"],
+      validAfter: new Date("2026-01-01T00:00:00Z"),
+      validBefore: new Date("2026-01-02T00:00:00Z"),
+      criticalOptions: [
+        { name: "force-command", value: "/usr/bin/true" },
+        { name: "source-address", value: "192.168.15.0/24" },
+      ],
+      extensions: ["permit-pty"],
+      caFingerprint: parseSshPublicKey(fs.readFileSync(`${ca}.pub`, "utf8"))
+        .fingerprint,
+    });
+
+    const host = key("reader-host", "-t", "ed25519");
+    keygen("-q", "-s", ca, "-h", "-I", "mini", "-n", "mini", `${host}.pub`);
+    const hostRead = parseSshCertificate(
+      fs.readFileSync(`${host}-cert.pub`, "utf8"),
+    );
+    expect(hostRead).toMatchObject({
+      type: "host",
+      keyType: "ssh-ed25519",
+      principals: ["mini"],
+      criticalOptions: [],
+      extensions: [],
+    });
+    expect(hostRead.validBefore.getTime()).toBe(8_640_000_000_000_000);
+    expect(() =>
+      parseSshCertificate(fs.readFileSync(`${host}.pub`, "utf8")),
+    ).toThrow(/not an OpenSSH certificate/);
   });
 });

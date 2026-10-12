@@ -43,6 +43,7 @@ import type { SshCa as SshCaRow } from "../../store/prisma";
 import {
   SSH_CERTIFICATE_RELATIONS,
   toSshCertificate,
+  toSshCertificateContents,
 } from "../converters/SshCertificateConverter";
 import { SshCaService } from "./SshCaService";
 import { SshKrlService } from "./SshKrlService";
@@ -425,6 +426,7 @@ export class SshCertificateService {
           maxValiditySeconds: ca.maxValidityHours * 3600,
         })
       ).trim();
+      preview.sshCertificate = toSshCertificateContents(preview.certificate);
     } catch (error: unknown) {
       if (!(error instanceof HttpException) || error.getStatus() >= 500) {
         throw error;

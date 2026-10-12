@@ -2269,6 +2269,34 @@ export interface components {
       /** @description The request to preview; made up where left out */
       sample?: components["schemas"]["ProfilePreviewSample"];
     };
+    SshCriticalOption: {
+      /** @description force-command or source-address */
+      name: string;
+      /** @description Its value */
+      value: string;
+    };
+    SshCertificateContents: {
+      /** @description User or host */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description The certified key's type: ssh-ed25519, ecdsa-sha2-nistp256, … */
+      keyType: string;
+      /** @description The serial, decimal */
+      serial: string;
+      /** @description The key ID */
+      keyId: string;
+      /** @description Its principals, in order */
+      principals: string[];
+      /** @description An ISO-8601 formatted string: valid from */
+      validAfter: string;
+      /** @description An ISO-8601 formatted string: valid until */
+      validBefore: string;
+      /** @description Its critical options */
+      criticalOptions: components["schemas"]["SshCriticalOption"][];
+      /** @description Its extensions, each permitting what it names */
+      extensions: string[];
+      /** @description The signing CA's key, SHA256:… */
+      caFingerprint: string;
+    };
     ProfilePreview: {
       /** @description Why the version would not be saved; none, it would */
       problems: string[];
@@ -2282,8 +2310,10 @@ export interface components {
       sampleNames: components["schemas"]["CertificateNames"];
       /** @description The sample key's type */
       keyAlgorithm: components["schemas"]["KeyAlgorithm"];
-      /** @description The certificate, PEM, signed by a throwaway key: none when it would be refused */
+      /** @description The certificate, signed by a throwaway key: PEM, or for an SSH version OpenSSH's format; none when it would be refused */
       certificate?: string;
+      /** @description For an SSH version, what the certificate says */
+      sshCertificate?: components["schemas"]["SshCertificateContents"];
     };
     PreviewProfileResponse: {
       /** @description The preview */
@@ -2831,6 +2861,8 @@ export interface components {
       revocationReason?: components["schemas"]["RevocationReason"];
       /** @description The certificate, OpenSSH format: for a user, id_ed25519-cert.pub beside the key; for a host, the file sshd_config's HostCertificate names */
       certificate: string;
+      /** @description What the certificate says */
+      contents: components["schemas"]["SshCertificateContents"];
       /** @description The certificate this one renews */
       renewsId?: string;
       /** @description An ISO-8601 formatted string: when it was issued */

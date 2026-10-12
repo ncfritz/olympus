@@ -41,6 +41,7 @@ import {
   SSH_EXTENSION_ENUM,
   SSH_EXTENSION_VALUES,
   SSH_MAX_VALIDITY_HOURS,
+  SshCertificateContents,
   type SshCertificateTypeName,
   type SshExtensionName,
 } from "./ssh";
@@ -1165,9 +1166,16 @@ export class ProfilePreview {
     type: String,
     required: false,
     description:
-      "The certificate, PEM, signed by a throwaway key: none when it would be refused",
+      "The certificate, signed by a throwaway key: PEM, or for an SSH version OpenSSH's format; none when it would be refused",
   })
   certificate?: string;
+
+  @ApiProperty({
+    type: () => SshCertificateContents,
+    required: false,
+    description: "For an SSH version, what the certificate says",
+  })
+  sshCertificate?: SshCertificateContents;
 }
 
 export class PreviewProfileResponse {

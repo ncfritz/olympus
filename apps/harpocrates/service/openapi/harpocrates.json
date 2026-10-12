@@ -8883,6 +8883,93 @@
           "profile"
         ]
       },
+      "SshCriticalOption": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "force-command or source-address"
+          },
+          "value": {
+            "type": "string",
+            "description": "Its value"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
+      "SshCertificateContents": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "User or host",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCertificateType"
+              }
+            ]
+          },
+          "keyType": {
+            "type": "string",
+            "description": "The certified key's type: ssh-ed25519, ecdsa-sha2-nistp256, …"
+          },
+          "serial": {
+            "type": "string",
+            "description": "The serial, decimal"
+          },
+          "keyId": {
+            "type": "string",
+            "description": "The key ID"
+          },
+          "principals": {
+            "description": "Its principals, in order",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "validAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: valid from"
+          },
+          "validBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: valid until"
+          },
+          "criticalOptions": {
+            "description": "Its critical options",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SshCriticalOption"
+            }
+          },
+          "extensions": {
+            "description": "Its extensions, each permitting what it names",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "caFingerprint": {
+            "type": "string",
+            "description": "The signing CA's key, SHA256:…"
+          }
+        },
+        "required": [
+          "type",
+          "keyType",
+          "serial",
+          "keyId",
+          "principals",
+          "validAfter",
+          "validBefore",
+          "criticalOptions",
+          "extensions",
+          "caFingerprint"
+        ]
+      },
       "ProfilePreview": {
         "type": "object",
         "properties": {
@@ -8930,7 +9017,15 @@
           },
           "certificate": {
             "type": "string",
-            "description": "The certificate, PEM, signed by a throwaway key: none when it would be refused"
+            "description": "The certificate, signed by a throwaway key: PEM, or for an SSH version OpenSSH's format; none when it would be refused"
+          },
+          "sshCertificate": {
+            "description": "For an SSH version, what the certificate says",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCertificateContents"
+              }
+            ]
           }
         },
         "required": [
@@ -10478,6 +10573,14 @@
             "type": "string",
             "description": "The certificate, OpenSSH format: for a user, id_ed25519-cert.pub beside the key; for a host, the file sshd_config's HostCertificate names"
           },
+          "contents": {
+            "description": "What the certificate says",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshCertificateContents"
+              }
+            ]
+          },
           "renewsId": {
             "type": "string",
             "description": "The certificate this one renews"
@@ -10506,6 +10609,7 @@
           "validBefore",
           "state",
           "certificate",
+          "contents",
           "createdAt",
           "updatedAt"
         ]

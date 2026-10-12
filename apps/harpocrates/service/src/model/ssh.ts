@@ -200,6 +200,90 @@ export class SshPrincipalMapping {
   updatedAt: Moment;
 }
 
+/** A critical option and its value. */
+export class SshCriticalOption {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "force-command or source-address",
+  })
+  name: string;
+
+  @ApiProperty({ type: String, required: true, description: "Its value" })
+  value: string;
+}
+
+/** What an OpenSSH certificate says, read back from it (ssh-keygen -L). */
+export class SshCertificateContents {
+  @ApiProperty({
+    ...SSH_CERTIFICATE_TYPE_ENUM,
+    required: true,
+    description: "User or host",
+  })
+  type: SshCertificateTypeName;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The certified key's type: ssh-ed25519, ecdsa-sha2-nistp256, …",
+  })
+  keyType: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The serial, decimal",
+  })
+  serial: string;
+
+  @ApiProperty({ type: String, required: true, description: "The key ID" })
+  keyId: string;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Its principals, in order",
+  })
+  principals: string[];
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: valid from",
+  })
+  validAfter: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: valid until",
+  })
+  validBefore: Moment;
+
+  @ApiProperty({
+    type: () => SshCriticalOption,
+    isArray: true,
+    required: true,
+    description: "Its critical options",
+  })
+  criticalOptions: SshCriticalOption[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "Its extensions, each permitting what it names",
+  })
+  extensions: string[];
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The signing CA's key, SHA256:…",
+  })
+  caFingerprint: string;
+}
+
 /** An SSH certificate (ADR 0035). */
 export class SshCertificate {
   @ApiProperty({ type: String, required: true, description: "Its id" })
@@ -315,6 +399,13 @@ export class SshCertificate {
       "The certificate, OpenSSH format: for a user, id_ed25519-cert.pub beside the key; for a host, the file sshd_config's HostCertificate names",
   })
   certificate: string;
+
+  @ApiProperty({
+    type: () => SshCertificateContents,
+    required: true,
+    description: "What the certificate says",
+  })
+  contents: SshCertificateContents;
 
   @ApiProperty({
     type: String,

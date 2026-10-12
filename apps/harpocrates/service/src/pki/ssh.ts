@@ -46,6 +46,10 @@ class Reader {
     return this.bytes(4).readUInt32BE(0);
   }
 
+  uint64(): bigint {
+    return this.bytes(8).readBigUInt64BE(0);
+  }
+
   get done(): boolean {
     return this.offset === this.data.length;
   }
@@ -129,6 +133,96 @@ export const parseSshPublicKey = (line: string): SshPublicKey => {
     throw new Error("the key's type does not match its encoding");
   }
   return key;
+};
+
+// ---- certificates (OpenSSH PROTOCOL.certkeys)
+
+const CERTIFICATE_SUFFIX = "-cert-v01@openssh.com";
+
+/** What an OpenSSH certificate says, read back. */
+export type SshCertificateContents = {
+  type: "user" | "host";
+  /** The certified key's type: `ssh-ed25519`, … */
+  keyType: string;
+  serial: bigint;
+  keyId: string;
+  principals: string[];
+  validAfter: Date;
+  validBefore: Date;
+  /** By name, with their values; `force-command`, `source-address`. */
+  criticalOptions: { name: string; value: string }[];
+  extensions: string[];
+  /** The signing CA's key, `SHA256:…`. */
+  caFingerprint: string;
+};
+
+/** A certificate's packed name/data pairs: critical options or extensions. */
+const options = (packed: Buffer): { name: string; value: string }[] => {
+  const reader = new Reader(packed);
+  const read: { name: string; value: string }[] = [];
+  while (!reader.done) {
+    const name = reader.string().toString("utf8");
+    const data = reader.string();
+    read.push({
+      name,
+      value: data.length ? new Reader(data).string().toString("utf8") : "",
+    });
+  }
+  return read;
+};
+
+/** A time as a certificate holds it; the largest is "forever". */
+const certificateTime = (seconds: bigint) =>
+  new Date(
+    seconds > 8_640_000_000_000n
+      ? 8_640_000_000_000_000
+      : Number(seconds) * 1000,
+  );
+
+/**
+ * An OpenSSH certificate line (`ssh-ed25519-cert-v01@openssh.com AAAA…`),
+ * read: what it certifies and says. Its signature is not checked.
+ */
+export const parseSshCertificate = (line: string): SshCertificateContents => {
+  const [, encoded] = line.trim().split(/\s+/);
+  if (!encoded || !/^[A-Za-z0-9+/]+=*$/.test(encoded)) {
+    throw new Error("not an OpenSSH certificate");
+  }
+  const reader = new Reader(Buffer.from(encoded, "base64"));
+  const certificateType = reader.string().toString("ascii");
+  if (!certificateType.endsWith(CERTIFICATE_SUFFIX)) {
+    throw new Error("not an OpenSSH certificate");
+  }
+  const keyType = certificateType.slice(0, -CERTIFICATE_SUFFIX.length);
+  reader.string(); // nonce
+  spkiOf(keyType, reader);
+  const serial = reader.uint64();
+  const kind = reader.uint32();
+  if (kind !== 1 && kind !== 2) throw new Error("neither user nor host");
+  const keyId = reader.string().toString("utf8");
+  const principals: string[] = [];
+  const packed = new Reader(reader.string());
+  while (!packed.done) principals.push(packed.string().toString("utf8"));
+  const validAfter = certificateTime(reader.uint64());
+  const validBefore = certificateTime(reader.uint64());
+  const criticalOptions = options(reader.string());
+  const extensions = options(reader.string()).map((e) => e.name);
+  reader.string(); // reserved
+  const ca = sshPublicKeyFromBlob(reader.string());
+  reader.string(); // signature
+  if (!reader.done) throw new Error("the certificate has bytes after its end");
+  return {
+    type: kind === 1 ? "user" : "host",
+    keyType,
+    serial,
+    keyId,
+    principals,
+    validAfter,
+    validBefore,
+    criticalOptions,
+    extensions,
+    caFingerprint: ca.fingerprint,
+  };
 };
 
 // ---- signatures (OpenSSH PROTOCOL.sshsig): what `ssh-keygen -Y sign` makes
