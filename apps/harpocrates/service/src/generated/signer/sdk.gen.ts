@@ -57,6 +57,9 @@ import type {
   PreviewData,
   PreviewErrors,
   PreviewResponses,
+  PreviewSshCertificateData,
+  PreviewSshCertificateErrors,
+  PreviewSshCertificateResponses,
   RegisterIssuerData,
   RegisterIssuerErrors,
   RegisterIssuerResponses,
@@ -653,6 +656,32 @@ export const signSshCertificate = <ThrowOnError extends boolean = true>(
   >({
     responseType: "json",
     url: "/v1/ssh/cas/{ca_id}/certificates",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Previews an SSH certificate
+ *
+ * The certificate a CA of the given kind and maximum validity would sign from this spec, after the same invariants, signed by a throwaway Ed25519 key: it reads as the real one would and never verifies. No CA key is used, so it answers while sealed.
+ */
+export const previewSshCertificate = <ThrowOnError extends boolean = true>(
+  options: Options<PreviewSshCertificateData, ThrowOnError>,
+): RequestResult<
+  PreviewSshCertificateResponses,
+  PreviewSshCertificateErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    PreviewSshCertificateResponses,
+    PreviewSshCertificateErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/previews/ssh-certificates",
     ...options,
     headers: {
       "Content-Type": "application/json",

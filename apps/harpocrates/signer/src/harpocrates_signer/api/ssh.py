@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 
 from harpocrates_signer.api.common import SignerDep, errors, require_token
 from harpocrates_signer.models import (
+    PreviewSshCertificateRequest,
     RegisterSshCaRequest,
     SshCaResponse,
     SshCertificateResponse,
@@ -55,6 +56,28 @@ def sign_ssh_certificate(
     ca_id: str, body: SshCertificateSpec, signer: SignerDep
 ) -> SshCertificateResponse:
     certificate = signer.ssh_cas.sign(ca_id, ssh_certificate_request(body))
+    return SshCertificateResponse(
+        certificate=certificate.public_bytes().decode("ascii")
+    )
+
+
+@router.post(
+    "/previews/ssh-certificates",
+    summary="Previews an SSH certificate",
+    description="The certificate a CA of the given kind and maximum validity "
+    "would sign from this spec, after the same invariants, signed by a "
+    "throwaway Ed25519 key: it reads as the real one would and never "
+    "verifies. No CA key is used, so it answers while sealed.",
+    responses=errors(400, 422),
+)
+def preview_ssh_certificate(
+    body: PreviewSshCertificateRequest, signer: SignerDep
+) -> SshCertificateResponse:
+    certificate = signer.ssh_cas.preview(
+        ssh_certificate_request(body.certificate),
+        body.kind,
+        body.max_validity_seconds,
+    )
     return SshCertificateResponse(
         certificate=certificate.public_bytes().decode("ascii")
     )

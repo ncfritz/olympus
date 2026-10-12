@@ -457,6 +457,14 @@ class SshCertificateSpec(Wire):
     extensions: list[SshExtension] = Field(default_factory=list[SshExtension])
 
 
+class PreviewSshCertificateRequest(Wire):
+    """An SSH certificate as a CA of this kind would sign it."""
+
+    certificate: SshCertificateSpec
+    kind: SshCertificateKind = Field(description="The CA's kind.")
+    max_validity_seconds: int = Field(gt=0, le=400 * 24 * 3600)
+
+
 class SshCertificateResponse(Wire):
     certificate: str = Field(description="The certificate, OpenSSH format.")
 

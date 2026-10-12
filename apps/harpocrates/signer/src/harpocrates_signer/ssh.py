@@ -167,9 +167,34 @@ class SshCas:
 
     def sign(self, ca_id: str, request: SshCertificateRequest) -> ssh.SSHCertificate:
         ca = self.get(ca_id)
-        invariants.check_ssh_kind(request.kind.value, ca.kind.value)
+        self._check(request, ca.kind, ca.max_validity_seconds)
+        signing_key = self._keys.private_key(ca.key_id)
+        if not isinstance(signing_key, ed25519.Ed25519PrivateKey):
+            raise TypeError("an SSH CA's key is Ed25519")
+        return build_ssh_certificate(request, signing_key)
+
+    def preview(
+        self,
+        request: SshCertificateRequest,
+        kind: SshCertificateKind,
+        max_validity_seconds: int,
+    ) -> ssh.SSHCertificate:
+        """The certificate a CA of this kind would sign, after the same
+        invariants, signed by a throwaway Ed25519 key (ADR 0034, preview): it
+        reads as the real one would and never verifies against a CA's key.
+        No CA key is used, so it works sealed."""
+        self._check(request, kind, max_validity_seconds)
+        return build_ssh_certificate(request, ed25519.Ed25519PrivateKey.generate())
+
+    def _check(
+        self,
+        request: SshCertificateRequest,
+        kind: SshCertificateKind,
+        max_validity_seconds: int,
+    ) -> None:
+        invariants.check_ssh_kind(request.kind.value, kind.value)
         invariants.check_ssh_validity(
-            request.valid_after, request.valid_before, ca.max_validity_seconds
+            request.valid_after, request.valid_before, max_validity_seconds
         )
         invariants.check_ssh_principals(request.principals)
         invariants.check_ssh_options(
@@ -181,7 +206,3 @@ class SshCas:
         invariants.check_ssh_subject_key(request.subject_key)
         if self._keys.purpose_of_public_key(request.subject_key) is KeyPurpose.ISSUER:
             raise RefusedError("subject-key", "the subject key is an issuer's key")
-        signing_key = self._keys.private_key(ca.key_id)
-        if not isinstance(signing_key, ed25519.Ed25519PrivateKey):
-            raise TypeError("an SSH CA's key is Ed25519")
-        return build_ssh_certificate(request, signing_key)

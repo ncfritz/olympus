@@ -612,6 +612,23 @@ export type PreviewCertificateRequest = {
 };
 
 /**
+ * PreviewSshCertificateRequest
+ *
+ * An SSH certificate as a CA of this kind would sign it.
+ */
+export type PreviewSshCertificateRequest = {
+  certificate: SshCertificateSpec;
+  /**
+   * The CA's kind.
+   */
+  kind: SshCertificateKind;
+  /**
+   * Maxvalidityseconds
+   */
+  maxValiditySeconds: number;
+};
+
+/**
  * RegisterIssuerRequest
  */
 export type RegisterIssuerRequest = {
@@ -2122,3 +2139,44 @@ export type SignSshCertificateResponses = {
 
 export type SignSshCertificateResponse =
   SignSshCertificateResponses[keyof SignSshCertificateResponses];
+
+export type PreviewSshCertificateData = {
+  body: PreviewSshCertificateRequest;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: "/v1/previews/ssh-certificates";
+};
+
+export type PreviewSshCertificateErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+};
+
+export type PreviewSshCertificateError =
+  PreviewSshCertificateErrors[keyof PreviewSshCertificateErrors];
+
+export type PreviewSshCertificateResponses = {
+  /**
+   * Successful Response
+   */
+  200: SshCertificateResponse;
+};
+
+export type PreviewSshCertificateResponse =
+  PreviewSshCertificateResponses[keyof PreviewSshCertificateResponses];

@@ -2371,6 +2371,86 @@
           }
         }
       }
+    },
+    "/v1/previews/ssh-certificates": {
+      "post": {
+        "tags": [
+          "SSH"
+        ],
+        "summary": "Previews an SSH certificate",
+        "description": "The certificate a CA of the given kind and maximum validity would sign from this spec, after the same invariants, signed by a throwaway Ed25519 key: it reads as the real one would and never verifies. No CA key is used, so it answers while sealed.",
+        "operationId": "PreviewSshCertificate",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewSshCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3262,6 +3342,32 @@
         ],
         "title": "PreviewCertificateRequest",
         "description": "A leaf as an issuer would sign it, the issuer given rather than\nregistered: an issuing CA, or a root that signs directly."
+      },
+      "PreviewSshCertificateRequest": {
+        "properties": {
+          "certificate": {
+            "$ref": "#/components/schemas/SshCertificateSpec"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SshCertificateKind",
+            "description": "The CA's kind."
+          },
+          "maxValiditySeconds": {
+            "type": "integer",
+            "maximum": 34560000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Maxvalidityseconds"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "certificate",
+          "kind",
+          "maxValiditySeconds"
+        ],
+        "title": "PreviewSshCertificateRequest",
+        "description": "An SSH certificate as a CA of this kind would sign it."
       },
       "RegisterIssuerRequest": {
         "properties": {

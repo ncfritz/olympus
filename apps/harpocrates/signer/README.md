@@ -32,7 +32,8 @@ calls it through a generated client.
 - **Previews**: the leaf an issuer (given, not registered) would sign,
   after the same invariants, signed by a throwaway key of the issuer's
   type, so it reads as the real one and never verifies; no issuer key is
-  used, so it answers while sealed.
+  used, so it answers while sealed. An SSH certificate previews the same
+  way, for a CA of a given kind and maximum validity.
 - **Ceremonies**: an offline CA's key (a root or an intermediate), held
   in memory for one ceremony, an hour at most, and never across a
   restart. Only a ceremony signs `CA:TRUE`.

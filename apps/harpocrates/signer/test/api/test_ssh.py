@@ -200,3 +200,18 @@ def test_signing_needs_the_signer_unsealed(unsealed, cas):
 def test_a_key_that_is_not_openssh_is_a_bad_request(unsealed, cas):
     body = spec(publicKey="-----BEGIN PUBLIC KEY-----")
     assert sign(unsealed, "ssh-user-1-g1", body).status_code == 400
+
+
+def test_a_preview_reads_as_the_real_one_and_never_verifies(unsealed, cas):
+    ok(unsealed.post("/v1/seal"), 204)
+    body = {"certificate": spec(), "kind": "user", "maxValiditySeconds": DAY}
+    certificate = ok(unsealed.post("/v1/previews/ssh-certificates", json=body), 200)[
+        "certificate"
+    ]
+    parsed = load_ssh_public_identity(certificate.encode())
+    assert parsed.valid_principals == [b"ncfritz", b"admin"]  # type: ignore[union-attr]
+    assert openssh(parsed.signature_key()) != cas["user"]["publicKey"]  # type: ignore[union-attr]
+    refused(
+        unsealed.post("/v1/previews/ssh-certificates", json={**body, "kind": "host"}),
+        "ssh-kind",
+    )
