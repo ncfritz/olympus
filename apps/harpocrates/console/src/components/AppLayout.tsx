@@ -8,7 +8,6 @@ import {
   FileProtectOutlined,
   GoogleOutlined,
   ProfileOutlined,
-  SafetyCertificateOutlined,
   ApartmentOutlined,
   CodeOutlined,
   IdcardOutlined,
@@ -45,17 +44,10 @@ const MY_SSH: ShellPage = {
 const PAGES: ShellPage[] = [
   { key: "/", label: "Dashboard", icon: <DashboardOutlined />, href: "/" },
   {
-    key: "cas",
-    label: "CAs",
+    key: "/roots",
+    label: "Roots",
     icon: <ApartmentOutlined />,
-    children: [
-      {
-        key: "/roots",
-        label: "Roots",
-        icon: <SafetyCertificateOutlined />,
-        href: "/roots",
-      },
-    ],
+    href: "/roots",
   },
   {
     key: "/certificates",
