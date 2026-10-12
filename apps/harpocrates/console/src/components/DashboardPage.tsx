@@ -20,14 +20,16 @@ import {
   useDashboard,
   useDeployTargets,
   useIssuers,
+  useSignerStatus,
 } from "@/lib/api/queries";
+import { healthChecks } from "@/lib/dashboard";
 import { formatDateTime } from "@/lib/labels";
-import { AttentionList } from "./dashboard/AttentionList";
 import { CaCard } from "./dashboard/CaCard";
 import { CrlTable } from "./dashboard/CrlTable";
 import { EndpointsTable } from "./dashboard/EndpointsTable";
 import { ExpiryLanes } from "./dashboard/ExpiryLanes";
 import { IssuingWindows } from "./dashboard/IssuingWindows";
+import { SidePanel } from "./dashboard/SidePanel";
 import { WeekCard } from "./dashboard/WeekCard";
 import { ErrorAlert } from "./ErrorAlert";
 import { SignerCard } from "./SignerCard";
@@ -81,6 +83,7 @@ export function DashboardPage() {
   const { data: dashboard, error } = useDashboard();
   const { data: issuers } = useIssuers();
   const { data: targets } = useDeployTargets();
+  const { data: signer } = useSignerStatus();
 
   const header = (
     <Flex justify="space-between" align="flex-end" gap="middle" wrap>
@@ -203,7 +206,17 @@ export function DashboardPage() {
           />
         </Col>
         <Col xs={24} xl={8}>
-          <AttentionList items={dashboard.attention} now={now} />
+          <SidePanel
+            dashboard={dashboard}
+            now={now}
+            health={healthChecks({
+              dashboard,
+              signer,
+              issuers,
+              targets: targets ?? [],
+              now,
+            })}
+          />
         </Col>
       </Row>
       <Row gutter={[16, 16]}>

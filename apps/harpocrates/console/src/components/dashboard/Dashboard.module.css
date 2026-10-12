@@ -18,7 +18,7 @@
 
 /* Needs a person: one row per item, divided. */
 .attention {
-  padding: 12px 16px;
+  padding: 12px 0;
 }
 
 .attention + .attention {
@@ -102,4 +102,21 @@
 .detail {
   margin: 0 !important;
   font-size: var(--ant-font-size-sm, 12px);
+}
+
+.section {
+  margin: 0 !important;
+}
+
+/* A health line: its mark, then what it checks. */
+.check {
+  padding: 8px 0;
+}
+
+.check + .check {
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+.timeline {
+  margin-top: 8px;
 }

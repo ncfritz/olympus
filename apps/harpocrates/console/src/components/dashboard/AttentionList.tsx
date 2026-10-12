@@ -1,5 +1,5 @@
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { Card, Flex, Tag, Typography } from "antd";
+import { Flex, Tag, Typography } from "antd";
 import Link from "next/link";
 import type { AttentionItem } from "@/lib/api/types";
 import { attentionHref, timeUntil } from "@/lib/dashboard";
@@ -14,11 +14,7 @@ export function AttentionList({
   now: number;
 }) {
   return (
-    <Card
-      title="Needs a person"
-      extra={items.length > 0 && <Tag>{items.length}</Tag>}
-      classNames={{ body: items.length ? styles.flushBody : undefined }}
-    >
+    <>
       {items.length === 0 ? (
         <Flex gap="small" align="center">
           <Typography.Text type="success">
@@ -59,6 +55,6 @@ export function AttentionList({
           ))}
         </Flex>
       )}
-    </Card>
+    </>
   );
 }

@@ -67,3 +67,5 @@ export type AttentionItem = Schemas["AttentionItem"];
 export type DashboardCrl = Schemas["DashboardCrl"];
 export type AuditVerification =
   Schemas["GetAuditVerificationResponse"]["verification"];
+export type DashboardEvent = Schemas["DashboardEvent"];
+export type HandledCount = Schemas["HandledCount"];

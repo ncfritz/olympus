@@ -3490,6 +3490,40 @@ export interface components {
       /** @description The offline CA it is for */
       nextCeremonyIssuerId?: string;
     };
+    DashboardOcsp: {
+      /** @description CAs with a responder in service */
+      answering: number;
+      /** @description Active online CAs with none: the service issues theirs on its next run */
+      missingOnline: number;
+      /** @description An ISO-8601 formatted string: when the soonest stored response lapses */
+      soonestLapse?: string;
+    };
+    DashboardEvent: {
+      /** @description Its position in the audit chain */
+      sequence: string;
+      /** @description An ISO-8601 formatted string: when it happened */
+      occurredAt: string;
+      /** @description What happened, e.g. certificate.issued */
+      kind: string;
+      /** @description Who: user:<email>, cli:<name>, acme:<account> or system */
+      principal: string;
+      /** @description Where from: api, cli, acme, renewal or system */
+      surface: string;
+      /** @description The kind of thing it concerns */
+      subjectType?: string;
+      /** @description Its ID */
+      subjectId?: string;
+      /** @description Its name: a certificate's or CA's common name, a deploy target's name */
+      subjectName?: string;
+    };
+    HandledCount: {
+      /** @description The audit kind, e.g. certificate.renewed */
+      kind: string;
+      /** @description Where from: acme, renewal or system */
+      surface: string;
+      /** @description How many */
+      count: number;
+    };
     Dashboard: {
       /** @description An ISO-8601 formatted string: when it was read */
       asOf: string;
@@ -3505,6 +3539,12 @@ export interface components {
       week: components["schemas"]["DashboardWeek"];
       /** @description The CA itself */
       ca: components["schemas"]["DashboardCa"];
+      /** @description OCSP across the CAs */
+      ocsp: components["schemas"]["DashboardOcsp"];
+      /** @description The latest audit events, newest first */
+      recent: components["schemas"]["DashboardEvent"][];
+      /** @description What ACME, renewal and the service did in the last 7 days, by audit kind and surface */
+      handled: components["schemas"]["HandledCount"][];
     };
     GetDashboardResponse: {
       /** @description The dashboard */
