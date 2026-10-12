@@ -177,29 +177,38 @@ export function SshCasPage() {
                     label: "Revocations",
                     children: (
                       <Flex vertical gap="small">
-                        <Typography.Text code copyable>
-                          {ca.krlUrl}
-                        </Typography.Text>
                         <Typography.Text type="secondary">
                           {ca.type === "user" ? (
                             <>
-                              Its KRL. Hosts fetch it into the file{" "}
+                              Hosts fetch every user CA&apos;s revocations in
+                              one KRL, over HTTPS from the renewal listener
+                              (harpocrates-ssh-host krl), into the file{" "}
                               <Typography.Text code>
                                 RevokedKeys
                               </Typography.Text>{" "}
-                              names (harpocrates-ssh-host krl).
+                              names. As published:
                             </>
                           ) : (
                             <>
-                              Its KRL. Clients may fetch it into the file{" "}
+                              Clients may fetch every host CA&apos;s revocations
+                              in one KRL into the file{" "}
                               <Typography.Text code>
                                 RevokedHostKeys
                               </Typography.Text>{" "}
                               names in{" "}
                               <Typography.Text code>ssh_config</Typography.Text>
-                              .
+                              . As published:
                             </>
                           )}
+                        </Typography.Text>
+                        <Typography.Text code copyable>
+                          {ca.typeKrlUrl}
+                        </Typography.Text>
+                        <Typography.Text type="secondary">
+                          This CA&apos;s alone:
+                        </Typography.Text>
+                        <Typography.Text code copyable>
+                          {ca.krlUrl}
                         </Typography.Text>
                       </Flex>
                     ),
