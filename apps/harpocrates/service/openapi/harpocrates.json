@@ -4796,6 +4796,204 @@
         ]
       }
     },
+    "/v1/ssh/host-renewals/challenges": {
+      "post": {
+        "description": "On the renewal listener (9443) only (ADR 0035): for a host certificate Harpocrates issued, current, not revoked and not already renewed, a nonce to sign with the host key (`ssh-keygen -Y sign -n harpocrates-ssh-renew`) within five minutes, and whether the certificate is due.",
+        "operationId": "CreateSshRenewalChallenge",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The host's current certificate.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSshRenewalChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The challenge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSshRenewalChallengeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Asks for a challenge to renew an SSH host certificate",
+        "tags": [
+          "Renewal"
+        ]
+      }
+    },
+    "/v1/ssh/host-renewals": {
+      "post": {
+        "description": "On the renewal listener (9443) only (ADR 0035): the challenge, signed by the certificate's own host key, gets the next certificate for the same key and principals under the same profile version, once the certificate is due. A challenge is tried once.",
+        "operationId": "RenewSshHostCertificate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The challenge and its signature.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewSshHostCertificateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The renewal was issued.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSshCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Renews an SSH host certificate",
+        "tags": [
+          "Renewal"
+        ]
+      }
+    },
     "/v1/renew": {
       "post": {
         "description": "On the renewal listener (9443) only: renews the client certificate the caller presents, with the same subject and profile. Without a CSR the same key is certified again while it is young enough; a CSR for a new key rekeys. The certificate must be one Harpocrates issued, current, not revoked and not already renewed.",
@@ -10442,6 +10640,89 @@
           "identity",
           "principals",
           "certificates"
+        ]
+      },
+      "CreateSshRenewalChallengeRequest": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "type": "string",
+            "description": "The host's current certificate, OpenSSH format (ssh_host_ed25519_key-cert.pub)"
+          }
+        },
+        "required": [
+          "certificate"
+        ]
+      },
+      "SshRenewalChallenge": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its id"
+          },
+          "nonce": {
+            "type": "string",
+            "description": "What to sign, exactly, with no newline"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "The namespace to sign it in: ssh-keygen -Y sign -n"
+          },
+          "due": {
+            "type": "boolean",
+            "description": "Whether the certificate is due for renewal now"
+          },
+          "renewAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the certificate is due"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the challenge lapses"
+          }
+        },
+        "required": [
+          "id",
+          "nonce",
+          "namespace",
+          "due",
+          "renewAt",
+          "expiresAt"
+        ]
+      },
+      "CreateSshRenewalChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "challenge": {
+            "description": "The challenge",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SshRenewalChallenge"
+              }
+            ]
+          }
+        },
+        "required": [
+          "challenge"
+        ]
+      },
+      "RenewSshHostCertificateRequest": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The challenge's id"
+          },
+          "signature": {
+            "type": "string",
+            "description": "The challenge's nonce signed with the host key: what `ssh-keygen -Y sign -n harpocrates-ssh-renew` writes, armored"
+          }
+        },
+        "required": [
+          "challengeId",
+          "signature"
         ]
       },
       "RenewPresentedCertificateRequest": {

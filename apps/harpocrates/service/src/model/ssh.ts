@@ -11,6 +11,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   Max,
   MaxLength,
@@ -468,6 +469,44 @@ export class CreateSshHostCertificateRequest {
   principals: string[];
 }
 
+/** The namespace a host's renewal signature is made in (ssh-keygen -n). */
+export const SSH_RENEWAL_NAMESPACE = "harpocrates-ssh-renew";
+
+export class CreateSshRenewalChallengeRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The host's current certificate, OpenSSH format (ssh_host_ed25519_key-cert.pub)",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(16384)
+  certificate: string;
+}
+
+export class RenewSshHostCertificateRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    format: "uuid",
+    description: "The challenge's id",
+  })
+  @IsUUID()
+  challengeId: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The challenge's nonce signed with the host key: what `ssh-keygen -Y sign -n harpocrates-ssh-renew` writes, armored",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(16384)
+  signature: string;
+}
+
 export class RevokeSshCertificateRequest {
   @ApiProperty({
     ...REVOCATION_REASON_ENUM,
@@ -564,6 +603,54 @@ export class SetSshPrincipalsResponse {
     description: "The mapping as it now is; none when it was removed",
   })
   mapping?: SshPrincipalMapping;
+}
+
+/** What a host signs to renew (ADR 0035). */
+export class SshRenewalChallenge {
+  @ApiProperty({ type: String, required: true, description: "Its id" })
+  id: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "What to sign, exactly, with no newline",
+  })
+  nonce: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The namespace to sign it in: ssh-keygen -Y sign -n",
+  })
+  namespace: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether the certificate is due for renewal now",
+  })
+  due: boolean;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when the certificate is due",
+  })
+  renewAt: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when the challenge lapses",
+  })
+  expiresAt: Moment;
+}
+
+export class CreateSshRenewalChallengeResponse {
+  @ApiProperty({
+    type: () => SshRenewalChallenge,
+    required: true,
+    description: "The challenge",
+  })
+  challenge: SshRenewalChallenge;
 }
 
 export class CreateSshCertificateResponse {

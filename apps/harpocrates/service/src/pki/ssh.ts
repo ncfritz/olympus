@@ -4,7 +4,7 @@
  * model keys every key by; and a KRL (OpenSSH's PROTOCOL.krl), written by
  * serial for each SSH CA.
  */
-import { createHash, createPublicKey } from "crypto";
+import { createHash, createPublicKey, verify } from "crypto";
 import { keyAlgorithm } from "./x509";
 
 /** An OpenSSH public key, read. */
@@ -33,6 +33,17 @@ class Reader {
     if (start + length > this.data.length) throw new Error("truncated");
     this.offset = start + length;
     return this.data.subarray(start, start + length);
+  }
+
+  bytes(count: number): Buffer {
+    if (this.offset + count > this.data.length) throw new Error("truncated");
+    const start = this.offset;
+    this.offset += count;
+    return this.data.subarray(start, this.offset);
+  }
+
+  uint32(): number {
+    return this.bytes(4).readUInt32BE(0);
   }
 
   get done(): boolean {
@@ -89,20 +100,10 @@ const spkiOf = (type: string, reader: Reader): Buffer => {
   throw new Error(`${type} keys are not taken`);
 };
 
-/**
- * An OpenSSH public key line (`ssh-ed25519 AAAA… comment`), read. Refuses
- * a certificate, a DSA or security-key type, or a malformed key.
- */
-export const parseSshPublicKey = (line: string): SshPublicKey => {
-  const [type, encoded] = line.trim().split(/\s+/);
-  if (!type || !encoded || !/^[A-Za-z0-9+/]+=*$/.test(encoded)) {
-    throw new Error("not an OpenSSH public key");
-  }
-  const blob = Buffer.from(encoded, "base64");
+/** A key from its wire encoding: what a certificate or signature carries. */
+export const sshPublicKeyFromBlob = (blob: Buffer): SshPublicKey => {
   const reader = new Reader(blob);
-  if (reader.string().toString("ascii") !== type) {
-    throw new Error("the key's type does not match its encoding");
-  }
+  const type = reader.string().toString("ascii");
   const spki = spkiOf(type, reader);
   if (!reader.done) throw new Error("the key has bytes after its end");
   return {
@@ -112,6 +113,114 @@ export const parseSshPublicKey = (line: string): SshPublicKey => {
     algorithm: keyAlgorithm(spki),
     fingerprint: `SHA256:${createHash("sha256").update(blob).digest("base64").replace(/=+$/, "")}`,
   };
+};
+
+/**
+ * An OpenSSH public key line (`ssh-ed25519 AAAA… comment`), read. Refuses
+ * a certificate, a DSA or security-key type, or a malformed key.
+ */
+export const parseSshPublicKey = (line: string): SshPublicKey => {
+  const [type, encoded] = line.trim().split(/\s+/);
+  if (!type || !encoded || !/^[A-Za-z0-9+/]+=*$/.test(encoded)) {
+    throw new Error("not an OpenSSH public key");
+  }
+  const key = sshPublicKeyFromBlob(Buffer.from(encoded, "base64"));
+  if (key.type !== type) {
+    throw new Error("the key's type does not match its encoding");
+  }
+  return key;
+};
+
+// ---- signatures (OpenSSH PROTOCOL.sshsig): what `ssh-keygen -Y sign` makes
+
+const SSHSIG_MAGIC = Buffer.from("SSHSIG", "ascii");
+
+const MESSAGE_HASHES = new Set(["sha256", "sha512"]);
+
+/** ECDSA's hash and its numbers' size, by curve. */
+const ECDSA: Record<string, { hash: string; size: number }> = {
+  "ecdsa-sha2-nistp256": { hash: "sha256", size: 32 },
+  "ecdsa-sha2-nistp384": { hash: "sha384", size: 48 },
+  "ecdsa-sha2-nistp521": { hash: "sha512", size: 66 },
+};
+
+const RSA_SIGNATURES: Record<string, string> = {
+  "rsa-sha2-256": "sha256",
+  "rsa-sha2-512": "sha512",
+};
+
+/** A number, as wide as its curve wants it. */
+const fixed = (mpint: Buffer, size: number) => {
+  const value = unsigned(mpint);
+  if (value.length > size) throw new Error("an ECDSA number is too long");
+  return Buffer.concat([Buffer.alloc(size - value.length), value]);
+};
+
+/**
+ * Who signed `message` in `namespace`: the key of an armored SSH
+ * signature, once it verifies over the message. Throws when it is
+ * malformed, for another namespace, or does not verify.
+ */
+export const verifySshSignature = (
+  armored: string,
+  message: Buffer,
+  namespace: string,
+): SshPublicKey => {
+  const body = armored
+    .replace(/-----(BEGIN|END) SSH SIGNATURE-----/g, "")
+    .replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/]+=*$/.test(body)) {
+    throw new Error("not an SSH signature");
+  }
+  const reader = new Reader(Buffer.from(body, "base64"));
+  if (!reader.bytes(6).equals(SSHSIG_MAGIC) || reader.uint32() !== 1) {
+    throw new Error("not an SSH signature");
+  }
+  const key = sshPublicKeyFromBlob(reader.string());
+  const signedNamespace = reader.string().toString("utf8");
+  const reserved = reader.string();
+  const hash = reader.string().toString("ascii");
+  const signature = new Reader(reader.string());
+  if (!reader.done) throw new Error("the signature has bytes after its end");
+  if (signedNamespace !== namespace) {
+    throw new Error(`signed for ${signedNamespace}, not ${namespace}`);
+  }
+  if (!MESSAGE_HASHES.has(hash)) throw new Error(`${hash} is not taken`);
+  const signed = Buffer.concat([
+    SSHSIG_MAGIC,
+    string(namespace),
+    string(reserved),
+    string(hash),
+    string(createHash(hash).update(message).digest()),
+  ]);
+  const type = signature.string().toString("ascii");
+  const bytes = signature.string();
+  const publicKey = createPublicKey({
+    key: key.spki,
+    format: "der",
+    type: "spki",
+  });
+  let verified: boolean;
+  if (key.type === "ssh-ed25519" && type === "ssh-ed25519") {
+    verified = verify(null, signed, publicKey, bytes);
+  } else if (ECDSA[key.type] && type === key.type) {
+    const { hash: digest, size } = ECDSA[key.type];
+    const numbers = new Reader(bytes);
+    const r = fixed(numbers.string(), size);
+    const s = fixed(numbers.string(), size);
+    verified = verify(
+      digest,
+      signed,
+      { key: publicKey, dsaEncoding: "ieee-p1363" },
+      Buffer.concat([r, s]),
+    );
+  } else if (key.type === "ssh-rsa" && RSA_SIGNATURES[type]) {
+    verified = verify(RSA_SIGNATURES[type], signed, publicKey, bytes);
+  } else {
+    throw new Error(`a ${type} signature by a ${key.type} key is not taken`);
+  }
+  if (!verified) throw new Error("the signature does not verify");
+  return key;
 };
 
 // ---- KRL (OpenSSH PROTOCOL.krl)

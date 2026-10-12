@@ -1012,6 +1012,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/ssh/host-renewals/challenges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Asks for a challenge to renew an SSH host certificate
+     * @description On the renewal listener (9443) only (ADR 0035): for a host certificate Harpocrates issued, current, not revoked and not already renewed, a nonce to sign with the host key (`ssh-keygen -Y sign -n harpocrates-ssh-renew`) within five minutes, and whether the certificate is due.
+     */
+    post: operations["CreateSshRenewalChallenge"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/host-renewals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Renews an SSH host certificate
+     * @description On the renewal listener (9443) only (ADR 0035): the challenge, signed by the certificate's own host key, gets the next certificate for the same key and principals under the same profile version, once the certificate is due. A challenge is tried once.
+     */
+    post: operations["RenewSshHostCertificate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/renew": {
     parameters: {
       query?: never;
@@ -2835,6 +2875,37 @@ export interface components {
       principals: string[];
       /** @description Its user certificates, newest first */
       certificates: components["schemas"]["SshCertificate"][];
+    };
+    CreateSshRenewalChallengeRequest: {
+      /** @description The host's current certificate, OpenSSH format (ssh_host_ed25519_key-cert.pub) */
+      certificate: string;
+    };
+    SshRenewalChallenge: {
+      /** @description Its id */
+      id: string;
+      /** @description What to sign, exactly, with no newline */
+      nonce: string;
+      /** @description The namespace to sign it in: ssh-keygen -Y sign -n */
+      namespace: string;
+      /** @description Whether the certificate is due for renewal now */
+      due: boolean;
+      /** @description An ISO-8601 formatted string: when the certificate is due */
+      renewAt: string;
+      /** @description An ISO-8601 formatted string: when the challenge lapses */
+      expiresAt: string;
+    };
+    CreateSshRenewalChallengeResponse: {
+      /** @description The challenge */
+      challenge: components["schemas"]["SshRenewalChallenge"];
+    };
+    RenewSshHostCertificateRequest: {
+      /**
+       * Format: uuid
+       * @description The challenge's id
+       */
+      challengeId: string;
+      /** @description The challenge's nonce signed with the host key: what `ssh-keygen -Y sign -n harpocrates-ssh-renew` writes, armored */
+      signature: string;
     };
     RenewPresentedCertificateRequest: {
       /** @description A CSR, PEM, for the same subject: with a new key it rekeys; without one the same key is certified again while it is young enough */
@@ -6637,6 +6708,173 @@ export interface operations {
       };
       /** @description No valid access token was presented */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CreateSshRenewalChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The host's current certificate. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSshRenewalChallengeRequest"];
+      };
+    };
+    responses: {
+      /** @description The challenge. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateSshRenewalChallengeResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  RenewSshHostCertificate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The challenge and its signature. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RenewSshHostCertificateRequest"];
+      };
+    };
+    responses: {
+      /** @description The renewal was issued. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateSshCertificateResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
         headers: {
           [name: string]: unknown;
         };

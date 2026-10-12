@@ -196,7 +196,8 @@ from it.
 ### Renewal over mutual TLS
 
 A second listener on `RENEWAL_LISTEN_PORT` (9443, ADR 0020) serves
-`POST /v1/renew` and nothing else, and that route is a 404 on 3200. It
+`POST /v1/renew`, ACME and SSH hosts' renewal (below) and nothing else,
+and those routes are a 404 on 3200. For `/v1/renew` it
 asks for a client certificate and accepts any in the handshake; the route
 then requires one Harpocrates issued, byte for byte, current, not revoked
 and not already renewed (401 otherwise), and renews it: the same subject
@@ -210,6 +211,31 @@ key in `RENEWAL_TLS_DIR`, issues itself a certificate for
 `RENEWAL_HOSTNAMES` under `RENEWAL_TLS_PROFILE`, and renews it at
 two-thirds of its life without a restart. Until there is a TLS issuing CA
 and the signer is unsealed it waits, and checks again every five minutes.
+
+### SSH hosts' renewal
+
+An SSH host renews its own certificate by proving its host key (ADR
+0035), on the renewal listener, with no other credential:
+
+1. `POST /v1/ssh/host-renewals/challenges` with its current certificate:
+   one Harpocrates issued, current, not revoked and not already renewed
+   (404, 422, 403 and 409 otherwise). The answer is a nonce, the
+   namespace `harpocrates-ssh-renew`, whether the certificate is `due`
+   (its version's `renewAtHours` after it was issued) and when.
+2. `POST /v1/ssh/host-renewals` with the challenge's id and the nonce
+   signed by the host key (`ssh-keygen -Y sign -n
+   harpocrates-ssh-renew`), within five minutes. A challenge is tried
+   once, whatever the outcome. A signature by any key but the
+   certificate's, or in another namespace, is a 403; one before the
+   certificate is due, a 409. The next certificate is for the same key
+   and principals under the same profile version, signed by the current
+   host CA; the audit log records the caller as `ssh-host:<first
+   principal>` on the `renewal` surface.
+
+[`../hosts/harpocrates-ssh-host`](../hosts/harpocrates-ssh-host) does
+both for `cron` or `launchd` (`renew`), restarting `sshd` when the
+certificate changed, and fetches the user CA's KRL into `RevokedKeys`
+(`krl`).
 
 ### Deploy targets
 

@@ -2,10 +2,12 @@ import { Module } from "@nestjs/common";
 import { KeysModule } from "../keys/KeysModule";
 import { ProfilesModule } from "../profiles/ProfilesModule";
 import { CreateSshHostCertificateController } from "./controllers/CreateSshHostCertificateController";
+import { CreateSshRenewalChallengeController } from "./controllers/CreateSshRenewalChallengeController";
 import { CreateSshUserCertificateController } from "./controllers/CreateSshUserCertificateController";
 import { DescribeMySshController } from "./controllers/DescribeMySshController";
 import { DescribeSshCertificateController } from "./controllers/DescribeSshCertificateController";
 import { ListSshCertificatesController } from "./controllers/ListSshCertificatesController";
+import { RenewSshHostCertificateController } from "./controllers/RenewSshHostCertificateController";
 import { RevokeSshCertificateController } from "./controllers/RevokeSshCertificateController";
 import { CreateSshCaController } from "./controllers/CreateSshCaController";
 import { DescribeSshCaController } from "./controllers/DescribeSshCaController";
@@ -15,10 +17,14 @@ import { RetireSshCaController } from "./controllers/RetireSshCaController";
 import { SetSshPrincipalsController } from "./controllers/SetSshPrincipalsController";
 import { SshCaService } from "./services/SshCaService";
 import { SshCertificateService } from "./services/SshCertificateService";
+import { SshHostRenewalService } from "./services/SshHostRenewalService";
 import { SshKrlService } from "./services/SshKrlService";
 import { SshPrincipalService } from "./services/SshPrincipalService";
 
-/** SSH CAs, who may log in as whom, SSH certificates and KRLs (ADR 0035). */
+/**
+ * SSH CAs, who may log in as whom, SSH certificates, their KRLs and
+ * hosts' renewal (ADR 0035).
+ */
 @Module({
   imports: [KeysModule, ProfilesModule],
   controllers: [
@@ -34,12 +40,15 @@ import { SshPrincipalService } from "./services/SshPrincipalService";
     DescribeSshCertificateController,
     RevokeSshCertificateController,
     DescribeMySshController,
+    CreateSshRenewalChallengeController,
+    RenewSshHostCertificateController,
   ],
   providers: [
     SshCaService,
     SshPrincipalService,
     SshCertificateService,
     SshKrlService,
+    SshHostRenewalService,
   ],
   exports: [SshCaService, SshPrincipalService, SshCertificateService],
 })

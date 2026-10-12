@@ -1,4 +1,5 @@
-import { SetMetadata } from "@nestjs/common";
+import { applyDecorators, SetMetadata } from "@nestjs/common";
+import { Public } from "./public";
 import type { Request } from "express";
 import type { TLSSocket } from "tls";
 
@@ -12,6 +13,17 @@ export const CLIENT_CERTIFICATE_KEY = "pkiClientCertificate";
  */
 export const ClientCertificate = () =>
   SetMetadata(CLIENT_CERTIFICATE_KEY, true);
+
+export const SIGNED_RENEWAL_KEY = "pkiSignedRenewal";
+
+/**
+ * A route of the renewal listener whose request proves itself (ADR 0035):
+ * an SSH host renewing signs a challenge with its host key; no client
+ * certificate, no access token (so @Public(), as ACME's routes are).
+ * Served there and nowhere else.
+ */
+export const SignedRenewal = () =>
+  applyDecorators(SetMetadata(SIGNED_RENEWAL_KEY, true), Public());
 
 /** Which listener a request arrived on. */
 export type Listener = "management" | "renewal";

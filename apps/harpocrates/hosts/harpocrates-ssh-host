@@ -1,0 +1,149 @@
+#!/bin/sh
+# harpocrates-ssh-host: keeps an SSH host's certificate renewed and its
+# KRL current (ADR 0035). Run from cron or launchd; POSIX sh, curl and
+# ssh-keygen (OpenSSH 8.1 or later), nothing else.
+#
+#   harpocrates-ssh-host renew  renews the host certificate once it is due,
+#                               proving the host key; runs RESTART_COMMAND
+#                               when the certificate changed
+#   harpocrates-ssh-host krl    fetches the user CA's KRL into the file
+#                               sshd's RevokedKeys names
+#
+# Settings, from the environment or the file HARPOCRATES_SSH_HOST_CONFIG
+# (default /etc/harpocrates/ssh-host.env), which is read after it:
+#
+#   HARPOCRATES_RENEWAL_URL  the renewal listener, https://<pki host>:9443
+#   HARPOCRATES_CA_FILE      the root CA's certificate (PEM), trusted for
+#                            the listener and the KRL's host
+#   HOST_KEY                 default /etc/ssh/ssh_host_ed25519_key
+#   HOST_CERTIFICATE         default ${HOST_KEY}-cert.pub
+#   RESTART_COMMAND          how sshd reads the new certificate, e.g.
+#                            "systemctl reload ssh"; none by default
+#   KRL_URL                  the user CA's KRL, as the console shows it
+#   KRL_FILE                 default /etc/ssh/revoked_keys
+#
+# Exit status: 0 when renewed, not yet due or fetched; 1 on a refusal or
+# a failure, with the reason on stderr; 2 on a usage error.
+
+set -eu
+
+NAMESPACE=harpocrates-ssh-renew
+
+config=${HARPOCRATES_SSH_HOST_CONFIG:-/etc/harpocrates/ssh-host.env}
+if [ -r "$config" ]; then
+  # shellcheck disable=SC1090
+  . "$config"
+fi
+
+HOST_KEY=${HOST_KEY:-/etc/ssh/ssh_host_ed25519_key}
+HOST_CERTIFICATE=${HOST_CERTIFICATE:-${HOST_KEY}-cert.pub}
+KRL_FILE=${KRL_FILE:-/etc/ssh/revoked_keys}
+RESTART_COMMAND=${RESTART_COMMAND:-}
+
+say() { printf 'harpocrates-ssh-host: %s\n' "$*" >&2; }
+fail() {
+  say "$*"
+  exit 1
+}
+
+need() {
+  eval "value=\${$1:-}"
+  [ -n "$value" ] || fail "$1 is not set"
+}
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/harpocrates-ssh-host.XXXXXX")
+trap 'rm -rf "$work"' EXIT INT TERM
+
+# A string field of a one-line JSON document: the last one by that name.
+field() {
+  sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p" "$2" | head -n 1
+}
+
+# POST $2 (a file of JSON) to $1 on the renewal listener; the answer in
+# $work/response, its status on stdout.
+post() {
+  curl --silent --show-error --cacert "$HARPOCRATES_CA_FILE" \
+    --header 'content-type: application/json' --data-binary "@$2" \
+    --output "$work/response" --write-out '%{http_code}' \
+    "${HARPOCRATES_RENEWAL_URL%/}$1"
+}
+
+refused() {
+  message=$(field message "$work/response")
+  fail "$1 (HTTP $2): ${message:-$(cat "$work/response")}"
+}
+
+# The file's text as a JSON string's contents: newlines escaped. Neither
+# a certificate nor an armored signature holds a quote or a backslash.
+json_text() {
+  awk 'BEGIN { ORS = "" } NR > 1 { print "\\n" } { print }' "$1"
+}
+
+renew() {
+  need HARPOCRATES_RENEWAL_URL
+  need HARPOCRATES_CA_FILE
+  [ -r "$HOST_CERTIFICATE" ] ||
+    fail "no certificate at $HOST_CERTIFICATE: an admin issues the first one"
+
+  printf '{"certificate":"%s"}' "$(json_text "$HOST_CERTIFICATE")" \
+    >"$work/challenge-request"
+  status=$(post /v1/ssh/host-renewals/challenges "$work/challenge-request")
+  [ "$status" = 201 ] || refused "no challenge" "$status"
+  if ! grep -q '"due":true' "$work/response"; then
+    say "not due until $(field renewAt "$work/response")"
+    return 0
+  fi
+  challenge=$(field id "$work/response")
+  nonce=$(field nonce "$work/response")
+  [ -n "$challenge" ] && [ -n "$nonce" ] || fail "an unreadable challenge"
+
+  printf '%s' "$nonce" >"$work/nonce"
+  ssh-keygen -Y sign -q -f "$HOST_KEY" -n "$NAMESPACE" "$work/nonce" ||
+    fail "could not sign with $HOST_KEY"
+  printf '{"challengeId":"%s","signature":"%s"}' "$challenge" \
+    "$(json_text "$work/nonce.sig")" >"$work/renew-request"
+  status=$(post /v1/ssh/host-renewals "$work/renew-request")
+  [ "$status" = 201 ] || refused "not renewed" "$status"
+  certificate=$(field certificate "$work/response")
+  case "$certificate" in
+  *-cert-v01@openssh.com\ *) ;;
+  *) fail "the answer holds no certificate" ;;
+  esac
+
+  # Beside the old, then renamed over it: sshd never reads half a file.
+  next="$HOST_CERTIFICATE.next"
+  printf '%s\n' "$certificate" >"$next"
+  chmod 644 "$next"
+  mv -f "$next" "$HOST_CERTIFICATE"
+  say "renewed $HOST_CERTIFICATE"
+  if [ -n "$RESTART_COMMAND" ]; then
+    sh -c "$RESTART_COMMAND" || fail "renewed, but '$RESTART_COMMAND' failed"
+  fi
+}
+
+krl() {
+  need KRL_URL
+  need HARPOCRATES_CA_FILE
+  curl --silent --show-error --fail --cacert "$HARPOCRATES_CA_FILE" \
+    --output "$work/krl" "$KRL_URL" || fail "could not fetch $KRL_URL"
+  # sshd refuses every key when RevokedKeys is unreadable: install only
+  # what is a KRL.
+  [ "$(head -c 6 "$work/krl")" = SSHKRL ] || fail "$KRL_URL is not a KRL"
+  if [ -f "$KRL_FILE" ] && cmp -s "$work/krl" "$KRL_FILE"; then
+    return 0
+  fi
+  next="$KRL_FILE.next"
+  cp "$work/krl" "$next"
+  chmod 644 "$next"
+  mv -f "$next" "$KRL_FILE"
+  say "updated $KRL_FILE"
+}
+
+case "${1:-}" in
+renew) renew ;;
+krl) krl ;;
+*)
+  say "usage: harpocrates-ssh-host renew|krl"
+  exit 2
+  ;;
+esac

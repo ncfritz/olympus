@@ -32,8 +32,8 @@ const contextOf = (identity: ListenerIdentity): https.ServerOptions => ({
 /**
  * The renewal listener on RENEWAL_LISTEN_PORT (9443, ADR 0020): HTTPS
  * with Harpocrates's own certificate from the TLS CA, a client
- * certificate requested, serving the @ClientCertificate() routes and
- * nothing else (the guard sees to that). It starts once that certificate
+ * certificate requested, serving the @ClientCertificate(), @AcmeRoute()
+ * and @SignedRenewal() routes and nothing else (the guard sees to that). It starts once that certificate
  * can be had, which needs a TLS issuing CA and an unsealed signer, so on
  * a new install it waits; it swaps in a renewed certificate without a
  * restart.

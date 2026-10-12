@@ -3,7 +3,11 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { buildKrl, parseSshPublicKey } from "../../../src/pki/ssh";
+import {
+  buildKrl,
+  parseSshPublicKey,
+  verifySshSignature,
+} from "../../../src/pki/ssh";
 
 const hasKeygen = spawnSync("ssh-keygen", ["-?"]).error === undefined;
 
@@ -96,5 +100,35 @@ describe.skipIf(!hasKeygen)("ssh", () => {
     expect(keygen("-Q", "-l", "-f", krl)).toMatch(
       /# KRL version 3\n[\s\S]*serial: 17\n[\s\S]*serial: 4242/,
     );
+  });
+
+  it.each([
+    ["signer-ed", ["-t", "ed25519"]],
+    ["signer-ec", ["-t", "ecdsa", "-b", "521"]],
+    ["signer-rsa", ["-t", "rsa", "-b", "3072"]],
+  ])("verifies what ssh-keygen -Y sign makes, with an %s key", (name, type) => {
+    const file = key(name, ...type);
+    const message = path.join(dir, `${name}.txt`);
+    fs.writeFileSync(message, "a nonce");
+    keygen("-Y", "sign", "-f", file, "-n", "harpocrates-ssh-renew", message);
+    const signature = fs.readFileSync(`${message}.sig`, "utf8");
+    const signer = verifySshSignature(
+      signature,
+      Buffer.from("a nonce"),
+      "harpocrates-ssh-renew",
+    );
+    expect(signer.fingerprint).toBe(
+      parseSshPublicKey(fs.readFileSync(`${file}.pub`, "utf8")).fingerprint,
+    );
+    expect(() =>
+      verifySshSignature(
+        signature,
+        Buffer.from("another"),
+        "harpocrates-ssh-renew",
+      ),
+    ).toThrow(/does not verify/);
+    expect(() =>
+      verifySshSignature(signature, Buffer.from("a nonce"), "file"),
+    ).toThrow(/signed for harpocrates-ssh-renew/);
   });
 });

@@ -76,7 +76,7 @@ const sampleSshKey = (): string => {
 };
 
 /** What a certificate is to say, decided before it is signed. */
-type Issuance = {
+export type Issuance = {
   profile: ProfileWithRules;
   type: SshCertificateTypeName;
   key: SshPublicKey;

@@ -585,10 +585,26 @@ model SshCertificate {
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
   principals SshCertificatePrincipal[]
+  challenges SshRenewalChallenge[]
 
   @@unique([sshCaId, serial])
   @@index([identity])
   @@map("ssh_certificates")
+}
+
+/// A challenge a host signs with its host key to renew its certificate
+/// (ADR 0035): used once, within minutes.
+model SshRenewalChallenge {
+  id               String         @id @default(uuid()) @db.Uuid
+  sshCertificateId String         @map("ssh_certificate_id") @db.Uuid
+  sshCertificate   SshCertificate @relation(fields: [sshCertificateId], references: [id], onDelete: Cascade)
+  nonce            String         @unique
+  expiresAt        DateTime       @map("expires_at")
+  usedAt           DateTime?      @map("used_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@map("ssh_renewal_challenges")
 }
 
 /// A principal an SSH certificate names, in order.
