@@ -194,20 +194,45 @@
  * The lower half: the tabs, and the side panel beside them, running the
  * window's height below the shell's header and breadcrumbs.
  */
+/*
+ * The dashboard fills the window below the shell's header and breadcrumbs
+ * (92px), the side panel its full height, beside everything.
+ */
 .lower.lower {
-  flex: 1;
-  min-height: 0;
-  height: auto;
+  height: calc(100vh - 92px);
+  min-height: 600px;
 }
 
 /*
- * The dashboard fills the window below the shell's header and breadcrumbs
- * (92px): the title and counts stay, and beneath them the graphs and tabs
- * scroll on their own, as does the side panel beside them.
+ * The page beside the panel: the title and counts stay, and beneath them
+ * the graphs and tabs scroll on their own.
  */
-.fill {
-  height: calc(100vh - 92px);
-  min-height: 600px;
+.column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/*
+ * The dashboard's scroll containers scroll without a scrollbar: its own,
+ * the side panel's, and its tables' sideways scroll.
+ */
+.scroll,
+.lower :global(.ant-tabs-body-holder),
+.lower :global(.ant-table-content) {
+  scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar,
+.lower :global(.ant-tabs-body-holder)::-webkit-scrollbar,
+.lower :global(.ant-table-content)::-webkit-scrollbar {
+  display: none;
 }
 
 /* The tabs' bar keeps off the page's left edge; their content too. */
@@ -224,6 +249,7 @@
 /* The side panel's page is the tabs, which keep their own margin. */
 .lower > :global(.ant-layout-content) {
   padding: 0;
+  overflow: hidden;
   container-type: inline-size;
 }
 

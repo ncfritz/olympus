@@ -115,147 +115,149 @@ export function DashboardPage() {
   const errors = dashboard.attention.some((a) => a.severity === "error");
 
   return (
-    <div className={`${styles.page} ${styles.fill}`}>
-      {title}
-      <div className={styles.strip}>
-        <Count
-          title="CAs"
-          value={counts.cas}
-          note={`${counts.offlineCas} offline · ${counts.cas - counts.offlineCas} online`}
-        />
-        <Count
-          title="Valid certificates"
-          value={certificates.valid}
-          note={`${certificates.dueWithin30Days} due within 30 days`}
-        />
-        <Count
-          title="SSH certificates"
-          value={counts.sshValid}
-          note={`${counts.sshUser} user · ${counts.sshHost} host`}
-        />
-        <Count
-          title="Revoked"
-          value={certificates.revoked}
-          note={`${certificates.revokedThisWeek} this week`}
-        />
-        <Count
-          title="Expired, last 30"
-          value={certificates.expiredRecently}
-          note={certificates.expiredNames.join(", ") || undefined}
-        />
-        <Count title="Profiles" value={counts.profiles} />
-      </div>
-      <SideTabPanel
-        panelId="harpocrates.dashboard"
-        width={PANEL_WIDTH}
-        defaultExpanded
-        className={styles.lower}
-        tabs={[
-          {
-            key: "attention",
-            label: (
-              <TabIcon
-                title="Needs attention"
-                icon={
-                  <Badge
-                    count={dashboard.attention.length}
-                    size="small"
-                    color={errors ? "red" : "orange"}
-                  >
-                    <BellOutlined />
-                  </Badge>
-                }
-              />
-            ),
-            children: (
-              <AttentionTab
-                dashboard={dashboard}
-                now={now}
-                health={healthChecks({
-                  dashboard,
-                  signer,
-                  issuers,
-                  targets: targets ?? [],
-                  now,
-                })}
-              />
-            ),
-          },
-          {
-            key: "activity",
-            label: <TabIcon title="Activity" icon={<HistoryOutlined />} />,
-            children: <ActivityTab dashboard={dashboard} />,
-          },
-        ]}
-      >
-        <div className={styles.graphs}>
-          <ActivityChart days={dashboard.activity} />
-          <HealthChart health={dashboard.health} />
-          <RenewersCard renewers={dashboard.renewers} />
+    <SideTabPanel
+      panelId="harpocrates.dashboard"
+      width={PANEL_WIDTH}
+      defaultExpanded
+      className={styles.lower}
+      tabs={[
+        {
+          key: "attention",
+          label: (
+            <TabIcon
+              title="Needs attention"
+              icon={
+                <Badge
+                  count={dashboard.attention.length}
+                  size="small"
+                  color={errors ? "red" : "orange"}
+                >
+                  <BellOutlined />
+                </Badge>
+              }
+            />
+          ),
+          children: (
+            <AttentionTab
+              dashboard={dashboard}
+              now={now}
+              health={healthChecks({
+                dashboard,
+                signer,
+                issuers,
+                targets: targets ?? [],
+                now,
+              })}
+            />
+          ),
+        },
+        {
+          key: "activity",
+          label: <TabIcon title="Activity" icon={<HistoryOutlined />} />,
+          children: <ActivityTab dashboard={dashboard} />,
+        },
+      ]}
+    >
+      <div className={styles.column}>
+        {title}
+        <div className={styles.strip}>
+          <Count
+            title="CAs"
+            value={counts.cas}
+            note={`${counts.offlineCas} offline · ${counts.cas - counts.offlineCas} online`}
+          />
+          <Count
+            title="Valid certificates"
+            value={certificates.valid}
+            note={`${certificates.dueWithin30Days} due within 30 days`}
+          />
+          <Count
+            title="SSH certificates"
+            value={counts.sshValid}
+            note={`${counts.sshUser} user · ${counts.sshHost} host`}
+          />
+          <Count
+            title="Revoked"
+            value={certificates.revoked}
+            note={`${certificates.revokedThisWeek} this week`}
+          />
+          <Count
+            title="Expired, last 30"
+            value={certificates.expiredRecently}
+            note={certificates.expiredNames.join(", ") || undefined}
+          />
+          <Count title="Profiles" value={counts.profiles} />
         </div>
-        <Tabs
-          className={styles.mainTabs}
-          items={[
-            {
-              key: "certificates",
-              label: "Certificates",
-              children: (
-                <CertificateList
-                  certificates={dashboard.certificateList}
-                  issuers={issuers}
-                  now={now}
-                  order="health"
-                />
-              ),
-            },
-            {
-              key: "authorities",
-              label: "Authorities",
-              children: (
-                <>
-                  <CaLifetimes issuers={issuers} now={now} />
-                  <AuthoritiesTable
-                    authorities={dashboard.authorities}
-                    issuers={issuers}
-                    now={now}
-                  />
-                </>
-              ),
-            },
-            {
-              key: "expirations",
-              label: "Expirations",
-              children: (
-                <>
-                  <ExpiryCharts
-                    certificates={dashboard.certificateList}
-                    issuers={issuers}
-                    now={now}
-                  />
+        <div className={styles.scroll}>
+          <div className={styles.graphs}>
+            <ActivityChart days={dashboard.activity} />
+            <HealthChart health={dashboard.health} />
+            <RenewersCard renewers={dashboard.renewers} />
+          </div>
+          <Tabs
+            className={styles.mainTabs}
+            items={[
+              {
+                key: "certificates",
+                label: "Certificates",
+                children: (
                   <CertificateList
                     certificates={dashboard.certificateList}
                     issuers={issuers}
                     now={now}
-                    order="expiry"
+                    order="health"
                   />
-                </>
-              ),
-            },
-            {
-              key: "timeline",
-              label: "Timeline",
-              children: (
-                <TimelineView
-                  certificates={dashboard.certificateList}
-                  authorities={dashboard.authorities}
-                  issuers={issuers}
-                  now={now}
-                />
-              ),
-            },
-          ]}
-        />
-      </SideTabPanel>
-    </div>
+                ),
+              },
+              {
+                key: "authorities",
+                label: "Authorities",
+                children: (
+                  <>
+                    <CaLifetimes issuers={issuers} now={now} />
+                    <AuthoritiesTable
+                      authorities={dashboard.authorities}
+                      issuers={issuers}
+                      now={now}
+                    />
+                  </>
+                ),
+              },
+              {
+                key: "expirations",
+                label: "Expirations",
+                children: (
+                  <>
+                    <ExpiryCharts
+                      certificates={dashboard.certificateList}
+                      issuers={issuers}
+                      now={now}
+                    />
+                    <CertificateList
+                      certificates={dashboard.certificateList}
+                      issuers={issuers}
+                      now={now}
+                      order="expiry"
+                    />
+                  </>
+                ),
+              },
+              {
+                key: "timeline",
+                label: "Timeline",
+                children: (
+                  <TimelineView
+                    certificates={dashboard.certificateList}
+                    authorities={dashboard.authorities}
+                    issuers={issuers}
+                    now={now}
+                  />
+                ),
+              },
+            ]}
+          />
+        </div>
+      </div>
+    </SideTabPanel>
   );
 }
