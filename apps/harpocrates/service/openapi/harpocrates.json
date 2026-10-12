@@ -10738,12 +10738,20 @@
             "items": {
               "$ref": "#/components/schemas/SshCertificate"
             }
+          },
+          "hostTrustLines": {
+            "description": "The known_hosts lines that trust the hosts: each host CA's, while it is active or vouches for a current certificate",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "identity",
           "principals",
-          "certificates"
+          "certificates",
+          "hostTrustLines"
         ]
       },
       "CreateSshRenewalChallengeRequest": {

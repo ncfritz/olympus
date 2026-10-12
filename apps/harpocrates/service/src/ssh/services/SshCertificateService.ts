@@ -148,6 +148,7 @@ export class SshCertificateService {
       identity,
       principals: await this.principals.principalsOf(identity),
       certificates: rows.map(toSshCertificate),
+      hostTrustLines: await this.cas.hostTrustLines(),
     };
   }
 

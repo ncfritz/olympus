@@ -50,6 +50,28 @@ export class SshCaService {
     return rows.map((row) => toSshCa(row, this.pki.sshHostPattern));
   }
 
+  /**
+   * The lines a client trusts the hosts by: each host CA that is active,
+   * or retired with certificates still current.
+   */
+  async hostTrustLines(): Promise<string[]> {
+    const rows = await this.prisma.sshCa.findMany({
+      where: {
+        type: "host",
+        OR: [
+          { status: "active" },
+          {
+            certificates: {
+              some: { status: "valid", validBefore: { gt: new Date() } },
+            },
+          },
+        ],
+      },
+      orderBy: [{ number: "asc" }, { generation: "desc" }],
+    });
+    return rows.map((row) => toSshCa(row, this.pki.sshHostPattern).trustLine);
+  }
+
   async describe(caId: string): Promise<SshCa> {
     return toSshCa(await this.row(caId), this.pki.sshHostPattern);
   }

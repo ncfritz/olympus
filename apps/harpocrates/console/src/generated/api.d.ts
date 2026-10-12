@@ -2907,6 +2907,8 @@ export interface components {
       principals: string[];
       /** @description Its user certificates, newest first */
       certificates: components["schemas"]["SshCertificate"][];
+      /** @description The known_hosts lines that trust the hosts: each host CA's, while it is active or vouches for a current certificate */
+      hostTrustLines: string[];
     };
     CreateSshRenewalChallengeRequest: {
       /** @description The host's current certificate, OpenSSH format (ssh_host_ed25519_key-cert.pub) */

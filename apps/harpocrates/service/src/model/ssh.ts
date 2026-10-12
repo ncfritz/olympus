@@ -804,4 +804,13 @@ export class DescribeMySshResponse {
     description: "Its user certificates, newest first",
   })
   certificates: SshCertificate[];
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description:
+      "The known_hosts lines that trust the hosts: each host CA's, while it is active or vouches for a current certificate",
+  })
+  hostTrustLines: string[];
 }

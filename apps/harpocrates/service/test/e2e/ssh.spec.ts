@@ -469,6 +469,11 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
         principals: ["guest", "backup"],
       });
       expect(mine.body.certificates).toHaveLength(1);
+      expect(mine.body.hostTrustLines).toEqual([
+        expect.stringMatching(
+          /^@cert-authority \*\.internal\.ncfritz\.net ssh-ed25519 \S+ .* SSH Host CA 1 - G1$/,
+        ),
+      ]);
     });
 
     it("never more than one's mapping, nor for someone else unless an admin", async () => {
