@@ -7,6 +7,7 @@ import type {
   Ceremony,
   CeremonySummary,
   Certificate,
+  CertificateLineage,
   CertificateState,
   CurrentUser,
   Dashboard,
@@ -50,6 +51,7 @@ export const KEYS = {
         value === undefined ? [] : [[key, String(value)]],
       ),
     ).toString()}`,
+  lineages: "/certificate-lineages",
   audit: "/audit/events",
   dashboard: "/dashboard",
   deployTargets: "/deploy-targets",
@@ -113,6 +115,17 @@ export const useDashboard = (refreshInterval = 60_000) =>
   useSWR<Dashboard>(
     KEYS.dashboard,
     async () => unwrap(await apiClient.GET("/v1/dashboard")).dashboard,
+    { refreshInterval },
+  );
+
+/**
+ * The certificates as lineages, each subject's versions together, and
+ * when they were read: renewals run unasked, so it is polled.
+ */
+export const useCertificateLineages = (refreshInterval = 60_000) =>
+  useSWR<{ asOf: string; lineages: CertificateLineage[] }>(
+    KEYS.lineages,
+    async () => unwrap(await apiClient.GET("/v1/certificate-lineages")),
     { refreshInterval },
   );
 

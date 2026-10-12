@@ -15,7 +15,7 @@ import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
-import { useCurrentUser } from "@/lib/api/queries";
+import { KEYS, useCurrentUser } from "@/lib/api/queries";
 import type { FullCertificate } from "@/lib/api/types";
 import { saveFile } from "@/lib/download";
 import { formatDateTime, namesOf, STATE_COLORS } from "@/lib/labels";
@@ -47,7 +47,9 @@ export function CertificateDrawer({
     mutate(
       (key) =>
         typeof key === "string" &&
-        (key.startsWith("/certificates") || key.startsWith("/certificate/")),
+        (key.startsWith("/certificates") ||
+          key.startsWith("/certificate/") ||
+          key === KEYS.lineages),
     );
   const { isAdmin } = useCurrentUser();
   const router = useRouter();

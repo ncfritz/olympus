@@ -3,6 +3,8 @@ import type { components } from "../../generated/api";
 type Schemas = components["schemas"];
 
 export type Issuer = Schemas["Issuer"];
+export type CertificateLineage = Schemas["CertificateLineage"];
+export type LineageVersion = Schemas["LineageVersion"];
 export type FullIssuer = Schemas["FullIssuer"];
 export type IssuerShape = Schemas["IssuerShape"];
 export type IssuerTier = Schemas["IssuerTier"];

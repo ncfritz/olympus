@@ -1,0 +1,418 @@
+/*
+ * The certificates page: its contents run to the shell's edges; what is
+ * in them keeps the page's 24px margin (docs/conventions/ux.md, Page
+ * edges). Doubled selectors outrank antd's own at the same specificity.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header.header {
+  padding: 16px 24px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+.padded.padded {
+  padding: 16px 24px;
+}
+
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.shrink {
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.tags :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+.count {
+  font-size: 24px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The graphs: two boxes to a row, four where there is room. */
+.graphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.graphs > * {
+  margin-bottom: -1px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.ring {
+  flex: none;
+  width: 140px;
+  height: 140px;
+}
+
+.ringLegend {
+  flex: 1 1 140px;
+  min-width: 140px;
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ant-color-text-secondary);
+}
+
+/* A heading across the page: a panel's, a group's. */
+.section {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-fill-quaternary);
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-secondary);
+}
+
+/* The alerts: two panels of buckets, each bucket a filter. */
+.alerts {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+@media (max-width: 1100px) {
+  .alerts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.panel + .panel {
+  border-left: 1px solid var(--ant-color-border-secondary);
+}
+
+.buckets {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+.bucket {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 12px 16px;
+  border: none;
+  border-right: 1px solid var(--ant-color-border-secondary);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bucket:first-child {
+  padding-inline-start: 24px;
+}
+
+.bucket:last-child {
+  border-right: none;
+}
+
+.bucket:hover {
+  background: var(--ant-color-fill-quaternary);
+}
+
+.bucket:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: -2px;
+}
+
+.bucketOn.bucketOn {
+  background: var(--ant-color-primary-bg);
+  box-shadow: inset 0 -2px 0 var(--ant-color-primary);
+}
+
+.bucketCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* A bucket that holds something to see to: a bar in its status. */
+.mark {
+  width: 3px;
+  height: 22px;
+  border-radius: 2px;
+}
+
+.markError {
+  background: var(--ant-color-error);
+}
+
+.markWarning {
+  background: var(--ant-color-warning);
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.search.search {
+  width: 260px;
+}
+
+.filter.filter {
+  width: 160px;
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+.flushTable :global(.ant-table-pagination) {
+  padding-inline: 24px;
+}
+
+/*
+ * A lineage's strip: each version (or gap, or mark) placed on the axis,
+ * its start (--from), length (--width) and colour (--color) from code.
+ */
+.lifeline {
+  position: relative;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--ant-color-fill-quaternary);
+}
+
+.tall {
+  height: 18px;
+}
+
+.version {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--from);
+  width: max(calc(var(--width) - 2px), 2px);
+  border-radius: 3px;
+  background: var(--color);
+}
+
+.gap {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: var(--from);
+  width: var(--width);
+  border: 1px dashed var(--ant-color-error);
+  border-radius: 3px;
+}
+
+.gapSwatch {
+  width: 10px;
+  height: 10px;
+  border: 1px dashed var(--ant-color-error);
+  border-radius: 2px;
+}
+
+.today,
+.todaySwatch {
+  width: 2px;
+  background: var(--ant-color-primary);
+}
+
+.today {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  left: var(--from);
+}
+
+.todaySwatch {
+  height: 12px;
+}
+
+/* The newest version's renewal point: a diamond, red once failing. */
+.due,
+.dueSwatch {
+  width: 10px;
+  height: 10px;
+  background: var(--ant-color-warning);
+  transform: rotate(45deg);
+}
+
+.due {
+  position: absolute;
+  top: calc(50% - 5px);
+  left: calc(var(--from) - 5px);
+  box-shadow: 0 0 0 2px var(--ant-color-bg-container);
+}
+
+.dueFailing {
+  background: var(--ant-color-error);
+}
+
+/* The axis in a strip column's heading: a tick (--from) to each label. */
+.axis {
+  position: relative;
+  height: 18px;
+  font-weight: 400;
+}
+
+.tick {
+  position: absolute;
+  left: var(--from);
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.tickToday {
+  color: var(--ant-color-primary);
+  font-weight: 600;
+}
+
+/* A lineage's versions, one to a line, under its row. */
+.versions {
+  display: flex;
+  flex-direction: column;
+  padding-inline-start: 24px;
+}
+
+.versionRow {
+  display: grid;
+  grid-template-columns:
+    36px 150px minmax(200px, 1fr) 220px minmax(120px, 200px)
+    60px;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+.versionRow:first-child {
+  border-top: none;
+}
+
+/* The timeline's heat strip: a cell to each week, darker the more expire. */
+.heatRow {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.heat {
+  display: grid;
+  grid-template-columns: repeat(26, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.heatLabels {
+  display: grid;
+  grid-template-columns: repeat(26, minmax(0, 1fr));
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.heatCell {
+  height: 22px;
+  border-radius: 3px;
+}
+
+.heat0 {
+  background: var(--ant-color-fill-tertiary);
+}
+
+.heat1 {
+  background: color-mix(in srgb, var(--ant-color-primary) 35%, transparent);
+}
+
+.heat2 {
+  background: color-mix(in srgb, var(--ant-color-primary) 65%, transparent);
+}
+
+.heat3 {
+  background: var(--ant-color-primary);
+}
+
+.heatNow {
+  outline: 2px solid var(--ant-color-error);
+  outline-offset: -2px;
+}
+
+/* A lineage's versions as a chain of cards, under its row. */
+.chainWrap {
+  padding-inline-start: 24px;
+}
+
+.chain {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.versionCard.versionCard {
+  flex: 0 0 210px;
+}
+
+.chain > :global(.ant-typography) {
+  align-self: center;
+}
+
+.versionCardOn.versionCardOn {
+  border-color: var(--ant-color-primary);
+}
+
+.cardLink.cardLink {
+  align-self: flex-start;
+  padding: 0;
+}

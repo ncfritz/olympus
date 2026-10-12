@@ -7,6 +7,7 @@ import type {
   IssuerShape,
   IssuerStatus,
   IssuerTier,
+  RevocationReason,
 } from "./api/types";
 
 /** A root's shape (ADR 0032, Three shapes), as the console explains it. */
@@ -88,6 +89,17 @@ export const namesOf = (certificate: Certificate): string =>
     .flat()
     .filter(Boolean)
     .join(", ");
+
+/** Why a certificate was revoked (RFC 5280), in a few words. */
+export const REVOCATION_REASONS: Record<RevocationReason, string> = {
+  unspecified: "Unspecified",
+  keyCompromise: "Key compromise",
+  cACompromise: "CA compromise",
+  affiliationChanged: "Affiliation changed",
+  superseded: "Superseded",
+  cessationOfOperation: "Cessation of operation",
+  privilegeWithdrawn: "Privilege withdrawn",
+};
 
 export const STATUS_COLORS: Record<IssuerStatus, string> = {
   pending: "default",

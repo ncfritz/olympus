@@ -1,14 +1,12 @@
 import { Suspense } from "react";
-import { CertificatesPage } from "@/components/CertificatesPage";
-import { PaddedPage } from "@/components/PaddedPage";
+import { CertificatesPage } from "@/components/certificates/CertificatesPage";
 
-// It reads its query (useSearchParams), which needs a Suspense boundary.
+// It reads its tab and the open certificate from its query
+// (useSearchParams), which needs a Suspense boundary.
 export default function Certificates() {
   return (
-    <PaddedPage>
-      <Suspense>
-        <CertificatesPage />
-      </Suspense>
-    </PaddedPage>
+    <Suspense>
+      <CertificatesPage />
+    </Suspense>
   );
 }
