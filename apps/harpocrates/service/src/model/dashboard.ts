@@ -335,6 +335,110 @@ export class DashboardCeremony {
   closedAt?: Moment;
 }
 
+/** A recent audit event, with what it concerns by name. */
+export class DashboardEvent {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its position in the audit chain",
+  })
+  sequence: string;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it happened",
+  })
+  occurredAt: Moment;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "What happened, e.g. certificate.issued",
+  })
+  kind: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Who: user:<email>, cli:<name>, acme:<account> or system",
+  })
+  principal: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Where from: api, cli, acme, renewal or system",
+  })
+  surface: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The kind of thing it concerns",
+  })
+  subjectType?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "Its ID",
+  })
+  subjectId?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Its name: a certificate's or CA's common name, a deploy target's name",
+  })
+  subjectName?: string;
+}
+
+/** Work done in the last 7 days without a person: by ACME, renewal or the service. */
+export class HandledCount {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The audit kind, e.g. certificate.renewed",
+  })
+  kind: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Where from: acme, renewal or system",
+  })
+  surface: string;
+
+  @ApiProperty({ type: Number, required: true, description: "How many" })
+  count: number;
+}
+
+/** OCSP across the CAs (ADR 0036). */
+export class DashboardOcsp {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "CAs with a responder in service",
+  })
+  answering: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Active online CAs with none: the service issues theirs on its next run",
+  })
+  missingOnline: number;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when the soonest stored response lapses",
+  })
+  soonestLapse?: Moment;
+}
+
 /** The CA itself. */
 export class DashboardCa {
   @ApiTimestamp({
@@ -425,6 +529,30 @@ export class Dashboard {
     description: "The CA itself",
   })
   ca: DashboardCa;
+
+  @ApiProperty({
+    type: () => DashboardOcsp,
+    required: true,
+    description: "OCSP across the CAs",
+  })
+  ocsp: DashboardOcsp;
+
+  @ApiProperty({
+    type: () => DashboardEvent,
+    isArray: true,
+    required: true,
+    description: "The latest audit events, newest first",
+  })
+  recent: DashboardEvent[];
+
+  @ApiProperty({
+    type: () => HandledCount,
+    isArray: true,
+    required: true,
+    description:
+      "What ACME, renewal and the service did in the last 7 days, by audit kind and surface",
+  })
+  handled: HandledCount[];
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

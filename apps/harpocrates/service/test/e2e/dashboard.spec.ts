@@ -43,6 +43,14 @@ type Dashboard = {
   }[];
   crls: { issuerId: string; tier: string; offline: boolean; number?: string }[];
   week: { issued: number; renewals: number };
+  ocsp: { answering: number; missingOnline: number; soonestLapse?: string };
+  recent: {
+    kind: string;
+    surface: string;
+    subjectType?: string;
+    subjectName?: string;
+  }[];
+  handled: { kind: string; surface: string; count: number }[];
   ca: {
     auditEvents: number;
     lastCeremony?: { issuerId: string };
@@ -134,6 +142,24 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
       expect.arrayContaining([hierarchy.root.id, hierarchy.intermediate.id]),
     );
     expect(read.ca.auditEvents).toBeGreaterThan(0);
+    // The latest events, newest first, naming what they concern.
+    expect(read.recent[0]).toMatchObject({
+      kind: "certificate.issued",
+      subjectType: "certificate",
+      subjectName: "dash-a.internal.ncfritz.net",
+    });
+    // The scheduler's run: lists signed, the online CA's OCSP responder.
+    expect(read.handled).toContainEqual(
+      expect.objectContaining({ kind: "crl.signed", surface: "system" }),
+    );
+    expect(read.handled).toContainEqual(
+      expect.objectContaining({
+        kind: "ocsp-responder.issued",
+        surface: "system",
+        count: 1,
+      }),
+    );
+    expect(read.ocsp).toMatchObject({ answering: 1, missingOnline: 0 });
     expect(read.ca.lastCeremony).toBeDefined();
     // The offline CAs' lists lapse first: a ceremony renews them.
     expect([hierarchy.root.id, hierarchy.intermediate.id]).toContain(

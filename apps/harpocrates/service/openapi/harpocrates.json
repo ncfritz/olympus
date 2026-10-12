@@ -12343,6 +12343,93 @@
           "auditEvents"
         ]
       },
+      "DashboardOcsp": {
+        "type": "object",
+        "properties": {
+          "answering": {
+            "type": "number",
+            "description": "CAs with a responder in service"
+          },
+          "missingOnline": {
+            "type": "number",
+            "description": "Active online CAs with none: the service issues theirs on its next run"
+          },
+          "soonestLapse": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the soonest stored response lapses"
+          }
+        },
+        "required": [
+          "answering",
+          "missingOnline"
+        ]
+      },
+      "DashboardEvent": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "string",
+            "description": "Its position in the audit chain"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it happened"
+          },
+          "kind": {
+            "type": "string",
+            "description": "What happened, e.g. certificate.issued"
+          },
+          "principal": {
+            "type": "string",
+            "description": "Who: user:<email>, cli:<name>, acme:<account> or system"
+          },
+          "surface": {
+            "type": "string",
+            "description": "Where from: api, cli, acme, renewal or system"
+          },
+          "subjectType": {
+            "type": "string",
+            "description": "The kind of thing it concerns"
+          },
+          "subjectId": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "subjectName": {
+            "type": "string",
+            "description": "Its name: a certificate's or CA's common name, a deploy target's name"
+          }
+        },
+        "required": [
+          "sequence",
+          "occurredAt",
+          "kind",
+          "principal",
+          "surface"
+        ]
+      },
+      "HandledCount": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "The audit kind, e.g. certificate.renewed"
+          },
+          "surface": {
+            "type": "string",
+            "description": "Where from: acme, renewal or system"
+          },
+          "count": {
+            "type": "number",
+            "description": "How many"
+          }
+        },
+        "required": [
+          "kind",
+          "surface",
+          "count"
+        ]
+      },
       "Dashboard": {
         "type": "object",
         "properties": {
@@ -12394,6 +12481,28 @@
                 "$ref": "#/components/schemas/DashboardCa"
               }
             ]
+          },
+          "ocsp": {
+            "description": "OCSP across the CAs",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardOcsp"
+              }
+            ]
+          },
+          "recent": {
+            "description": "The latest audit events, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            }
+          },
+          "handled": {
+            "description": "What ACME, renewal and the service did in the last 7 days, by audit kind and surface",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HandledCount"
+            }
           }
         },
         "required": [
@@ -12403,7 +12512,10 @@
           "attention",
           "crls",
           "week",
-          "ca"
+          "ca",
+          "ocsp",
+          "recent",
+          "handled"
         ]
       },
       "GetDashboardResponse": {

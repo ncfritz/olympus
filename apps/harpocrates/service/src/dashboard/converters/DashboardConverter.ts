@@ -34,6 +34,22 @@ export const toDashboard = (row: DashboardRow): Dashboard => ({
     publishedAt: when(crl.publishedAt),
   })),
   week: row.week,
+  ocsp: {
+    answering: row.ocsp.answering,
+    missingOnline: row.ocsp.missingOnline,
+    soonestLapse: when(row.ocsp.soonestLapse),
+  },
+  recent: row.recent.map((event) => ({
+    sequence: event.sequence.toString(),
+    occurredAt: moment(event.occurredAt),
+    kind: event.kind,
+    principal: event.principal,
+    surface: event.surface,
+    subjectType: event.subjectType,
+    subjectId: event.subjectId,
+    subjectName: event.subjectName,
+  })),
+  handled: row.handled,
   ca: {
     lastPublishedAt: when(row.ca.lastPublishedAt),
     auditEvents: row.ca.auditEvents,

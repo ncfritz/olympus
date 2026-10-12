@@ -27,6 +27,9 @@ const DEPLOYMENT_FAILING_MS = HOUR;
 /** A list waiting this long to be published is failing. */
 const UNPUBLISHED_MS = 5 * 60 * 1000;
 
+/** How many audit events the dashboard shows. */
+const RECENT_EVENTS = 12;
+
 /** Errors are what break within this. */
 const URGENT_DAYS = 7;
 
@@ -82,6 +85,18 @@ export type DashboardRow = {
     deployed: number;
     deploymentsFailing: number;
   };
+  ocsp: { answering: number; missingOnline: number; soonestLapse?: Date };
+  recent: {
+    sequence: bigint;
+    occurredAt: Date;
+    kind: string;
+    principal: string;
+    surface: string;
+    subjectType?: string;
+    subjectId?: string;
+    subjectName?: string;
+  }[];
+  handled: { kind: string; surface: string; count: number }[];
   ca: {
     lastPublishedAt?: Date;
     auditEvents: number;
@@ -225,12 +240,16 @@ export class DashboardService {
     const due30 = expiring.filter((e) => e.notAfter <= ahead(30));
     const expiredNow = expired.filter((row) => !replaced(row));
 
-    const [crls, attentionFromCas, week, ca] = await Promise.all([
-      this.crls(),
-      this.casNeedingAPerson(now),
-      this.week(now),
-      this.ca(now),
-    ]);
+    const [crls, attentionFromCas, week, ca, ocsp, recent, handled] =
+      await Promise.all([
+        this.crls(),
+        this.casNeedingAPerson(now),
+        this.week(now),
+        this.ca(now),
+        this.ocsp(now),
+        this.recent(),
+        this.handled(now),
+      ]);
 
     const attention = [
       ...this.certificatesNeedingAPerson(expiring, now),
@@ -283,7 +302,114 @@ export class DashboardService {
       })),
       week,
       ca,
+      ocsp,
+      recent,
+      handled,
     };
+  }
+
+  /** CAs answering OCSP, online CAs with no responder, the soonest lapse. */
+  private async ocsp(now: Date): Promise<DashboardRow["ocsp"]> {
+    const inService = {
+      status: "active" as const,
+      notBefore: { lte: now },
+      notAfter: { gt: now },
+    };
+    const [answering, missingOnline, soonest] = await Promise.all([
+      this.prisma.issuer.count({
+        where: {
+          discardedAt: null,
+          ocspResponders: { some: inService },
+        },
+      }),
+      this.prisma.issuer.count({
+        where: {
+          tier: "issuing",
+          status: "active",
+          discardedAt: null,
+          certificate: { not: null },
+          ocspResponders: { none: inService },
+        },
+      }),
+      this.prisma.ocspResponse.aggregate({ _min: { nextUpdate: true } }),
+    ]);
+    return {
+      answering,
+      missingOnline,
+      soonestLapse: soonest._min.nextUpdate ?? undefined,
+    };
+  }
+
+  /** The latest audit events, with what they concern by name. */
+  private async recent(): Promise<DashboardRow["recent"]> {
+    const events = await this.prisma.auditEvent.findMany({
+      orderBy: { sequence: "desc" },
+      take: RECENT_EVENTS,
+    });
+    const ids = (type: string) => [
+      ...new Set(
+        events
+          .filter((e) => e.subjectType === type && e.subjectId)
+          .map((e) => e.subjectId!),
+      ),
+    ];
+    const uuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
+    const [certificates, issuers, targets] = await Promise.all([
+      this.prisma.certificate.findMany({
+        where: { id: { in: ids("certificate").filter(uuid) } },
+        select: { id: true, subject: true },
+      }),
+      this.prisma.issuer.findMany({
+        where: { id: { in: ids("issuer") } },
+        select: { id: true, subject: true },
+      }),
+      this.prisma.deployTarget.findMany({
+        where: { id: { in: ids("deploy-target").filter(uuid) } },
+        select: { id: true, name: true },
+      }),
+    ]);
+    const names = new Map<string, string>([
+      ...certificates.map((c): [string, string] => [
+        `certificate:${c.id}`,
+        nameOf(c.subject),
+      ]),
+      ...issuers.map((i): [string, string] => [
+        `issuer:${i.id}`,
+        nameOf(i.subject),
+      ]),
+      ...targets.map((t): [string, string] => [
+        `deploy-target:${t.id}`,
+        t.name,
+      ]),
+    ]);
+    return events.map((event) => ({
+      sequence: event.sequence,
+      occurredAt: event.occurredAt,
+      kind: event.kind,
+      principal: event.principal,
+      surface: event.surface,
+      subjectType: event.subjectType ?? undefined,
+      subjectId: event.subjectId ?? undefined,
+      subjectName: names.get(`${event.subjectType}:${event.subjectId}`),
+    }));
+  }
+
+  /** What ACME, renewal and the service did in the last 7 days. */
+  private async handled(now: Date): Promise<DashboardRow["handled"]> {
+    const rows = await this.prisma.auditEvent.groupBy({
+      by: ["kind", "surface"],
+      where: {
+        occurredAt: { gt: new Date(now.getTime() - 7 * DAY) },
+        surface: { in: ["acme", "renewal", "system"] },
+      },
+      _count: { _all: true },
+      orderBy: [{ kind: "asc" }, { surface: "asc" }],
+    });
+    return rows.map((row) => ({
+      kind: row.kind,
+      surface: row.surface,
+      count: row._count._all,
+    }));
   }
 
   /**
