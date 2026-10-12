@@ -718,6 +718,35 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
         });
         expect(row.revocation).toMatchObject({ reason: "keyCompromise" });
       });
+
+      it("counts a certificate its client has ordered again as renewed, though nothing names it", async () => {
+        const names = ["h.lab.internal.ncfritz.net"];
+        for (let i = 0; i < 2; i += 1) {
+          const order = await readyOrder(names);
+          const { csr } = await csrFor(names);
+          await client.finalizeOrder(order, csr);
+          // A second apart, so the next expires later.
+          await new Promise((resolve) => setTimeout(resolve, 1100));
+        }
+        const [older, newer] = await harness.prisma.certificate.findMany({
+          where: { subject: { contains: "CN=h.lab.internal.ncfritz.net" } },
+          orderBy: { notAfter: "asc" },
+        });
+        expect(older.renewsId).toBeNull();
+        expect(newer.renewsId).toBeNull();
+        const metrics = await request(server()).get("/metrics").expect(200);
+        // The alerts on certificates nothing renews skip the older one.
+        expect(metrics.text).toMatch(
+          new RegExp(
+            `certificate_expiry_days\\{[^}]*serial="${older.serial}",renewal="renewed"`,
+          ),
+        );
+        expect(metrics.text).toMatch(
+          new RegExp(
+            `certificate_expiry_days\\{[^}]*serial="${newer.serial}",renewal="automatic"`,
+          ),
+        );
+      });
     });
 
     it("rolls its account key over (key-change)", async () => {

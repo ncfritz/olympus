@@ -81,7 +81,21 @@ export class PkiGaugeService implements OnModuleInit {
             },
           }),
         );
+        // The latest expiry among each CA's certificates for a subject:
+        // one expiring before it has been replaced, even when nothing
+        // names it as renewed (an ACME client's next order).
+        const latest = new Map<string, number>();
         for (const row of rows) {
+          const key = `${row.issuerId}\n${row.subject}`;
+          latest.set(
+            key,
+            Math.max(latest.get(key) ?? 0, row.notAfter.getTime()),
+          );
+        }
+        for (const row of rows) {
+          const replaced =
+            (latest.get(`${row.issuerId}\n${row.subject}`) ?? 0) >
+            row.notAfter.getTime();
           this.set(
             {
               issuer: row.issuerId,
@@ -89,14 +103,16 @@ export class PkiGaugeService implements OnModuleInit {
               subject: row.subject,
               serial: row.serial,
               // Whether it still needs renewing, and by whom: renewed (its
-              // successor exists, so it needs nothing), automatic (a deploy
-              // target's, which Harpocrates renews, or ACME's, which its
-              // client renews), or manual.
-              renewal: row.renewedBy
-                ? "renewed"
-                : row.deployTargets.length > 0 || row.acmeOrder
-                  ? "automatic"
-                  : "manual",
+              // successor exists, so it needs nothing: a renewal of it, or a
+              // later certificate from its CA for its subject), automatic (a
+              // deploy target's, which Harpocrates renews, or ACME's, which
+              // its client renews), or manual.
+              renewal:
+                row.renewedBy || replaced
+                  ? "renewed"
+                  : row.deployTargets.length > 0 || row.acmeOrder
+                    ? "automatic"
+                    : "manual",
             },
             days(row.notAfter),
           );

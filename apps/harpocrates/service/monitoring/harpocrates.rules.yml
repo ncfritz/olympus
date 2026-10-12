@@ -112,8 +112,9 @@ groups:
 
       # The profile's threshold: its validity less the age it renews at.
       # Only certificates nothing renews by itself (renewal="manual"): not
-      # one already renewed ("renewed"), which stays valid, and listed,
-      # until it expires; nor a deploy target's ("automatic"), which
+      # one already renewed or replaced ("renewed": a renewal of it, or a
+      # later certificate from its CA for its subject, as an ACME client's
+      # next order is), which stays valid, and listed, until it expires; nor a deploy target's ("automatic"), which
       # Harpocrates renews, and which the deploy alerts below cover.
       - alert: HarpocratesCertificateNeedsRenewal
         expr: >-

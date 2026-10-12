@@ -416,34 +416,34 @@ taken.
 
 ## Metrics and alerts
 
-| Metric                                                              | What                                                                                                    |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `harpocrates_certificates_issued_total{issuer,profile}`             | Issued, renewals included                                                                               |
-| `harpocrates_revocations_total{issuer,reason}`                      | Revoked                                                                                                 |
-| `harpocrates_refusals_total{invariant}`                             | Requests refused by a profile rule or the signer                                                        |
-| `harpocrates_crls_signed_total{issuer,source}`                      | Lists signed or imported                                                                                |
-| `harpocrates_crl_signing_failures_total{issuer,reason}`             | Scheduled signings that failed: `sealed`, `refused`, `error`                                            |
-| `harpocrates_crl_publication_failures_total{issuer}`                | Publication attempts that failed                                                                        |
-| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`        | When each CA's newest published list lapses (Unix time)                                                 |
-| `harpocrates_crl_publication_pending_seconds{issuer,tier}`          | How long its newest list has waited to be published; 0 once out                                         |
-| `harpocrates_deployments_total{target}`                             | Certificates deployed to a deploy target                                                                |
-| `harpocrates_deployment_failures_total{target}`                     | Deployment attempts that failed                                                                         |
-| `harpocrates_deploy_target_serving{target,result}`                  | 1 for what each target's endpoint served at its last check, 0 for the other results                     |
-| `harpocrates_deployment_pending_seconds{target}`                    | How long a target's pending deployment has waited; 0 when none                                          |
-| `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                                                |
-| `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                                                 |
-| `harpocrates_deploy_target_stapling{target,must_staple}`            | 1 when its endpoint stapled an OCSP response at its last check, 0 when not                              |
-| `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`                            |
-| `harpocrates_ocsp_requests_total{result}`                           | OCSP requests answered: `good`, `revoked`, `unauthorized`, `malformed`, `tryLater`                      |
-| `harpocrates_ocsp_responses_signed_total{issuer}`                   | OCSP responses signed ahead                                                                             |
-| `harpocrates_ocsp_refresh_failures_total{issuer,reason}`            | Scheduled OCSP signing that failed: `sealed`, `refused`, `error`                                        |
-| `harpocrates_ocsp_next_update_timestamp_seconds{issuer,tier}`       | When each CA's soonest-lapsing OCSP response lapses (Unix time)                                         |
-| `harpocrates_ocsp_responder_expiry_timestamp_seconds{issuer,tier}`  | When each CA's OCSP responder lapses (Unix time)                                                        |
-| `harpocrates_ocsp_responder_missing{issuer,tier}`                   | 1 for an active CA with no OCSP responder in service                                                    |
-| `harpocrates_issuing_window_days{issuer}`                           | Days until each active CA stops issuing                                                                 |
-| `harpocrates_profile_renewal_due_days{profile}`                     | Days before expiry a profile's certificates are due for renewal                                         |
-| `harpocrates_signer_sealed`                                         | 1 when the signer is sealed or unreachable                                                              |
-| `certificate_expiry_days{issuer,profile,subject,serial,renewal}`    | Days left on every valid certificate; `renewal`: `manual`, `automatic` (a deploy target's) or `renewed` |
+| Metric                                                              | What                                                                                                                                                                  |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `harpocrates_certificates_issued_total{issuer,profile}`             | Issued, renewals included                                                                                                                                             |
+| `harpocrates_revocations_total{issuer,reason}`                      | Revoked                                                                                                                                                               |
+| `harpocrates_refusals_total{invariant}`                             | Requests refused by a profile rule or the signer                                                                                                                      |
+| `harpocrates_crls_signed_total{issuer,source}`                      | Lists signed or imported                                                                                                                                              |
+| `harpocrates_crl_signing_failures_total{issuer,reason}`             | Scheduled signings that failed: `sealed`, `refused`, `error`                                                                                                          |
+| `harpocrates_crl_publication_failures_total{issuer}`                | Publication attempts that failed                                                                                                                                      |
+| `harpocrates_crl_next_update_timestamp_seconds{issuer,tier}`        | When each CA's newest published list lapses (Unix time)                                                                                                               |
+| `harpocrates_crl_publication_pending_seconds{issuer,tier}`          | How long its newest list has waited to be published; 0 once out                                                                                                       |
+| `harpocrates_deployments_total{target}`                             | Certificates deployed to a deploy target                                                                                                                              |
+| `harpocrates_deployment_failures_total{target}`                     | Deployment attempts that failed                                                                                                                                       |
+| `harpocrates_deploy_target_serving{target,result}`                  | 1 for what each target's endpoint served at its last check, 0 for the other results                                                                                   |
+| `harpocrates_deployment_pending_seconds{target}`                    | How long a target's pending deployment has waited; 0 when none                                                                                                        |
+| `harpocrates_deploy_target_checked_timestamp_seconds{target}`       | When each target's endpoint was last checked (Unix time)                                                                                                              |
+| `harpocrates_deploy_target_served_expiry_timestamp_seconds{target}` | When the certificate it served then expires (Unix time)                                                                                                               |
+| `harpocrates_deploy_target_stapling{target,must_staple}`            | 1 when its endpoint stapled an OCSP response at its last check, 0 when not                                                                                            |
+| `harpocrates_target_renewal_failures_total{target,reason}`          | Renewals of a target's certificate that failed: `sealed`, `refused`, `error`                                                                                          |
+| `harpocrates_ocsp_requests_total{result}`                           | OCSP requests answered: `good`, `revoked`, `unauthorized`, `malformed`, `tryLater`                                                                                    |
+| `harpocrates_ocsp_responses_signed_total{issuer}`                   | OCSP responses signed ahead                                                                                                                                           |
+| `harpocrates_ocsp_refresh_failures_total{issuer,reason}`            | Scheduled OCSP signing that failed: `sealed`, `refused`, `error`                                                                                                      |
+| `harpocrates_ocsp_next_update_timestamp_seconds{issuer,tier}`       | When each CA's soonest-lapsing OCSP response lapses (Unix time)                                                                                                       |
+| `harpocrates_ocsp_responder_expiry_timestamp_seconds{issuer,tier}`  | When each CA's OCSP responder lapses (Unix time)                                                                                                                      |
+| `harpocrates_ocsp_responder_missing{issuer,tier}`                   | 1 for an active CA with no OCSP responder in service                                                                                                                  |
+| `harpocrates_issuing_window_days{issuer}`                           | Days until each active CA stops issuing                                                                                                                               |
+| `harpocrates_profile_renewal_due_days{profile}`                     | Days before expiry a profile's certificates are due for renewal                                                                                                       |
+| `harpocrates_signer_sealed`                                         | 1 when the signer is sealed or unreachable                                                                                                                            |
+| `certificate_expiry_days{issuer,profile,subject,serial,renewal}`    | Days left on every valid certificate; `renewal`: `manual`, `automatic` (a deploy target's, ACME's) or `renewed` (renewed, or replaced by a later one for its subject) |
 
 The gauges are read at scrape time; a scrape never fails because the
 database or the signer is down. A list's lapse, like an OCSP response's
