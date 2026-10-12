@@ -8,11 +8,13 @@ from datetime import datetime
 from enum import StrEnum
 
 from cryptography import x509
+from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from harpocrates_signer import invariants
 from harpocrates_signer.der import utf8_string
 from harpocrates_signer.errors import BadRequestError, RefusedError
 from harpocrates_signer.keys import (
@@ -37,6 +39,14 @@ from harpocrates_signer.signing import (
     RevokedEntry,
     RsaPadding,
     SignatureHash,
+)
+from harpocrates_signer.ssh import (
+    SshCaInfo,
+    SshCertificateKind,
+    SshCertificateRequest,
+    SshExtension,
+    SshSubjectKey,
+    openssh_public_key,
 )
 from harpocrates_signer.vault import SealReason
 
@@ -394,6 +404,63 @@ class OpenCeremonyRequest(Wire):
     certificate: str = Field(description="The offline CA's certificate, PEM.")
 
 
+# ---- SSH (ADR 0035)
+
+
+class RegisterSshCaRequest(Wire):
+    id: str = Field(
+        pattern=r"^[a-z][a-z0-9-]{0,62}$",
+        description="The CA's slug, e.g. ssh-user-1-g1.",
+    )
+    key_id: str = Field(description="An issuer's Ed25519 key in the store.")
+    kind: SshCertificateKind
+    max_validity_seconds: int = Field(gt=0, le=400 * 24 * 3600)
+
+
+class SshCaResponse(Wire):
+    id: str
+    key_id: str
+    kind: SshCertificateKind
+    max_validity_seconds: int
+    public_key: str = Field(
+        description="The CA's key, OpenSSH format: what TrustedUserCAKeys and "
+        "@cert-authority lines carry."
+    )
+
+    @staticmethod
+    def of(info: SshCaInfo) -> "SshCaResponse":
+        return SshCaResponse(
+            id=info.id,
+            key_id=info.key_id,
+            kind=info.kind,
+            max_validity_seconds=info.max_validity_seconds,
+            public_key=openssh_public_key(info.public_key),
+        )
+
+
+class SshCertificateSpec(Wire):
+    """Everything an SSH certificate says."""
+
+    kind: SshCertificateKind
+    public_key: str = Field(description="The subject's key, OpenSSH format.")
+    serial: str = Field(
+        pattern=r"^[0-9a-fA-F]{1,16}$", description="Hex, at most 64 bits."
+    )
+    key_id: str = Field(min_length=1, max_length=256)
+    principals: list[str] = Field(description="User names, or host names.")
+    valid_after: AwareDatetime
+    valid_before: AwareDatetime
+    force_command: str | None = Field(default=None, max_length=1024)
+    source_addresses: list[str] = Field(
+        default_factory=list[str], description="CIDRs the certificate is used from."
+    )
+    extensions: list[SshExtension] = Field(default_factory=list[SshExtension])
+
+
+class SshCertificateResponse(Wire):
+    certificate: str = Field(description="The certificate, OpenSSH format.")
+
+
 # ---- conversions
 
 
@@ -547,4 +614,33 @@ def crl_request(spec: CrlSpec) -> CrlRequest:
             )
             for r in spec.revoked
         ),
+    )
+
+
+def ssh_certificate_request(spec: SshCertificateSpec) -> SshCertificateRequest:
+    try:
+        key = serialization.load_ssh_public_key(spec.public_key.encode("ascii"))
+    except (ValueError, UnicodeEncodeError, UnsupportedAlgorithm) as error:
+        raise BadRequestError("the public key is not an OpenSSH key") from error
+    invariants.check_ssh_subject_key(key)
+    addresses: list[str] = []
+    try:
+        for value in spec.source_addresses:
+            addresses.append(str(ipaddress.ip_network(value, strict=False)))
+    except ValueError as error:
+        raise BadRequestError(
+            "a source address is not an address or network"
+        ) from error
+    subject: SshSubjectKey = key  # type: ignore[assignment]  # checked above
+    return SshCertificateRequest(
+        kind=spec.kind,
+        subject_key=subject,
+        serial=int(spec.serial, 16),
+        key_id=spec.key_id,
+        principals=tuple(spec.principals),
+        valid_after=spec.valid_after,
+        valid_before=spec.valid_before,
+        force_command=spec.force_command,
+        source_addresses=tuple(addresses),
+        extensions=frozenset(spec.extensions),
     )

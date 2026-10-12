@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 
 from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 from cryptography.x509.oid import CertificatePoliciesOID, ExtendedKeyUsageOID
 
 from harpocrates_signer import der
@@ -308,3 +309,81 @@ def check_custom_extensions(
             raise RefusedError(
                 "custom-extension", f"{dotted}'s value is not one DER element"
             )
+
+
+# ---- SSH certificates (ADR 0035)
+
+MAX_SSH_SERIAL = 2**64
+
+#: The curves OpenSSH takes for ECDSA keys.
+SSH_CURVES = ("secp256r1", "secp384r1", "secp521r1")
+
+#: RSA below this is refused for SSH (OpenSSH's own floor is 1024; NIST's 2048
+#: is past its use, and 3072 matches the X.509 profiles' RSA).
+MIN_SSH_RSA_BITS = 3072
+
+
+def check_ssh_kind(requested: str, ca_kind: str) -> None:
+    """A user CA signs user certificates only, and a host CA host ones."""
+    if requested != ca_kind:
+        raise RefusedError(
+            "ssh-kind", f"a {ca_kind} CA cannot sign a {requested} certificate"
+        )
+
+
+def check_ssh_validity(
+    valid_after: datetime, valid_before: datetime, max_seconds: int
+) -> None:
+    if valid_before <= valid_after:
+        raise RefusedError("validity", "validBefore must be after validAfter")
+    if valid_before - valid_after > timedelta(seconds=max_seconds):
+        raise RefusedError(
+            "validity",
+            f"longer than the CA's maximum of {max_seconds // 3600} hours",
+        )
+
+
+def check_ssh_principals(principals: Sequence[str]) -> None:
+    """At least one principal: a certificate with none is valid for any
+    user or host, which OpenSSH allows and Harpocrates does not."""
+    if not principals:
+        raise RefusedError("principals", "an SSH certificate names its principals")
+    for principal in principals:
+        if (
+            not principal
+            or principal != principal.strip()
+            or any(c in principal for c in ",\n\r\t\0")
+        ):
+            raise RefusedError("principals", f"{principal!r} is not a principal")
+    if len(set(principals)) != len(principals):
+        raise RefusedError("principals", "a principal is named twice")
+
+
+def check_ssh_options(kind: str, critical_options: bool, extensions: bool) -> None:
+    """A host certificate carries no critical options or extensions: they
+    restrict and permit what a user may do, not what a host is."""
+    if kind == "host" and (critical_options or extensions):
+        raise RefusedError(
+            "ssh-options",
+            "a host certificate has no critical options or extensions",
+        )
+
+
+def check_ssh_serial(serial: int) -> None:
+    if not 0 < serial < MAX_SSH_SERIAL:
+        raise RefusedError("serial", "an SSH serial is positive and at most 64 bits")
+
+
+def check_ssh_subject_key(key: object) -> None:
+    """A key OpenSSH certifies: Ed25519, ECDSA on its curves, RSA of 3072
+    bits or more. DSA, which OpenSSH has dropped, is not."""
+    if isinstance(key, ed25519.Ed25519PublicKey):
+        return
+    if isinstance(key, ec.EllipticCurvePublicKey) and key.curve.name in SSH_CURVES:
+        return
+    if isinstance(key, rsa.RSAPublicKey) and key.key_size >= MIN_SSH_RSA_BITS:
+        return
+    raise RefusedError(
+        "subject-key",
+        "an SSH key is Ed25519, ECDSA P-256/384/521, or RSA of 3072 bits or more",
+    )

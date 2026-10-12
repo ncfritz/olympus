@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE settings (
@@ -52,6 +52,22 @@ CREATE TABLE issuer_extended_key_usages (
 """
 
 
+#: Each later version's change, applied in order to an older store.
+MIGRATIONS: dict[int, str] = {
+    # SSH CAs (ADR 0035): an Ed25519 issuer key that signs user or host
+    # certificates, never shared with an X.509 issuer.
+    2: """
+CREATE TABLE ssh_cas (
+    id                   TEXT PRIMARY KEY,
+    key_id               TEXT NOT NULL UNIQUE REFERENCES keys (id),
+    kind                 TEXT NOT NULL CHECK (kind IN ('user', 'host')),
+    max_validity_seconds INTEGER NOT NULL CHECK (max_validity_seconds > 0),
+    registered_at        TEXT NOT NULL
+);
+""",
+}
+
+
 def now() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -78,6 +94,14 @@ class IssuerRow:
     extended_key_usages: frozenset[str]
 
 
+@dataclass(frozen=True)
+class SshCaRow:
+    id: str
+    key_id: str
+    kind: str
+    max_validity_seconds: int
+
+
 class Store:
     """A single connection, serialised by a lock: the signer is small."""
 
@@ -92,16 +116,18 @@ class Store:
             os.chmod(path, 0o600)
         self._connection.execute("PRAGMA foreign_keys = ON")
         version = self._connection.execute("PRAGMA user_version").fetchone()[0]
-        if version == 0:
-            # executescript manages its own transaction: the whole schema,
-            # and its version, or nothing.
-            with self._lock:
-                self._connection.executescript(
-                    f"BEGIN;\n{SCHEMA}\n"
-                    f"PRAGMA user_version = {SCHEMA_VERSION};\nCOMMIT;"
-                )
-        elif version != SCHEMA_VERSION:
+        if version > SCHEMA_VERSION:
             raise RuntimeError(f"unknown store schema version {version}")
+        # executescript manages its own transaction: each step, and its
+        # version, or nothing.
+        steps = [(1, SCHEMA)] if version == 0 else []
+        later = range(max(version, 1) + 1, SCHEMA_VERSION + 1)
+        steps += [(v, MIGRATIONS[v]) for v in later]
+        with self._lock:
+            for target, script in steps:
+                self._connection.executescript(
+                    f"BEGIN;\n{script}\nPRAGMA user_version = {target};\nCOMMIT;"
+                )
 
     def close(self) -> None:
         with self._lock:
@@ -245,6 +271,37 @@ class Store:
             chain=tuple(bytes(c[0]) for c in chain),
             extended_key_usages=frozenset(u[0] for u in usages),
         )
+
+    # ---- SSH CAs
+
+    def insert_ssh_ca(self, row: SshCaRow) -> None:
+        with self.transaction() as db:
+            db.execute(
+                "INSERT INTO ssh_cas (id, key_id, kind, max_validity_seconds, "
+                "registered_at) VALUES (?, ?, ?, ?, ?)",
+                (row.id, row.key_id, row.kind, row.max_validity_seconds, now()),
+            )
+
+    def ssh_ca(self, ca_id: str) -> SshCaRow | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT id, key_id, kind, max_validity_seconds FROM ssh_cas "
+                "WHERE id = ?",
+                (ca_id,),
+            ).fetchone()
+        return None if row is None else SshCaRow(*row)
+
+    def is_issuer_key(self, key_id: str) -> bool:
+        """Whether a key already signs: an X.509 issuer's or an SSH CA's."""
+        with self._lock:
+            return (
+                self._connection.execute(
+                    "SELECT 1 FROM issuers WHERE key_id = ? "
+                    "UNION SELECT 1 FROM ssh_cas WHERE key_id = ?",
+                    (key_id, key_id),
+                ).fetchone()
+                is not None
+            )
 
 
 def _key_row(row: tuple[object, ...]) -> KeyRow:

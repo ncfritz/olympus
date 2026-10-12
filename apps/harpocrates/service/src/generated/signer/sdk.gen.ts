@@ -30,6 +30,9 @@ import type {
   DescribeKeyData,
   DescribeKeyErrors,
   DescribeKeyResponses,
+  DescribeSshCaData,
+  DescribeSshCaErrors,
+  DescribeSshCaResponses,
   DescribeStatusData,
   DescribeStatusErrors,
   DescribeStatusResponses,
@@ -57,6 +60,9 @@ import type {
   RegisterIssuerData,
   RegisterIssuerErrors,
   RegisterIssuerResponses,
+  RegisterSshCaData,
+  RegisterSshCaErrors,
+  RegisterSshCaResponses,
   RotateUnsealKeyData,
   RotateUnsealKeyErrors,
   RotateUnsealKeyResponses,
@@ -75,6 +81,9 @@ import type {
   SignCrlData,
   SignCrlErrors,
   SignCrlResponses,
+  SignSshCertificateData,
+  SignSshCertificateErrors,
+  SignSshCertificateResponses,
   UnsealData,
   UnsealErrors,
   UnsealResponses,
@@ -578,6 +587,72 @@ export const createRootCa = <ThrowOnError extends boolean = true>(
   >({
     responseType: "json",
     url: "/v1/roots",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Registers an SSH CA
+ *
+ * An issuer's Ed25519 key that signs user or host certificates, never both, and never an X.509 issuer's key too; with the longest certificate it signs.
+ */
+export const registerSshCa = <ThrowOnError extends boolean = true>(
+  options: Options<RegisterSshCaData, ThrowOnError>,
+): RequestResult<RegisterSshCaResponses, RegisterSshCaErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    RegisterSshCaResponses,
+    RegisterSshCaErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/ssh/cas",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Describes an SSH CA
+ *
+ * Its kind, maximum validity and public key, OpenSSH format.
+ */
+export const describeSshCa = <ThrowOnError extends boolean = true>(
+  options: Options<DescribeSshCaData, ThrowOnError>,
+): RequestResult<DescribeSshCaResponses, DescribeSshCaErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    DescribeSshCaResponses,
+    DescribeSshCaErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/ssh/cas/{ca_id}",
+    ...options,
+  });
+
+/**
+ * Signs an SSH certificate
+ *
+ * A certificate exactly as specified, after the invariants: the CA's own kind, within its maximum validity, at least one principal, an OpenSSH key type and never an issuer's key, and no critical options or extensions on a host certificate.
+ */
+export const signSshCertificate = <ThrowOnError extends boolean = true>(
+  options: Options<SignSshCertificateData, ThrowOnError>,
+): RequestResult<
+  SignSshCertificateResponses,
+  SignSshCertificateErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    SignSshCertificateResponses,
+    SignSshCertificateErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/ssh/cas/{ca_id}/certificates",
     ...options,
     headers: {
       "Content-Type": "application/json",

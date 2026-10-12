@@ -2083,6 +2083,294 @@
           }
         }
       }
+    },
+    "/v1/ssh/cas": {
+      "post": {
+        "tags": [
+          "SSH"
+        ],
+        "summary": "Registers an SSH CA",
+        "description": "An issuer's Ed25519 key that signs user or host certificates, never both, and never an X.509 issuer's key too; with the longest certificate it signs.",
+        "operationId": "RegisterSshCa",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterSshCaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshCaResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ssh/cas/{ca_id}": {
+      "get": {
+        "tags": [
+          "SSH"
+        ],
+        "summary": "Describes an SSH CA",
+        "description": "Its kind, maximum validity and public key, OpenSSH format.",
+        "operationId": "DescribeSshCa",
+        "parameters": [
+          {
+            "name": "ca_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ca Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshCaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ssh/cas/{ca_id}/certificates": {
+      "post": {
+        "tags": [
+          "SSH"
+        ],
+        "summary": "Signs an SSH certificate",
+        "description": "A certificate exactly as specified, after the invariants: the CA's own kind, within its maximum validity, at least one principal, an OpenSSH key type and never an issuer's key, and no critical options or extensions on a host certificate.",
+        "operationId": "SignSshCertificate",
+        "parameters": [
+          {
+            "name": "ca_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ca Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SshCertificateSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshCertificateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3026,6 +3314,39 @@
         ],
         "title": "RegisterIssuerRequest"
       },
+      "RegisterSshCaRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,62}$",
+            "title": "Id",
+            "description": "The CA's slug, e.g. ssh-user-1-g1."
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid",
+            "description": "An issuer's Ed25519 key in the store."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SshCertificateKind"
+          },
+          "maxValiditySeconds": {
+            "type": "integer",
+            "maximum": 34560000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Maxvalidityseconds"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "keyId",
+          "kind",
+          "maxValiditySeconds"
+        ],
+        "title": "RegisterSshCaRequest"
+      },
       "RevocationReason": {
         "type": "string",
         "enum": [
@@ -3091,6 +3412,157 @@
           "sha512"
         ],
         "title": "SignatureHash"
+      },
+      "SshCaResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SshCertificateKind"
+          },
+          "maxValiditySeconds": {
+            "type": "integer",
+            "title": "Maxvalidityseconds"
+          },
+          "publicKey": {
+            "type": "string",
+            "title": "Publickey",
+            "description": "The CA's key, OpenSSH format: what TrustedUserCAKeys and @cert-authority lines carry."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "keyId",
+          "kind",
+          "maxValiditySeconds",
+          "publicKey"
+        ],
+        "title": "SshCaResponse"
+      },
+      "SshCertificateKind": {
+        "type": "string",
+        "enum": [
+          "user",
+          "host"
+        ],
+        "title": "SshCertificateKind"
+      },
+      "SshCertificateResponse": {
+        "properties": {
+          "certificate": {
+            "type": "string",
+            "title": "Certificate",
+            "description": "The certificate, OpenSSH format."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "certificate"
+        ],
+        "title": "SshCertificateResponse"
+      },
+      "SshCertificateSpec": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SshCertificateKind"
+          },
+          "publicKey": {
+            "type": "string",
+            "title": "Publickey",
+            "description": "The subject's key, OpenSSH format."
+          },
+          "serial": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{1,16}$",
+            "title": "Serial",
+            "description": "Hex, at most 64 bits."
+          },
+          "keyId": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Keyid"
+          },
+          "principals": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Principals",
+            "description": "User names, or host names."
+          },
+          "validAfter": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Validafter"
+          },
+          "validBefore": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Validbefore"
+          },
+          "forceCommand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forcecommand"
+          },
+          "sourceAddresses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sourceaddresses",
+            "description": "CIDRs the certificate is used from."
+          },
+          "extensions": {
+            "items": {
+              "$ref": "#/components/schemas/SshExtension"
+            },
+            "type": "array",
+            "title": "Extensions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "publicKey",
+          "serial",
+          "keyId",
+          "principals",
+          "validAfter",
+          "validBefore"
+        ],
+        "title": "SshCertificateSpec",
+        "description": "Everything an SSH certificate says."
+      },
+      "SshExtension": {
+        "type": "string",
+        "enum": [
+          "permit-pty",
+          "permit-port-forwarding",
+          "permit-agent-forwarding",
+          "permit-X11-forwarding",
+          "permit-user-rc"
+        ],
+        "title": "SshExtension",
+        "description": "OpenSSH's extensions; each, when present, permits what it names."
       },
       "StatusResponse": {
         "properties": {
@@ -3226,6 +3698,10 @@
     {
       "name": "Ceremonies",
       "description": "Offline CAs, one ceremony at a time."
+    },
+    {
+      "name": "SSH",
+      "description": "SSH CAs and the certificates they sign."
     }
   ]
 }

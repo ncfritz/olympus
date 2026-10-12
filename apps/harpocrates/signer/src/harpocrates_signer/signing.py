@@ -593,6 +593,8 @@ class Issuers:
         _check_chain(certificate, chain)
         if self._store.issuer(issuer_id) is not None:
             raise ConflictError(f"issuer {issuer_id} is already registered")
+        if self._store.is_issuer_key(key_id):
+            raise RefusedError("issuer-key", "the key already signs for another CA")
         self._store.insert_issuer(
             IssuerRow(
                 id=issuer_id,

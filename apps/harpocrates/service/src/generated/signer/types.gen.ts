@@ -650,6 +650,29 @@ export type RegisterIssuerRequest = {
 };
 
 /**
+ * RegisterSshCaRequest
+ */
+export type RegisterSshCaRequest = {
+  /**
+   * Id
+   *
+   * The CA's slug, e.g. ssh-user-1-g1.
+   */
+  id: string;
+  /**
+   * Keyid
+   *
+   * An issuer's Ed25519 key in the store.
+   */
+  keyId: string;
+  kind: SshCertificateKind;
+  /**
+   * Maxvalidityseconds
+   */
+  maxValiditySeconds: number;
+};
+
+/**
  * RevocationReason
  */
 export type RevocationReason =
@@ -693,6 +716,113 @@ export type SealReason =
  * SignatureHash
  */
 export type SignatureHash = "sha256" | "sha384" | "sha512";
+
+/**
+ * SshCaResponse
+ */
+export type SshCaResponse = {
+  /**
+   * Id
+   */
+  id: string;
+  /**
+   * Keyid
+   */
+  keyId: string;
+  kind: SshCertificateKind;
+  /**
+   * Maxvalidityseconds
+   */
+  maxValiditySeconds: number;
+  /**
+   * Publickey
+   *
+   * The CA's key, OpenSSH format: what TrustedUserCAKeys and @cert-authority lines carry.
+   */
+  publicKey: string;
+};
+
+/**
+ * SshCertificateKind
+ */
+export type SshCertificateKind = "user" | "host";
+
+/**
+ * SshCertificateResponse
+ */
+export type SshCertificateResponse = {
+  /**
+   * Certificate
+   *
+   * The certificate, OpenSSH format.
+   */
+  certificate: string;
+};
+
+/**
+ * SshCertificateSpec
+ *
+ * Everything an SSH certificate says.
+ */
+export type SshCertificateSpec = {
+  kind: SshCertificateKind;
+  /**
+   * Publickey
+   *
+   * The subject's key, OpenSSH format.
+   */
+  publicKey: string;
+  /**
+   * Serial
+   *
+   * Hex, at most 64 bits.
+   */
+  serial: string;
+  /**
+   * Keyid
+   */
+  keyId: string;
+  /**
+   * Principals
+   *
+   * User names, or host names.
+   */
+  principals: Array<string>;
+  /**
+   * Validafter
+   */
+  validAfter: string;
+  /**
+   * Validbefore
+   */
+  validBefore: string;
+  /**
+   * Forcecommand
+   */
+  forceCommand?: string | null;
+  /**
+   * Sourceaddresses
+   *
+   * CIDRs the certificate is used from.
+   */
+  sourceAddresses?: Array<string>;
+  /**
+   * Extensions
+   */
+  extensions?: Array<SshExtension>;
+};
+
+/**
+ * SshExtension
+ *
+ * OpenSSH's extensions; each, when present, permits what it names.
+ */
+export type SshExtension =
+  | "permit-pty"
+  | "permit-port-forwarding"
+  | "permit-agent-forwarding"
+  | "permit-X11-forwarding"
+  | "permit-user-rc";
 
 /**
  * StatusResponse
@@ -1845,3 +1975,150 @@ export type CreateRootCaResponses = {
 
 export type CreateRootCaResponse =
   CreateRootCaResponses[keyof CreateRootCaResponses];
+
+export type RegisterSshCaData = {
+  body: RegisterSshCaRequest;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: "/v1/ssh/cas";
+};
+
+export type RegisterSshCaErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * The store is not in the state this needs.
+   */
+  409: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+};
+
+export type RegisterSshCaError = RegisterSshCaErrors[keyof RegisterSshCaErrors];
+
+export type RegisterSshCaResponses = {
+  /**
+   * Successful Response
+   */
+  201: SshCaResponse;
+};
+
+export type RegisterSshCaResponse =
+  RegisterSshCaResponses[keyof RegisterSshCaResponses];
+
+export type DescribeSshCaData = {
+  body?: never;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path: {
+    /**
+     * Ca Id
+     */
+    ca_id: string;
+  };
+  query?: never;
+  url: "/v1/ssh/cas/{ca_id}";
+};
+
+export type DescribeSshCaErrors = {
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DescribeSshCaError = DescribeSshCaErrors[keyof DescribeSshCaErrors];
+
+export type DescribeSshCaResponses = {
+  /**
+   * Successful Response
+   */
+  200: SshCaResponse;
+};
+
+export type DescribeSshCaResponse =
+  DescribeSshCaResponses[keyof DescribeSshCaResponses];
+
+export type SignSshCertificateData = {
+  body: SshCertificateSpec;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path: {
+    /**
+     * Ca Id
+     */
+    ca_id: string;
+  };
+  query?: never;
+  url: "/v1/ssh/cas/{ca_id}/certificates";
+};
+
+export type SignSshCertificateErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+  /**
+   * The signer is sealed.
+   */
+  503: ErrorResponse;
+};
+
+export type SignSshCertificateError =
+  SignSshCertificateErrors[keyof SignSshCertificateErrors];
+
+export type SignSshCertificateResponses = {
+  /**
+   * Successful Response
+   */
+  201: SshCertificateResponse;
+};
+
+export type SignSshCertificateResponse =
+  SignSshCertificateResponses[keyof SignSshCertificateResponses];

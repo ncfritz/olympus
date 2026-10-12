@@ -26,6 +26,9 @@ calls it through a generated client.
   signs answers `503` while sealed.
 - **Online issuers**: issuing CAs (path length 0) whose keys it holds,
   each with its chain, maximum validity and the usages it may sign.
+- **SSH CAs** (ADR 0035): Ed25519 issuer keys that sign OpenSSH user or
+  host certificates, never both and never an X.509 issuer's key too,
+  each with the longest certificate it signs.
 - **Previews**: the leaf an issuer (given, not registered) would sign,
   after the same invariants, signed by a throwaway key of the issuer's
   type, so it reads as the real one and never verifies; no issuer key is
@@ -55,23 +58,26 @@ chooses (ADR 0034), and the defaults are what the signer always built:
 
 Refusals answer `422` with the invariant's name:
 
-| Invariant                       | Refused                                                                                         |
-| ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `name-constraints`              | a name outside a constraint of the issuer or any CA above it                                    |
-| `extended-key-usage`            | a usage the issuer is not registered for, or outside an EKU up the chain                        |
-| `validity`                      | past the issuer's expiry, longer than its maximum, or inverted                                  |
-| `ca`                            | `CA:TRUE` from an online issuer                                                                 |
-| `path-length`                   | a CA not strictly below its signer; an online issuer that is not 0                              |
-| `subject-key`                   | an issuer's key as a subject's, a subject's as a CA's, or a destroyed one                       |
-| `proof-of-possession`           | a CSR whose signature does not verify                                                           |
-| `ceremony`                      | a ceremony asked to sign a leaf, or opened with a CA that signs no CAs                          |
-| `escrow`                        | exporting an issuer's key, or with another key's certificate                                    |
-| `signature`                     | a hash for an Ed25519 issuer, or PSS under an issuer that is not RSA                            |
-| `basic-constraints`             | a CA whose basic constraints are not critical                                                   |
-| `key-identifier`                | a CA without a subject key identifier                                                           |
-| `certificate-policies`          | a policy outside those of a CA above it (unless it asserts anyPolicy)                           |
-| `custom-extension`              | an extension the signer builds itself, one given twice, or a value not one DER element          |
-| `issuer-key`, `chain`, `serial` | an issuer registered with the wrong key or a chain not its own; a serial outside 1 to 2^159 - 1 |
+| Invariant                       | Refused                                                                                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name-constraints`              | a name outside a constraint of the issuer or any CA above it                                                                                                                       |
+| `extended-key-usage`            | a usage the issuer is not registered for, or outside an EKU up the chain                                                                                                           |
+| `validity`                      | past the issuer's expiry, longer than its maximum, or inverted                                                                                                                     |
+| `ca`                            | `CA:TRUE` from an online issuer                                                                                                                                                    |
+| `path-length`                   | a CA not strictly below its signer; an online issuer that is not 0                                                                                                                 |
+| `subject-key`                   | an issuer's key as a subject's, a subject's as a CA's, a destroyed one, or an SSH key OpenSSH would not take (DSA, RSA under 3072 bits)                                            |
+| `proof-of-possession`           | a CSR whose signature does not verify                                                                                                                                              |
+| `ceremony`                      | a ceremony asked to sign a leaf, or opened with a CA that signs no CAs                                                                                                             |
+| `escrow`                        | exporting an issuer's key, or with another key's certificate                                                                                                                       |
+| `signature`                     | a hash for an Ed25519 issuer, or PSS under an issuer that is not RSA                                                                                                               |
+| `basic-constraints`             | a CA whose basic constraints are not critical                                                                                                                                      |
+| `key-identifier`                | a CA without a subject key identifier                                                                                                                                              |
+| `certificate-policies`          | a policy outside those of a CA above it (unless it asserts anyPolicy)                                                                                                              |
+| `ssh-kind`                      | an SSH CA asked to sign the other kind of certificate (a user CA, a host's)                                                                                                        |
+| `principals`                    | an SSH certificate with no principals, an empty or repeated one, or one with a comma                                                                                               |
+| `ssh-options`                   | critical options or extensions on an SSH host certificate                                                                                                                          |
+| `custom-extension`              | an extension the signer builds itself, one given twice, or a value not one DER element                                                                                             |
+| `issuer-key`, `chain`, `serial` | an issuer registered with the wrong key, a chain not its own, or a key already signing for another CA (an SSH CA's is Ed25519); a serial outside 1 to 2^159 - 1 (2^64 - 1 for SSH) |
 
 ## Commands
 
