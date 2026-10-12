@@ -515,18 +515,33 @@ the API alone, no console page yet.
 
 ## Phase 11 — OCSP
 
-Under an ADR of its own, amending ADR 0020's "no OCSP".
+[ADR 0036](../../decisions/0036-harpocrates-ocsp.md), amending ADR
+0020's "no OCSP".
 
-1. **A responder** on the PKI host (`/ocsp`, GET and POST, RFC 6960):
-   responses signed by a delegated OCSP signing certificate per CA
-   (`id-kp-OCSPSigning`, `id-pkix-ocsp-nocheck`), issued in a ceremony
-   for an offline CA; status from the service's revocation records.
-2. **AIA OCSP** in certificates, its URL a CA setting, included or
-   omitted per profile version.
-3. **OCSP must-staple** (the TLS feature extension, RFC 7633) as a
-   profile setting, offered only once the responder is in service.
-4. **Monitoring**: responder errors, response freshness, and a check
-   that a stapling server staples.
+1. **Signer**: the `ocsp` key purpose; a responder certificate from an
+   online CA's key, or in a ceremony from an offline CA's
+   (`id-kp-OCSPSigning` only, `ocsp-nocheck`, P-256); responses signed
+   by a responder for its own CA's certificates only, within its
+   validity and a week; the TLS feature (`status_request` only, and only
+   with an OCSP URL); its document and the service's client regenerated.
+2. **Responders and responses**: `ocsp_responders`, an online CA's
+   issued and renewed by the service (30 days, renewed at 10 left, a new
+   key), an offline CA's in a ceremony (13 months); `ocsp_responses`, one
+   per unexpired certificate, signed in batches, valid 4 days, refreshed
+   daily and at once on a revocation, served while the signer is sealed.
+3. **The responder**: `/ocsp`, GET and POST (RFC 6960, the RFC 5019
+   profile), outside `/v1`; `unauthorized` for what it does not know,
+   `tryLater` for a lapsed response; caching headers; nginx's
+   `pki.conf` proxying it.
+4. **AIA OCSP and must-staple**: a CA's OCSP URL (shown and edited on
+   its page); two version settings, off by default, offered once the
+   issuing CA has a responder; the rules, the preview.
+5. **Console**: each CA's responder and its responses' freshness, an
+   offline CA's responder in its ceremony, the OCSP URL, the two
+   settings in the profile editor.
+6. **Monitoring and docs**: metrics and alerts (lapsing responses and
+   responders, failing refreshes), the endpoint checks recording
+   stapling, the certificates guide, the READMEs.
 
 **Sign-off:** C18.
 

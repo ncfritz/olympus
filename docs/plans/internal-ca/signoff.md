@@ -256,6 +256,19 @@ recovery passphrase is used.
 | C17.9  | DEV | Set a CA's issuer alternative names; a version including them; issue                                                | the certificate's IAN is the CA's; the change is audited (issuer.updated)                    | console; audit |
 | C17.10 | DEV | Edit a profile in the console, watching the preview; break a rule (renewal past validity)                           | the preview follows each change; the broken rule shows before saving and the save is refused | console        |
 
+## C18 — OCSP
+
+| Id    | Env | Steps                                                                                                                    | Expected                                                                                   | Evidence                       |
+| ----- | --- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------ |
+| C18.1 | DEV | Issue `internal-tls` under a version with the OCSP URL; `openssl ocsp -issuer … -cert … -url http://…/ocsp -CAfile root` | `good`, signed by the issuing CA's responder, verified to the root; `nextUpdate` 4 days on | `openssl ocsp -resp_text`      |
+| C18.2 | DEV | Revoke it (`keyCompromise`); ask again, by GET and by POST                                                               | `revoked`, with its time and reason, within a minute                                       | `openssl ocsp`; curl           |
+| C18.3 | DEV | Seal the signer; ask again; unseal                                                                                       | still answered, the same response; the refresh's failure shows and alerts; refreshed after | `openssl ocsp`; console; alert |
+| C18.4 | DEV | Ask for a serial the CA never issued, and with an issuer it does not know                                                | `unauthorized`, unsigned                                                                   | `openssl ocsp`                 |
+| C18.5 | DEV | Issue an offline intermediate's responder in a ceremony; ask about an issuing CA's certificate                           | `good`, signed by the intermediate's responder, valid 13 months, with `ocsp-nocheck`       | `openssl ocsp`; `x509 -text`   |
+| C18.6 | DEV | A must-staple version; a certificate from it on nginx with `ssl_stapling on`; `openssl s_client -status`                 | the response is stapled; the endpoint check records it; without stapling it alerts         | `s_client`; console; alert     |
+| C18.7 | DEV | Ask the signer for the TLS feature without an OCSP URL, and a response for another CA's certificate                      | both refused, naming the invariant                                                         | response                       |
+| C18.8 | DEV | Let an online CA's responder reach 10 days left                                                                          | a new responder, with a new key; responses re-signed by it                                 | console; `openssl ocsp`        |
+
 ## Sign-off matrix
 
 | Phase | Flows to pass                                                                 |
@@ -270,3 +283,4 @@ recovery passphrase is used.
 | 8     | C8, C5.4, C6, C4.7, C12                                                       |
 | 9     | C15                                                                           |
 | 10    | C17                                                                           |
+| 11    | C18                                                                           |

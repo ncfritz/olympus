@@ -120,6 +120,9 @@ ADR 0020 provides no OCSP. A later phase adds a responder, the AIA OCSP
 URL and an OCSP must-staple (TLS feature) setting in profiles, under an
 ADR of its own; until then neither is offered.
 
+> **Decided in [ADR 0036](0036-harpocrates-ocsp.md)**: both are version
+> settings, off by default, offered once the issuing CA has a responder.
+
 ## Consequences
 
 - Profiles move from seed data to administered data with history; the

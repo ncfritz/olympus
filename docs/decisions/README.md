@@ -28,7 +28,7 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0017](0017-shared-api-client-and-request-metrics.md)        | Shared API client and request metrics                                      | Accepted                        |
 | [0018](0018-authentication.md)                               | Authentication for users, devices and services                             | Accepted                        |
 | [0019](0019-compose-stacks-and-configuration.md)             | Compose stacks, configuration and secrets                                  | Accepted                        |
-| [0020](0020-internal-certificate-authority.md)               | An internal certificate authority: Harpocrates                             | Accepted (amended by 0032–0035) |
+| [0020](0020-internal-certificate-authority.md)               | An internal certificate authority: Harpocrates                             | Accepted (amended by 0032–0036) |
 | [0021](0021-control-host-and-console-navigation.md)          | The control host and console navigation                                    | Accepted (amended by 0020)      |
 | [0022](0022-environments-not-machines.md)                    | Environments are named, machines are not                                   | Accepted                        |
 | [0023](0023-service-certificates-are-checked-by-issuer.md)   | A service certificate is checked by its issuer, not only its chain         | Accepted                        |
@@ -42,7 +42,8 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0031](0031-control-stack-deployment-agents-and-releases.md) | Control in a stack of its own, deployment agents, and releases             | Proposed                        |
 | [0032](0032-harpocrates-roots-and-migration.md)              | Harpocrates: new roots, three shapes, and a migration from XCA             | Accepted                        |
 | [0033](0033-harpocrates-key-types-and-imported-keys.md)      | Harpocrates: the key type chosen at issuance, and keys brought in          | Accepted (amended by 0034)      |
-| [0034](0034-harpocrates-profiles-versioned-presets.md)       | Harpocrates: profiles as versioned, editable presets                       | Accepted (amended by 0035)      |
+| [0034](0034-harpocrates-profiles-versioned-presets.md)       | Harpocrates: profiles as versioned, editable presets                       | Accepted (amended by 0035–0036) |
 | [0035](0035-harpocrates-ssh-certificates.md)                 | Harpocrates: SSH certificates                                              | Accepted                        |
+| [0036](0036-harpocrates-ocsp.md)                             | Harpocrates: OCSP                                                          | Proposed                        |
 
 New records: copy [template.md](template.md), take the next number.

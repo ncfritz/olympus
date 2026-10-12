@@ -1,6 +1,6 @@
 # 0020. An internal certificate authority: Harpocrates
 
-- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in; by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): profiles as versioned, editable presets; by [ADR 0035](0035-harpocrates-ssh-certificates.md) (2026-10-11): SSH profiles as a kind of profile, principals mapped by an admin, hosts renewing by proving their host key
+- **Status:** Accepted; amended by [ADR 0032](0032-harpocrates-roots-and-migration.md) (2026-10-09): new roots instead of adopting XCA's, three shapes, overridable defaults, escrow for every generated key; by [ADR 0033](0033-harpocrates-key-types-and-imported-keys.md) (2026-10-11): the key type chosen at issuance, and keys brought in; by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): profiles as versioned, editable presets; by [ADR 0035](0035-harpocrates-ssh-certificates.md) (2026-10-11): SSH profiles as a kind of profile, principals mapped by an admin, hosts renewing by proving their host key; by [ADR 0036](0036-harpocrates-ocsp.md) (proposed 2026-10-11): OCSP
 - **Date:** 2026-09-21; amended and accepted 2026-09-25
 
 ## Context
@@ -394,6 +394,11 @@ is deleted after a day.
   is affected and offers to reissue it from a successor.
 - OCSP is not provided, nor certificate hold; every relying party is
   ours and uses lists.
+
+> **Amended by [ADR 0036](0036-harpocrates-ocsp.md).** OCSP is provided:
+> a delegated responder per CA, responses pre-signed and refreshed like
+> the lists, served from the PKI host over HTTP; the AIA OCSP URL and
+> must-staple are profile settings. Certificate hold is still not.
 
 ### Renewal and delivery
 
