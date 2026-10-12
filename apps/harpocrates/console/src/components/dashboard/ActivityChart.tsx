@@ -1,12 +1,12 @@
 import { useThemeMode } from "@ncfritz/olympus-console";
-import { Card, Segmented, theme } from "antd";
+import { Segmented, theme } from "antd";
 import Highcharts from "highcharts";
 import "highcharts/modules/accessibility";
 import HighchartsReact from "highcharts-react-official";
 import { useMemo, useState } from "react";
 import type { ActivityDay } from "@/lib/api/types";
 import { ACTIVITY_COLORS } from "./chartColors";
-import styles from "./Dashboard.module.css";
+import { GraphBox } from "./GraphBox";
 
 const RANGES = [7, 30, 90] as const;
 
@@ -49,7 +49,7 @@ export function ActivityChart({ days }: { days: ActivityDay[] }) {
     return {
       chart: {
         type: "column",
-        height: 240,
+        height: 200,
         backgroundColor: "transparent",
         spacing: [8, 0, 0, 0],
         style: { fontFamily: token.fontFamily },
@@ -106,9 +106,8 @@ export function ActivityChart({ days }: { days: ActivityDay[] }) {
   }, [shown, totals, range, resolvedMode, token]);
 
   return (
-    <Card
+    <GraphBox
       title="Activity"
-      className={styles.graph}
       extra={
         <Segmented
           size="small"
@@ -119,6 +118,6 @@ export function ActivityChart({ days }: { days: ActivityDay[] }) {
       }
     >
       <HighchartsReact highcharts={Highcharts} options={options} />
-    </Card>
+    </GraphBox>
   );
 }

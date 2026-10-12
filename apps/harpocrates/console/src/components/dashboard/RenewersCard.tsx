@@ -1,8 +1,12 @@
-import { Card, Flex, Progress, theme, Typography } from "antd";
+import { Flex, Progress, theme, Tooltip, Typography } from "antd";
 import type { Dashboard } from "@/lib/api/types";
 import styles from "./Dashboard.module.css";
+import { GraphBox } from "./GraphBox";
 
-/** Valid certificates by who renews them: one bar each, out of them all. */
+/**
+ * Valid certificates by who renews them: one bar each, out of them all,
+ * compact enough to sit level with the graphs beside it.
+ */
 export function RenewersCard({
   renewers,
 }: {
@@ -13,28 +17,30 @@ export function RenewersCard({
     {
       label: "ACME",
       count: renewers.acme,
-      note: "their clients order the next",
+      note: "Their clients order the next",
     },
     {
-      label: "Harpocrates, to a deploy target",
+      label: "Deploy targets",
       count: renewers.deployTarget,
-      note: "renewed and installed",
+      note: "Harpocrates renews and installs them",
     },
     {
-      label: "Their holders, over mTLS",
+      label: "Holders, over mTLS",
       count: renewers.mtls,
-      note: "as they renewed before",
+      note: "They renew themselves, as they did before",
     },
-    { label: "A person", count: renewers.person, note: "nothing renews them" },
+    { label: "A person", count: renewers.person, note: "Nothing renews them" },
   ];
   const total = rows.reduce((sum, r) => sum + r.count, 0);
   return (
-    <Card title="Who renews them" className={styles.graph}>
-      <Flex vertical gap="middle">
+    <GraphBox title="Who renews them">
+      <Flex vertical gap={10} className={styles.renewers}>
         {rows.map((row) => (
           <div key={row.label}>
             <Flex justify="space-between" gap="small">
-              <Typography.Text>{row.label}</Typography.Text>
+              <Tooltip title={row.note} placement="left">
+                <Typography.Text>{row.label}</Typography.Text>
+              </Tooltip>
               <Typography.Text strong className={styles.count}>
                 {row.count}
               </Typography.Text>
@@ -44,14 +50,12 @@ export function RenewersCard({
               showInfo={false}
               size="small"
               strokeColor={token.colorPrimary}
+              className={styles.bar}
               aria-label={`${row.label}: ${row.count} of ${total}`}
             />
-            <Typography.Text type="secondary" className={styles.small}>
-              {row.note}
-            </Typography.Text>
           </div>
         ))}
       </Flex>
-    </Card>
+    </GraphBox>
   );
 }

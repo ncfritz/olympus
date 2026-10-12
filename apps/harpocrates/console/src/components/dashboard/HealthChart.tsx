@@ -1,5 +1,5 @@
 import { useThemeMode } from "@ncfritz/olympus-console";
-import { Card, Flex, theme, Typography } from "antd";
+import { Flex, theme, Tooltip, Typography } from "antd";
 import Highcharts from "highcharts";
 import "highcharts/modules/accessibility";
 import HighchartsReact from "highcharts-react-official";
@@ -7,8 +7,9 @@ import { useMemo } from "react";
 import type { Dashboard } from "@/lib/api/types";
 import { HEALTH_COLORS } from "./chartColors";
 import styles from "./Dashboard.module.css";
+import { GraphBox } from "./GraphBox";
 
-const SIZE = 160;
+const SIZE = 140;
 
 /**
  * Valid certificates by whether their renewal is in hand, as a doughnut
@@ -24,28 +25,28 @@ export function HealthChart({ health }: { health: Dashboard["health"] }) {
         label: "Healthy",
         count: health.healthy,
         color: HEALTH_COLORS.healthy,
-        note: "before its renewal point",
+        note: "Not yet at its renewal point",
       },
       {
         key: "renewing",
         label: "Renewing",
         count: health.renewing,
         color: HEALTH_COLORS.renewing[resolvedMode],
-        note: "something renews it",
+        note: "Past its renewal point; something renews it",
       },
       {
         key: "needsPerson",
         label: "Needs a person",
         count: health.needsPerson,
         color: HEALTH_COLORS.needsPerson,
-        note: "nothing renews it",
+        note: "Past its renewal point, and nothing renews it",
       },
       {
         key: "failing",
         label: "Failing",
         count: health.failing,
         color: HEALTH_COLORS.failing,
-        note: "a week left, not renewed",
+        note: "A week or less left, and not renewed",
       },
     ],
     [health, resolvedMode],
@@ -104,23 +105,22 @@ export function HealthChart({ health }: { health: Dashboard["health"] }) {
   );
 
   return (
-    <Card title="Certificates" className={styles.graph}>
-      <Flex gap="large" align="center" wrap>
+    <GraphBox title="Certificates">
+      <Flex gap="middle" align="center">
         <div className={styles.ring}>
           <HighchartsReact highcharts={Highcharts} options={options} />
         </div>
-        <Flex vertical gap={6} className={styles.legend}>
+        <Flex vertical gap={10} className={styles.legend}>
           {parts.map((p) => (
             <Flex key={p.key} align="center" gap="small">
               <svg width={10} height={10} aria-hidden>
                 <rect width={10} height={10} rx={2} fill={p.color} />
               </svg>
-              <Flex vertical className={styles.grow}>
-                <Typography.Text>{p.label}</Typography.Text>
-                <Typography.Text type="secondary" className={styles.small}>
-                  {p.note}
+              <Tooltip title={p.note} placement="left">
+                <Typography.Text className={styles.grow}>
+                  {p.label}
                 </Typography.Text>
-              </Flex>
+              </Tooltip>
               <Typography.Text strong className={styles.count}>
                 {p.count}
               </Typography.Text>
@@ -128,6 +128,6 @@ export function HealthChart({ health }: { health: Dashboard["health"] }) {
           ))}
         </Flex>
       </Flex>
-    </Card>
+    </GraphBox>
   );
 }

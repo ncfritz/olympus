@@ -5,7 +5,6 @@ import { SideTabPanel } from "@ncfritz/olympus-console";
 import {
   Badge,
   Col,
-  Flex,
   Row,
   Skeleton,
   Statistic,
@@ -52,7 +51,7 @@ export function HomePage() {
 }
 
 /** The side panel's width, open. */
-const PANEL_WIDTH = 380;
+const PANEL_WIDTH = 480;
 
 const TabIcon = ({ title, icon }: { title: string; icon: ReactNode }) => (
   <Tooltip title={title} placement="left">
@@ -73,7 +72,11 @@ const Count = ({
   <div className={styles.cell}>
     <Statistic title={title} value={value} />
     {note && (
-      <Typography.Text type="secondary" className={styles.small}>
+      <Typography.Text
+        type="secondary"
+        className={styles.small}
+        ellipsis={{ tooltip: note }}
+      >
         {note}
       </Typography.Text>
     )}
@@ -92,24 +95,30 @@ export function DashboardPage() {
   const { data: signer } = useSignerStatus();
 
   const title = (
-    <Typography.Title level={3} className={styles.title}>
-      PKI Dashboard
-    </Typography.Title>
+    <div className={styles.header}>
+      <Typography.Title level={3} className={styles.title}>
+        PKI Dashboard
+      </Typography.Title>
+    </div>
   );
   if (error) {
     return (
-      <Flex vertical gap="large">
+      <div className={styles.page}>
         {title}
-        <ErrorAlert error={error} title="The dashboard could not be read" />
-      </Flex>
+        <div className={styles.header}>
+          <ErrorAlert error={error} title="The dashboard could not be read" />
+        </div>
+      </div>
     );
   }
   if (!dashboard || !issuers) {
     return (
-      <Flex vertical gap="large">
+      <div className={styles.page}>
         {title}
-        <Skeleton active />
-      </Flex>
+        <div className={styles.header}>
+          <Skeleton active />
+        </div>
+      </div>
     );
   }
 
@@ -118,7 +127,7 @@ export function DashboardPage() {
   const errors = dashboard.attention.some((a) => a.severity === "error");
 
   return (
-    <Flex vertical gap="large">
+    <div className={styles.page}>
       {title}
       <div className={styles.strip}>
         <Count
@@ -142,7 +151,7 @@ export function DashboardPage() {
           note={`${certificates.revokedThisWeek} this week`}
         />
         <Count
-          title="Expired, last 30 days"
+          title="Expired, last 30"
           value={certificates.expiredRecently}
           note={certificates.expiredNames.join(", ") || undefined}
         />
@@ -197,6 +206,7 @@ export function DashboardPage() {
         ]}
       >
         <Tabs
+          className={styles.mainTabs}
           items={[
             {
               key: "expiring",
@@ -253,6 +263,6 @@ export function DashboardPage() {
           ]}
         />
       </SideTabPanel>
-    </Flex>
+    </div>
   );
 }

@@ -96,6 +96,16 @@
   margin-top: 8px;
 }
 
+/* The page flows to the shell's edges (docs/conventions/ux.md, Page edges). */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 16px 24px;
+}
+
 /* The headline counts, as the main site's Goals summary strip. */
 .strip {
   display: grid;
@@ -105,36 +115,70 @@
 }
 
 .cell {
-  padding: 16px;
+  padding: 16px 24px;
   border-right: 1px solid var(--ant-color-border-secondary);
 }
 
-/* The graphs: 40%, 35% and the rest, stacking when narrow. */
+.cell:last-child {
+  border-right: none;
+}
+
+/* The graphs: 40%, 35% and the rest, as boxes, stacking when narrow. */
 .graphs {
   display: grid;
   grid-template-columns: minmax(0, 40fr) minmax(0, 35fr) minmax(0, 25fr);
-  gap: 16px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 24px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+
+.box:last-child {
+  border-right: none;
 }
 
 @media (max-width: 1200px) {
   .graphs {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .box {
+    border-right: none;
+    border-bottom: 1px solid var(--ant-color-border-secondary);
+  }
+
+  .box:last-child {
+    border-bottom: none;
+  }
 }
 
-.graph {
-  height: 100%;
+.boxTitle {
+  font-size: var(--ant-font-size-lg, 16px);
+}
+
+.renewers {
+  padding-top: 4px;
+}
+
+.bar {
+  margin: 0 !important;
 }
 
 .ring {
   flex: none;
-  width: 160px;
-  height: 160px;
+  width: 140px;
+  height: 140px;
 }
 
 .legend {
   flex: 1;
-  min-width: 160px;
+  min-width: 0;
 }
 
 .grow {
@@ -146,11 +190,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The lower half: the tabs, and the side panel beside them. */
+/*
+ * The lower half: the tabs, and the side panel beside them, running the
+ * window's height below the shell's header and breadcrumbs.
+ */
 .lower {
-  height: calc(100vh - 140px);
+  height: calc(100vh - 92px);
   min-height: 560px;
-  border: 1px solid var(--ant-color-border-secondary);
-  border-radius: var(--ant-border-radius-lg);
-  overflow: hidden;
+}
+
+/* The tabs' bar keeps off the page's left edge; their content too. */
+.mainTabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+.mainTabs > :global(.ant-tabs-body-holder) {
+  padding: 16px 24px 24px;
+}
+
+/* The side panel's page is the tabs, which keep their own margin. */
+.lower > :global(.ant-layout-content) {
+  padding: 0;
 }
