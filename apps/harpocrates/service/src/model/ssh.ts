@@ -151,6 +151,14 @@ export class SshCa {
   })
   krlUrl: string;
 
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "Where every CA of its type's KRL is published together: the one file RevokedKeys (or, for host CAs, RevokedHostKeys) fetches",
+  })
+  typeKrlUrl: string;
+
   @ApiTimestamp({
     required: false,
     description: "An ISO-8601 formatted string: when it was retired",

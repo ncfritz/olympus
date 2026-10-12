@@ -22,6 +22,8 @@ export const toSshCa = (row: SshCaRow, hostPattern: string): SshCa => ({
   trustLine: trustLine(row, hostPattern),
   maxValidityHours: row.maxValidityHours,
   krlUrl: row.krlUrl,
+  // Beside the CA's own: krl/ssh-<type>.krl.
+  typeKrlUrl: row.krlUrl.replace(/[^/]+\.krl$/, `ssh-${row.type}.krl`),
   retiredAt: row.retiredAt ? moment(row.retiredAt) : undefined,
   createdAt: moment(row.createdAt),
   updatedAt: moment(row.updatedAt),

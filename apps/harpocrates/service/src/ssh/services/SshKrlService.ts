@@ -18,14 +18,19 @@ import {
 } from "../../config/configuration";
 import { buildKrl } from "../../pki/ssh";
 import { PrismaService } from "../../store/PrismaService";
+import type { SshCertificateType } from "../../store/prisma";
 
 const HOUR = 3600 * 1000;
+
+/** A certificate's serial, stored as hex, as a KRL lists it. */
+const serialOf = ({ serial }: { serial: string }) => BigInt(`0x${serial}`);
 
 /**
  * Each SSH CA's KRL (ADR 0035): the serials of its revoked certificates
  * that have not yet expired, written to the published directory at
  * `krl/<slug>.krl` as soon as one is revoked, and again every
- * CRL_REFRESH_HOURS. Unsigned (sshd does not check a KRL's signature), so
+ * CRL_REFRESH_HOURS; with it, every CA of its type's together, at
+ * `krl/ssh-<type>.krl`, the one hosts fetch. Unsigned (sshd does not check a KRL's signature), so
  * no signer is needed and a sealed signer does not stop it.
  */
 @Injectable()
@@ -97,13 +102,13 @@ export class SshKrlService
       select: { serial: true },
     });
     const krl = buildKrl({
-      caPublicKey: ca.publicKey,
-      serials: revoked.map((r) => BigInt(`0x${r.serial}`)),
+      cas: [{ caPublicKey: ca.publicKey, serials: revoked.map(serialOf) }],
       version: ca.nextKrlNumber,
       generatedAt: now,
       comment: ca.name,
     });
     await this.write(path.join("krl", `${ca.id}.krl`), krl);
+    await this.writeTypeKrl(ca.type, now);
     await this.prisma.$transaction(async (tx) => {
       await tx.sshCa.update({
         where: { id: caId },
@@ -127,6 +132,38 @@ export class SshKrlService
         tx,
       );
     });
+  }
+
+  /**
+   * Every CA of a type's revocations in one KRL, `krl/ssh-<type>.krl`:
+   * sshd's RevokedKeys names a single file, and while a rotation's two
+   * generations are both trusted a host needs both CAs' revocations.
+   * Its version is the time it was built, which only grows.
+   */
+  private async writeTypeKrl(
+    type: SshCertificateType,
+    now: Date,
+  ): Promise<void> {
+    const cas = await this.prisma.sshCa.findMany({
+      where: { type },
+      orderBy: [{ number: "asc" }, { generation: "asc" }],
+      include: {
+        certificates: {
+          where: { status: "revoked", validBefore: { gt: now } },
+          select: { serial: true },
+        },
+      },
+    });
+    const krl = buildKrl({
+      cas: cas.map((ca) => ({
+        caPublicKey: ca.publicKey,
+        serials: ca.certificates.map(serialOf),
+      })),
+      version: BigInt(now.getTime()),
+      generatedAt: now,
+      comment: `Every SSH ${type} CA`,
+    });
+    await this.write(path.join("krl", `ssh-${type}.krl`), krl);
   }
 
   /** Written beside, then renamed: nginx never serves half a file. */

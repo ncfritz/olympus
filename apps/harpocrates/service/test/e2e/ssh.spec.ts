@@ -62,6 +62,7 @@ type SshCa = {
   trustLine: string;
   maxValidityHours: number;
   krlUrl: string;
+  typeKrlUrl: string;
 };
 
 /** An SSH profile's settings, as a new one is made. */
@@ -168,6 +169,7 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
       expect(user.publicKey).toMatch(/^ssh-ed25519 \S+$/);
       expect(user.trustLine).toBe(`${user.publicKey} ${user.name}`);
       expect(user.krlUrl).toMatch(/\/krl\/ssh-user-1-g1\.krl$/);
+      expect(user.typeKrlUrl).toMatch(/\/krl\/ssh-user\.krl$/);
 
       const host = ca(
         await createCa({ type: "host", maxValidityHours: 2400 }).expect(201),
@@ -561,6 +563,11 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
           await issueUser({ publicKey: sshKey() }, guest).expect(201),
         );
         expect(keygen(other.certificate, "-Q", "-f", krl).status).toBe(0);
+        // Every user CA's revocations together: the one file a host's
+        // RevokedKeys names.
+        const all = path.join(harness.published, "krl", "ssh-user.krl");
+        expect(keygen(issued.certificate, "-Q", "-f", all).status).not.toBe(0);
+        expect(keygen(other.certificate, "-Q", "-f", all).status).toBe(0);
       }
       const current = await request(server())
         .get("/v1/ssh/certificates?type=user&current=true")

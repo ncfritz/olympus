@@ -10268,6 +10268,10 @@
             "type": "string",
             "description": "Where its KRL is published"
           },
+          "typeKrlUrl": {
+            "type": "string",
+            "description": "Where every CA of its type's KRL is published together: the one file RevokedKeys (or, for host CAs, RevokedHostKeys) fetches"
+          },
           "retiredAt": {
             "type": "string",
             "description": "An ISO-8601 formatted string: when it was retired"
@@ -10292,6 +10296,7 @@
           "trustLine",
           "maxValidityHours",
           "krlUrl",
+          "typeKrlUrl",
           "createdAt",
           "updatedAt"
         ]

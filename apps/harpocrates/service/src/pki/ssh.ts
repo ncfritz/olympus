@@ -341,31 +341,45 @@ const string = (data: Buffer | string) => {
   return Buffer.concat([uint32(bytes.length), bytes]);
 };
 
-/**
- * A KRL revoking these serials of one CA's certificates. Unsigned:
- * sshd does not check a KRL's signature (ADR 0035), so it is served
- * over HTTPS instead.
- */
-export const buildKrl = (krl: {
-  /** The CA's public key, OpenSSH format. */
+/** One CA's revoked serials: a KRL's certificates section. */
+const certificatesSection = (ca: {
   caPublicKey: string;
   serials: bigint[];
-  version: bigint;
-  generatedAt: Date;
-  comment: string;
 }): Buffer => {
-  const ca = parseSshPublicKey(krl.caPublicKey);
-  const serials = [...new Set(krl.serials)].sort((a, b) =>
+  const key = parseSshPublicKey(ca.caPublicKey);
+  const serials = [...new Set(ca.serials)].sort((a, b) =>
     a < b ? -1 : a > b ? 1 : 0,
   );
-  const sections: Buffer[] = [string(ca.blob), string("")];
+  const section: Buffer[] = [string(key.blob), string("")];
   if (serials.length) {
-    sections.push(
+    section.push(
       Buffer.from([KRL_SECTION_CERT_SERIAL_LIST]),
       string(Buffer.concat(serials.map(uint64))),
     );
   }
   return Buffer.concat([
+    Buffer.from([KRL_SECTION_CERTIFICATES]),
+    string(Buffer.concat(section)),
+  ]);
+};
+
+/**
+ * A KRL revoking these serials of each CA's certificates: one CA's, or
+ * every CA of a type's, since sshd's RevokedKeys names one file. Unsigned:
+ * sshd does not check a KRL's signature (ADR 0035), so it is served over
+ * HTTPS instead.
+ */
+export const buildKrl = (krl: {
+  cas: {
+    /** The CA's public key, OpenSSH format. */
+    caPublicKey: string;
+    serials: bigint[];
+  }[];
+  version: bigint;
+  generatedAt: Date;
+  comment: string;
+}): Buffer =>
+  Buffer.concat([
     KRL_MAGIC,
     uint32(KRL_FORMAT_VERSION),
     uint64(krl.version),
@@ -373,7 +387,5 @@ export const buildKrl = (krl: {
     uint64(0n),
     string(""),
     string(krl.comment),
-    Buffer.from([KRL_SECTION_CERTIFICATES]),
-    string(Buffer.concat(sections)),
+    ...krl.cas.map(certificatesSection),
   ]);
-};

@@ -83,8 +83,12 @@ describe.skipIf(!hasKeygen)("ssh", () => {
     fs.writeFileSync(
       krl,
       buildKrl({
-        caPublicKey: fs.readFileSync(`${ca}.pub`, "utf8"),
-        serials: [4242n, 17n, 4242n],
+        cas: [
+          {
+            caPublicKey: fs.readFileSync(`${ca}.pub`, "utf8"),
+            serials: [4242n, 17n, 4242n],
+          },
+        ],
         version: 3n,
         generatedAt: new Date(),
         comment: "test CA",
@@ -101,6 +105,52 @@ describe.skipIf(!hasKeygen)("ssh", () => {
     expect(keygen("-Q", "-l", "-f", krl)).toMatch(
       /# KRL version 3\n[\s\S]*serial: 17\n[\s\S]*serial: 4242/,
     );
+  });
+
+  it("writes one KRL for several CAs, each revoking its own serials", () => {
+    const sign = (ca: string, name: string, serial: string) => {
+      const subject = key(name, "-t", "ed25519");
+      keygen(
+        "-q",
+        "-s",
+        ca,
+        "-I",
+        name,
+        "-n",
+        "neil",
+        "-z",
+        serial,
+        `${subject}.pub`,
+      );
+      return subject;
+    };
+    const g1 = key("g1", "-t", "ed25519");
+    const g2 = key("g2", "-t", "ed25519");
+    const g1Revoked = sign(g1, "g1-revoked", "7");
+    const g1Kept = sign(g1, "g1-kept", "8");
+    const g2Revoked = sign(g2, "g2-revoked", "8");
+    const g2Kept = sign(g2, "g2-kept", "7");
+    const krl = path.join(dir, "both.krl");
+    fs.writeFileSync(
+      krl,
+      buildKrl({
+        cas: [
+          { caPublicKey: fs.readFileSync(`${g1}.pub`, "utf8"), serials: [7n] },
+          { caPublicKey: fs.readFileSync(`${g2}.pub`, "utf8"), serials: [8n] },
+        ],
+        version: 1n,
+        generatedAt: new Date(),
+        comment: "user CAs",
+      }),
+    );
+    const revoked = (file: string) =>
+      spawnSync("ssh-keygen", ["-Q", "-f", krl, `${file}-cert.pub`]).status !==
+      0;
+    // A serial is revoked only for the CA that lists it.
+    expect(revoked(g1Revoked)).toBe(true);
+    expect(revoked(g2Revoked)).toBe(true);
+    expect(revoked(g1Kept)).toBe(false);
+    expect(revoked(g2Kept)).toBe(false);
   });
 
   it.each([

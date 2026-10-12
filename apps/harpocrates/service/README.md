@@ -131,7 +131,10 @@ ADR 0020, Serials, revocation and publication; the scheduler
   they expire, and its imported revocations.
 - **SSH CAs** (ADR 0035): a KRL each, by serial, of its revoked
   certificates until they expire, written to `krl/<slug>.krl` at once on
-  a revocation and every `CRL_REFRESH_HOURS`. Unsigned (sshd does not
+  a revocation and every `CRL_REFRESH_HOURS`; with it, every CA of its
+  type's in one, `krl/ssh-user.krl` or `krl/ssh-host.krl`, the file
+  hosts fetch, since `RevokedKeys` names one file and a rotation trusts
+  two CAs. Unsigned (sshd does not
   check a KRL's signature) and built by the service, so it is written
   while the signer is sealed too.
 - **Offline CAs**: signed in a ceremony (`POST /ceremony/{id}/crl`),

@@ -2763,6 +2763,8 @@ export interface components {
       maxValidityHours: number;
       /** @description Where its KRL is published */
       krlUrl: string;
+      /** @description Where every CA of its type's KRL is published together: the one file RevokedKeys (or, for host CAs, RevokedHostKeys) fetches */
+      typeKrlUrl: string;
       /** @description An ISO-8601 formatted string: when it was retired */
       retiredAt?: string;
       /** @description An ISO-8601 formatted string: when it was created */
