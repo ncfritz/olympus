@@ -1,6 +1,6 @@
 # 0036. Harpocrates: OCSP
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-11
 - **Amends:** [ADR 0020](0020-internal-certificate-authority.md)
   (Serials, revocation and publication: "OCSP is not provided"),

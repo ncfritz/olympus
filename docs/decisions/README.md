@@ -44,6 +44,6 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0033](0033-harpocrates-key-types-and-imported-keys.md)      | Harpocrates: the key type chosen at issuance, and keys brought in          | Accepted (amended by 0034)      |
 | [0034](0034-harpocrates-profiles-versioned-presets.md)       | Harpocrates: profiles as versioned, editable presets                       | Accepted (amended by 0035–0036) |
 | [0035](0035-harpocrates-ssh-certificates.md)                 | Harpocrates: SSH certificates                                              | Accepted                        |
-| [0036](0036-harpocrates-ocsp.md)                             | Harpocrates: OCSP                                                          | Proposed                        |
+| [0036](0036-harpocrates-ocsp.md)                             | Harpocrates: OCSP                                                          | Accepted                        |
 
 New records: copy [template.md](template.md), take the next number.
