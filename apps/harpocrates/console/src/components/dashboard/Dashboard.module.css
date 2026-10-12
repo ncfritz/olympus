@@ -106,23 +106,6 @@
   padding: 16px 24px;
 }
 
-/* The headline counts, as the main site's Goals summary strip. */
-.strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  border-top: 1px solid var(--ant-color-border-secondary);
-  border-bottom: 1px solid var(--ant-color-border-secondary);
-}
-
-.cell {
-  padding: 16px 24px;
-  border-right: 1px solid var(--ant-color-border-secondary);
-}
-
-.cell:last-child {
-  border-right: none;
-}
-
 /* The graphs: 40%, 35% and the rest, as boxes, stacking when narrow. */
 .graphs {
   display: grid;

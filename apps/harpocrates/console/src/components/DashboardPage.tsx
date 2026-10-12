@@ -2,7 +2,7 @@
 
 import { BellOutlined, HistoryOutlined } from "@ant-design/icons";
 import { SideTabPanel } from "@ncfritz/olympus-console";
-import { Badge, Skeleton, Statistic, Tabs, Tooltip, Typography } from "antd";
+import { Badge, Skeleton, Tabs, Tooltip, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 import {
@@ -13,6 +13,7 @@ import {
   useSignerStatus,
 } from "@/lib/api/queries";
 import { healthChecks } from "@/lib/dashboard";
+import { Count, CountStrip } from "./CountStrip";
 import { ActivityChart } from "./dashboard/ActivityChart";
 import { AuthoritiesTable, CaLifetimes } from "./dashboard/Authorities";
 import { CertificateList } from "./dashboard/CertificateList";
@@ -45,30 +46,6 @@ const TabIcon = ({ title, icon }: { title: string; icon: ReactNode }) => (
   <Tooltip title={title} placement="left">
     <span aria-label={title}>{icon}</span>
   </Tooltip>
-);
-
-/** One headline count, as the main site's Goals summary strip has them. */
-const Count = ({
-  title,
-  value,
-  note,
-}: {
-  title: string;
-  value: number;
-  note?: string;
-}) => (
-  <div className={styles.cell}>
-    <Statistic title={title} value={value} />
-    {note && (
-      <Typography.Text
-        type="secondary"
-        className={styles.small}
-        ellipsis={{ tooltip: note }}
-      >
-        {note}
-      </Typography.Text>
-    )}
-  </div>
 );
 
 /**
@@ -160,7 +137,7 @@ export function DashboardPage() {
     >
       <div className={styles.column}>
         {title}
-        <div className={styles.strip}>
+        <CountStrip>
           <Count
             title="CAs"
             value={counts.cas}
@@ -187,7 +164,7 @@ export function DashboardPage() {
             note={certificates.expiredNames.join(", ") || undefined}
           />
           <Count title="Profiles" value={counts.profiles} />
-        </div>
+        </CountStrip>
         <div className={styles.scroll}>
           <div className={styles.graphs}>
             <ActivityChart days={dashboard.activity} />

@@ -1,0 +1,25 @@
+/*
+ * A page's headline counts, as the main site's Goals summary strip: edge
+ * to edge, each count in a cell of its own (docs/conventions/ux.md, Page
+ * edges).
+ */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  border-top: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.cell {
+  min-width: 0;
+  padding: 16px 24px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+
+.cell:last-child {
+  border-right: none;
+}
+
+.note {
+  font-size: var(--ant-font-size-sm, 12px);
+}
