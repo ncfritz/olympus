@@ -155,6 +155,32 @@ ADR 0020, Serials, revocation and publication; the scheduler
 One instance runs the scheduler; the CLI never does (its revocations
 are picked up by the running service's next run).
 
+## OCSP
+
+ADR 0036; each scheduler run, after the lists:
+
+- **Responders**: each CA's is a certificate it issued for a P-256
+  `ocsp` key in the signer (OCSPSigning, ocsp-nocheck). An online CA's is
+  issued on the first run and renewed with a new key
+  `OCSP_RESPONDER_RENEW_DAYS` (10) before it lapses, valid
+  `OCSP_RESPONDER_DAYS` (30). An offline CA's is issued in a ceremony
+  (`POST /ceremony/{id}/ocsp-responder`), valid as long as its list. A new
+  one supersedes the old, whose key is destroyed once it expires. Each is
+  audited (`ocsp-responder.issued`, `.retired`).
+- **Responses**: one per unexpired certificate a CA issued (leaves, the
+  CAs below it, and serials revoked by lists imported for it) and per
+  CertID hash (SHA-1, SHA-256), good or revoked, valid
+  `OCSP_VALIDITY_HOURS` (96) and kept in `ocsp_responses`. A response is
+  re-signed when it is `OCSP_REFRESH_HOURS` (24) old, when its status
+  changes (a revocation runs the scheduler at once), and when a new
+  responder takes over; a certificate's are dropped once it has expired
+  and they have lapsed.
+- **Sealed**: responders and responses wait, and what is stored stays
+  valid until its `nextUpdate`, so a seal of up to three days is not seen
+  by OCSP clients.
+- `GET /issuer/{id}/ocsp-responders` lists a CA's responders and how
+  fresh its responses are.
+
 ## API
 
 `/v1`, with the API's access tokens (ADR 0018) and the roles
@@ -192,6 +218,8 @@ from it.
 | `GET /issuer/{id}/crls`                                                                                                          | either role           |
 | `POST /issuer/{id}/crls` (import a list)                                                                                         | admin                 |
 | `POST /ceremony/{id}/crl` (an offline CA's list)                                                                                 | admin, recent sign-in |
+| `GET /issuer/{id}/ocsp-responders` (its OCSP responders, and its responses' freshness)                                           | either role           |
+| `POST /ceremony/{id}/ocsp-responder` (an offline CA's OCSP responder)                                                            | admin, recent sign-in |
 
 "Recent" is `AUTH_RECENT_SIGN_IN_SECONDS` since the token's `auth_time`.
 `/health` and `/metrics` are open.
@@ -484,6 +512,10 @@ HARPOCRATES_E2E_DATABASE_URL=postgresql://harpocrates:<password>@localhost:5433/
 | `CRL_REFRESH_HOURS`           | `24`                                                      | How old an online CA's list gets before it is re-signed                                            |
 | `CRL_OFFLINE_VALIDITY_DAYS`   | `395`                                                     | An offline CA's list's validity, signed in a ceremony                                              |
 | `CRL_SCHEDULE_SECONDS`        | `30`                                                      | How often the scheduler runs; `0` turns it off                                                     |
+| `OCSP_VALIDITY_HOURS`         | `96`                                                      | An OCSP response's validity (at most 168)                                                          |
+| `OCSP_REFRESH_HOURS`          | `24`                                                      | How old a response gets before it is re-signed                                                     |
+| `OCSP_RESPONDER_DAYS`         | `30`                                                      | An online CA's responder's validity (at most 35)                                                   |
+| `OCSP_RESPONDER_RENEW_DAYS`   | `10`                                                      | How many days before it lapses an online CA's responder is renewed                                 |
 | `RENEWAL_LISTEN_PORT`         | `9443`                                                    | The renewal listener; `0` turns it off                                                             |
 | `RENEWAL_TLS_DIR`             | `/var/lib/harpocrates/renewal-tls`                        | Its own key and certificate                                                                        |
 | `RENEWAL_HOSTNAMES`           | `pki.internal.ncfritz.net`                                | The names its certificate is issued for, comma-separated                                           |

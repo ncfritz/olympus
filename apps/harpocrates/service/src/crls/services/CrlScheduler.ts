@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { crlConfig, type CrlConfigType } from "../../config/configuration";
 import { crlSigningFailures } from "../../metrics/pkiMetrics";
+import { type OcspRun, OcspService } from "../../ocsp/services/OcspService";
 import { CrlService } from "./CrlService";
 import { type Publication, PublicationService } from "./PublicationService";
 
@@ -17,6 +18,8 @@ export type SchedulerRun = {
   signed: { issuerId: string; number: number }[];
   failed: { issuerId: string; reason: string; message: string }[];
   published: Publication[];
+  /** The OCSP pass after the lists (ADR 0036). */
+  ocsp: OcspRun;
 };
 
 const reasonOf = (error: unknown) =>
@@ -28,9 +31,10 @@ const reasonOf = (error: unknown) =>
 
 /**
  * Keeps the lists current: every CRL_SCHEDULE_SECONDS it signs what is
- * due and publishes what is not out yet, and a revocation or an imported
- * list runs it at once. While the signer is sealed each run fails and the
- * next tries again, so a missed list is signed as soon as it unseals.
+ * due and publishes what is not out yet, then keeps OCSP current (ADR
+ * 0036), and a revocation or an imported list runs it at once. While the
+ * signer is sealed each run fails and the next tries again, so a missed
+ * list is signed as soon as it unseals.
  * One instance runs it; the CLI and the tests turn it off.
  */
 @Injectable()
@@ -46,6 +50,7 @@ export class CrlScheduler
   constructor(
     private readonly crls: CrlService,
     private readonly publication: PublicationService,
+    private readonly ocsp: OcspService,
     @Inject(crlConfig.KEY) private readonly config: CrlConfigType,
   ) {}
 
@@ -85,9 +90,17 @@ export class CrlScheduler
     return this.running;
   }
 
-  /** One pass: sign what is due, then publish what is not out. */
+  /**
+   * One pass: sign what is due, publish what is not out, then OCSP: its
+   * responders and the responses a revocation or the day has changed.
+   */
   async run(now = new Date()): Promise<SchedulerRun> {
-    const result: SchedulerRun = { signed: [], failed: [], published: [] };
+    const result: SchedulerRun = {
+      signed: [],
+      failed: [],
+      published: [],
+      ocsp: { responders: [], responses: [], retired: [], failed: [] },
+    };
     for (const issuer of await this.crls.due(now)) {
       try {
         const crl = await this.crls.signOnline(issuer);
@@ -115,6 +128,7 @@ export class CrlScheduler
       }
     }
     result.published = await this.publication.publishPending(now);
+    result.ocsp = await this.ocsp.run(now);
     return result;
   }
 }

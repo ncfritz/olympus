@@ -45,6 +45,12 @@ describe("readConfig", () => {
       offlineValidityDays: 395,
       scheduleSeconds: 30,
     });
+    expect(config.ocsp).toEqual({
+      validityHours: 96,
+      refreshHours: 24,
+      responderDays: 30,
+      responderRenewDays: 10,
+    });
   });
 
   it("reads the database URL from a file, as the stack mounts it", () => {
@@ -66,6 +72,21 @@ describe("readConfig", () => {
       readConfig({ ...REQUIRED, CRL_SCHEDULE_SECONDS: "0" }).crl
         .scheduleSeconds,
     ).toBe(0);
+  });
+
+  it("refuses OCSP settings the signer would not sign, or that lapse", () => {
+    expect(() =>
+      readConfig({ ...REQUIRED, OCSP_VALIDITY_HOURS: "24" }),
+    ).toThrow(/OCSP_REFRESH_HOURS must be less than OCSP_VALIDITY_HOURS/);
+    expect(() =>
+      readConfig({ ...REQUIRED, OCSP_VALIDITY_HOURS: "200" }),
+    ).toThrow(/OCSP_VALIDITY_HOURS is at most 168/);
+    expect(() =>
+      readConfig({ ...REQUIRED, OCSP_RESPONDER_DAYS: "60" }),
+    ).toThrow(/OCSP_RESPONDER_DAYS is at most 35/);
+    expect(() =>
+      readConfig({ ...REQUIRED, OCSP_RESPONDER_RENEW_DAYS: "3" }),
+    ).toThrow(/OCSP_RESPONDER_RENEW_DAYS must be less/);
   });
 
   it("refuses a list that expires before it is replaced", () => {

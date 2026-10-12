@@ -2190,6 +2190,180 @@
         ]
       }
     },
+    "/v1/issuer/{issuerId}/ocsp-responders": {
+      "get": {
+        "description": "The CA's OCSP responders, newest first (ADR 0036), and how fresh its stored responses are: how many, how many revoked, the soonest to lapse and the latest signed.",
+        "operationId": "ListIssuerOcspResponders",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The responders and responses.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListIssuerOcspRespondersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists a CA's OCSP responders",
+        "tags": [
+          "OCSP"
+        ]
+      }
+    },
+    "/v1/ceremony/{ceremonyId}/ocsp-responder": {
+      "post": {
+        "description": "The ceremony's CA issues its OCSP responder (ADR 0036): a certificate for a new key in the signer, valid as long as its list (CRL_OFFLINE_VALIDITY_DAYS), which signs the CA's responses while its own key is offline. It supersedes the CA's earlier responder; its responses are signed at once.",
+        "operationId": "IssueCeremonyOcspResponder",
+        "parameters": [
+          {
+            "name": "ceremonyId",
+            "required": true,
+            "in": "path",
+            "description": "The open ceremony",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The responder was issued.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The CA's responders"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCeremonyOcspResponderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issues an offline CA's OCSP responder in a ceremony",
+        "tags": [
+          "Ceremonies"
+        ]
+      }
+    },
     "/v1/certificates": {
       "get": {
         "description": "Certificates, soonest to expire first, by issuer, profile, state, text or how soon they expire.",
@@ -5921,6 +6095,9 @@
       "name": "Issuers"
     },
     {
+      "name": "OCSP"
+    },
+    {
       "name": "Profiles"
     },
     {
@@ -7855,6 +8032,144 @@
         },
         "required": [
           "crl"
+        ]
+      },
+      "OcspResponderStatus": {
+        "type": "string",
+        "description": "Whether it signs its CA's responses",
+        "enum": [
+          "active",
+          "superseded"
+        ]
+      },
+      "OcspResponder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its id"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA it answers for, which issued it"
+          },
+          "serial": {
+            "type": "string",
+            "description": "Its certificate's serial, hex"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Its certificate's subject"
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: valid from"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: valid until"
+          },
+          "status": {
+            "description": "Whether it signs its CA's responses",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OcspResponderStatus"
+              }
+            ]
+          },
+          "ceremonyId": {
+            "type": "string",
+            "description": "The ceremony it was issued in: an offline CA's"
+          },
+          "certificate": {
+            "type": "string",
+            "description": "Its certificate, PEM"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was issued"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "serial",
+          "subject",
+          "notBefore",
+          "notAfter",
+          "status",
+          "certificate",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OcspResponsesSummary": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Its stored responses, one per certificate and CertID hash"
+          },
+          "revoked": {
+            "type": "number",
+            "description": "How many say revoked"
+          },
+          "earliestNextUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: the soonest any lapses; none are served after"
+          },
+          "latestThisUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: the latest signed"
+          }
+        },
+        "required": [
+          "count",
+          "revoked"
+        ]
+      },
+      "ListIssuerOcspRespondersResponse": {
+        "type": "object",
+        "properties": {
+          "responders": {
+            "description": "Its responders, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OcspResponder"
+            }
+          },
+          "responses": {
+            "description": "Its stored responses",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OcspResponsesSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "responders",
+          "responses"
+        ]
+      },
+      "IssueCeremonyOcspResponderResponse": {
+        "type": "object",
+        "properties": {
+          "responder": {
+            "description": "The responder",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OcspResponder"
+              }
+            ]
+          }
+        },
+        "required": [
+          "responder"
         ]
       },
       "Certificate": {

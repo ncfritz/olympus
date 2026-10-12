@@ -122,6 +122,8 @@ model Issuer {
   crls                Crl[]
   ceremonies          Ceremony[]
   importedRevocations ImportedRevocation[]
+  ocspResponders      OcspResponder[]
+  ocspResponses       OcspResponse[]
 
   @@unique([purpose, tier, number, generation])
   @@map("issuers")
@@ -171,7 +173,8 @@ model Ceremony {
   openedAt  DateTime  @default(now()) @map("opened_at")
   closedAt  DateTime? @map("closed_at")
 
-  crls Crl[]
+  crls           Crl[]
+  ocspResponders OcspResponder[]
 
   @@map("ceremonies")
 }
@@ -638,6 +641,8 @@ model SshPrincipalMapping {
 enum KeyPurpose {
   issuer
   subject
+  /// An OCSP responder's (ADR 0036): signs one CA's responses.
+  ocsp
 }
 
 /// Where the private key is.
@@ -671,6 +676,7 @@ model Key {
   issuer          Issuer?
   sshCa           SshCa?
   sshCertificates SshCertificate[]
+  ocspResponder   OcspResponder?
   enrollment      Enrollment?
   escrowExports   EscrowExport[]
 
@@ -1173,4 +1179,78 @@ model AuditEventAttribute {
 
   @@id([sequence, name])
   @@map("audit_event_attributes")
+}
+
+// ---- OCSP (ADR 0036)
+
+/// active: signs its CA's responses. superseded: replaced by a newer one;
+/// its responses are re-signed by that one, and its key destroyed once it
+/// expires.
+enum OcspResponderStatus {
+  active
+  superseded
+}
+
+/// The hash a request's CertID uses.
+enum OcspCertIdHash {
+  sha1
+  sha256
+}
+
+enum OcspCertStatus {
+  good
+  revoked
+}
+
+/// A CA's OCSP responder: a certificate the CA issued for an `ocsp` key
+/// in the signer (OCSPSigning, ocsp-nocheck). An online CA's is issued and
+/// renewed by the service; an offline CA's in a ceremony.
+model OcspResponder {
+  id          String              @id @default(uuid()) @db.Uuid
+  issuerId    String              @map("issuer_id")
+  issuer      Issuer              @relation(fields: [issuerId], references: [id])
+  keyId       String              @unique @map("key_id") @db.Uuid
+  key         Key                 @relation(fields: [keyId], references: [id])
+  serial      String
+  subject     String
+  certificate Bytes
+  notBefore   DateTime            @map("not_before")
+  notAfter    DateTime            @map("not_after")
+  status      OcspResponderStatus @default(active)
+  /// The ceremony it was issued in: an offline CA's.
+  ceremonyId  String?             @map("ceremony_id")
+  ceremony    Ceremony?           @relation(fields: [ceremonyId], references: [id])
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  responses OcspResponse[]
+
+  @@unique([issuerId, serial])
+  @@index([issuerId, status])
+  @@map("ocsp_responders")
+}
+
+/// A signed response for one certificate of a CA, by CertID hash: kept and
+/// served until its nextUpdate, re-signed daily and on a change of status.
+model OcspResponse {
+  id          String            @id @default(uuid()) @db.Uuid
+  issuerId    String            @map("issuer_id")
+  issuer      Issuer            @relation(fields: [issuerId], references: [id])
+  /// Hex, as the certificate's.
+  serial      String
+  hash        OcspCertIdHash
+  status      OcspCertStatus
+  revokedAt   DateTime?         @map("revoked_at")
+  reason      RevocationReason?
+  responderId String            @map("responder_id") @db.Uuid
+  responder   OcspResponder     @relation(fields: [responderId], references: [id])
+  der         Bytes
+  thisUpdate  DateTime          @map("this_update")
+  nextUpdate  DateTime          @map("next_update")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  @@unique([issuerId, serial, hash])
+  @@index([nextUpdate])
+  @@map("ocsp_responses")
 }

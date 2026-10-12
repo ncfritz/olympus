@@ -51,6 +51,8 @@ export const AuditKind = {
   SshCertificateRenewed: "ssh-certificate.renewed",
   SshCertificateRevoked: "ssh-certificate.revoked",
   SshKrlPublished: "ssh-krl.published",
+  OcspResponderIssued: "ocsp-responder.issued",
+  OcspResponderRetired: "ocsp-responder.retired",
 } as const;
 
 export type AuditKindName = (typeof AuditKind)[keyof typeof AuditKind];

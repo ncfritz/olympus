@@ -476,6 +476,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/issuer/{issuerId}/ocsp-responders": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists a CA's OCSP responders
+     * @description The CA's OCSP responders, newest first (ADR 0036), and how fresh its stored responses are: how many, how many revoked, the soonest to lapse and the latest signed.
+     */
+    get: operations["ListIssuerOcspResponders"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ceremony/{ceremonyId}/ocsp-responder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Issues an offline CA's OCSP responder in a ceremony
+     * @description The ceremony's CA issues its OCSP responder (ADR 0036): a certificate for a new key in the signer, valid as long as its list (CRL_OFFLINE_VALIDITY_DAYS), which signs the CA's responses while its own key is offline. It supersedes the CA's earlier responder; its responses are signed at once.
+     */
+    post: operations["IssueCeremonyOcspResponder"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/certificates": {
     parameters: {
       query?: never;
@@ -1892,6 +1932,55 @@ export interface components {
     SignCeremonyCrlResponse: {
       /** @description The offline CA's new list, published with the next run */
       crl: components["schemas"]["RevocationList"];
+    };
+    /**
+     * @description Whether it signs its CA's responses
+     * @enum {string}
+     */
+    OcspResponderStatus: "active" | "superseded";
+    OcspResponder: {
+      /** @description Its id */
+      id: string;
+      /** @description The CA it answers for, which issued it */
+      issuerId: string;
+      /** @description Its certificate's serial, hex */
+      serial: string;
+      /** @description Its certificate's subject */
+      subject: string;
+      /** @description An ISO-8601 formatted string: valid from */
+      notBefore: string;
+      /** @description An ISO-8601 formatted string: valid until */
+      notAfter: string;
+      /** @description Whether it signs its CA's responses */
+      status: components["schemas"]["OcspResponderStatus"];
+      /** @description The ceremony it was issued in: an offline CA's */
+      ceremonyId?: string;
+      /** @description Its certificate, PEM */
+      certificate: string;
+      /** @description An ISO-8601 formatted string: when it was issued */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    OcspResponsesSummary: {
+      /** @description Its stored responses, one per certificate and CertID hash */
+      count: number;
+      /** @description How many say revoked */
+      revoked: number;
+      /** @description An ISO-8601 formatted string: the soonest any lapses; none are served after */
+      earliestNextUpdate?: string;
+      /** @description An ISO-8601 formatted string: the latest signed */
+      latestThisUpdate?: string;
+    };
+    ListIssuerOcspRespondersResponse: {
+      /** @description Its responders, newest first */
+      responders: components["schemas"]["OcspResponder"][];
+      /** @description Its stored responses */
+      responses: components["schemas"]["OcspResponsesSummary"];
+    };
+    IssueCeremonyOcspResponderResponse: {
+      /** @description The responder */
+      responder: components["schemas"]["OcspResponder"];
     };
     Certificate: {
       /** @description Its ID */
@@ -4822,6 +4911,135 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["SignCeremonyCrlResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListIssuerOcspResponders: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        issuerId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The responders and responses. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListIssuerOcspRespondersResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  IssueCeremonyOcspResponder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The open ceremony */
+        ceremonyId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The responder was issued. */
+      201: {
+        headers: {
+          /** @description The CA's responders */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IssueCeremonyOcspResponderResponse"];
         };
       };
       /** @description No valid access token was presented */

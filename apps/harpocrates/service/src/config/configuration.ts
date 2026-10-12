@@ -93,6 +93,18 @@ export type CrlConfig = {
   scheduleSeconds: number;
 };
 
+/** OCSP (ADR 0036): responses signed ahead, and online CAs' responders. */
+export type OcspConfig = {
+  /** How long a response is valid: its nextUpdate (4 days; a week at most). */
+  validityHours: number;
+  /** How often a response is re-signed with nothing changed (daily). */
+  refreshHours: number;
+  /** How long an online CA's responder is valid (30 days; 35 at most). */
+  responderDays: number;
+  /** How many days before it lapses an online CA's responder is renewed. */
+  responderRenewDays: number;
+};
+
 /** The renewal listener (ADR 0020, Renewal and delivery). */
 export type RenewalConfig = {
   /** Its port (9443); 0 turns it off. */
@@ -155,6 +167,7 @@ export type HarpocratesConfig = {
   auth: AuthConfig;
   pki: PkiConfig;
   crl: CrlConfig;
+  ocsp: OcspConfig;
   renewal: RenewalConfig;
   deploy: DeployConfig;
   acme: AcmeConfig;
@@ -264,6 +277,12 @@ export const readConfig = (
       offlineValidityDays: integer(read, "CRL_OFFLINE_VALIDITY_DAYS", 395),
       scheduleSeconds: integer(read, "CRL_SCHEDULE_SECONDS", 30, 0),
     },
+    ocsp: {
+      validityHours: integer(read, "OCSP_VALIDITY_HOURS", 4 * 24),
+      refreshHours: integer(read, "OCSP_REFRESH_HOURS", 24),
+      responderDays: integer(read, "OCSP_RESPONDER_DAYS", 30),
+      responderRenewDays: integer(read, "OCSP_RESPONDER_RENEW_DAYS", 10),
+    },
     renewal: {
       port: integer(read, "RENEWAL_LISTEN_PORT", 9443, 0),
       tlsDir: read.string(
@@ -306,6 +325,29 @@ export const readConfig = (
       "CRL_REFRESH_HOURS must be less than CRL_VALIDITY_HOURS: a list must be replaced before it expires",
     );
   }
+  if (config.ocsp.refreshHours >= config.ocsp.validityHours) {
+    read.problems.push(
+      "OCSP_REFRESH_HOURS must be less than OCSP_VALIDITY_HOURS: a response must be replaced before it lapses",
+    );
+  }
+  if (config.ocsp.validityHours > 7 * 24) {
+    read.problems.push(
+      "OCSP_VALIDITY_HOURS is at most 168: the signer signs no response for longer than a week",
+    );
+  }
+  if (config.ocsp.responderDays > 35) {
+    read.problems.push(
+      "OCSP_RESPONDER_DAYS is at most 35: the signer issues an online responder for no longer",
+    );
+  }
+  if (
+    config.ocsp.responderRenewDays * 24 <= config.ocsp.validityHours ||
+    config.ocsp.responderRenewDays >= config.ocsp.responderDays
+  ) {
+    read.problems.push(
+      "OCSP_RESPONDER_RENEW_DAYS must be less than OCSP_RESPONDER_DAYS and longer than a response is valid",
+    );
+  }
   if (read.problems.length) throw new ConfigValidationError(read.problems);
   return config;
 };
@@ -336,6 +378,10 @@ export const authConfig = registerAs(
 );
 export const pkiConfig = registerAs("pki", () => readConfig(process.env).pki);
 export const crlConfig = registerAs("crl", () => readConfig(process.env).crl);
+export const ocspConfig = registerAs(
+  "ocsp",
+  () => readConfig(process.env).ocsp,
+);
 export const renewalConfig = registerAs(
   "renewal",
   () => readConfig(process.env).renewal,
@@ -358,6 +404,7 @@ export type SignerConfigType = ConfigType<typeof signerConfig>;
 export type AuthConfigType = ConfigType<typeof authConfig>;
 export type PkiConfigType = ConfigType<typeof pkiConfig>;
 export type CrlConfigType = ConfigType<typeof crlConfig>;
+export type OcspConfigType = ConfigType<typeof ocspConfig>;
 export type RenewalConfigType = ConfigType<typeof renewalConfig>;
 export type DeployConfigType = ConfigType<typeof deployConfig>;
 export type AcmeConfigType = ConfigType<typeof acmeConfig>;
@@ -370,6 +417,7 @@ export const ALL_CONFIG = [
   authConfig,
   pkiConfig,
   crlConfig,
+  ocspConfig,
   renewalConfig,
   deployConfig,
   acmeConfig,

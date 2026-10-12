@@ -31,10 +31,13 @@ import type {
   KeyAlgorithm,
   KeyPurpose,
   KeyResponse,
+  OcspResponsesRequest,
   OfflineCaResponse,
   PreviewCertificateRequest,
   PreviewSshCertificateRequest,
   RegisterSshCaRequest,
+  ResponderResponse,
+  ResponderSpec,
   RevocationReason,
   SshCaResponse,
   SshCertificateSpec,
@@ -42,6 +45,9 @@ import type {
 } from "../../generated/signer/types.gen";
 
 export type {
+  OcspResponsesRequest,
+  ResponderResponse as SignerOcspResponder,
+  ResponderSpec,
   SshCertificateSpec,
   CeremonyResponse as SignerCeremony,
   CertificateSpec,
@@ -317,6 +323,51 @@ export class SignerService {
         body: { certificate: spec, algorithm, exportPassphrase },
       }),
     );
+  }
+
+  // ---- OCSP (ADR 0036)
+
+  /** An online issuer's OCSP responder, signed by its own key. */
+  issueOcspResponder(
+    issuerId: string,
+    spec: ResponderSpec,
+  ): Promise<ResponderResponse> {
+    return this.call(() =>
+      signer.issueIssuerOcspResponder({
+        client: this.client,
+        path: { issuer_id: issuerId },
+        body: spec,
+      }),
+    );
+  }
+
+  /** An offline CA's OCSP responder, signed in its open ceremony. */
+  issueOcspResponderInCeremony(
+    ceremonyId: string,
+    spec: ResponderSpec,
+  ): Promise<ResponderResponse> {
+    return this.call(() =>
+      signer.issueCeremonyOcspResponder({
+        client: this.client,
+        path: { ceremony_id: ceremonyId },
+        body: spec,
+      }),
+    );
+  }
+
+  /** Signed OCSP responses, DER, one per entry, in order. */
+  async signOcspResponses(
+    responderKeyId: string,
+    request: OcspResponsesRequest,
+  ): Promise<Buffer[]> {
+    const signed = await this.call(() =>
+      signer.signOcspResponses({
+        client: this.client,
+        path: { key_id: responderKeyId },
+        body: request,
+      }),
+    );
+    return signed.responses.map((r) => Buffer.from(r, "base64"));
   }
 
   /** Runs a call, returning its data and translating the signer's errors. */
