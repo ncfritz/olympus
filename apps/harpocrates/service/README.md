@@ -174,7 +174,7 @@ ADR 0036; each scheduler run, after the lists:
   re-signed when it is `OCSP_REFRESH_HOURS` (24) old, when its status
   changes (a revocation runs the scheduler at once), and when a new
   responder takes over; a certificate's are dropped once it has expired
-  and they have lapsed.
+  (or its CA is discarded), and it is then answered `unauthorized`.
 - **Sealed**: responders and responses wait, and what is stored stays
   valid until its `nextUpdate`, so a seal of up to three days is not seen
   by OCSP clients.

@@ -277,6 +277,24 @@ describe.skipIf(!E2E_DATABASE_URL)("ocsp", () => {
     expect(key.destroyedAt).not.toBeNull();
   });
 
+  it("drops the responses of a certificate no longer current, which would otherwise read as lapsing", async () => {
+    const certificate = await issue("ocsp-expired.internal.ncfritz.net");
+    await scheduler.run();
+    await stored(tls, certificate.serial);
+    const before = (await responders(tls)).responses.count;
+    await harness.prisma.certificate.update({
+      where: { id: certificate.id },
+      data: { notAfter: new Date(Date.now() - 1000) },
+    });
+    await scheduler.run();
+    expect(
+      await harness.prisma.ocspResponse.count({
+        where: { issuerId: tls, serial: certificate.serial },
+      }),
+    ).toBe(0);
+    expect((await responders(tls)).responses.count).toBe(before - 2);
+  });
+
   it("issues an offline CA's responder in a ceremony, and signs its responses at once", async () => {
     const ceremony = (
       (

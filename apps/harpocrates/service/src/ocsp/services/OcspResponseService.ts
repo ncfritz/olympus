@@ -46,7 +46,7 @@ const key = (serial: string, hash: OcspCertIdHash) => `${serial}/${hash}`;
  * revoked, valid OCSP_VALIDITY_HOURS, re-signed every OCSP_REFRESH_HOURS,
  * at once when a status changes, and by a new responder when one takes
  * over. Stored responses are served while the signer is sealed, until
- * they lapse.
+ * they lapse; those for certificates no longer current are dropped.
  */
 @Injectable()
 export class OcspResponseService {
@@ -76,8 +76,8 @@ export class OcspResponseService {
   /**
    * Signs what a CA needs signed: responses missing, saying another
    * status, signed by another responder, a refresh interval old, or within
-   * an hour of lapsing. Drops
-   * those for certificates no longer current once they have lapsed.
+   * an hour of lapsing. Drops those for
+   * certificates no longer current.
    */
   async refresh(issuerId: string, now = new Date()): Promise<OcspRefresh> {
     const responder = await this.responders.active(issuerId, now);
@@ -175,18 +175,13 @@ export class OcspResponseService {
       signed += batch.length;
     }
 
-    // A certificate no longer current keeps its response until it lapses.
-    const current = new Set(wanted.map((w) => w.serial));
-    const lapsed = await this.prisma.ocspResponse.findMany({
-      where: { issuerId, nextUpdate: { lte: now } },
-      select: { id: true, serial: true },
+    // A certificate no longer current (expired, or a CA discarded) is not
+    // answered: its responses would otherwise linger, unrefreshed, until
+    // they lapsed, and read as the CA's responses lapsing.
+    const current = wanted.map((w) => w.serial);
+    await this.prisma.ocspResponse.deleteMany({
+      where: { issuerId, serial: { notIn: current } },
     });
-    const gone = lapsed.filter((r) => !current.has(r.serial)).map((r) => r.id);
-    if (gone.length) {
-      await this.prisma.ocspResponse.deleteMany({
-        where: { id: { in: gone } },
-      });
-    }
     return { issuerId, signed };
   }
 
