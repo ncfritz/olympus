@@ -6060,6 +6060,54 @@
           "ACME Credentials"
         ]
       }
+    },
+    "/v1/dashboard": {
+      "get": {
+        "description": "The console's dashboard: the certificates counted, those expiring within 90 days that nothing has replaced, what needs a person, each CA's newest list, the last 7 days, and the CA itself. The signer's state is GET /signer/status.",
+        "operationId": "GetDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The dashboard.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The CA at a glance",
+        "tags": [
+          "Dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -6087,6 +6135,9 @@
     },
     {
       "name": "Certificates"
+    },
+    {
+      "name": "Dashboard"
     },
     {
       "name": "Deploy Targets"
@@ -11968,6 +12019,407 @@
         },
         "required": [
           "credential"
+        ]
+      },
+      "DashboardCertificates": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "number",
+            "description": "Valid: unexpired and not revoked"
+          },
+          "issuers": {
+            "type": "number",
+            "description": "The CAs that issued them"
+          },
+          "dueWithin30Days": {
+            "type": "number",
+            "description": "Valid, not yet replaced, and expiring within 30 days"
+          },
+          "dueManual": {
+            "type": "number",
+            "description": "Of those, how many nothing renews: a person must"
+          },
+          "expiredRecently": {
+            "type": "number",
+            "description": "Expired in the last 30 days without being replaced or revoked"
+          },
+          "expiredNames": {
+            "description": "Their common names, soonest expired first, at most 3",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "revoked": {
+            "type": "number",
+            "description": "Revoked and not yet expired"
+          },
+          "revokedThisWeek": {
+            "type": "number",
+            "description": "Revoked in the last 7 days"
+          }
+        },
+        "required": [
+          "valid",
+          "issuers",
+          "dueWithin30Days",
+          "dueManual",
+          "expiredRecently",
+          "expiredNames",
+          "revoked",
+          "revokedThisWeek"
+        ]
+      },
+      "RenewalMode": {
+        "type": "string",
+        "description": "Whether something renews it",
+        "enum": [
+          "automatic",
+          "manual"
+        ]
+      },
+      "ExpiringCertificate": {
+        "type": "object",
+        "properties": {
+          "certificateId": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Its common name, or its subject when it has none"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued it"
+          },
+          "profileId": {
+            "type": "string",
+            "description": "The profile it was issued under"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "renewalDueAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: its renewal point, from its profile version (30 days before expiry without one)"
+          },
+          "renewal": {
+            "description": "Whether something renews it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RenewalMode"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificateId",
+          "name",
+          "issuerId",
+          "notAfter",
+          "renewalDueAt",
+          "renewal"
+        ]
+      },
+      "AttentionKind": {
+        "type": "string",
+        "description": "What it is",
+        "enum": [
+          "certificate-due",
+          "renewal-overdue",
+          "deployment-failing",
+          "endpoint-stale",
+          "endpoint-not-stapling",
+          "crl-unpublished",
+          "offline-crl-due",
+          "offline-ocsp-due",
+          "issuing-window",
+          "backup-unproved"
+        ]
+      },
+      "AttentionSeverity": {
+        "type": "string",
+        "description": "How urgent",
+        "enum": [
+          "error",
+          "warning"
+        ]
+      },
+      "AttentionSubject": {
+        "type": "string",
+        "description": "What it concerns",
+        "enum": [
+          "certificate",
+          "issuer",
+          "deploy-target"
+        ]
+      },
+      "AttentionItem": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What it is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionKind"
+              }
+            ]
+          },
+          "severity": {
+            "description": "How urgent",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionSeverity"
+              }
+            ]
+          },
+          "subjectType": {
+            "description": "What it concerns",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttentionSubject"
+              }
+            ]
+          },
+          "subjectId": {
+            "type": "string",
+            "description": "Its ID: a certificate's, a CA's or a deploy target's"
+          },
+          "title": {
+            "type": "string",
+            "description": "What it concerns, by name"
+          },
+          "detail": {
+            "type": "string",
+            "description": "What is wrong and what to do"
+          },
+          "dueAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it breaks if nothing is done"
+          }
+        },
+        "required": [
+          "kind",
+          "severity",
+          "subjectType",
+          "subjectId",
+          "title",
+          "detail"
+        ]
+      },
+      "DashboardCrl": {
+        "type": "object",
+        "properties": {
+          "issuerId": {
+            "type": "string",
+            "description": "The CA"
+          },
+          "tier": {
+            "description": "Its tier",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssuerTier"
+              }
+            ]
+          },
+          "offline": {
+            "type": "boolean",
+            "description": "Whether its key is offline: its lists are signed in ceremonies"
+          },
+          "number": {
+            "type": "string",
+            "description": "Its newest list's number; none when it has none"
+          },
+          "nextUpdate": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its newest published list lapses"
+          },
+          "publishedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its newest list was published; none while it waits"
+          }
+        },
+        "required": [
+          "issuerId",
+          "tier",
+          "offline"
+        ]
+      },
+      "DashboardWeek": {
+        "type": "object",
+        "properties": {
+          "issued": {
+            "type": "number",
+            "description": "Certificates issued, renewals and ACME's included"
+          },
+          "renewals": {
+            "type": "number",
+            "description": "Of those, renewals of a certificate it names"
+          },
+          "acmeOrders": {
+            "type": "number",
+            "description": "ACME orders"
+          },
+          "acmeOrdersFailed": {
+            "type": "number",
+            "description": "ACME orders that failed"
+          },
+          "deployed": {
+            "type": "number",
+            "description": "Certificates deployed to deploy targets"
+          },
+          "deploymentsFailing": {
+            "type": "number",
+            "description": "Deployments still failing"
+          }
+        },
+        "required": [
+          "issued",
+          "renewals",
+          "acmeOrders",
+          "acmeOrdersFailed",
+          "deployed",
+          "deploymentsFailing"
+        ]
+      },
+      "DashboardCeremony": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "Its CA"
+          },
+          "openedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it opened"
+          },
+          "closedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it closed"
+          }
+        },
+        "required": [
+          "id",
+          "issuerId",
+          "openedAt"
+        ]
+      },
+      "DashboardCa": {
+        "type": "object",
+        "properties": {
+          "lastPublishedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when a list was last published"
+          },
+          "auditEvents": {
+            "type": "number",
+            "description": "Events in the audit log"
+          },
+          "lastCeremony": {
+            "description": "The newest ceremony",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardCeremony"
+              }
+            ]
+          },
+          "nextCeremonyDueAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when an offline CA's list or OCSP responder next lapses, which a ceremony renews"
+          },
+          "nextCeremonyIssuerId": {
+            "type": "string",
+            "description": "The offline CA it is for"
+          }
+        },
+        "required": [
+          "auditEvents"
+        ]
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was read"
+          },
+          "certificates": {
+            "description": "The certificates, counted",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardCertificates"
+              }
+            ]
+          },
+          "expiring": {
+            "description": "Valid certificates expiring within 90 days that nothing has replaced yet, soonest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExpiringCertificate"
+            }
+          },
+          "attention": {
+            "description": "What needs a person, errors first, then soonest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttentionItem"
+            }
+          },
+          "crls": {
+            "description": "Each active CA's newest revocation list, online CAs first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardCrl"
+            }
+          },
+          "week": {
+            "description": "The last 7 days",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardWeek"
+              }
+            ]
+          },
+          "ca": {
+            "description": "The CA itself",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardCa"
+              }
+            ]
+          }
+        },
+        "required": [
+          "asOf",
+          "certificates",
+          "expiring",
+          "attention",
+          "crls",
+          "week",
+          "ca"
+        ]
+      },
+      "GetDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "dashboard": {
+            "description": "The dashboard",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Dashboard"
+              }
+            ]
+          }
+        },
+        "required": [
+          "dashboard"
         ]
       }
     }

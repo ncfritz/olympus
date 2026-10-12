@@ -6,6 +6,7 @@ import { CeremoniesModule } from "./ceremonies/CeremoniesModule";
 import { CertificatesModule } from "./certificates/CertificatesModule";
 import { ALL_CONFIG } from "./config/configuration";
 import { CrlsModule } from "./crls/CrlsModule";
+import { DashboardModule } from "./dashboard/DashboardModule";
 import { IssuersModule } from "./issuers/IssuersModule";
 import { KeysModule } from "./keys/KeysModule";
 import { MetricsModule } from "./metrics/MetricsModule";
@@ -41,6 +42,7 @@ import { StoreModule } from "./store/StoreModule";
     DeployModule,
     AcmeModule,
     SshModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

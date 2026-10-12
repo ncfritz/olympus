@@ -207,38 +207,39 @@ ADR 0036; each scheduler run, after the lists:
 `openapi/harpocrates.json`; the SDK's `harpocrates` client is generated
 from it.
 
-| Operation                                                                                                                        | Who                   |
-| -------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `GET /issuers`, `GET /issuer/{id}`                                                                                               | either role           |
-| `PUT /issuer/{id}` (its issuer alternative names, its OCSP URL)                                                                  | admin, recent sign-in |
-| `POST /issuers/roots`, `POST /issuers/import`                                                                                    | admin, recent sign-in |
-| `POST /issuers/preview` (a new CA's settings and defaults, unsigned)                                                             | admin                 |
-| `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing`                                                           | admin, recent sign-in |
-| `GET /ceremony/{id}`, `DELETE /ceremony/{id}`                                                                                    | admin                 |
-| `GET /profiles`, `GET /profile/{id}`                                                                                             | either role           |
-| `GET /profile/{id}/versions`                                                                                                     | either role           |
-| `POST /profiles/preview` (the certificate a version would produce, signed by a throwaway key)                                    | admin                 |
-| `POST /profiles`, `PUT /profile/{id}` (a new version), `POST /profile/{id}/copy`, `.../deactivate`, `.../reactivate`, `.../move` | admin, recent sign-in |
-| `GET /ssh/cas`, `GET /ssh/ca/{id}`                                                                                               | either role           |
-| `POST /ssh/cas` (a CA, or its next generation), `POST /ssh/ca/{id}/retire`                                                       | admin, recent sign-in |
-| `GET /ssh/principals`                                                                                                            | admin                 |
-| `PUT /ssh/principals/{identity}` (who an identity may log in as)                                                                 | admin, recent sign-in |
-| `POST /ssh/certificates/user` (for one's own key and mapped principals; an admin, for any mapped identity)                       | anyone signed in      |
-| `POST /ssh/certificates/host`                                                                                                    | admin                 |
-| `GET /ssh/mine` (one's principals and user certificates)                                                                         | anyone signed in      |
-| `GET /ssh/certificates` (`type`, `current`), `GET /ssh/certificate/{id}`, `POST /ssh/certificate/{id}/revoke`                    | either role           |
-| `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`                                                               | either role           |
-| `GET /certificate/{id}/download` (`pem`, `der`, `chain`)                                                                         | either role           |
-| `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`                                                                  | either role           |
-| `POST /certificate/{id}/key-export` (PEM, PKCS#12, legacy PKCS#12)                                                               | admin, recent sign-in |
-| `POST /certificates/import` (another CA product's, XCA's)                                                                        | admin                 |
-| `GET /signer/status`; `POST /signer/seal`, `POST /signer/unseal`                                                                 | either role; admin    |
-| `GET /audit/events`, `GET /audit/verification`                                                                                   | either role           |
-| `GET /issuer/{id}/crls`                                                                                                          | either role           |
-| `POST /issuer/{id}/crls` (import a list)                                                                                         | admin                 |
-| `POST /ceremony/{id}/crl` (an offline CA's list)                                                                                 | admin, recent sign-in |
-| `GET /issuer/{id}/ocsp-responders` (its OCSP responders, and its responses' freshness)                                           | either role           |
-| `POST /ceremony/{id}/ocsp-responder` (an offline CA's OCSP responder)                                                            | admin, recent sign-in |
+| Operation                                                                                                                                             | Who                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `GET /issuers`, `GET /issuer/{id}`                                                                                                                    | either role           |
+| `PUT /issuer/{id}` (its issuer alternative names, its OCSP URL)                                                                                       | admin, recent sign-in |
+| `POST /issuers/roots`, `POST /issuers/import`                                                                                                         | admin, recent sign-in |
+| `POST /issuers/preview` (a new CA's settings and defaults, unsigned)                                                                                  | admin                 |
+| `POST /ceremonies`, `POST /ceremony/{id}/intermediates`, `.../issuing`                                                                                | admin, recent sign-in |
+| `GET /ceremony/{id}`, `DELETE /ceremony/{id}`                                                                                                         | admin                 |
+| `GET /profiles`, `GET /profile/{id}`                                                                                                                  | either role           |
+| `GET /profile/{id}/versions`                                                                                                                          | either role           |
+| `POST /profiles/preview` (the certificate a version would produce, signed by a throwaway key)                                                         | admin                 |
+| `POST /profiles`, `PUT /profile/{id}` (a new version), `POST /profile/{id}/copy`, `.../deactivate`, `.../reactivate`, `.../move`                      | admin, recent sign-in |
+| `GET /ssh/cas`, `GET /ssh/ca/{id}`                                                                                                                    | either role           |
+| `POST /ssh/cas` (a CA, or its next generation), `POST /ssh/ca/{id}/retire`                                                                            | admin, recent sign-in |
+| `GET /ssh/principals`                                                                                                                                 | admin                 |
+| `PUT /ssh/principals/{identity}` (who an identity may log in as)                                                                                      | admin, recent sign-in |
+| `POST /ssh/certificates/user` (for one's own key and mapped principals; an admin, for any mapped identity)                                            | anyone signed in      |
+| `POST /ssh/certificates/host`                                                                                                                         | admin                 |
+| `GET /ssh/mine` (one's principals and user certificates)                                                                                              | anyone signed in      |
+| `GET /ssh/certificates` (`type`, `current`), `GET /ssh/certificate/{id}`, `POST /ssh/certificate/{id}/revoke`                                         | either role           |
+| `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`                                                                                    | either role           |
+| `GET /certificate/{id}/download` (`pem`, `der`, `chain`)                                                                                              | either role           |
+| `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`                                                                                       | either role           |
+| `POST /certificate/{id}/key-export` (PEM, PKCS#12, legacy PKCS#12)                                                                                    | admin, recent sign-in |
+| `POST /certificates/import` (another CA product's, XCA's)                                                                                             | admin                 |
+| `GET /dashboard` (the console's dashboard: counts, what expires within 90 days unreplaced, what needs a person, each CA's newest list, the last week) | either role           |
+| `GET /signer/status`; `POST /signer/seal`, `POST /signer/unseal`                                                                                      | either role; admin    |
+| `GET /audit/events`, `GET /audit/verification`                                                                                                        | either role           |
+| `GET /issuer/{id}/crls`                                                                                                                               | either role           |
+| `POST /issuer/{id}/crls` (import a list)                                                                                                              | admin                 |
+| `POST /ceremony/{id}/crl` (an offline CA's list)                                                                                                      | admin, recent sign-in |
+| `GET /issuer/{id}/ocsp-responders` (its OCSP responders, and its responses' freshness)                                                                | either role           |
+| `POST /ceremony/{id}/ocsp-responder` (an offline CA's OCSP responder)                                                                                 | admin, recent sign-in |
 
 "Recent" is `AUTH_RECENT_SIGN_IN_SECONDS` since the token's `auth_time`.
 `/health` and `/metrics` are open.
