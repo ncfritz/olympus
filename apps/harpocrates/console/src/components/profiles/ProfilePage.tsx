@@ -86,6 +86,7 @@ export function ProfilePage({ profileId }: { profileId: string }) {
                 inactive since {formatDate(profile.deactivatedAt)}
               </Tag>
             )}
+            {profile.kind === "ssh" && <Tag color="geekblue">SSH</Tag>}
             {profile.directOnly && (
               <Tag color="purple">root signs directly</Tag>
             )}
@@ -96,9 +97,12 @@ export function ProfilePage({ profileId }: { profileId: string }) {
         </Flex>
         {isAdmin && (
           <Flex gap="small" wrap>
-            <Link href={`/profiles/edit?id=${profile.id}`}>
-              <Button icon={<EditOutlined />}>Edit</Button>
-            </Link>
+            {/* SSH versions get their editor with the SSH console pages. */}
+            {profile.kind === "x509" && (
+              <Link href={`/profiles/edit?id=${profile.id}`}>
+                <Button icon={<EditOutlined />}>Edit</Button>
+              </Link>
+            )}
             <Button icon={<CopyOutlined />} onClick={() => setCopying(true)}>
               Copy
             </Button>
@@ -130,14 +134,19 @@ export function ProfilePage({ profileId }: { profileId: string }) {
           {
             key: "settings",
             label: "Settings",
-            children: <ProfileSettingsView settings={settingsOf(profile)} />,
+            children: (
+              <ProfileSettingsView
+                settings={settingsOf(profile)}
+                kind={profile.kind}
+              />
+            ),
           },
           {
             key: "history",
             label: `History (${versions?.length ?? "…"})`,
             children: versions && <ProfileHistory versions={versions} />,
           },
-          ...(isAdmin
+          ...(isAdmin && profile.kind === "x509"
             ? [
                 {
                   key: "preview",

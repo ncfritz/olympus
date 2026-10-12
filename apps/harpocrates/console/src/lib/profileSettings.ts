@@ -335,6 +335,10 @@ export const SETTINGS: Record<SettingKey, Meta> = {
     label: "Custom extensions",
     help: "Any extension Harpocrates does not build itself, by OID, its value one DER element in base64. Critical: a client that does not know it must reject the certificate.",
   },
+  ssh: {
+    label: "SSH certificates",
+    help: "An SSH profile's settings (ADR 0035): user or host certificates, their CA, validity and renewal in hours, and for user certificates their critical options and extensions.",
+  },
 };
 
 /** The editor's and the view's sections, in order. */
@@ -453,6 +457,18 @@ export const settingLines = (
       return settings.customExtensions.map(
         (e) => `${e.oid}${e.critical ? " (critical)" : ""}: ${e.value}`,
       );
+    case "ssh": {
+      const ssh = settings.ssh;
+      if (!ssh) return [];
+      return [
+        `${ssh.certificateType} certificates, from ${ssh.sshCaId || "the newest active CA"}`,
+        `valid ${ssh.validityHours} hours, renewed at ${ssh.renewAtHours}`,
+        ssh.forceCommand && `force-command ${ssh.forceCommand}`,
+        ssh.sourceAddresses.length &&
+          `source-address ${ssh.sourceAddresses.join(",")}`,
+        ssh.extensions.length && ssh.extensions.join(", "),
+      ].filter((line): line is string => Boolean(line));
+    }
     default:
       return [settingText(key, settings)];
   }
@@ -524,17 +540,18 @@ export const changedSettings = (
   before: ProfileSettings,
   after: ProfileSettings,
 ): SettingChange[] =>
-  SECTIONS.flatMap((section) => section.settings).flatMap((key) =>
-    canonical(key, before[key]) === canonical(key, after[key])
-      ? []
-      : [
-          {
-            key,
-            label: SETTINGS[key].label,
-            before: settingLines(key, before),
-            after: settingLines(key, after),
-          },
-        ],
+  [...SECTIONS.flatMap((section) => section.settings), "ssh" as const].flatMap(
+    (key) =>
+      canonical(key, before[key]) === canonical(key, after[key])
+        ? []
+        : [
+            {
+              key,
+              label: SETTINGS[key].label,
+              before: settingLines(key, before),
+              after: settingLines(key, after),
+            },
+          ],
   );
 
 /** A version's settings alone, from a profile or a version. */

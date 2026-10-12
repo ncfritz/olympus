@@ -944,6 +944,110 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/ssh/cas": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists the SSH CAs
+     * @description Every SSH CA (ADR 0035), user CAs first, newest generation first, with the line that trusts each.
+     */
+    get: operations["ListSshCas"];
+    put?: never;
+    /**
+     * Creates an SSH CA
+     * @description An online Ed25519 key in the signer that signs one type of SSH certificate (ADR 0035), with no ceremony. For a type and number that has one, it is the next generation: a rotation, trusted beside the old until the old is retired and its certificates expire.
+     */
+    post: operations["CreateSshCa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/ca/{caId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Describes an SSH CA
+     * @description Its type, generation, status, public key and the line that trusts it.
+     */
+    get: operations["DescribeSshCa"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/ca/{caId}/retire": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Retires an SSH CA
+     * @description It signs nothing more; hosts and clients keep trusting it until its last certificate expires, then its line can go.
+     */
+    post: operations["RetireSshCa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/principals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists who may log in as whom
+     * @description Every Olympus identity mapped to SSH principals (ADR 0035): its user certificates carry those and no others.
+     */
+    get: operations["ListSshPrincipals"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/principals/{identity}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Sets who an identity may log in as
+     * @description Replaces an Olympus identity's SSH principals (ADR 0035); none removes its mapping. Certificates already issued keep theirs until they expire or are revoked.
+     */
+    put: operations["SetSshPrincipals"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1863,6 +1967,37 @@ export interface components {
       /** @description Its value: one DER element, base64 */
       value: string;
     };
+    /**
+     * @description user: logs its holder in as its principals; host: vouches for a host's names
+     * @enum {string}
+     */
+    SshCertificateType: "user" | "host";
+    /**
+     * @description What a user certificate permits
+     * @enum {string}
+     */
+    SshExtension:
+      | "permit-pty"
+      | "permit-port-forwarding"
+      | "permit-agent-forwarding"
+      | "permit-X11-forwarding"
+      | "permit-user-rc";
+    SshProfileSettings: {
+      /** @description What its certificates are */
+      certificateType: components["schemas"]["SshCertificateType"];
+      /** @description The SSH CA it is pinned to; unset, the newest active one of its type */
+      sshCaId?: string | null;
+      /** @description How long its certificates are valid, in hours */
+      validityHours: number;
+      /** @description How many hours into a certificate's life it is due for renewal: less than its validity */
+      renewAtHours: number;
+      /** @description The force-command critical option: the one command a user certificate may run */
+      forceCommand?: string;
+      /** @description The source-address critical option: the addresses or networks a user certificate is used from; none, anywhere */
+      sourceAddresses: string[];
+      /** @description What a user certificate permits */
+      extensions: components["schemas"]["SshExtension"][];
+    };
     ProfileSettings: {
       /** @description The issuer it is pinned to; unset, the active issuing CA of its purpose */
       issuerId?: string | null;
@@ -1942,7 +2077,14 @@ export interface components {
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
       customExtensions: components["schemas"]["ProfileCustomExtension"][];
+      /** @description An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are */
+      ssh?: components["schemas"]["SshProfileSettings"];
     };
+    /**
+     * @description What a profile issues (ADR 0035): X.509 certificates, or OpenSSH ones
+     * @enum {string}
+     */
+    ProfileKind: "x509" | "ssh";
     ProfilePreviewSample: {
       /** @description Its subject; by default a CN of preview, and each other required attribute's default or a placeholder */
       subject?: components["schemas"]["CertificateSubject"];
@@ -1962,6 +2104,8 @@ export interface components {
       profile: components["schemas"]["ProfileSettings"];
       /** @description Whether it is issued only in a ceremony with a root that signs directly: previewed under that root */
       directOnly?: boolean;
+      /** @description What it issues; by default X.509 */
+      kind?: components["schemas"]["ProfileKind"];
       /** @description The request to preview; made up where left out */
       sample?: components["schemas"]["ProfilePreviewSample"];
     };
@@ -2064,8 +2208,12 @@ export interface components {
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
       customExtensions: components["schemas"]["ProfileCustomExtension"][];
+      /** @description An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are */
+      ssh?: components["schemas"]["SshProfileSettings"];
       /** @description The profile's name, e.g. internal-tls */
       id: string;
+      /** @description What it issues */
+      kind: components["schemas"]["ProfileKind"];
       /** @description The version these settings are: the latest, which new certificates take (ADR 0034) */
       version: number;
       /** @description What it is for */
@@ -2164,6 +2312,10 @@ export interface components {
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
       customExtensions: components["schemas"]["ProfileCustomExtension"][];
+      /** @description An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are */
+      ssh?: components["schemas"]["SshProfileSettings"];
+      /** @description What it issues, for good; by default X.509 */
+      kind?: components["schemas"]["ProfileKind"];
       /** @description Its name: lower case, digits and hyphens, e.g. web-tls */
       id: string;
       /** @description What it is for */
@@ -2260,6 +2412,8 @@ export interface components {
       policies?: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
       customExtensions?: components["schemas"]["ProfileCustomExtension"][];
+      /** @description An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are */
+      ssh?: components["schemas"]["SshProfileSettings"];
       /** @description What it is for */
       description?: string;
     };
@@ -2350,6 +2504,8 @@ export interface components {
       policies: components["schemas"]["ProfilePolicy"][];
       /** @description Extensions the signer does not build itself */
       customExtensions: components["schemas"]["ProfileCustomExtension"][];
+      /** @description An SSH version's settings (ADR 0035); required for an SSH profile, absent for an X.509 one, whose settings the rest are */
+      ssh?: components["schemas"]["SshProfileSettings"];
       /** @description v1, v2, … */
       version: number;
       /** @description Who made it: a principal, or `migration` for the seeds */
@@ -2648,6 +2804,83 @@ export interface components {
     RevokeAcmeCredentialResponse: {
       /** @description The credential, revoked, with its account */
       credential: components["schemas"]["AcmeCredential"];
+    };
+    SshCa: {
+      /** @description Its slug, e.g. ssh-user-1-g1 */
+      id: string;
+      /** @description Its name, e.g. ncfritz.net SSH User CA 1 - G1 */
+      name: string;
+      /** @description What it signs */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description Its number */
+      number: number;
+      /** @description Its generation: a rotation is the next */
+      generation: number;
+      /**
+       * @description active: signs; retired: signs nothing more, trusted until its certificates expire
+       * @enum {string}
+       */
+      status: "active" | "retired";
+      /** @description Its key, OpenSSH format */
+      publicKey: string;
+      /** @description The line that trusts it: for a user CA, one for the file sshd_config's TrustedUserCAKeys names; for a host CA, one for known_hosts */
+      trustLine: string;
+      /** @description The longest certificate it signs, in hours */
+      maxValidityHours: number;
+      /** @description Where its KRL is published */
+      krlUrl: string;
+      /** @description An ISO-8601 formatted string: when it was retired */
+      retiredAt?: string;
+      /** @description An ISO-8601 formatted string: when it was created */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    ListSshCasResponse: {
+      /** @description Every SSH CA, users' first, newest generation first */
+      cas: components["schemas"]["SshCa"][];
+    };
+    CreateSshCaRequest: {
+      /** @description What it signs */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description Its number; by default 1. Its generation is the next of that type and number: a rotation */
+      number?: number;
+      /** @description The longest certificate it signs, in hours; by default a week for users, a year for hosts */
+      maxValidityHours?: number;
+    };
+    CreateSshCaResponse: {
+      /** @description The new CA */
+      ca: components["schemas"]["SshCa"];
+    };
+    DescribeSshCaResponse: {
+      /** @description The CA */
+      ca: components["schemas"]["SshCa"];
+    };
+    RetireSshCaResponse: {
+      /** @description The CA, retired */
+      ca: components["schemas"]["SshCa"];
+    };
+    SshPrincipalMapping: {
+      /** @description The identity's email */
+      identity: string;
+      /** @description Its principals: Unix user names */
+      principals: string[];
+      /** @description An ISO-8601 formatted string: when it was first mapped */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    ListSshPrincipalsResponse: {
+      /** @description Every mapped identity, by email */
+      mappings: components["schemas"]["SshPrincipalMapping"][];
+    };
+    SetSshPrincipalsRequest: {
+      /** @description The identity's principals, replacing those it had; none removes the mapping */
+      principals: string[];
+    };
+    SetSshPrincipalsResponse: {
+      /** @description The mapping as it now is; none when it was removed */
+      mapping?: components["schemas"]["SshPrincipalMapping"];
     };
   };
   responses: never;
@@ -6152,6 +6385,309 @@ export interface operations {
       };
       /** @description The request conflicts with the current state */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListSshCas: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The SSH CAs. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSshCasResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CreateSshCa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Its type, and its number and longest certificate if not the defaults. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSshCaRequest"];
+      };
+    };
+    responses: {
+      /** @description The CA was created. */
+      201: {
+        headers: {
+          /** @description The CA */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateSshCaResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DescribeSshCa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        caId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The CA. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DescribeSshCaResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  RetireSshCa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        caId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The CA. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetireSshCaResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListSshPrincipals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The mappings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSshPrincipalsResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  SetSshPrincipals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The identity's email */
+        identity: string;
+      };
+      cookie?: never;
+    };
+    /** @description Its principals. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetSshPrincipalsRequest"];
+      };
+    };
+    responses: {
+      /** @description The mapping, as it now is. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SetSshPrincipalsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
         headers: {
           [name: string]: unknown;
         };

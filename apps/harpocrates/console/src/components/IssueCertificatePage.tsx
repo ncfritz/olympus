@@ -173,7 +173,8 @@ export function IssueCertificatePage() {
     // A deactivated profile takes no new certificates (ADR 0034).
     () =>
       (profiles ?? []).filter(
-        (profile) => !profile.directOnly && profile.active,
+        (profile) =>
+          profile.kind === "x509" && !profile.directOnly && profile.active,
       ),
     [profiles],
   );

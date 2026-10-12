@@ -76,8 +76,11 @@ export function ProfilesPage() {
           { title: "Key", dataIndex: "keyAlgorithm" },
           {
             title: "Validity",
-            dataIndex: "validityDays",
-            render: describeDays,
+            key: "validity",
+            render: (_, p) =>
+              p.ssh
+                ? `${p.ssh.validityHours} hours`
+                : describeDays(p.validityDays),
           },
           {
             title: "Usages",
@@ -102,6 +105,7 @@ export function ProfilesPage() {
             render: (_, p) => (
               <Flex gap={4} wrap>
                 <Tag>v{p.version}</Tag>
+                {p.kind === "ssh" && <Tag color="geekblue">SSH</Tag>}
                 {!p.active && <Tag color="red">inactive</Tag>}
                 {p.directOnly && <Tag color="purple">root signs directly</Tag>}
                 {p.extensions === "minimal" && <Tag>key identifiers only</Tag>}
