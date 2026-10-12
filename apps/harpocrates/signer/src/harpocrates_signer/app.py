@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
-from harpocrates_signer.api import ceremonies, issuers, keys, seal, ssh
+from harpocrates_signer.api import ceremonies, issuers, keys, ocsp, seal, ssh
 from harpocrates_signer.api.health import router as health_router
 from harpocrates_signer.config import Config, read_config
 from harpocrates_signer.errors import RefusedError, SignerError
@@ -25,6 +25,7 @@ TAGS = [
     {"name": "Issuers", "description": "Online issuers and what they sign."},
     {"name": "Ceremonies", "description": "Offline CAs, one ceremony at a time."},
     {"name": "SSH", "description": "SSH CAs and the certificates they sign."},
+    {"name": "OCSP", "description": "Each CA's OCSP responder and its responses."},
 ]
 
 
@@ -105,6 +106,6 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.add_exception_handler(SignerError, _signer_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(health_router)
-    for feature in (seal, keys, issuers, ceremonies, ssh):
+    for feature in (seal, keys, issuers, ceremonies, ssh, ocsp):
         app.include_router(feature.router)
     return app

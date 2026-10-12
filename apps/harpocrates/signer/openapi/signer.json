@@ -2451,6 +2451,432 @@
           }
         }
       }
+    },
+    "/v1/issuers/{issuer_id}/ocsp-responders": {
+      "post": {
+        "tags": [
+          "OCSP"
+        ],
+        "summary": "Issues an online issuer's OCSP responder",
+        "description": "A certificate for an `ocsp` key, signed by the issuer's own key: OCSPSigning only, ocsp-nocheck, valid at most 35 days. The signer keeps it, and the key signs that issuer's responses from then on.",
+        "operationId": "IssueIssuerOcspResponder",
+        "parameters": [
+          {
+            "name": "issuer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Issuer Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponderSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ceremonies/{ceremony_id}/ocsp-responders": {
+      "post": {
+        "tags": [
+          "OCSP"
+        ],
+        "summary": "Issues an offline CA's OCSP responder in a ceremony",
+        "description": "The same, signed by the ceremony's CA, valid at most 400 days: an offline CA's responses are signed by this responder while the CA's own key stays offline.",
+        "operationId": "IssueCeremonyOcspResponder",
+        "parameters": [
+          {
+            "name": "ceremony_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ceremony Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponderSpec"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The store is not in the state this needs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ocsp-responders/{key_id}": {
+      "get": {
+        "tags": [
+          "OCSP"
+        ],
+        "summary": "Describes an OCSP responder",
+        "description": "Its certificate and the CA it answers for.",
+        "operationId": "DescribeOcspResponder",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ocsp-responders/{key_id}/responses": {
+      "post": {
+        "tags": [
+          "OCSP"
+        ],
+        "summary": "Signs OCSP responses",
+        "description": "One response per entry, each for a serial of the responder's own CA (the CertID's issuer hashes are the signer's, from the CA's certificate): good or revoked, with this thisUpdate and nextUpdate, at most a week apart and within the responder's validity.",
+        "operationId": "SignOcspResponses",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OcspResponsesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OcspResponsesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: one of the signer's invariants (see `invariant`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2503,6 +2929,15 @@
           "expiresAt"
         ],
         "title": "CeremonyResponse"
+      },
+      "CertIdHash": {
+        "type": "string",
+        "enum": [
+          "sha1",
+          "sha256"
+        ],
+        "title": "CertIdHash",
+        "description": "The hash a request's CertID uses: SHA-1, as RFC 5019 has clients\nsend, or SHA-256."
       },
       "CertificateResponse": {
         "properties": {
@@ -2635,6 +3070,20 @@
             },
             "type": "array",
             "title": "Issuerurls"
+          },
+          "ocspUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ocspurls",
+            "description": "The issuing CA's OCSP responder, http://, in the AIA."
+          },
+          "mustStaple": {
+            "type": "boolean",
+            "title": "Muststaple",
+            "description": "OCSP must-staple: the TLS feature with status_request (RFC 7633). Only with an OCSP URL, and never for a CA.",
+            "default": false
           },
           "extensions": {
             "$ref": "#/components/schemas/ExtensionSet",
@@ -3049,10 +3498,11 @@
         "type": "string",
         "enum": [
           "issuer",
-          "subject"
+          "subject",
+          "ocsp"
         ],
         "title": "KeyPurpose",
-        "description": "An issuer's key signs; a subject's key is certified (and may be escrowed)."
+        "description": "An issuer's key signs; a subject's key is certified (and may be\nescrowed); an OCSP responder's key signs a CA's OCSP responses (ADR\n0036), and nothing else."
       },
       "KeyResponse": {
         "properties": {
@@ -3170,6 +3620,113 @@
         "additionalProperties": false,
         "type": "object",
         "title": "Names"
+      },
+      "OcspEntrySpec": {
+        "properties": {
+          "serial": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{1,40}$",
+            "title": "Serial",
+            "description": "Hex."
+          },
+          "hash": {
+            "$ref": "#/components/schemas/CertIdHash",
+            "description": "The CertID's hash, as clients ask.",
+            "default": "sha1"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OcspStatus"
+          },
+          "revokedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revokedat",
+            "description": "When it was revoked; only when it was."
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RevocationReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "serial",
+          "status"
+        ],
+        "title": "OcspEntrySpec"
+      },
+      "OcspResponsesRequest": {
+        "properties": {
+          "thisUpdate": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Thisupdate"
+          },
+          "nextUpdate": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Nextupdate",
+            "description": "At most a week after thisUpdate, and within the responder."
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/OcspEntrySpec"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "thisUpdate",
+          "nextUpdate",
+          "entries"
+        ],
+        "title": "OcspResponsesRequest"
+      },
+      "OcspResponsesResponse": {
+        "properties": {
+          "responses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Responses",
+            "description": "Each entry's signed OCSPResponse, DER, base64, in order."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "responses"
+        ],
+        "title": "OcspResponsesResponse"
+      },
+      "OcspStatus": {
+        "type": "string",
+        "enum": [
+          "good",
+          "revoked"
+        ],
+        "title": "OcspStatus",
+        "description": "What a response says. `unknown` is never signed ahead: a serial the\nCA never issued is answered `unauthorized`, unsigned."
       },
       "OfflineCaResponse": {
         "properties": {
@@ -3452,6 +4009,73 @@
           "maxValiditySeconds"
         ],
         "title": "RegisterSshCaRequest"
+      },
+      "ResponderResponse": {
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "certificate": {
+            "type": "string",
+            "title": "Certificate",
+            "description": "The responder's certificate, PEM."
+          },
+          "caCertificate": {
+            "type": "string",
+            "title": "Cacertificate",
+            "description": "The CA it answers for, PEM."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "keyId",
+          "certificate",
+          "caCertificate"
+        ],
+        "title": "ResponderResponse"
+      },
+      "ResponderSpec": {
+        "properties": {
+          "subject": {
+            "type": "string",
+            "title": "Subject",
+            "description": "RFC 4514, e.g. CN=ncfritz.net TLS Issuing CA 1 - G1 OCSP"
+          },
+          "serial": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{1,40}$",
+            "title": "Serial",
+            "description": "Hex, at most 159 bits."
+          },
+          "notBefore": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Notbefore"
+          },
+          "notAfter": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Notafter"
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid",
+            "description": "An `ocsp` key, P-256, with no responder yet."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "subject",
+          "serial",
+          "notBefore",
+          "notAfter",
+          "keyId"
+        ],
+        "title": "ResponderSpec",
+        "description": "An OCSP responder's certificate: for an `ocsp` key, issued by the\nCA it answers for."
       },
       "RevocationReason": {
         "type": "string",
@@ -3808,6 +4432,10 @@
     {
       "name": "SSH",
       "description": "SSH CAs and the certificates they sign."
+    },
+    {
+      "name": "OCSP",
+      "description": "Each CA's OCSP responder and its responses."
     }
   ]
 }

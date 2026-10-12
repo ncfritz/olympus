@@ -30,6 +30,9 @@ import type {
   DescribeKeyData,
   DescribeKeyErrors,
   DescribeKeyResponses,
+  DescribeOcspResponderData,
+  DescribeOcspResponderErrors,
+  DescribeOcspResponderResponses,
   DescribeSshCaData,
   DescribeSshCaErrors,
   DescribeSshCaResponses,
@@ -51,6 +54,12 @@ import type {
   InitialiseData,
   InitialiseErrors,
   InitialiseResponses,
+  IssueCeremonyOcspResponderData,
+  IssueCeremonyOcspResponderErrors,
+  IssueCeremonyOcspResponderResponses,
+  IssueIssuerOcspResponderData,
+  IssueIssuerOcspResponderErrors,
+  IssueIssuerOcspResponderResponses,
   OpenCeremonyData,
   OpenCeremonyErrors,
   OpenCeremonyResponses,
@@ -84,6 +93,9 @@ import type {
   SignCrlData,
   SignCrlErrors,
   SignCrlResponses,
+  SignOcspResponsesData,
+  SignOcspResponsesErrors,
+  SignOcspResponsesResponses,
   SignSshCertificateData,
   SignSshCertificateErrors,
   SignSshCertificateResponses,
@@ -682,6 +694,106 @@ export const previewSshCertificate = <ThrowOnError extends boolean = true>(
   >({
     responseType: "json",
     url: "/v1/previews/ssh-certificates",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Issues an online issuer's OCSP responder
+ *
+ * A certificate for an `ocsp` key, signed by the issuer's own key: OCSPSigning only, ocsp-nocheck, valid at most 35 days. The signer keeps it, and the key signs that issuer's responses from then on.
+ */
+export const issueIssuerOcspResponder = <ThrowOnError extends boolean = true>(
+  options: Options<IssueIssuerOcspResponderData, ThrowOnError>,
+): RequestResult<
+  IssueIssuerOcspResponderResponses,
+  IssueIssuerOcspResponderErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    IssueIssuerOcspResponderResponses,
+    IssueIssuerOcspResponderErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/issuers/{issuer_id}/ocsp-responders",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Issues an offline CA's OCSP responder in a ceremony
+ *
+ * The same, signed by the ceremony's CA, valid at most 400 days: an offline CA's responses are signed by this responder while the CA's own key stays offline.
+ */
+export const issueCeremonyOcspResponder = <ThrowOnError extends boolean = true>(
+  options: Options<IssueCeremonyOcspResponderData, ThrowOnError>,
+): RequestResult<
+  IssueCeremonyOcspResponderResponses,
+  IssueCeremonyOcspResponderErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    IssueCeremonyOcspResponderResponses,
+    IssueCeremonyOcspResponderErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/ceremonies/{ceremony_id}/ocsp-responders",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Describes an OCSP responder
+ *
+ * Its certificate and the CA it answers for.
+ */
+export const describeOcspResponder = <ThrowOnError extends boolean = true>(
+  options: Options<DescribeOcspResponderData, ThrowOnError>,
+): RequestResult<
+  DescribeOcspResponderResponses,
+  DescribeOcspResponderErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    DescribeOcspResponderResponses,
+    DescribeOcspResponderErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/ocsp-responders/{key_id}",
+    ...options,
+  });
+
+/**
+ * Signs OCSP responses
+ *
+ * One response per entry, each for a serial of the responder's own CA (the CertID's issuer hashes are the signer's, from the CA's certificate): good or revoked, with this thisUpdate and nextUpdate, at most a week apart and within the responder's validity.
+ */
+export const signOcspResponses = <ThrowOnError extends boolean = true>(
+  options: Options<SignOcspResponsesData, ThrowOnError>,
+): RequestResult<
+  SignOcspResponsesResponses,
+  SignOcspResponsesErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    SignOcspResponsesResponses,
+    SignOcspResponsesErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/ocsp-responders/{key_id}/responses",
     ...options,
     headers: {
       "Content-Type": "application/json",

@@ -204,5 +204,8 @@ class SshCas:
         )
         invariants.check_ssh_serial(request.serial)
         invariants.check_ssh_subject_key(request.subject_key)
-        if self._keys.purpose_of_public_key(request.subject_key) is KeyPurpose.ISSUER:
+        purpose = self._keys.purpose_of_public_key(request.subject_key)
+        if purpose is KeyPurpose.ISSUER:
             raise RefusedError("subject-key", "the subject key is an issuer's key")
+        if purpose is KeyPurpose.OCSP:
+            raise RefusedError("subject-key", "the subject key is an OCSP responder's")

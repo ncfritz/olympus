@@ -29,6 +29,16 @@ calls it through a generated client.
 - **SSH CAs** (ADR 0035): Ed25519 issuer keys that sign OpenSSH user or
   host certificates, never both and never an X.509 issuer's key too,
   each with the longest certificate it signs.
+- **OCSP responders** (ADR 0036): for each CA, a certificate for a P-256
+  `ocsp` key the signer generated (never brought, never a subject's or a
+  CA's): `OCSPSigning` only, `ocsp-nocheck`, nothing else. An online
+  issuer issues its own (`/issuers/{id}/ocsp-responders`, 35 days at
+  most); an offline CA's is issued in its ceremony
+  (`/ceremonies/{id}/ocsp-responders`, 400 days at most). The signer
+  keeps it with its CA's certificate and signs responses with its key
+  (`/ocsp-responders/{keyId}/responses`, up to 1000 at once): good or
+  revoked, for that CA's serials only, since the CertID's issuer hashes
+  are computed here from the CA's certificate.
 - **Previews**: the leaf an issuer (given, not registered) would sign,
   after the same invariants, signed by a throwaway key of the issuer's
   type, so it reads as the real one and never verifies; no issuer key is
@@ -53,7 +63,9 @@ chooses (ADR 0034), and the defaults are what the signer always built:
 - subject alternative names of DNS, IP, email, URI, a Microsoft UPN
   (otherName) or a registeredID; the issuer's alternative names;
 - certificate policies with a CPS URI and a user notice; custom
-  extensions by OID, critical or not, their value as DER.
+  extensions by OID, critical or not, their value as DER;
+- the issuing CA's OCSP URL in the AIA, and OCSP must-staple (the TLS
+  feature with `status_request`, RFC 7633) with it.
 
 ## Invariants
 
@@ -66,7 +78,7 @@ Refusals answer `422` with the invariant's name:
 | `validity`                      | past the issuer's expiry, longer than its maximum, or inverted                                                                                                                     |
 | `ca`                            | `CA:TRUE` from an online issuer                                                                                                                                                    |
 | `path-length`                   | a CA not strictly below its signer; an online issuer that is not 0                                                                                                                 |
-| `subject-key`                   | an issuer's key as a subject's, a subject's as a CA's, a destroyed one, or an SSH key OpenSSH would not take (DSA, RSA under 3072 bits)                                            |
+| `subject-key`                   | an issuer's key as a subject's, a subject's as a CA's, an OCSP responder's as either, a destroyed one, or an SSH key OpenSSH would not take (DSA, RSA under 3072 bits)             |
 | `proof-of-possession`           | a CSR whose signature does not verify                                                                                                                                              |
 | `ceremony`                      | a ceremony asked to sign a leaf, or opened with a CA that signs no CAs                                                                                                             |
 | `escrow`                        | exporting an issuer's key, or with another key's certificate                                                                                                                       |
@@ -77,6 +89,10 @@ Refusals answer `422` with the invariant's name:
 | `ssh-kind`                      | an SSH CA asked to sign the other kind of certificate (a user CA, a host's)                                                                                                        |
 | `principals`                    | an SSH certificate with no principals, an empty or repeated one, or one with a comma                                                                                               |
 | `ssh-options`                   | critical options or extensions on an SSH host certificate                                                                                                                          |
+| `ocsp-key`                      | an `ocsp` key that is not P-256 or was brought rather than generated; a responder for a key that is not one, or has one                                                            |
+| `ocsp-responder`                | a responder outside its CA's validity, or longer than 35 days online or 400 in a ceremony                                                                                          |
+| `ocsp-window`                   | a response from a responder not valid now, from the future, valid more than a week, past its responder, or revoked after its `thisUpdate`                                          |
+| `ocsp-url`, `tls-feature`       | an OCSP URL that is not `http://`; must-staple without an OCSP URL, or on a CA                                                                                                     |
 | `custom-extension`              | an extension the signer builds itself, one given twice, or a value not one DER element                                                                                             |
 | `issuer-key`, `chain`, `serial` | an issuer registered with the wrong key, a chain not its own, or a key already signing for another CA (an SSH CA's is Ed25519); a serial outside 1 to 2^159 - 1 (2^64 - 1 for SSH) |
 

@@ -129,6 +129,10 @@ class CertificateRequest:
     name_constraints: NameConstraintsRequest | None = None
     crl_distribution_points: tuple[str, ...] = ()
     issuer_urls: tuple[str, ...] = ()
+    # The issuing CA's responder (ADR 0036), in the AIA beside caIssuers.
+    ocsp_urls: tuple[str, ...] = ()
+    # OCSP must-staple: the TLS feature with status_request (RFC 7633).
+    must_staple: bool = False
     # Only the key identifiers: for a consumer that accepts nothing else
     # (ADR 0032, the direct root's leaves). Never for a CA.
     minimal_extensions: bool = False
@@ -292,6 +296,8 @@ def build_certificate(
     invariants.check_custom_extensions(
         [(e.oid, e.value) for e in request.custom_extensions]
     )
+    invariants.check_ocsp_urls(request.ocsp_urls)
+    invariants.check_tls_feature(request.must_staple, request.ocsp_urls, request.ca)
     if request.minimal_extensions:
         return _build_minimal(
             request, issuer_name, issuer_public_key, signing_key, issuer_certificate
@@ -361,10 +367,17 @@ def build_certificate(
             ),
             critical=False,
         )
-    if request.issuer_urls:
+    if request.issuer_urls or request.ocsp_urls:
         builder = builder.add_extension(
             x509.AuthorityInformationAccess(
                 [
+                    x509.AccessDescription(
+                        AuthorityInformationAccessOID.OCSP,
+                        x509.UniformResourceIdentifier(url),
+                    )
+                    for url in request.ocsp_urls
+                ]
+                + [
                     x509.AccessDescription(
                         AuthorityInformationAccessOID.CA_ISSUERS,
                         x509.UniformResourceIdentifier(url),
@@ -373,6 +386,10 @@ def build_certificate(
                 ]
             ),
             critical=False,
+        )
+    if request.must_staple:
+        builder = builder.add_extension(
+            x509.TLSFeature([x509.TLSFeatureType.status_request]), critical=False
         )
     if request.certificate_policies:
         builder = builder.add_extension(
@@ -418,6 +435,8 @@ def _build_minimal(
             ("nameConstraints", request.name_constraints is not None),
             ("crlDistributionPoints", bool(request.crl_distribution_points)),
             ("issuerUrls", bool(request.issuer_urls)),
+            ("ocspUrls", bool(request.ocsp_urls)),
+            ("mustStaple", request.must_staple),
             ("issuerAlternativeNames", bool(request.issuer_alternative_names)),
             ("certificatePolicies", bool(request.certificate_policies)),
             ("customExtensions", bool(request.custom_extensions)),
@@ -528,15 +547,22 @@ def preview_certificate(
 
 
 def check_subject_key(subject_key: PublicKey, keys: Keys) -> None:
-    """A CA's key is never a subject's (ADR 0020, Keys and enrollment)."""
-    if keys.purpose_of_public_key(subject_key) is KeyPurpose.ISSUER:
+    """A CA's key is never a subject's (ADR 0020, Keys and enrollment),
+    nor an OCSP responder's (ADR 0036): each is certified once, for that."""
+    purpose = keys.purpose_of_public_key(subject_key)
+    if purpose is KeyPurpose.ISSUER:
         raise RefusedError("subject-key", "the subject key is an issuer's key")
+    if purpose is KeyPurpose.OCSP:
+        raise RefusedError("subject-key", "the subject key is an OCSP responder's")
 
 
 def check_ca_key(ca_key: PublicKey, keys: Keys) -> None:
-    """...and a subject's key is never a CA's."""
-    if keys.purpose_of_public_key(ca_key) is KeyPurpose.SUBJECT:
+    """...and a subject's key, or a responder's, is never a CA's."""
+    purpose = keys.purpose_of_public_key(ca_key)
+    if purpose is KeyPurpose.SUBJECT:
         raise RefusedError("subject-key", "a CA's key cannot be a subject's key")
+    if purpose is KeyPurpose.OCSP:
+        raise RefusedError("subject-key", "a CA's key cannot be an OCSP responder's")
 
 
 def _check_chain(

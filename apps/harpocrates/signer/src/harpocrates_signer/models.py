@@ -26,6 +26,13 @@ from harpocrates_signer.keys import (
     Keys,
     PublicKey,
 )
+from harpocrates_signer.ocsp import (
+    CertIdHash,
+    OcspEntry,
+    OcspStatus,
+    ResponderInfo,
+    ResponderRequest,
+)
 from harpocrates_signer.signing import (
     AuthorityKeyIdentifierForm,
     BasicConstraintsForm,
@@ -290,6 +297,15 @@ class CertificateSpec(Wire):
     name_constraints: NameConstraintsSpec | None = None
     crl_distribution_points: list[str] = Field(default_factory=list[str])
     issuer_urls: list[str] = Field(default_factory=list[str])
+    ocsp_urls: list[str] = Field(
+        default_factory=list[str],
+        description="The issuing CA's OCSP responder, http://, in the AIA.",
+    )
+    must_staple: bool = Field(
+        default=False,
+        description="OCSP must-staple: the TLS feature with status_request "
+        "(RFC 7633). Only with an OCSP URL, and never for a CA.",
+    )
     extensions: ExtensionSet = Field(
         default=ExtensionSet.STANDARD,
         description="`minimal`: the key identifiers only, for a leaf whose "
@@ -393,6 +409,62 @@ class CrlSpec(Wire):
 
 class CrlResponse(Wire):
     crl: str = Field(description="PEM.")
+
+
+# ---- OCSP (ADR 0036)
+
+
+class ResponderSpec(Wire):
+    """An OCSP responder's certificate: for an `ocsp` key, issued by the
+    CA it answers for."""
+
+    subject: str = Field(
+        description="RFC 4514, e.g. CN=ncfritz.net TLS Issuing CA 1 - G1 OCSP"
+    )
+    serial: str = Field(pattern=SERIAL_PATTERN, description="Hex, at most 159 bits.")
+    not_before: AwareDatetime
+    not_after: AwareDatetime
+    key_id: str = Field(description="An `ocsp` key, P-256, with no responder yet.")
+
+
+class ResponderResponse(Wire):
+    key_id: str
+    certificate: str = Field(description="The responder's certificate, PEM.")
+    ca_certificate: str = Field(description="The CA it answers for, PEM.")
+
+    @staticmethod
+    def of(info: ResponderInfo) -> "ResponderResponse":
+        return ResponderResponse(
+            key_id=info.key_id,
+            certificate=pem_certificate(info.certificate),
+            ca_certificate=pem_certificate(info.ca_certificate),
+        )
+
+
+class OcspEntrySpec(Wire):
+    serial: str = Field(pattern=SERIAL_PATTERN, description="Hex.")
+    hash: CertIdHash = Field(
+        default=CertIdHash.SHA1, description="The CertID's hash, as clients ask."
+    )
+    status: OcspStatus
+    revoked_at: AwareDatetime | None = Field(
+        default=None, description="When it was revoked; only when it was."
+    )
+    reason: RevocationReason | None = None
+
+
+class OcspResponsesRequest(Wire):
+    this_update: AwareDatetime
+    next_update: AwareDatetime = Field(
+        description="At most a week after thisUpdate, and within the responder."
+    )
+    entries: list[OcspEntrySpec] = Field(min_length=1, max_length=1000)
+
+
+class OcspResponsesResponse(Wire):
+    responses: list[str] = Field(
+        description="Each entry's signed OCSPResponse, DER, base64, in order."
+    )
 
 
 # ---- ceremonies
@@ -594,6 +666,8 @@ def certificate_request(
         name_constraints=constraints,
         crl_distribution_points=tuple(spec.crl_distribution_points),
         issuer_urls=tuple(spec.issuer_urls),
+        ocsp_urls=tuple(spec.ocsp_urls),
+        must_staple=spec.must_staple,
         minimal_extensions=spec.extensions is ExtensionSet.MINIMAL,
         signature_hash=spec.signature_hash,
         rsa_padding=spec.rsa_padding,
@@ -651,4 +725,27 @@ def ssh_certificate_request(spec: SshCertificateSpec) -> SshCertificateRequest:
         force_command=spec.force_command,
         source_addresses=tuple(addresses),
         extensions=frozenset(spec.extensions),
+    )
+
+
+def responder_request(spec: ResponderSpec) -> ResponderRequest:
+    return ResponderRequest(
+        subject=_name(spec.subject),
+        key_id=spec.key_id,
+        serial=int(spec.serial, 16),
+        not_before=spec.not_before,
+        not_after=spec.not_after,
+    )
+
+
+def ocsp_entries(spec: OcspResponsesRequest) -> tuple[OcspEntry, ...]:
+    return tuple(
+        OcspEntry(
+            serial=int(e.serial, 16),
+            hash=e.hash,
+            status=e.status,
+            revoked_at=e.revoked_at,
+            reason=None if e.reason is None else x509.ReasonFlags(e.reason.value),
+        )
+        for e in spec.entries
     )

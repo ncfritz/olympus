@@ -38,6 +38,12 @@ from harpocrates_signer.keys import (
     load_encrypted_pkcs8,
     public_key_der,
 )
+from harpocrates_signer.ocsp import (
+    CEREMONY_RESPONDER_MAX_DAYS,
+    ResponderInfo,
+    ResponderRequest,
+    Responders,
+)
 from harpocrates_signer.signing import (
     CertificateRequest,
     CrlRequest,
@@ -236,6 +242,16 @@ class Ceremonies:
     ) -> x509.CertificateRevocationList:
         held = self._held(ceremony_id)
         return build_crl(request, held.certificate, held.key)
+
+    def issue_ocsp_responder(
+        self, ceremony_id: str, responders: Responders, request: ResponderRequest
+    ) -> ResponderInfo:
+        """The ceremony's CA's OCSP responder (ADR 0036), valid up to 13
+        months: the only way an offline CA's responses are signed."""
+        held = self._held(ceremony_id)
+        return responders.issue(
+            request, held.certificate, held.key, CEREMONY_RESPONDER_MAX_DAYS
+        )
 
     def create_offline_ca(
         self,

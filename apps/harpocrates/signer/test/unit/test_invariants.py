@@ -220,3 +220,60 @@ def test_custom_extensions_are_unmanaged_single_and_well_formed():
         with pytest.raises(RefusedError) as error:
             invariants.check_custom_extensions(extensions)
         assert error.value.invariant == "custom-extension"
+
+
+# ---- OCSP (ADR 0036)
+
+
+def test_an_ocsp_url_is_plain_http():
+    invariants.check_ocsp_urls(["http://pki.internal.ncfritz.net/ocsp"])
+    for url in ("https://pki/ocsp", "ldap://pki/ocsp", "http:///ocsp"):
+        with pytest.raises(RefusedError, match="not an http") as refused:
+            invariants.check_ocsp_urls([url])
+        assert refused.value.invariant == "ocsp-url"
+
+
+def test_must_staple_only_on_a_leaf_with_an_ocsp_url():
+    invariants.check_tls_feature(False, [], ca=False)
+    invariants.check_tls_feature(True, ["http://pki/ocsp"], ca=False)
+    with pytest.raises(RefusedError, match="needs an OCSP URL"):
+        invariants.check_tls_feature(True, [], ca=False)
+    with pytest.raises(RefusedError, match="never must-staple"):
+        invariants.check_tls_feature(True, ["http://pki/ocsp"], ca=True)
+
+
+def test_a_responder_lives_inside_its_ca_and_its_maximum():
+    issuer = ca(days=60)
+    start = NOW
+    invariants.check_responder_validity(start, start + timedelta(days=30), issuer, 35)
+    for not_before, not_after, message in (
+        (start, start + timedelta(days=36), "at most 35 days"),
+        (start, start + timedelta(days=61), "past the CA"),
+        (start - timedelta(days=2), start + timedelta(days=1), "before the CA"),
+        (start, start, "after notBefore"),
+    ):
+        with pytest.raises(RefusedError, match=message) as refused:
+            invariants.check_responder_validity(not_before, not_after, issuer, 35)
+        assert refused.value.invariant == "ocsp-responder"
+
+
+def test_a_response_is_current_short_and_inside_its_responder():
+    responder = ca(days=10)
+    invariants.check_ocsp_window(NOW, NOW + timedelta(days=4), responder, NOW)
+    for this_update, next_update, now, message in (
+        (NOW, NOW + timedelta(days=8), NOW, "at most a week"),
+        (NOW, NOW + timedelta(days=11), NOW, "a week"),
+        (
+            NOW + timedelta(days=7),
+            NOW + timedelta(days=11),
+            NOW + timedelta(days=7),
+            "past the responder",
+        ),
+        (NOW + timedelta(hours=1), NOW + timedelta(days=1), NOW, "in the future"),
+        (NOW, NOW, NOW, "after thisUpdate"),
+        (NOW, NOW + timedelta(days=1), NOW + timedelta(days=11), "not valid now"),
+        (NOW - timedelta(days=2), NOW, NOW, "before the responder"),
+    ):
+        with pytest.raises(RefusedError, match=message) as refused:
+            invariants.check_ocsp_window(this_update, next_update, responder, now)
+        assert refused.value.invariant == "ocsp-window"

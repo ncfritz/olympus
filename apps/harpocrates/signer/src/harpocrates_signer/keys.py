@@ -15,7 +15,12 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed25519, rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 
-from harpocrates_signer.errors import BadRequestError, ConflictError, NotFoundError
+from harpocrates_signer.errors import (
+    BadRequestError,
+    ConflictError,
+    NotFoundError,
+    RefusedError,
+)
 from harpocrates_signer.store import KeyRow, Store, now
 from harpocrates_signer.vault import Vault
 
@@ -55,10 +60,17 @@ CURVES: dict[str, ec.EllipticCurve] = {
 
 
 class KeyPurpose(StrEnum):
-    """An issuer's key signs; a subject's key is certified (and may be escrowed)."""
+    """An issuer's key signs; a subject's key is certified (and may be
+    escrowed); an OCSP responder's key signs a CA's OCSP responses (ADR
+    0036), and nothing else."""
 
     ISSUER = "issuer"
     SUBJECT = "subject"
+    OCSP = "ocsp"
+
+
+#: An OCSP responder's key, whatever its CA's (ADR 0036).
+OCSP_KEY_ALGORITHM = "P-256"
 
 
 class KeyAlgorithm(StrEnum):
@@ -174,6 +186,8 @@ class Keys:
         self._vault = vault
 
     def generate(self, purpose: KeyPurpose, algorithm: KeyAlgorithm) -> KeyInfo:
+        if purpose is KeyPurpose.OCSP and algorithm.value != OCSP_KEY_ALGORITHM:
+            raise RefusedError("ocsp-key", "an OCSP responder's key is P-256")
         return self._keep(purpose, generate_private_key(algorithm))
 
     def import_key(
@@ -183,6 +197,10 @@ class Keys:
         passphrase: str,
         import_format: ImportFormat = ImportFormat.PEM,
     ) -> KeyInfo:
+        if purpose is KeyPurpose.OCSP:
+            raise RefusedError(
+                "ocsp-key", "an OCSP responder's key is generated here, not brought"
+            )
         key = (
             load_pkcs12_key(data, passphrase)
             if import_format is ImportFormat.PKCS12

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE settings (
@@ -65,6 +65,33 @@ CREATE TABLE ssh_cas (
     registered_at        TEXT NOT NULL
 );
 """,
+    # OCSP (ADR 0036): a key purpose of its own, which the keys table's
+    # CHECK must admit (SQLite rebuilds a table to change one: its rows,
+    # under the same name, so what references it still does), and each
+    # responder's certificate with the CA's it answers for.
+    3: """
+CREATE TABLE keys_rebuilt (
+    id                  TEXT PRIMARY KEY,
+    purpose             TEXT NOT NULL CHECK (purpose IN ('issuer', 'subject', 'ocsp')),
+    algorithm           TEXT NOT NULL,
+    public_key          BLOB NOT NULL UNIQUE,
+    wrapped_data_key    BLOB,
+    wrapped_private_key BLOB,
+    created_at          TEXT NOT NULL,
+    destroyed_at        TEXT,
+    CHECK ((destroyed_at IS NULL) = (wrapped_private_key IS NOT NULL))
+);
+INSERT INTO keys_rebuilt SELECT id, purpose, algorithm, public_key,
+    wrapped_data_key, wrapped_private_key, created_at, destroyed_at FROM keys;
+DROP TABLE keys;
+ALTER TABLE keys_rebuilt RENAME TO keys;
+CREATE TABLE ocsp_responders (
+    key_id         TEXT PRIMARY KEY REFERENCES keys (id),
+    ca_certificate BLOB NOT NULL,
+    certificate    BLOB NOT NULL,
+    registered_at  TEXT NOT NULL
+);
+""",
 }
 
 
@@ -95,6 +122,13 @@ class IssuerRow:
 
 
 @dataclass(frozen=True)
+class OcspResponderRow:
+    key_id: str
+    ca_certificate: bytes
+    certificate: bytes
+
+
+@dataclass(frozen=True)
 class SshCaRow:
     id: str
     key_id: str
@@ -118,16 +152,34 @@ class Store:
         version = self._connection.execute("PRAGMA user_version").fetchone()[0]
         if version > SCHEMA_VERSION:
             raise RuntimeError(f"unknown store schema version {version}")
-        # executescript manages its own transaction: each step, and its
-        # version, or nothing.
         steps = [(1, SCHEMA)] if version == 0 else []
         later = range(max(version, 1) + 1, SCHEMA_VERSION + 1)
         steps += [(v, MIGRATIONS[v]) for v in later]
         with self._lock:
             for target, script in steps:
-                self._connection.executescript(
-                    f"BEGIN;\n{script}\nPRAGMA user_version = {target};\nCOMMIT;"
+                self._migrate(target, script)
+
+    def _migrate(self, target: int, script: str) -> None:
+        """One step and its version, or nothing. Foreign keys are off while
+        it runs, as SQLite's way of rebuilding a table needs, and checked
+        before it commits."""
+        db = self._connection
+        db.execute("PRAGMA foreign_keys = OFF")
+        try:
+            db.executescript(f"BEGIN;\n{script}\nPRAGMA user_version = {target};")
+            broken = db.execute("PRAGMA foreign_key_check").fetchall()
+            if broken:
+                db.execute("ROLLBACK")
+                raise RuntimeError(
+                    f"store schema version {target} would break references: {broken}"
                 )
+            db.execute("COMMIT")
+        except sqlite3.Error:
+            if db.in_transaction:
+                db.execute("ROLLBACK")
+            raise
+        finally:
+            db.execute("PRAGMA foreign_keys = ON")
 
     def close(self) -> None:
         with self._lock:
@@ -290,6 +342,29 @@ class Store:
                 (ca_id,),
             ).fetchone()
         return None if row is None else SshCaRow(*row)
+
+    # ---- OCSP responders
+
+    def insert_ocsp_responder(self, row: OcspResponderRow) -> None:
+        with self.transaction() as db:
+            db.execute(
+                "INSERT INTO ocsp_responders (key_id, ca_certificate, certificate, "
+                "registered_at) VALUES (?, ?, ?, ?)",
+                (row.key_id, row.ca_certificate, row.certificate, now()),
+            )
+
+    def ocsp_responder(self, key_id: str) -> OcspResponderRow | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT key_id, ca_certificate, certificate FROM ocsp_responders "
+                "WHERE key_id = ?",
+                (key_id,),
+            ).fetchone()
+        return (
+            None
+            if row is None
+            else OcspResponderRow(str(row[0]), bytes(row[1]), bytes(row[2]))
+        )
 
     def is_issuer_key(self, key_id: str) -> bool:
         """Whether a key already signs: an X.509 issuer's or an SSH CA's."""

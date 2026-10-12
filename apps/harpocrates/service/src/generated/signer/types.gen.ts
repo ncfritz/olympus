@@ -38,6 +38,14 @@ export type CeremonyResponse = {
 };
 
 /**
+ * CertIdHash
+ *
+ * The hash a request's CertID uses: SHA-1, as RFC 5019 has clients
+ * send, or SHA-256.
+ */
+export type CertIdHash = "sha1" | "sha256";
+
+/**
  * CertificateResponse
  */
 export type CertificateResponse = {
@@ -121,6 +129,18 @@ export type CertificateSpec = {
    * Issuerurls
    */
   issuerUrls?: Array<string>;
+  /**
+   * Ocspurls
+   *
+   * The issuing CA's OCSP responder, http://, in the AIA.
+   */
+  ocspUrls?: Array<string>;
+  /**
+   * Muststaple
+   *
+   * OCSP must-staple: the TLS feature with status_request (RFC 7633). Only with an OCSP URL, and never for a CA.
+   */
+  mustStaple?: boolean;
   /**
    * `minimal`: the key identifiers only, for a leaf whose consumer accepts nothing else; keyUsage and everything after it must then be empty.
    */
@@ -399,9 +419,11 @@ export type KeyIdentifierMethod = "sha1" | "sha256" | "none";
 /**
  * KeyPurpose
  *
- * An issuer's key signs; a subject's key is certified (and may be escrowed).
+ * An issuer's key signs; a subject's key is certified (and may be
+ * escrowed); an OCSP responder's key signs a CA's OCSP responses (ADR
+ * 0036), and nothing else.
  */
-export type KeyPurpose = "issuer" | "subject";
+export type KeyPurpose = "issuer" | "subject" | "ocsp";
 
 /**
  * KeyResponse
@@ -487,6 +509,70 @@ export type Names = {
    */
   registeredId?: Array<string>;
 };
+
+/**
+ * OcspEntrySpec
+ */
+export type OcspEntrySpec = {
+  /**
+   * Serial
+   *
+   * Hex.
+   */
+  serial: string;
+  /**
+   * The CertID's hash, as clients ask.
+   */
+  hash?: CertIdHash;
+  status: OcspStatus;
+  /**
+   * Revokedat
+   *
+   * When it was revoked; only when it was.
+   */
+  revokedAt?: string | null;
+  reason?: RevocationReason | null;
+};
+
+/**
+ * OcspResponsesRequest
+ */
+export type OcspResponsesRequest = {
+  /**
+   * Thisupdate
+   */
+  thisUpdate: string;
+  /**
+   * Nextupdate
+   *
+   * At most a week after thisUpdate, and within the responder.
+   */
+  nextUpdate: string;
+  /**
+   * Entries
+   */
+  entries: Array<OcspEntrySpec>;
+};
+
+/**
+ * OcspResponsesResponse
+ */
+export type OcspResponsesResponse = {
+  /**
+   * Responses
+   *
+   * Each entry's signed OCSPResponse, DER, base64, in order.
+   */
+  responses: Array<string>;
+};
+
+/**
+ * OcspStatus
+ *
+ * What a response says. `unknown` is never signed ahead: a serial the
+ * CA never issued is answered `unauthorized`, unsigned.
+ */
+export type OcspStatus = "good" | "revoked";
 
 /**
  * OfflineCaResponse
@@ -687,6 +773,63 @@ export type RegisterSshCaRequest = {
    * Maxvalidityseconds
    */
   maxValiditySeconds: number;
+};
+
+/**
+ * ResponderResponse
+ */
+export type ResponderResponse = {
+  /**
+   * Keyid
+   */
+  keyId: string;
+  /**
+   * Certificate
+   *
+   * The responder's certificate, PEM.
+   */
+  certificate: string;
+  /**
+   * Cacertificate
+   *
+   * The CA it answers for, PEM.
+   */
+  caCertificate: string;
+};
+
+/**
+ * ResponderSpec
+ *
+ * An OCSP responder's certificate: for an `ocsp` key, issued by the
+ * CA it answers for.
+ */
+export type ResponderSpec = {
+  /**
+   * Subject
+   *
+   * RFC 4514, e.g. CN=ncfritz.net TLS Issuing CA 1 - G1 OCSP
+   */
+  subject: string;
+  /**
+   * Serial
+   *
+   * Hex, at most 159 bits.
+   */
+  serial: string;
+  /**
+   * Notbefore
+   */
+  notBefore: string;
+  /**
+   * Notafter
+   */
+  notAfter: string;
+  /**
+   * Keyid
+   *
+   * An `ocsp` key, P-256, with no responder yet.
+   */
+  keyId: string;
 };
 
 /**
@@ -2180,3 +2323,219 @@ export type PreviewSshCertificateResponses = {
 
 export type PreviewSshCertificateResponse =
   PreviewSshCertificateResponses[keyof PreviewSshCertificateResponses];
+
+export type IssueIssuerOcspResponderData = {
+  body: ResponderSpec;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path: {
+    /**
+     * Issuer Id
+     */
+    issuer_id: string;
+  };
+  query?: never;
+  url: "/v1/issuers/{issuer_id}/ocsp-responders";
+};
+
+export type IssueIssuerOcspResponderErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * The store is not in the state this needs.
+   */
+  409: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+  /**
+   * The signer is sealed.
+   */
+  503: ErrorResponse;
+};
+
+export type IssueIssuerOcspResponderError =
+  IssueIssuerOcspResponderErrors[keyof IssueIssuerOcspResponderErrors];
+
+export type IssueIssuerOcspResponderResponses = {
+  /**
+   * Successful Response
+   */
+  201: ResponderResponse;
+};
+
+export type IssueIssuerOcspResponderResponse =
+  IssueIssuerOcspResponderResponses[keyof IssueIssuerOcspResponderResponses];
+
+export type IssueCeremonyOcspResponderData = {
+  body: ResponderSpec;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path: {
+    /**
+     * Ceremony Id
+     */
+    ceremony_id: string;
+  };
+  query?: never;
+  url: "/v1/ceremonies/{ceremony_id}/ocsp-responders";
+};
+
+export type IssueCeremonyOcspResponderErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * The store is not in the state this needs.
+   */
+  409: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+  /**
+   * The signer is sealed.
+   */
+  503: ErrorResponse;
+};
+
+export type IssueCeremonyOcspResponderError =
+  IssueCeremonyOcspResponderErrors[keyof IssueCeremonyOcspResponderErrors];
+
+export type IssueCeremonyOcspResponderResponses = {
+  /**
+   * Successful Response
+   */
+  201: ResponderResponse;
+};
+
+export type IssueCeremonyOcspResponderResponse =
+  IssueCeremonyOcspResponderResponses[keyof IssueCeremonyOcspResponderResponses];
+
+export type DescribeOcspResponderData = {
+  body?: never;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path: {
+    /**
+     * Key Id
+     */
+    key_id: string;
+  };
+  query?: never;
+  url: "/v1/ocsp-responders/{key_id}";
+};
+
+export type DescribeOcspResponderErrors = {
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DescribeOcspResponderError =
+  DescribeOcspResponderErrors[keyof DescribeOcspResponderErrors];
+
+export type DescribeOcspResponderResponses = {
+  /**
+   * Successful Response
+   */
+  200: ResponderResponse;
+};
+
+export type DescribeOcspResponderResponse =
+  DescribeOcspResponderResponses[keyof DescribeOcspResponderResponses];
+
+export type SignOcspResponsesData = {
+  body: OcspResponsesRequest;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path: {
+    /**
+     * Key Id
+     */
+    key_id: string;
+  };
+  query?: never;
+  url: "/v1/ocsp-responders/{key_id}/responses";
+};
+
+export type SignOcspResponsesErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Not found.
+   */
+  404: ErrorResponse;
+  /**
+   * Refused: one of the signer's invariants (see `invariant`).
+   */
+  422: ErrorResponse;
+  /**
+   * The signer is sealed.
+   */
+  503: ErrorResponse;
+};
+
+export type SignOcspResponsesError =
+  SignOcspResponsesErrors[keyof SignOcspResponsesErrors];
+
+export type SignOcspResponsesResponses = {
+  /**
+   * Successful Response
+   */
+  200: OcspResponsesResponse;
+};
+
+export type SignOcspResponsesResponse =
+  SignOcspResponsesResponses[keyof SignOcspResponsesResponses];

@@ -286,6 +286,7 @@ MANAGED_EXTENSIONS: dict[str, str] = {
     "2.5.29.54": "inhibit anyPolicy",
     "1.3.6.1.5.5.7.1.1": "authority information access",
     "1.3.6.1.5.5.7.1.24": "TLS feature",
+    "1.3.6.1.5.5.7.48.1.5": "OCSP no check",
 }
 
 
@@ -309,6 +310,79 @@ def check_custom_extensions(
             raise RefusedError(
                 "custom-extension", f"{dotted}'s value is not one DER element"
             )
+
+
+# ---- OCSP (ADR 0036)
+
+#: The longest an OCSP response may be valid: its nextUpdate past its
+#: thisUpdate. Responses are refreshed daily and valid four days.
+MAX_OCSP_RESPONSE_VALIDITY = timedelta(days=7)
+
+#: How far ahead of the signer's clock a response's thisUpdate may be.
+OCSP_CLOCK_SKEW = timedelta(minutes=5)
+
+
+def check_ocsp_urls(urls: Sequence[str]) -> None:
+    """An OCSP URL is plain HTTP, as clients fetch it (RFC 6960, A.1)."""
+    for url in urls:
+        parts = urlsplit(url)
+        if parts.scheme != "http" or not parts.hostname:
+            raise RefusedError("ocsp-url", f"{url} is not an http:// URL")
+
+
+def check_tls_feature(must_staple: bool, ocsp_urls: Sequence[str], ca: bool) -> None:
+    """Must-staple (RFC 7633) only where a client can find the status it
+    insists on: a leaf with an OCSP URL in its AIA."""
+    if not must_staple:
+        return
+    if ca:
+        raise RefusedError("tls-feature", "a CA's certificate is never must-staple")
+    if not ocsp_urls:
+        raise RefusedError(
+            "tls-feature", "must-staple needs an OCSP URL in the certificate"
+        )
+
+
+def check_responder_validity(
+    not_before: datetime,
+    not_after: datetime,
+    ca: x509.Certificate,
+    max_days: int,
+) -> None:
+    """A responder lives inside its CA, no longer than it is allowed: it
+    carries ocsp-nocheck, so its expiry is what limits it."""
+    if not_after <= not_before:
+        raise RefusedError("ocsp-responder", "notAfter must be after notBefore")
+    if not_before < ca.not_valid_before_utc:
+        raise RefusedError("ocsp-responder", "notBefore is before the CA's own")
+    if not_after > ca.not_valid_after_utc:
+        raise RefusedError("ocsp-responder", "notAfter is past the CA's own expiry")
+    if not_after - not_before > timedelta(days=max_days):
+        raise RefusedError(
+            "ocsp-responder", f"a responder here is valid at most {max_days} days"
+        )
+
+
+def check_ocsp_window(
+    this_update: datetime,
+    next_update: datetime,
+    responder: x509.Certificate,
+    now: datetime,
+) -> None:
+    """A response is signed by a current responder, is not from the
+    future, lasts no more than a week, and ends within its responder."""
+    if not responder.not_valid_before_utc <= now < responder.not_valid_after_utc:
+        raise RefusedError("ocsp-window", "the responder is not valid now")
+    if this_update > now + OCSP_CLOCK_SKEW:
+        raise RefusedError("ocsp-window", "thisUpdate is in the future")
+    if this_update < responder.not_valid_before_utc:
+        raise RefusedError("ocsp-window", "thisUpdate is before the responder's own")
+    if next_update <= this_update:
+        raise RefusedError("ocsp-window", "nextUpdate must be after thisUpdate")
+    if next_update - this_update > MAX_OCSP_RESPONSE_VALIDITY:
+        raise RefusedError("ocsp-window", "a response is valid at most a week")
+    if next_update > responder.not_valid_after_utc:
+        raise RefusedError("ocsp-window", "nextUpdate is past the responder's expiry")
 
 
 # ---- SSH certificates (ADR 0035)
