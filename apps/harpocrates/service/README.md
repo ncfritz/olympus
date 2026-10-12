@@ -178,6 +178,16 @@ ADR 0036; each scheduler run, after the lists:
 - **Sealed**: responders and responses wait, and what is stored stays
   valid until its `nextUpdate`, so a seal of up to three days is not seen
   by OCSP clients.
+- **The responder**: `GET /ocsp/<request>` (base64, URL-encoded) and
+  `POST /ocsp` (`application/ocsp-request`), outside `/v1` and its
+  document, open to anyone; nginx's distribution host proxies
+  `http://pki.internal.ncfritz.net/ocsp` to it. It answers from the
+  stored responses (RFC 6960, the RFC 5019 profile): one certificate per
+  request, a SHA-1 or SHA-256 CertID, with `Cache-Control`, `Expires`,
+  `Last-Modified` and an `ETag` so a cache keeps it until an hour before
+  its `nextUpdate`. A CA or serial it does not know is `unauthorized`,
+  never `good`; a lapsed response is `tryLater`; what is not a request
+  is `malformedRequest`. A nonce is not echoed.
 - `GET /issuer/{id}/ocsp-responders` lists a CA's responders and how
   fresh its responses are.
 

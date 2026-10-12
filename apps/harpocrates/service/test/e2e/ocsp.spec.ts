@@ -1,4 +1,5 @@
-import { execFileSync, spawnSync } from "child_process";
+import { execFileSync, spawn, spawnSync } from "child_process";
+import type { AddressInfo } from "net";
 import * as fs from "fs";
 import * as path from "path";
 import request from "supertest";
@@ -338,6 +339,192 @@ describe.skipIf(!E2E_DATABASE_URL)("ocsp", () => {
       expect(text).toMatch(/OCSP No Check/);
       expect(text).toMatch(/OCSP Signing/);
     }
+  });
+
+  describe("the responder at /ocsp", () => {
+    let base: string;
+    let good: { id: string; serial: string; certificate: string };
+    let revoked: { id: string; serial: string; certificate: string };
+    let work: string;
+    const issuingFile = () => path.join(work, "issuing.pem");
+    const trustedFile = () => path.join(work, "trusted.pem");
+
+    /** openssl ocsp's request for a certificate, as DER. */
+    const ask = (certificatePem: string, ...flags: string[]) => {
+      const certificate = path.join(work, `ask-${Date.now()}.pem`);
+      const out = `${certificate}.der`;
+      fs.writeFileSync(certificate, certificatePem);
+      execFileSync("openssl", [
+        "ocsp",
+        "-issuer",
+        issuingFile(),
+        ...flags,
+        "-cert",
+        certificate,
+        "-reqout",
+        out,
+      ]);
+      return fs.readFileSync(out);
+    };
+
+    /** What openssl reads in a response body, unverified. */
+    const read = (body: Buffer) => {
+      const file = path.join(work, `read-${Date.now()}.der`);
+      fs.writeFileSync(file, body);
+      const out = spawnSync(
+        "openssl",
+        ["ocsp", "-respin", file, "-resp_text", "-noverify"],
+        { encoding: "utf8" },
+      );
+      return out.stdout + out.stderr;
+    };
+
+    /** openssl ocsp as a client: it asks the URL, then verifies. */
+    const client = (certificatePem: string) =>
+      new Promise<string>((resolve, reject) => {
+        const certificate = path.join(work, `client-${Date.now()}.pem`);
+        fs.writeFileSync(certificate, certificatePem);
+        // Apart from this process, which serves the request.
+        const child = spawn("openssl", [
+          "ocsp",
+          "-issuer",
+          issuingFile(),
+          "-cert",
+          certificate,
+          "-CAfile",
+          trustedFile(),
+          "-url",
+          `${base}/ocsp`,
+        ]);
+        let out = "";
+        child.stdout.on("data", (chunk: Buffer) => (out += chunk.toString()));
+        child.stderr.on("data", (chunk: Buffer) => (out += chunk.toString()));
+        child.on("error", reject);
+        child.on("close", () => resolve(out));
+      });
+
+    beforeAll(async () => {
+      work = fs.mkdtempSync(path.join(harness.dir, "responder-"));
+      fs.writeFileSync(issuingFile(), hierarchy.issuing.TLS.certificate);
+      fs.writeFileSync(
+        trustedFile(),
+        hierarchy.root.certificate + hierarchy.intermediate.certificate,
+      );
+      const listening = harness.app.getHttpServer();
+      await new Promise<void>((resolve) =>
+        listening.listen(0, "127.0.0.1", resolve),
+      );
+      base = `http://127.0.0.1:${(listening.address() as AddressInfo).port}`;
+      good = await issue("responder-good.internal.ncfritz.net");
+      revoked = await issue("responder-revoked.internal.ncfritz.net");
+      await revoke(revoked.id, "superseded");
+      await scheduler.run();
+    });
+
+    it.skipIf(!hasOpenssl)(
+      "answers openssl's POST, verified to the root",
+      async () => {
+        const out = await client(good.certificate);
+        expect(out).toMatch(/Response verify OK/);
+        expect(out).toMatch(/: good/);
+        const revokedOut = await client(revoked.certificate);
+        expect(revokedOut).toMatch(/Response verify OK/);
+        expect(revokedOut).toMatch(/: revoked/);
+        expect(revokedOut).toMatch(/Reason: superseded/);
+      },
+    );
+
+    it.skipIf(!hasOpenssl)(
+      "answers a GET as a cache should keep it, and a POST the same",
+      async () => {
+        const der = ask(good.certificate, "-no_nonce");
+        const got = await request(server())
+          .get(`/ocsp/${encodeURIComponent(der.toString("base64"))}`)
+          .buffer(true)
+          .parse((res, done) => {
+            const chunks: Buffer[] = [];
+            res.on("data", (c: Buffer) => chunks.push(c));
+            res.on("end", () => done(null, Buffer.concat(chunks)));
+          })
+          .expect(200)
+          .expect("Content-Type", "application/ocsp-response");
+        const body = got.body as Buffer;
+        expect(read(body)).toMatch(/Cert Status: good/);
+        expect(got.headers["cache-control"]).toMatch(
+          /^max-age=\d+, public, no-transform, must-revalidate$/,
+        );
+        const maxAge = Number(
+          /max-age=(\d+)/.exec(got.headers["cache-control"])![1],
+        );
+        // 4 days, less an hour's margin, less the time since it was signed.
+        expect(maxAge).toBeGreaterThan(3 * 24 * 3600);
+        expect(maxAge).toBeLessThanOrEqual(4 * 24 * 3600 - 3600);
+        expect(got.headers.etag).toMatch(/^"[0-9a-f]{40}"$/);
+        expect(Date.parse(got.headers.expires)).toBeGreaterThan(Date.now());
+        expect(got.headers["last-modified"]).toBeDefined();
+
+        const posted = await request(server())
+          .post("/ocsp")
+          .set("Content-Type", "application/ocsp-request")
+          .send(ask(good.certificate, "-sha256"))
+          .buffer(true)
+          .parse((res, done) => {
+            const chunks: Buffer[] = [];
+            res.on("data", (c: Buffer) => chunks.push(c));
+            res.on("end", () => done(null, Buffer.concat(chunks)));
+          })
+          .expect(200);
+        expect(read(posted.body as Buffer)).toMatch(/Hash Algorithm: sha256/);
+      },
+    );
+
+    it.skipIf(!hasOpenssl)(
+      "is unauthorized for what it does not know, and malformed for what is not a request",
+      async () => {
+        const raw = (body: Buffer) =>
+          request(server())
+            .post("/ocsp")
+            .set("Content-Type", "application/ocsp-request")
+            .send(body)
+            .buffer(true)
+            .parse((res, done) => {
+              const chunks: Buffer[] = [];
+              res.on("data", (c: Buffer) => chunks.push(c));
+              res.on("end", () => done(null, Buffer.concat(chunks)));
+            })
+            .expect(200);
+        // A serial the CA never issued: the issuing CA's own, asked of itself.
+        const unknown = await raw(ask(hierarchy.issuing.TLS.certificate));
+        expect(read(unknown.body as Buffer)).toMatch(/unauthorized \(6\)/);
+        expect(unknown.headers["cache-control"]).toBe("no-cache, no-store");
+        const nonsense = await raw(Buffer.from("not an OCSP request"));
+        expect(read(nonsense.body as Buffer)).toMatch(
+          /malformedrequest \(1\)/i,
+        );
+      },
+    );
+
+    it.skipIf(!hasOpenssl)(
+      "says try later once a response has lapsed",
+      async () => {
+        await harness.prisma.ocspResponse.updateMany({
+          where: { issuerId: tls, serial: good.serial },
+          data: { nextUpdate: new Date(Date.now() - 1000) },
+        });
+        const lapsed = await request(server())
+          .post("/ocsp")
+          .set("Content-Type", "application/ocsp-request")
+          .send(ask(good.certificate))
+          .buffer(true)
+          .parse((res, done) => {
+            const chunks: Buffer[] = [];
+            res.on("data", (c: Buffer) => chunks.push(c));
+            res.on("end", () => done(null, Buffer.concat(chunks)));
+          })
+          .expect(200);
+        expect(read(lapsed.body as Buffer)).toMatch(/trylater \(3\)/i);
+      },
+    );
   });
 
   it("answers 404 for a CA it does not know", async () => {

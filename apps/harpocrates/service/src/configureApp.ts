@@ -30,6 +30,11 @@ export const configureApp = (app: INestApplication): INestApplication => {
   (app as NestExpressApplication).useBodyParser("json", {
     type: ["application/json", "application/jose+json"],
   });
+  // An OCSP request, POSTed as DER (ADR 0036; RFC 6960 A.1).
+  (app as NestExpressApplication).useBodyParser("raw", {
+    type: "application/ocsp-request",
+    limit: "16kb",
+  });
   // The CA console's session rides on cookies (ADR 0029, 0032).
   app.use(cookieParser());
   app.useGlobalPipes(

@@ -70,7 +70,7 @@ The CA's stack (`compose/harpocrates.yml`) holds what the other stacks
 trust, so it comes up before `olympus` and `nginx`, which read the lists
 it publishes to `${DATA_DIR}/olympus/apps/harpocrates/published`: nginx
 serves them as `http://pki.internal.ncfritz.net` (`nginx/pki.conf`, plain
-HTTP on purpose), and the API mounts them read-only for its services
+HTTP on purpose, with `/ocsp` proxied to the service's OCSP responder), and the API mounts them read-only for its services
 listener. The management API is published at
 `https://${CONTROL_HOST}/harpocrates/ca/api` (`nginx/control.conf`).
 
