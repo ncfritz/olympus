@@ -135,15 +135,12 @@ export class SshKrlService
   }
 
   /**
-   * Every CA of a type's revocations in one KRL, `krl/ssh-<type>.krl`:
-   * sshd's RevokedKeys names a single file, and while a rotation's two
-   * generations are both trusted a host needs both CAs' revocations.
-   * Its version is the time it was built, which only grows.
+   * Every CA of a type's revocations in one KRL, built now: sshd's
+   * RevokedKeys names a single file, and while a rotation's two
+   * generations are both trusted a host needs both CAs' revocations. Its
+   * version is the time it was built, which only grows.
    */
-  private async writeTypeKrl(
-    type: SshCertificateType,
-    now: Date,
-  ): Promise<void> {
+  async typeKrl(type: SshCertificateType, now = new Date()): Promise<Buffer> {
     const cas = await this.prisma.sshCa.findMany({
       where: { type },
       orderBy: [{ number: "asc" }, { generation: "asc" }],
@@ -154,7 +151,7 @@ export class SshKrlService
         },
       },
     });
-    const krl = buildKrl({
+    return buildKrl({
       cas: cas.map((ca) => ({
         caPublicKey: ca.publicKey,
         serials: ca.certificates.map(serialOf),
@@ -163,7 +160,34 @@ export class SshKrlService
       generatedAt: now,
       comment: `Every SSH ${type} CA`,
     });
-    await this.write(path.join("krl", `ssh-${type}.krl`), krl);
+  }
+
+  /**
+   * The type's KRL as published: what the distribution host serves, and
+   * the renewal listener over HTTPS. It changes only when it is written,
+   * on a revocation and every CRL_REFRESH_HOURS, so a host that fetches
+   * it unchanged leaves its copy alone. Written first if it never was.
+   */
+  async publishedTypeKrl(type: SshCertificateType): Promise<Buffer> {
+    const file = path.join(this.pki.publishedDir, "krl", `ssh-${type}.krl`);
+    try {
+      return await fs.readFile(file);
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      await this.writeTypeKrl(type, new Date());
+      return fs.readFile(file);
+    }
+  }
+
+  /** The type's KRL, published as `krl/ssh-<type>.krl`. */
+  private async writeTypeKrl(
+    type: SshCertificateType,
+    now: Date,
+  ): Promise<void> {
+    await this.write(
+      path.join("krl", `ssh-${type}.krl`),
+      await this.typeKrl(type, now),
+    );
   }
 
   /** Written beside, then renamed: nginx never serves half a file. */

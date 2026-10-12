@@ -5,6 +5,7 @@ import { CreateSshHostCertificateController } from "./controllers/CreateSshHostC
 import { CreateSshRenewalChallengeController } from "./controllers/CreateSshRenewalChallengeController";
 import { CreateSshUserCertificateController } from "./controllers/CreateSshUserCertificateController";
 import { DescribeMySshController } from "./controllers/DescribeMySshController";
+import { DescribeSshTypeKrlController } from "./controllers/DescribeSshTypeKrlController";
 import { DescribeSshCertificateController } from "./controllers/DescribeSshCertificateController";
 import { ListSshCertificatesController } from "./controllers/ListSshCertificatesController";
 import { RenewSshHostCertificateController } from "./controllers/RenewSshHostCertificateController";
@@ -42,6 +43,7 @@ import { SshPrincipalService } from "./services/SshPrincipalService";
     DescribeMySshController,
     CreateSshRenewalChallengeController,
     RenewSshHostCertificateController,
+    DescribeSshTypeKrlController,
   ],
   providers: [
     SshCaService,

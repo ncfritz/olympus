@@ -4994,6 +4994,64 @@
         ]
       }
     },
+    "/v1/ssh/krl/{type}": {
+      "get": {
+        "description": "On the renewal listener (9443) only, to anyone (ADR 0035): the revocations of every user or host CA in one KRL, as published: it changes on a revocation and every CRL_REFRESH_HOURS. A KRL is not signed, so hosts fetch it here, over HTTPS from Harpocrates's own certificate, into the file RevokedKeys (or RevokedHostKeys) names.",
+        "operationId": "DescribeSshTypeKrl",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "description": "user or host",
+            "schema": {
+              "enum": [
+                "user",
+                "host"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The KRL, OpenSSH's binary format.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Gets every SSH CA of a type's KRL",
+        "tags": [
+          "Renewal"
+        ]
+      }
+    },
     "/v1/renew": {
       "post": {
         "description": "On the renewal listener (9443) only: renews the client certificate the caller presents, with the same subject and profile. Without a CSR the same key is certified again while it is young enough; a CSR for a new key rekeys. The certificate must be one Harpocrates issued, current, not revoked and not already renewed.",

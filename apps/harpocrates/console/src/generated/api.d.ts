@@ -1052,6 +1052,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/ssh/krl/{type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Gets every SSH CA of a type's KRL
+     * @description On the renewal listener (9443) only, to anyone (ADR 0035): the revocations of every user or host CA in one KRL, as published: it changes on a revocation and every CRL_REFRESH_HOURS. A KRL is not signed, so hosts fetch it here, over HTTPS from Harpocrates's own certificate, into the file RevokedKeys (or RevokedHostKeys) names.
+     */
+    get: operations["DescribeSshTypeKrl"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/renew": {
     parameters: {
       query?: never;
@@ -6925,6 +6945,47 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DescribeSshTypeKrl: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description user or host */
+        type: "user" | "host";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The KRL, OpenSSH's binary format. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": components["schemas"]["ErrorResponse"];
         };
       };
     };

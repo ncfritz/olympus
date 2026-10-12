@@ -112,6 +112,14 @@ a KRL that `sshd` reads from a file (`RevokedKeys`).
   `RevokedKeys` names.
 - `sshd` does not check a KRL's signature, so the KRL is built by the
   service and not signed; hosts fetch it over HTTPS from the PKI host.
+
+> **Clarified 2026-10-11, in building it.** `RevokedKeys` names one
+> file, and a rotation trusts two generations of a CA, so beside each
+> CA's KRL the service publishes every CA of a type's in one
+> (`/krl/ssh-user.krl`, `/krl/ssh-host.krl`). The distribution host is
+> plain HTTP, so the HTTPS that hosts fetch it over is the renewal
+> listener's (`GET /v1/ssh/krl/{type}` on `9443`).
+
 - User certificates are short enough that revoking one is rarely needed.
 
 ## Consequences

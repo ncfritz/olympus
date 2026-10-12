@@ -199,7 +199,8 @@ from it.
 ### Renewal over mutual TLS
 
 A second listener on `RENEWAL_LISTEN_PORT` (9443, ADR 0020) serves
-`POST /v1/renew`, ACME and SSH hosts' renewal (below) and nothing else,
+`POST /v1/renew`, ACME, SSH hosts' renewal and their KRL (below) and
+nothing else,
 and those routes are a 404 on 3200. For `/v1/renew` it
 asks for a client certificate and accepts any in the handshake; the route
 then requires one Harpocrates issued, byte for byte, current, not revoked
@@ -227,17 +228,21 @@ An SSH host renews its own certificate by proving its host key (ADR
    (its version's `renewAtHours` after it was issued) and when.
 2. `POST /v1/ssh/host-renewals` with the challenge's id and the nonce
    signed by the host key (`ssh-keygen -Y sign -n
-   harpocrates-ssh-renew`), within five minutes. A challenge is tried
+harpocrates-ssh-renew`), within five minutes. A challenge is tried
    once, whatever the outcome. A signature by any key but the
    certificate's, or in another namespace, is a 403; one before the
    certificate is due, a 409. The next certificate is for the same key
    and principals under the same profile version, signed by the current
    host CA; the audit log records the caller as `ssh-host:<first
-   principal>` on the `renewal` surface.
+principal>` on the `renewal` surface.
+
+`GET /v1/ssh/krl/{user,host}`, to anyone, is every CA of the type's KRL
+as published (`krl/ssh-<type>.krl`): a KRL is not signed, so hosts fetch
+it here, over HTTPS, rather than from the distribution host.
 
 [`../hosts/harpocrates-ssh-host`](../hosts/harpocrates-ssh-host) does
 both for `cron` or `launchd` (`renew`), restarting `sshd` when the
-certificate changed, and fetches the user CA's KRL into `RevokedKeys`
+certificate changed, and fetches the user CAs' KRL into `RevokedKeys`
 (`krl`).
 
 ### Deploy targets

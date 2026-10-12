@@ -6,7 +6,6 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { OID } from "../../src/pki/x509";
 import { RenewalListener } from "../../src/renewal/services/RenewalListener";
-import { SshKrlService } from "../../src/ssh/services/SshKrlService";
 import {
   buildHierarchy,
   E2E_DATABASE_URL,
@@ -87,6 +86,31 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh host renewal", () => {
       );
       req.on("error", reject);
       req.end(payload);
+    });
+
+  /** A GET on the renewal listener, with no credential: the raw body. */
+  const get = (route: string): Promise<{ status: number; body: Buffer }> =>
+    new Promise((resolve, reject) => {
+      https
+        .get(
+          {
+            host: "localhost",
+            port,
+            path: route,
+            ca: hierarchy.root.certificate,
+          },
+          (response) => {
+            const chunks: Buffer[] = [];
+            response.on("data", (chunk: Buffer) => chunks.push(chunk));
+            response.on("end", () =>
+              resolve({
+                status: response.statusCode ?? 0,
+                body: Buffer.concat(chunks),
+              }),
+            );
+          },
+        )
+        .on("error", reject);
     });
 
   const challengeFor = async (certificate: string, status = 201) => {
@@ -281,6 +305,30 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh host renewal", () => {
       .expect(404);
   });
 
+  it("serves every CA of a type's KRL on the renewal listener, to anyone", async () => {
+    const { certificate } = await issueHost("switch");
+    await request(server())
+      .post(`/v1/ssh/certificate/${certificate.id}/revoke`)
+      .set("Authorization", harness.operator)
+      .send({ reason: "superseded" })
+      .expect(200);
+    const krl = await get("/v1/ssh/krl/host");
+    expect(krl.status).toBe(200);
+    expect(krl.body.subarray(0, 6).toString()).toBe("SSHKRL");
+    if (hasTools) {
+      const file = path.join(harness.dir, "host.krl");
+      const cert = path.join(harness.dir, "switch-cert.pub");
+      fs.writeFileSync(file, krl.body);
+      fs.writeFileSync(cert, `${certificate.certificate}\n`);
+      expect(spawnSync("ssh-keygen", ["-Q", "-f", file, cert]).status).not.toBe(
+        0,
+      );
+    }
+    expect((await get("/v1/ssh/krl/other")).status).toBe(400);
+    // Not on the management listener.
+    await request(server()).get("/v1/ssh/krl/host").expect(404);
+  });
+
   describe.skipIf(!hasTools)("the host script", () => {
     let dir: string;
     /** The script, run apart: the service it calls is in this process. */
@@ -350,23 +398,22 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh host renewal", () => {
       expect(again.stderr).toMatch(/HTTP 409.*renewed already/);
     });
 
-    it("fetches the user CA's KRL, and installs only a KRL", async () => {
-      await harness.app.get(SshKrlService).writeDue();
-      const cas = await request(server())
-        .get("/v1/ssh/cas")
-        .set("Authorization", harness.operator)
-        .expect(200);
-      const user = (
-        cas.body as { cas: { type: string; krlUrl: string }[] }
-      ).cas.find((c) => c.type === "user")!;
-      const krlUrl = user.krlUrl.replace(
-        /^.*\/krl\//,
-        `${harness.distribution.url}/krl/`,
-      );
+    it("fetches the user CAs' KRL over HTTPS, and installs only a KRL", async () => {
       const krlFile = path.join(dir, "revoked_keys");
-      const fetched = await run("krl", { KRL_URL: krlUrl, KRL_FILE: krlFile });
+      const env = {
+        HARPOCRATES_RENEWAL_URL: `https://localhost:${port}`,
+        KRL_FILE: krlFile,
+      };
+      const fetched = await run("krl", env);
       expect(fetched.status, fetched.stderr).toBe(0);
-      expect(fs.readFileSync(krlFile).subarray(0, 6).toString()).toBe("SSHKRL");
+      expect(fetched.stderr).toMatch(/updated /);
+      expect(
+        spawnSync("ssh-keygen", ["-Q", "-l", "-f", krlFile], {
+          encoding: "utf8",
+        }).stdout,
+      ).toMatch(/# Comment: Every SSH user CA/);
+      // Nothing new: the file is left alone.
+      expect((await run("krl", env)).stderr).toBe("");
 
       const notKrl = await run("krl", {
         KRL_URL: `${harness.distribution.url}/ca/nothing.crt`,

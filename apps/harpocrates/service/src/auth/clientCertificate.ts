@@ -25,6 +25,17 @@ export const SIGNED_RENEWAL_KEY = "pkiSignedRenewal";
 export const SignedRenewal = () =>
   applyDecorators(SetMetadata(SIGNED_RENEWAL_KEY, true), Public());
 
+export const RENEWAL_PUBLISHED_KEY = "pkiRenewalPublished";
+
+/**
+ * A route of the renewal listener that anyone may read (ADR 0035): what
+ * a host fetches over HTTPS because nothing else vouches for it, such as
+ * an unsigned KRL. No credential (so @Public()); served there and
+ * nowhere else.
+ */
+export const RenewalPublished = () =>
+  applyDecorators(SetMetadata(RENEWAL_PUBLISHED_KEY, true), Public());
+
 /** Which listener a request arrived on. */
 export type Listener = "management" | "renewal";
 

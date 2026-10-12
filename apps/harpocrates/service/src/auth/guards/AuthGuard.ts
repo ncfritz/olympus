@@ -15,6 +15,7 @@ import { ACME_ROUTE_KEY } from "../../acme/acmeRoute";
 import {
   CLIENT_CERTIFICATE_KEY,
   listenerOf,
+  RENEWAL_PUBLISHED_KEY,
   SIGNED_RENEWAL_KEY,
 } from "../clientCertificate";
 import type { AuthenticatedRequest, PkiRole, Principal } from "../principal";
@@ -31,9 +32,10 @@ import { AccessTokenService } from "../services/AccessTokenService";
  * The token is a Bearer header, or, for the CA console, its cookie,
  * refreshed when it has expired (ADR 0029, 0032).
  *
- * The renewal listener serves only @ClientCertificate(), @AcmeRoute() and
- * @SignedRenewal() routes, and they are served nowhere else: anything
- * else is a 404 there, and they are one on the management listener.
+ * The renewal listener serves only @ClientCertificate(), @AcmeRoute(),
+ * @SignedRenewal() and @RenewalPublished() routes, and they are served
+ * nowhere else: anything else is a 404 there, and they are one on the
+ * management listener.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -47,15 +49,16 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
     // The renewal listener's routes: renewal by client certificate, ACME,
-    // whose requests authenticate themselves (a JWS), and SSH hosts'
-    // renewal, signed by the host key.
+    // whose requests authenticate themselves (a JWS), SSH hosts'
+    // renewal, signed by the host key, and what hosts fetch over HTTPS.
     const renewalRoute = Boolean(
       this.reflector.getAllAndOverride<boolean>(
         CLIENT_CERTIFICATE_KEY,
         targets,
       ) ||
       this.reflector.getAllAndOverride<boolean>(ACME_ROUTE_KEY, targets) ||
-      this.reflector.getAllAndOverride<boolean>(SIGNED_RENEWAL_KEY, targets),
+      this.reflector.getAllAndOverride<boolean>(SIGNED_RENEWAL_KEY, targets) ||
+      this.reflector.getAllAndOverride<boolean>(RENEWAL_PUBLISHED_KEY, targets),
     );
     const onRenewal =
       listenerOf(context.switchToHttp().getRequest<AuthenticatedRequest>()) ===

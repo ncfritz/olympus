@@ -6,20 +6,22 @@
 #   harpocrates-ssh-host renew  renews the host certificate once it is due,
 #                               proving the host key; runs RESTART_COMMAND
 #                               when the certificate changed
-#   harpocrates-ssh-host krl    fetches the user CA's KRL into the file
-#                               sshd's RevokedKeys names
+#   harpocrates-ssh-host krl    fetches the user CAs' KRL, over HTTPS from
+#                               the renewal listener, into the file sshd's
+#                               RevokedKeys names
 #
 # Settings, from the environment or the file HARPOCRATES_SSH_HOST_CONFIG
 # (default /etc/harpocrates/ssh-host.env), which is read after it:
 #
 #   HARPOCRATES_RENEWAL_URL  the renewal listener, https://<pki host>:9443
 #   HARPOCRATES_CA_FILE      the root CA's certificate (PEM), trusted for
-#                            the listener and the KRL's host
+#                            the renewal listener
 #   HOST_KEY                 default /etc/ssh/ssh_host_ed25519_key
 #   HOST_CERTIFICATE         default ${HOST_KEY}-cert.pub
 #   RESTART_COMMAND          how sshd reads the new certificate, e.g.
 #                            "systemctl reload ssh"; none by default
-#   KRL_URL                  the user CA's KRL, as the console shows it
+#   KRL_URL                  default ${HARPOCRATES_RENEWAL_URL}/v1/ssh/krl/user:
+#                            every user CA's revocations in one KRL
 #   KRL_FILE                 default /etc/ssh/revoked_keys
 #
 # Exit status: 0 when renewed, not yet due or fetched; 1 on a refusal or
@@ -122,7 +124,10 @@ renew() {
 }
 
 krl() {
-  need KRL_URL
+  if [ -z "${KRL_URL:-}" ]; then
+    need HARPOCRATES_RENEWAL_URL
+    KRL_URL="${HARPOCRATES_RENEWAL_URL%/}/v1/ssh/krl/user"
+  fi
   need HARPOCRATES_CA_FILE
   curl --silent --show-error --fail --cacert "$HARPOCRATES_CA_FILE" \
     --output "$work/krl" "$KRL_URL" || fail "could not fetch $KRL_URL"
