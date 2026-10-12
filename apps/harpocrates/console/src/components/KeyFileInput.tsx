@@ -1,8 +1,6 @@
 "use client";
 
-import { UploadOutlined } from "@ant-design/icons";
-import { Button, Typography, Upload } from "antd";
-import { useState } from "react";
+import { PemInput } from "./PemInput";
 
 export interface KeyFileInputProps {
   value?: string;
@@ -10,33 +8,10 @@ export interface KeyFileInputProps {
 }
 
 /**
- * An offline CA's encrypted key, read from the offline media in the
- * browser. Its text goes to the service in the request that opens the
- * ceremony, and nowhere else.
+ * An offline CA's encrypted key, dropped or chosen from the offline media
+ * and read in the browser. Its text goes to the service in the request
+ * that opens the ceremony, and nowhere else.
  */
 export function KeyFileInput({ value, onChange }: KeyFileInputProps) {
-  const [name, setName] = useState<string>();
-  return (
-    <Upload
-      accept=".pem,.key"
-      maxCount={1}
-      showUploadList={false}
-      beforeUpload={async (file) => {
-        const text = await file.text();
-        setName(file.name);
-        onChange?.(text.includes("ENCRYPTED PRIVATE KEY") ? text : undefined);
-        return false;
-      }}
-    >
-      <Button icon={<UploadOutlined />}>
-        {value ? `Read ${name}` : "Choose the key file"}
-      </Button>
-      {name && !value && (
-        <Typography.Text type="danger">
-          {" "}
-          {name} is not an encrypted private key
-        </Typography.Text>
-      )}
-    </Upload>
-  );
+  return <PemInput kind="key" rows={3} value={value} onChange={onChange} />;
 }

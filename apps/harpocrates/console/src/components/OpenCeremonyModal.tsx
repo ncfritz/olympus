@@ -106,7 +106,13 @@ export function OpenCeremonyModal({
           <Form.Item
             name="privateKey"
             label="Key file"
-            rules={[{ required: true, message: "Its encrypted key file" }]}
+            rules={[
+              { required: true, message: "Its encrypted key file" },
+              {
+                pattern: /-----BEGIN ENCRYPTED PRIVATE KEY-----/,
+                message: "An encrypted private key (PKCS#8)",
+              },
+            ]}
           >
             <KeyFileInput />
           </Form.Item>

@@ -1,11 +1,12 @@
 "use client";
 
-import { Button, Flex, Form, Input, Typography } from "antd";
+import { Button, Flex, Form, Typography } from "antd";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
 import type { Certificate, FullCertificate } from "@/lib/api/types";
 import { ErrorAlert } from "./ErrorAlert";
+import { PemInput } from "./PemInput";
 
 /**
  * Renewing a certificate (ADR 0020, Keys and enrollment): the same
@@ -60,7 +61,7 @@ export function RenewForm({
             },
           ]}
         >
-          <Input.TextArea rows={6} spellCheck={false} />
+          <PemInput kind="csr" rows={4} />
         </Form.Item>
       )}
       <Flex vertical gap="middle">

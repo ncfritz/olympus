@@ -40,6 +40,7 @@ import { attributeLabel, keyUsageName } from "@/lib/profileSettings";
 import { commonName } from "@/lib/tree";
 import { ErrorAlert } from "./ErrorAlert";
 import { ImportKeyInput } from "./ImportKeyInput";
+import { PemInput } from "./PemInput";
 import { IssuedCertificate, type KeyOrigin } from "./IssuedCertificate";
 
 const NAME_LABELS: Record<NameType, { label: string; placeholder: string }> = {
@@ -449,14 +450,17 @@ export function IssueCertificatePage() {
                           label="CSR (PEM)"
                           extra="Any key type Harpocrates certifies: RSA or DSA of at least 2048 bits, P-256, P-384, P-521 or Ed25519"
                           rules={[
-                            { required: true, message: "Paste the CSR" },
+                            {
+                              required: true,
+                              message: "Drop, choose or paste the CSR",
+                            },
                             {
                               pattern: /-----BEGIN CERTIFICATE REQUEST-----/,
                               message: "A PEM certificate request",
                             },
                           ]}
                         >
-                          <Input.TextArea rows={8} spellCheck={false} />
+                          <PemInput kind="csr" rows={6} />
                         </Form.Item>
                       ),
                     },

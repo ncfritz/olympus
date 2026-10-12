@@ -1,0 +1,18 @@
+/* A file input: a compact drop zone above the text it fills. */
+.zone :global(.ant-upload-btn) {
+  padding: 12px 16px !important;
+}
+
+.icon {
+  font-size: 28px;
+  color: var(--ant-color-primary);
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.pem {
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-font-size-sm, 12px);
+}
