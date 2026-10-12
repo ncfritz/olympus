@@ -148,6 +148,15 @@ export const TIER_PLURALS: Record<IssuerTier, string> = {
   issuing: "Issuing CAs",
 };
 
+/** What each kind of item about a CA asks of a person. */
+const TO_DO: Partial<Record<AttentionItem["kind"], string>> = {
+  "offline-crl-due": "Sign its next list, in a ceremony",
+  "offline-ocsp-due": "Issue its next OCSP responder, in a ceremony",
+  "backup-unproved": "Prove its key's backup",
+  "issuing-window": "Plan its successor: it stops issuing",
+  "crl-unpublished": "Publish its list",
+};
+
 /** Something coming up for the CAs, from soonest. */
 export type ComingUp = {
   key: string;
@@ -188,7 +197,7 @@ export const comingUp = (
               issuerId: issuer.id,
               at: closesAt,
               severity: "info" as const,
-              title: "Stops issuing",
+              title: "Plan its successor: it stops issuing",
               detail:
                 "What it signs must end before it does; a successor is planned in a ceremony with its parent.",
             },
@@ -201,7 +210,7 @@ export const comingUp = (
       issuerId: item.subjectId,
       at: item.dueAt ? Date.parse(item.dueAt) : undefined,
       severity: item.severity,
-      title: item.title,
+      title: TO_DO[item.kind] ?? item.title,
       detail: item.detail,
     })),
     ...later,

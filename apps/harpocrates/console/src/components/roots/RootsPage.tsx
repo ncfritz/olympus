@@ -19,6 +19,7 @@ import { ErrorAlert } from "../ErrorAlert";
 import { CaBoard } from "./CaBoard";
 import { CaDiagram } from "./CaDiagram";
 import { CaList } from "./CaList";
+import { CaTimeline } from "./CaTimeline";
 import styles from "./Roots.module.css";
 
 /** The tabs, each one of the canvas's four roots designs, by `?view=`. */
@@ -143,6 +144,18 @@ export function RootsPage() {
           certificates={dashboard.certificateList}
           now={now}
           isAdmin={isAdmin}
+        />
+      ),
+    },
+    {
+      key: "timeline",
+      label: "Timeline",
+      children: (
+        <CaTimeline
+          issuers={issuers}
+          authorities={authorities}
+          attention={dashboard.attention}
+          now={now}
         />
       ),
     },
