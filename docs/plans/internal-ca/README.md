@@ -403,13 +403,21 @@ the signer and the service. The mockups are the design canvas
    the API's `TLS_CA_SERVICES`, `TLS_CRL_SERVICES` and
    `AUTH_SERVICES_ISSUER` naming both Service issuing CAs and their
    chains' lists; the NAS pull for both.
-2. **An inventory of XCA's certificates** (from its exports, outside
-   Harpocrates) with a column for what replaces each.
+2. **XCA imported, as a record** ([ADR 0037](../../decisions/0037-harpocrates-xca-imported-for-the-record.md)):
+   its root and intermediates by certificate, its issuing CAs closed
+   with their keys, their newest lists, and what they issued, from the
+   console's import. The inventory is the certificates list filtered
+   to XCA's CAs.
 3. **Replace**: ACME (phase 7) for every holder that speaks it; the rest
    reissued from the new CAs, by hand or through deploy targets (phase
    6): the agents' client certificates, the listeners' server
    certificates, people's devices, the printer.
-4. **Retire XCA** once nothing trusts a certificate it issued: its root
+   Each XCA certificate is revoked in Harpocrates once its successor is
+   in place.
+4. **Revoke XCA's CAs** as each is emptied: revoking a CA
+   (`POST /issuer/{id}/revoke`, the parent's next list carrying it, in
+   a ceremony for an offline parent), the follow-up from phase 3.
+5. **Retire XCA** once nothing trusts a certificate it issued: its root
    out of the trust stores, its lists' pull removed, its database
    archived encrypted beside the offline media.
 
