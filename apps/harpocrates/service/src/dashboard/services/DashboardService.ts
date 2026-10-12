@@ -248,7 +248,7 @@ export class DashboardService {
           severity: "error",
           subjectType: "issuer",
           subjectId: crl.issuerId,
-          title: crl.issuerId,
+          title: crl.name,
           detail: `Its newest list (number ${crl.number}) has not been published: the CA's lists show why; publication is retried.`,
         })),
       ...attentionFromCas,
@@ -384,7 +384,9 @@ export class DashboardService {
    * Each active CA's newest list, published or waiting, online CAs first;
    * `waitingSince` is for the attention items only.
    */
-  private async crls(): Promise<(CrlRow & { waitingSince?: Date })[]> {
+  private async crls(): Promise<
+    (CrlRow & { name: string; waitingSince?: Date })[]
+  > {
     const issuers = await this.prisma.issuer.findMany({
       where: {
         status: { in: ["active", "closed"] },
@@ -394,6 +396,7 @@ export class DashboardService {
       select: {
         id: true,
         tier: true,
+        subject: true,
         crls: {
           orderBy: { number: "desc" },
           take: 1,
@@ -416,6 +419,7 @@ export class DashboardService {
         const newest = issuer.crls[0];
         return {
           issuerId: issuer.id,
+          name: nameOf(issuer.subject),
           tier: issuer.tier,
           offline: issuer.tier !== "issuing",
           number: newest?.number,
@@ -439,6 +443,7 @@ export class DashboardService {
       select: {
         id: true,
         tier: true,
+        subject: true,
         notAfter: true,
         maxValidityDays: true,
         provedAt: true,
@@ -463,6 +468,7 @@ export class DashboardService {
     const rows: AttentionRow[] = [];
     for (const issuer of issuers) {
       const offline = issuer.tier !== "issuing";
+      const title = nameOf(issuer.subject);
       const list = issuer.crls[0]?.nextUpdate;
       if (offline && list && list <= ceremonyBy) {
         rows.push({
@@ -470,7 +476,7 @@ export class DashboardService {
           severity: urgent(list),
           subjectType: "issuer",
           subjectId: issuer.id,
-          title: issuer.id,
+          title,
           detail: `Its list lapses ${inDays(list, now)}: sign the next in a ceremony, with the offline media and the passphrase.`,
           dueAt: list,
         });
@@ -482,7 +488,7 @@ export class DashboardService {
           severity: urgent(responder),
           subjectType: "issuer",
           subjectId: issuer.id,
-          title: issuer.id,
+          title,
           detail: `Its OCSP responder lapses ${inDays(responder, now)}: issue the next in a ceremony.`,
           dueAt: responder,
         });
@@ -493,7 +499,7 @@ export class DashboardService {
           severity: "warning",
           subjectType: "issuer",
           subjectId: issuer.id,
-          title: issuer.id,
+          title,
           detail:
             "Its key's backup has not been proved: open a ceremony with the key file from the offline media.",
         });
@@ -509,7 +515,7 @@ export class DashboardService {
             severity: urgent(closes),
             subjectType: "issuer",
             subjectId: issuer.id,
-            title: issuer.id,
+            title,
             detail: `It stops issuing ${inDays(closes, now)}: create its successor, the next generation, in a ceremony.`,
             dueAt: closes,
           });
