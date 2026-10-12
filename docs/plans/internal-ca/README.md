@@ -420,6 +420,21 @@ the signer and the service. The mockups are the design canvas
 [ADR 0035](../../decisions/0035-harpocrates-ssh-certificates.md),
 amending ADR 0020's outline.
 
+**Done 2026-10-11** (steps 1 to 6; the sign-off runs on DEV, and the
+hosts' setup, are outstanding). Described in
+[the SSH guide](../../guides/ssh.md),
+[the service's README](../../../apps/harpocrates/service/README.md),
+[the signer's](../../../apps/harpocrates/signer/README.md) and
+[the console's](../../../apps/harpocrates/console/README.md). What
+differs from the steps: every CA of a type's revocations are also
+published in one KRL, since `RevokedKeys` names one file and a rotation
+trusts two CAs, and hosts fetch it over HTTPS from the renewal listener
+(`GET /v1/ssh/krl/{type}`), the distribution host being plain HTTP; the
+API reads a certificate back to its fields for the console; one's own
+page carries the `known_hosts` lines, since someone with no PKI role
+cannot list the CAs; and the distribution host's nginx now serves
+`/krl/`, which it did not.
+
 1. **Signer**: SSH CAs registered (an Ed25519 key, user or host, a
    maximum validity) and SSH certificates signed; the invariants: a CA
    signs only its own kind, within its maximum validity, at least one

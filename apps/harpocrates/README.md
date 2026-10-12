@@ -15,7 +15,8 @@ In production they run as the `harpocrates` stack
 brought up empty, with its roots created through the console
 ([ADR 0032](../../docs/decisions/0032-harpocrates-roots-and-migration.md);
 until then [the cutover guide](../../docs/guides/harpocrates-cutover.md)'s first two steps);
-issuing and revoking is [the certificates guide](../../docs/guides/certificates.md).
+issuing and revoking is [the certificates guide](../../docs/guides/certificates.md),
+and SSH certificates [the SSH guide](../../docs/guides/ssh.md).
 
 The service reaches the signer over a Unix socket with a shared token;
 the signer has no network listener. The service never sees a private key
@@ -23,12 +24,12 @@ except one it hands to the operator once.
 
 ## Ports
 
-| Port   | What                                         |
-| ------ | -------------------------------------------- |
-| `3200` | The management API, `/health` and `/metrics` |
-| `9443` | Renewal and ACME, over TLS (phases 5 and 6)  |
-| `5433` | `harpocrates-postgres` in development        |
-| `8480` | The distribution host in development (nginx) |
+| Port   | What                                           |
+| ------ | ---------------------------------------------- |
+| `3200` | The management API, `/health` and `/metrics`   |
+| `9443` | Renewal, ACME and SSH hosts' renewal, over TLS |
+| `5433` | `harpocrates-postgres` in development          |
+| `8480` | The distribution host in development (nginx)   |
 
 ## Development
 
@@ -67,6 +68,10 @@ listener within seconds.
 Each package's README has the rest: the
 [service](service/README.md) (API, rules, CLI, environment) and the
 [signer](signer/README.md) (store, seal, invariants).
+
+`hosts/` holds what an SSH host runs (the guide installs it):
+`harpocrates-ssh-host`, which renews its certificate and fetches the
+KRL, its settings and a launchd job.
 
 `.run/` holds the signer's socket and development store; it is
 git-ignored.

@@ -21,6 +21,9 @@ production does. Its `certs/README.txt` says what each file is for,
 including which revocation lists a relying party needs: one from every
 authority in the chain, which at this depth is three.
 
+SSH certificates, from the same Harpocrates, are
+[the SSH guide](ssh.md).
+
 ## Where to do it
 
 - **The console**, at `https://control.olympus.ncfritz.net/harpocrates/ca`,

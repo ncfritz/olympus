@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  harpocrates-ssh-host on a Mac (docs/guides/ssh.md): every hour, the
+  user CAs' KRL, then the host certificate's renewal once it is due. As
+  root, from /Library/LaunchDaemons, mode 0644, owned by root:wheel.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>net.ncfritz.harpocrates-ssh-host</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>/usr/local/sbin/harpocrates-ssh-host krl; /usr/local/sbin/harpocrates-ssh-host renew</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>3600</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardErrorPath</key>
+  <string>/var/log/harpocrates-ssh-host.log</string>
+</dict>
+</plist>
