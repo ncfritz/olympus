@@ -45,6 +45,6 @@ import { ConsoleAuthService } from "./services/ConsoleAuthService";
     ConsoleAuthService,
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
-  exports: [AccessTokenService],
+  exports: [AccessTokenService, ConsoleAuthService],
 })
 export class AuthModule {}

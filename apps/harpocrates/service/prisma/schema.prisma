@@ -211,9 +211,10 @@ model Profile {
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
 
-  versions     ProfileVersion[]
-  enrollments  Enrollment[]
-  certificates Certificate[]
+  versions        ProfileVersion[]
+  enrollments     Enrollment[]
+  certificates    Certificate[]
+  sshCertificates SshCertificate[]
 
   @@map("profiles")
 }
@@ -277,6 +278,7 @@ model ProfileVersion {
   ssh                ProfileSshSettings?
   sshSourceAddresses ProfileSshSourceAddress[]
   sshExtensions      ProfileSshExtension[]
+  sshCertificates    SshCertificate[]
   enrollments        Enrollment[]
   certificates       Certificate[]
 
@@ -491,10 +493,17 @@ model SshCa {
   /// Where its KRL is published.
   krlUrl           String             @map("krl_url")
   retiredAt        DateTime?          @map("retired_at")
+  /// The next KRL's version number.
+  nextKrlNumber    BigInt             @default(1) @map("next_krl_number")
+  /// A new KRL is wanted (a revocation, a new CA): the scheduler writes it.
+  krlDueAt         DateTime?          @default(now()) @map("krl_due_at")
+  /// When its KRL was last written to the published directory.
+  krlPublishedAt   DateTime?          @map("krl_published_at")
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
   profileSettings ProfileSshSettings[]
+  certificates    SshCertificate[]
 
   @@unique([type, number, generation])
   @@map("ssh_cas")
@@ -536,6 +545,62 @@ model ProfileSshExtension {
 
   @@id([profileVersionId, extension])
   @@map("profile_ssh_extensions")
+}
+
+/// An SSH certificate (ADR 0035): what an SSH CA signed, for which key,
+/// and as whom.
+model SshCertificate {
+  id               String             @id @default(uuid()) @db.Uuid
+  sshCaId          String             @map("ssh_ca_id")
+  sshCa            SshCa              @relation(fields: [sshCaId], references: [id])
+  profileId        String             @map("profile_id")
+  profile          Profile            @relation(fields: [profileId], references: [id])
+  profileVersionId String             @map("profile_version_id") @db.Uuid
+  profileVersion   ProfileVersion     @relation(fields: [profileVersionId], references: [id])
+  keyId            String             @map("key_id") @db.Uuid
+  key              Key                @relation(fields: [keyId], references: [id])
+  type             SshCertificateType
+  /// 64 bits, hex.
+  serial           String
+  /// Its key ID: who it is for and its serial, as sshd logs it.
+  keyIdentifier    String             @map("key_identifier")
+  /// A user certificate's Olympus identity (email); none for a host's.
+  identity         String?
+  /// Its key's, `SHA256:…`, as ssh-keygen -l prints it.
+  fingerprint      String
+  validAfter       DateTime           @map("valid_after")
+  validBefore      DateTime           @map("valid_before")
+  /// The certificate, OpenSSH format.
+  certificate      String
+  status           CertificateStatus  @default(valid)
+  revokedAt        DateTime?          @map("revoked_at")
+  revocationReason RevocationReason?  @map("revocation_reason")
+  /// Who issued it: a principal, or the host itself renewing.
+  issuedBy         String             @map("issued_by")
+  /// The certificate it renews, for a host's renewal.
+  renewsId         String?            @unique @map("renews_id") @db.Uuid
+  renews           SshCertificate?    @relation("SshRenewal", fields: [renewsId], references: [id])
+  renewedBy        SshCertificate?    @relation("SshRenewal")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  principals SshCertificatePrincipal[]
+
+  @@unique([sshCaId, serial])
+  @@index([identity])
+  @@map("ssh_certificates")
+}
+
+/// A principal an SSH certificate names, in order.
+model SshCertificatePrincipal {
+  id               Int            @id @default(autoincrement())
+  sshCertificateId String         @map("ssh_certificate_id") @db.Uuid
+  sshCertificate   SshCertificate @relation(fields: [sshCertificateId], references: [id], onDelete: Cascade)
+  position         Int
+  principal        String
+
+  @@unique([sshCertificateId, principal])
+  @@map("ssh_certificate_principals")
 }
 
 /// The principals (Unix user names) an Olympus identity may log in as with
@@ -587,10 +652,11 @@ model Key {
   /// Revoked for keyCompromise: never certified again.
   blockedAt   DateTime?   @map("blocked_at")
 
-  issuer        Issuer?
-  sshCa         SshCa?
-  enrollment    Enrollment?
-  escrowExports EscrowExport[]
+  issuer          Issuer?
+  sshCa           SshCa?
+  sshCertificates SshCertificate[]
+  enrollment      Enrollment?
+  escrowExports   EscrowExport[]
 
   @@map("keys")
 }

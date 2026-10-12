@@ -788,6 +788,230 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/ssh/cas": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists the SSH CAs
+     * @description Every SSH CA (ADR 0035), user CAs first, newest generation first, with the line that trusts each.
+     */
+    get: operations["ListSshCas"];
+    put?: never;
+    /**
+     * Creates an SSH CA
+     * @description An online Ed25519 key in the signer that signs one type of SSH certificate (ADR 0035), with no ceremony. For a type and number that has one, it is the next generation: a rotation, trusted beside the old until the old is retired and its certificates expire.
+     */
+    post: operations["CreateSshCa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/ca/{caId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Describes an SSH CA
+     * @description Its type, generation, status, public key and the line that trusts it.
+     */
+    get: operations["DescribeSshCa"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/ca/{caId}/retire": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Retires an SSH CA
+     * @description It signs nothing more; hosts and clients keep trusting it until its last certificate expires, then its line can go.
+     */
+    post: operations["RetireSshCa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/principals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists who may log in as whom
+     * @description Every Olympus identity mapped to SSH principals (ADR 0035): its user certificates carry those and no others.
+     */
+    get: operations["ListSshPrincipals"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/principals/{identity}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Sets who an identity may log in as
+     * @description Replaces an Olympus identity's SSH principals (ADR 0035); none removes its mapping. Certificates already issued keep theirs until they expire or are revoked.
+     */
+    put: operations["SetSshPrincipals"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/certificates/user": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Issues an SSH user certificate
+     * @description A user certificate for a public key (ADR 0035): anyone signed in whom a pki-admin has mapped to principals may have one for their own key, carrying those principals or fewer; a pki-admin may issue one for any mapped identity. Valid as long as its profile says (16 hours for ssh-user).
+     */
+    post: operations["CreateSshUserCertificate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/certificates/host": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Issues an SSH host certificate
+     * @description A host certificate for a host's key and names (ADR 0035): clients trusting the host CA connect without a host-key prompt. From then on the host renews it itself, by proving its key.
+     */
+    post: operations["CreateSshHostCertificate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/certificates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists SSH certificates
+     * @description SSH certificates, newest first: by type, and only the current ones (who holds a valid user certificate now) if asked.
+     */
+    get: operations["ListSshCertificates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/certificate/{certificateId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Describes an SSH certificate
+     * @description Its principals, validity, state and the certificate itself.
+     */
+    get: operations["DescribeSshCertificate"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/certificate/{certificateId}/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Revokes an SSH certificate
+     * @description Revokes it and writes its CA's KRL at once (ADR 0035); hosts refuse it once they fetch the KRL. keyCompromise also blocks the key for good and revokes its other SSH certificates.
+     */
+    post: operations["RevokeSshCertificate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/ssh/mine": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Describes one's own SSH access
+     * @description The signed-in identity, the principals it is mapped to, and its user certificates. Anyone signed in may ask.
+     */
+    get: operations["DescribeMySsh"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/renew": {
     parameters: {
       query?: never;
@@ -938,110 +1162,6 @@ export interface paths {
      * @description Revokes an External Account Binding credential: unused, it can no longer register an account; bound, its account is revoked and can order nothing more. Certificates it was issued stay valid until revoked themselves.
      */
     post: operations["RevokeAcmeCredential"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/ssh/cas": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Lists the SSH CAs
-     * @description Every SSH CA (ADR 0035), user CAs first, newest generation first, with the line that trusts each.
-     */
-    get: operations["ListSshCas"];
-    put?: never;
-    /**
-     * Creates an SSH CA
-     * @description An online Ed25519 key in the signer that signs one type of SSH certificate (ADR 0035), with no ceremony. For a type and number that has one, it is the next generation: a rotation, trusted beside the old until the old is retired and its certificates expire.
-     */
-    post: operations["CreateSshCa"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/ssh/ca/{caId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Describes an SSH CA
-     * @description Its type, generation, status, public key and the line that trusts it.
-     */
-    get: operations["DescribeSshCa"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/ssh/ca/{caId}/retire": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Retires an SSH CA
-     * @description It signs nothing more; hosts and clients keep trusting it until its last certificate expires, then its line can go.
-     */
-    post: operations["RetireSshCa"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/ssh/principals": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Lists who may log in as whom
-     * @description Every Olympus identity mapped to SSH principals (ADR 0035): its user certificates carry those and no others.
-     */
-    get: operations["ListSshPrincipals"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/v1/ssh/principals/{identity}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    /**
-     * Sets who an identity may log in as
-     * @description Replaces an Olympus identity's SSH principals (ADR 0035); none removes its mapping. Certificates already issued keep theirs until they expire or are revoked.
-     */
-    put: operations["SetSshPrincipals"];
-    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2549,6 +2669,173 @@ export interface components {
       /** @description How many enrollments moved */
       moved: number;
     };
+    SshCa: {
+      /** @description Its slug, e.g. ssh-user-1-g1 */
+      id: string;
+      /** @description Its name, e.g. ncfritz.net SSH User CA 1 - G1 */
+      name: string;
+      /** @description What it signs */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description Its number */
+      number: number;
+      /** @description Its generation: a rotation is the next */
+      generation: number;
+      /**
+       * @description active: signs; retired: signs nothing more, trusted until its certificates expire
+       * @enum {string}
+       */
+      status: "active" | "retired";
+      /** @description Its key, OpenSSH format */
+      publicKey: string;
+      /** @description The line that trusts it: for a user CA, one for the file sshd_config's TrustedUserCAKeys names; for a host CA, one for known_hosts */
+      trustLine: string;
+      /** @description The longest certificate it signs, in hours */
+      maxValidityHours: number;
+      /** @description Where its KRL is published */
+      krlUrl: string;
+      /** @description An ISO-8601 formatted string: when it was retired */
+      retiredAt?: string;
+      /** @description An ISO-8601 formatted string: when it was created */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    ListSshCasResponse: {
+      /** @description Every SSH CA, users' first, newest generation first */
+      cas: components["schemas"]["SshCa"][];
+    };
+    CreateSshCaRequest: {
+      /** @description What it signs */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description Its number; by default 1. Its generation is the next of that type and number: a rotation */
+      number?: number;
+      /** @description The longest certificate it signs, in hours; by default a week for users, a year for hosts */
+      maxValidityHours?: number;
+    };
+    CreateSshCaResponse: {
+      /** @description The new CA */
+      ca: components["schemas"]["SshCa"];
+    };
+    DescribeSshCaResponse: {
+      /** @description The CA */
+      ca: components["schemas"]["SshCa"];
+    };
+    RetireSshCaResponse: {
+      /** @description The CA, retired */
+      ca: components["schemas"]["SshCa"];
+    };
+    SshPrincipalMapping: {
+      /** @description The identity's email */
+      identity: string;
+      /** @description Its principals: Unix user names */
+      principals: string[];
+      /** @description An ISO-8601 formatted string: when it was first mapped */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    ListSshPrincipalsResponse: {
+      /** @description Every mapped identity, by email */
+      mappings: components["schemas"]["SshPrincipalMapping"][];
+    };
+    SetSshPrincipalsRequest: {
+      /** @description The identity's principals, replacing those it had; none removes the mapping */
+      principals: string[];
+    };
+    SetSshPrincipalsResponse: {
+      /** @description The mapping as it now is; none when it was removed */
+      mapping?: components["schemas"]["SshPrincipalMapping"];
+    };
+    CreateSshUserCertificateRequest: {
+      /** @description The public key to certify, OpenSSH format (id_ed25519.pub) */
+      publicKey: string;
+      /** @description The profile; by default ssh-user */
+      profileId?: string;
+      /** @description The principals it carries, of those the identity is mapped to; by default all of them */
+      principals?: string[];
+      /** @description Whom it is for: a pki-admin may issue for any mapped identity; by default, and for anyone else, the signed-in identity */
+      identity?: string;
+    };
+    SshCertificate: {
+      /** @description Its id */
+      id: string;
+      /** @description User or host */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description The SSH CA that signed it */
+      caId: string;
+      /** @description The profile it was issued under */
+      profileId: string;
+      /** @description The profile's version it was issued under */
+      profileVersion: number;
+      /** @description Its serial, hex (64 bits) */
+      serial: string;
+      /** @description Its key ID, as sshd logs it: whom it is for, and its serial */
+      keyIdentifier: string;
+      /** @description A user certificate's Olympus identity (email) */
+      identity?: string;
+      /** @description Its principals: user names, or a host's names */
+      principals: string[];
+      /** @description Its key's type */
+      keyAlgorithm: components["schemas"]["KeyAlgorithm"];
+      /** @description Its key's fingerprint, SHA256:…, as ssh-keygen -l prints it */
+      fingerprint: string;
+      /** @description An ISO-8601 formatted string: when it starts to be valid */
+      validAfter: string;
+      /** @description An ISO-8601 formatted string: when it stops */
+      validBefore: string;
+      /** @description valid, revoked or expired */
+      state: components["schemas"]["CertificateState"];
+      /** @description An ISO-8601 formatted string: when it was revoked */
+      revokedAt?: string;
+      /** @description Why it was revoked */
+      revocationReason?: components["schemas"]["RevocationReason"];
+      /** @description The certificate, OpenSSH format: for a user, id_ed25519-cert.pub beside the key; for a host, the file sshd_config's HostCertificate names */
+      certificate: string;
+      /** @description The certificate this one renews */
+      renewsId?: string;
+      /** @description An ISO-8601 formatted string: when it was issued */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    CreateSshCertificateResponse: {
+      /** @description The certificate */
+      certificate: components["schemas"]["SshCertificate"];
+    };
+    CreateSshHostCertificateRequest: {
+      /** @description The host's public key, OpenSSH format (/etc/ssh/ssh_host_ed25519_key.pub) */
+      publicKey: string;
+      /** @description The profile; by default ssh-host */
+      profileId?: string;
+      /** @description The host's names, as clients connect to it */
+      principals: string[];
+    };
+    ListSshCertificatesResponse: {
+      /** @description The certificates, newest first */
+      certificates: components["schemas"]["SshCertificate"][];
+    };
+    DescribeSshCertificateResponse: {
+      /** @description The certificate */
+      certificate: components["schemas"]["SshCertificate"];
+    };
+    RevokeSshCertificateRequest: {
+      /** @description Why; by default unspecified */
+      reason?: components["schemas"]["RevocationReason"];
+      /** @description A comment for the audit log */
+      comment?: string;
+    };
+    RevokeSshCertificateResponse: {
+      /** @description The certificate, revoked */
+      certificate: components["schemas"]["SshCertificate"];
+    };
+    DescribeMySshResponse: {
+      /** @description The signed-in identity */
+      identity: string;
+      /** @description The principals it is mapped to; none, no user certificate */
+      principals: string[];
+      /** @description Its user certificates, newest first */
+      certificates: components["schemas"]["SshCertificate"][];
+    };
     RenewPresentedCertificateRequest: {
       /** @description A CSR, PEM, for the same subject: with a new key it rekeys; without one the same key is certified again while it is young enough */
       csr?: string;
@@ -2804,83 +3091,6 @@ export interface components {
     RevokeAcmeCredentialResponse: {
       /** @description The credential, revoked, with its account */
       credential: components["schemas"]["AcmeCredential"];
-    };
-    SshCa: {
-      /** @description Its slug, e.g. ssh-user-1-g1 */
-      id: string;
-      /** @description Its name, e.g. ncfritz.net SSH User CA 1 - G1 */
-      name: string;
-      /** @description What it signs */
-      type: components["schemas"]["SshCertificateType"];
-      /** @description Its number */
-      number: number;
-      /** @description Its generation: a rotation is the next */
-      generation: number;
-      /**
-       * @description active: signs; retired: signs nothing more, trusted until its certificates expire
-       * @enum {string}
-       */
-      status: "active" | "retired";
-      /** @description Its key, OpenSSH format */
-      publicKey: string;
-      /** @description The line that trusts it: for a user CA, one for the file sshd_config's TrustedUserCAKeys names; for a host CA, one for known_hosts */
-      trustLine: string;
-      /** @description The longest certificate it signs, in hours */
-      maxValidityHours: number;
-      /** @description Where its KRL is published */
-      krlUrl: string;
-      /** @description An ISO-8601 formatted string: when it was retired */
-      retiredAt?: string;
-      /** @description An ISO-8601 formatted string: when it was created */
-      createdAt: string;
-      /** @description An ISO-8601 formatted string: when it last changed */
-      updatedAt: string;
-    };
-    ListSshCasResponse: {
-      /** @description Every SSH CA, users' first, newest generation first */
-      cas: components["schemas"]["SshCa"][];
-    };
-    CreateSshCaRequest: {
-      /** @description What it signs */
-      type: components["schemas"]["SshCertificateType"];
-      /** @description Its number; by default 1. Its generation is the next of that type and number: a rotation */
-      number?: number;
-      /** @description The longest certificate it signs, in hours; by default a week for users, a year for hosts */
-      maxValidityHours?: number;
-    };
-    CreateSshCaResponse: {
-      /** @description The new CA */
-      ca: components["schemas"]["SshCa"];
-    };
-    DescribeSshCaResponse: {
-      /** @description The CA */
-      ca: components["schemas"]["SshCa"];
-    };
-    RetireSshCaResponse: {
-      /** @description The CA, retired */
-      ca: components["schemas"]["SshCa"];
-    };
-    SshPrincipalMapping: {
-      /** @description The identity's email */
-      identity: string;
-      /** @description Its principals: Unix user names */
-      principals: string[];
-      /** @description An ISO-8601 formatted string: when it was first mapped */
-      createdAt: string;
-      /** @description An ISO-8601 formatted string: when it last changed */
-      updatedAt: string;
-    };
-    ListSshPrincipalsResponse: {
-      /** @description Every mapped identity, by email */
-      mappings: components["schemas"]["SshPrincipalMapping"][];
-    };
-    SetSshPrincipalsRequest: {
-      /** @description The identity's principals, replacing those it had; none removes the mapping */
-      principals: string[];
-    };
-    SetSshPrincipalsResponse: {
-      /** @description The mapping as it now is; none when it was removed */
-      mapping?: components["schemas"]["SshPrincipalMapping"];
     };
   };
   responses: never;
@@ -5749,6 +5959,702 @@ export interface operations {
       };
     };
   };
+  ListSshCas: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The SSH CAs. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSshCasResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CreateSshCa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Its type, and its number and longest certificate if not the defaults. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSshCaRequest"];
+      };
+    };
+    responses: {
+      /** @description The CA was created. */
+      201: {
+        headers: {
+          /** @description The CA */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateSshCaResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DescribeSshCa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        caId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The CA. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DescribeSshCaResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  RetireSshCa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        caId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The CA. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetireSshCaResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListSshPrincipals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The mappings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSshPrincipalsResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  SetSshPrincipals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The identity's email */
+        identity: string;
+      };
+      cookie?: never;
+    };
+    /** @description Its principals. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetSshPrincipalsRequest"];
+      };
+    };
+    responses: {
+      /** @description The mapping, as it now is. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SetSshPrincipalsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CreateSshUserCertificate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The key, and the principals and identity if not the defaults. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSshUserCertificateRequest"];
+      };
+    };
+    responses: {
+      /** @description The certificate was issued. */
+      201: {
+        headers: {
+          /** @description The certificate */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateSshCertificateResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  CreateSshHostCertificate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The host's key and names. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSshHostCertificateRequest"];
+      };
+    };
+    responses: {
+      /** @description The certificate was issued. */
+      201: {
+        headers: {
+          /** @description The certificate */
+          Location?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateSshCertificateResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListSshCertificates: {
+    parameters: {
+      query?: {
+        /** @description Only user or only host certificates */
+        type?: components["schemas"]["SshCertificateType"];
+        /** @description Only those currently valid: neither revoked nor expired */
+        current?: "true" | "false";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The certificates. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSshCertificatesResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DescribeSshCertificate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The certificate's id */
+        certificateId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The certificate. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DescribeSshCertificateResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  RevokeSshCertificate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The certificate's id */
+        certificateId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Why. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RevokeSshCertificateRequest"];
+      };
+    };
+    responses: {
+      /** @description The certificate, revoked. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RevokeSshCertificateResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  DescribeMySsh: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description One's SSH access. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DescribeMySshResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   RenewPresentedCertificate: {
     parameters: {
       query?: never;
@@ -6385,309 +7291,6 @@ export interface operations {
       };
       /** @description The request conflicts with the current state */
       409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  ListSshCas: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The SSH CAs. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ListSshCasResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  CreateSshCa: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Its type, and its number and longest certificate if not the defaults. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateSshCaRequest"];
-      };
-    };
-    responses: {
-      /** @description The CA was created. */
-      201: {
-        headers: {
-          /** @description The CA */
-          Location?: string;
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["CreateSshCaResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The request conflicts with the current state */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  DescribeSshCa: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The CA's slug */
-        caId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The CA. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["DescribeSshCaResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  RetireSshCa: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The CA's slug */
-        caId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The CA. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["RetireSshCaResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The entity with the specified identifiers was not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  ListSshPrincipals: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description The mappings. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ListSshPrincipalsResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-    };
-  };
-  SetSshPrincipals: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description The identity's email */
-        identity: string;
-      };
-      cookie?: never;
-    };
-    /** @description Its principals. */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SetSshPrincipalsRequest"];
-      };
-    };
-    responses: {
-      /** @description The mapping, as it now is. */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["SetSshPrincipalsResponse"];
-        };
-      };
-      /** @description The request presented was not valid */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description No valid access token was presented */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorResponse"];
-        };
-      };
-      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
-      403: {
         headers: {
           [name: string]: unknown;
         };

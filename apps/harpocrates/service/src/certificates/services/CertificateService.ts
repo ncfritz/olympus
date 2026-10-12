@@ -73,6 +73,7 @@ import {
   subjectString,
 } from "../../profiles/rules";
 import { ProfileService } from "../../profiles/services/ProfileService";
+import { SshCertificateService } from "../../ssh/services/SshCertificateService";
 import {
   bytes,
   certifiable,
@@ -222,6 +223,7 @@ export class CertificateService {
     private readonly keys: KeyService,
     private readonly audit: AuditService,
     private readonly scheduler: CrlScheduler,
+    private readonly ssh: SshCertificateService,
     @Inject(pkiConfig.KEY) private readonly pki: PkiConfigType,
   ) {}
 
@@ -983,14 +985,7 @@ export class CertificateService {
     const kind = request.kind ?? "x509";
     const problems = await this.profiles.settingsProblems(settings, kind);
     if (kind === "ssh") {
-      // SSH issuance comes with phase 9's step 3, and its preview with it.
-      return {
-        problems,
-        refusals: ["An SSH version's certificate is not previewed yet"],
-        sampleSubject: {},
-        sampleNames: {},
-        keyAlgorithm: settings.keyAlgorithm,
-      };
+      return this.ssh.preview(settings, problems, request.sample ?? {});
     }
     const profile = unsavedVersion(settings, {
       id: "preview",

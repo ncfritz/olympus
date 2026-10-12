@@ -1,6 +1,56 @@
+import { spawnSync } from "child_process";
+import { generateKeyPairSync } from "crypto";
+import * as fs from "fs";
+import * as http from "http";
+import type { AddressInfo } from "net";
+import * as path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { E2E_DATABASE_URL, startHarness, type Harness } from "../support/e2e";
+import { accessToken } from "../support/tokens";
+
+/** Who each test token's subject is, as the Olympus API answers /v1/auth/me. */
+const EMAILS: Record<string, string> = {
+  "user-1": "neil@ncfritz.net",
+  "user-2": "guest@ncfritz.net",
+  "user-3": "nobody@ncfritz.net",
+};
+
+/** A stand-in for the Olympus API: only who is signed in. */
+const startOlympus = async () => {
+  const server = http.createServer((req, res) => {
+    const token = (req.headers.authorization ?? "").replace(/^Bearer /, "");
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1] ?? "", "base64url").toString() || "{}",
+    ) as { sub?: string };
+    const email = EMAILS[payload.sub ?? ""];
+    res.writeHead(email && req.url === "/v1/auth/me" ? 200 : 404, {
+      "content-type": "application/json",
+    });
+    res.end(JSON.stringify(email ? { user: { email } } : {}));
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  return {
+    url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
+};
+
+/** A new Ed25519 public key, OpenSSH format. */
+const sshKey = (comment = "test"): string => {
+  const raw = generateKeyPairSync("ed25519")
+    .publicKey.export({ type: "spki", format: "der" })
+    .subarray(-32);
+  const field = (data: Buffer) => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    return Buffer.concat([length, data]);
+  };
+  const blob = Buffer.concat([field(Buffer.from("ssh-ed25519")), field(raw)]);
+  return `ssh-ed25519 ${blob.toString("base64")} ${comment}`;
+};
+
+const hasKeygen = spawnSync("ssh-keygen", ["-?"]).error === undefined;
 
 type SshCa = {
   id: string;
@@ -60,6 +110,7 @@ const sshSettings = {
  */
 describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
   let harness: Harness;
+  let olympus: Awaited<ReturnType<typeof startOlympus>>;
   const server = () => harness.app.getHttpServer();
   const createCa = (body: object, token = harness.admin) =>
     request(server())
@@ -84,11 +135,20 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
       .send({ profile: body });
 
   beforeAll(async () => {
-    harness = await startHarness();
+    olympus = await startOlympus();
+    harness = await startHarness({
+      env: {
+        OLYMPUS_API_URL: olympus.url,
+        OLYMPUS_SIGN_IN_URL: "https://olympus.test/api",
+        AUTH_BASE_URL: "https://control.test/harpocrates/ca/api",
+        WEB_APP_URL: "https://control.test/harpocrates/ca",
+      },
+    });
   });
 
   afterAll(async () => {
     await harness?.close();
+    await olympus?.close();
   });
 
   describe("CAs", () => {
@@ -315,6 +375,214 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
         .send({ profileId: "ssh-user", subject: { commonName: "x" } })
         .expect(422);
       expect(refused.body.message).toMatch(/issues SSH certificates/);
+    });
+  });
+
+  describe("certificates", () => {
+    type Certificate = {
+      id: string;
+      type: string;
+      caId: string;
+      principals: string[];
+      keyIdentifier: string;
+      identity?: string;
+      state: string;
+      certificate: string;
+      fingerprint: string;
+      validAfter: string;
+      validBefore: string;
+    };
+    const certificateOf = (response: request.Response) =>
+      (response.body as { certificate: Certificate }).certificate;
+    let guest: string;
+    let nobody: string;
+    const issueUser = (body: object, token: string) =>
+      request(server())
+        .post("/v1/ssh/certificates/user")
+        .set("Authorization", token)
+        .send(body);
+    const issueHost = (body: object, token = harness.admin) =>
+      request(server())
+        .post("/v1/ssh/certificates/host")
+        .set("Authorization", token)
+        .send(body);
+    const keygen = (certificate: string, ...args: string[]) => {
+      const file = path.join(harness.dir, `cert-${Date.now()}-cert.pub`);
+      fs.writeFileSync(file, `${certificate}\n`);
+      return spawnSync("ssh-keygen", [...args, file], { encoding: "utf8" });
+    };
+
+    beforeAll(async () => {
+      guest = `Bearer ${await accessToken({ roles: [], sub: "user-2" })}`;
+      nobody = `Bearer ${await accessToken({ roles: [], sub: "user-3" })}`;
+      await setPrincipals("guest@ncfritz.net", ["guest", "backup"]).expect(200);
+      await setPrincipals("neil@ncfritz.net", ["ncfritz"]).expect(200);
+    });
+
+    it("issues a user certificate for one's own key and mapped principals, with no PKI role", async () => {
+      const issued = await issueUser({ publicKey: sshKey() }, guest).expect(
+        201,
+      );
+      expect(issued.headers.location).toMatch(
+        /\/ssh\/certificate\/[0-9a-f-]+$/,
+      );
+      const certificate = certificateOf(issued);
+      expect(certificate).toMatchObject({
+        type: "user",
+        caId: "ssh-user-1-g2",
+        identity: "guest@ncfritz.net",
+        principals: ["guest", "backup"],
+        state: "valid",
+      });
+      expect(certificate.keyIdentifier).toMatch(
+        /^guest@ncfritz\.net:[0-9a-f]{16}$/,
+      );
+      expect(certificate.fingerprint).toMatch(/^SHA256:/);
+      const hours =
+        (Date.parse(certificate.validBefore) -
+          Date.parse(certificate.validAfter)) /
+        3_600_000;
+      expect(Math.round(hours * 12) / 12).toBeCloseTo(16 + 5 / 60, 1);
+      if (hasKeygen) {
+        const listing = keygen(certificate.certificate, "-L", "-f").stdout;
+        expect(listing).toMatch(/user certificate/);
+        expect(listing).toMatch(/permit-pty/);
+        expect(listing).toMatch(/guest\n\s+backup/);
+      }
+      const mine = await request(server())
+        .get("/v1/ssh/mine")
+        .set("Authorization", guest)
+        .expect(200);
+      expect(mine.body).toMatchObject({
+        identity: "guest@ncfritz.net",
+        principals: ["guest", "backup"],
+      });
+      expect(mine.body.certificates).toHaveLength(1);
+    });
+
+    it("never more than one's mapping, nor for someone else unless an admin", async () => {
+      await issueUser({ publicKey: sshKey() }, nobody).expect(403);
+      await issueUser(
+        { publicKey: sshKey(), principals: ["root"] },
+        guest,
+      ).expect(403);
+      await issueUser(
+        { publicKey: sshKey(), identity: "neil@ncfritz.net" },
+        guest,
+      ).expect(403);
+      const forGuest = certificateOf(
+        await issueUser(
+          {
+            publicKey: sshKey(),
+            identity: "guest@ncfritz.net",
+            principals: ["backup"],
+          },
+          harness.admin,
+        ).expect(201),
+      );
+      expect(forGuest).toMatchObject({
+        identity: "guest@ncfritz.net",
+        principals: ["backup"],
+      });
+      await issueUser({ publicKey: "ssh-dss AAAA" }, guest).expect(400);
+    });
+
+    it("keeps a key to one use", async () => {
+      const key = sshKey();
+      await issueUser({ publicKey: key }, guest).expect(201);
+      // The same key, profile and principals: reissued.
+      await issueUser({ publicKey: key }, guest).expect(201);
+      await issueUser({ publicKey: key, principals: ["guest"] }, guest).expect(
+        409,
+      );
+      await issueHost({
+        publicKey: key,
+        principals: ["mini.internal.ncfritz.net"],
+      }).expect(409);
+    });
+
+    it("issues a host certificate, an admin's", async () => {
+      const body = {
+        publicKey: sshKey("root@mini"),
+        principals: ["Mini.internal.ncfritz.net", "mini"],
+      };
+      await issueHost(body, harness.operator).expect(403);
+      const host = certificateOf(await issueHost(body).expect(201));
+      expect(host).toMatchObject({
+        type: "host",
+        caId: "ssh-host-1-g1",
+        principals: ["mini.internal.ncfritz.net", "mini"],
+      });
+      expect(host.identity).toBeUndefined();
+      expect(host.keyIdentifier).toMatch(/^mini\.internal\.ncfritz\.net:/);
+      if (hasKeygen) {
+        const listing = keygen(host.certificate, "-L", "-f").stdout;
+        expect(listing).toMatch(/host certificate/);
+        expect(listing).not.toMatch(/permit-pty/);
+      }
+    });
+
+    it("revokes, and the CA's KRL says so at once", async () => {
+      const issued = certificateOf(
+        await issueUser({ publicKey: sshKey() }, guest).expect(201),
+      );
+      const revoked = await request(server())
+        .post(`/v1/ssh/certificate/${issued.id}/revoke`)
+        .set("Authorization", harness.operator)
+        .send({ reason: "superseded" })
+        .expect(200);
+      expect(certificateOf(revoked).state).toBe("revoked");
+      await request(server())
+        .post(`/v1/ssh/certificate/${issued.id}/revoke`)
+        .set("Authorization", harness.operator)
+        .send({})
+        .expect(409);
+      const krl = path.join(harness.published, "krl", "ssh-user-1-g2.krl");
+      expect(fs.existsSync(krl)).toBe(true);
+      if (hasKeygen) {
+        expect(keygen(issued.certificate, "-Q", "-f", krl).status).not.toBe(0);
+        const other = certificateOf(
+          await issueUser({ publicKey: sshKey() }, guest).expect(201),
+        );
+        expect(keygen(other.certificate, "-Q", "-f", krl).status).toBe(0);
+      }
+      const current = await request(server())
+        .get("/v1/ssh/certificates?type=user&current=true")
+        .set("Authorization", harness.operator)
+        .expect(200);
+      expect(
+        (current.body.certificates as Certificate[]).every(
+          (c) => c.state === "valid" && c.type === "user",
+        ),
+      ).toBe(true);
+      expect(
+        await harness.prisma.auditEvent.count({
+          where: { kind: "ssh-certificate.revoked" },
+        }),
+      ).toBe(1);
+    });
+
+    it("previews an SSH version, signed by no CA", async () => {
+      const preview = await request(server())
+        .post("/v1/profiles/preview")
+        .set("Authorization", harness.admin)
+        .send({ kind: "ssh", profile: sshSettings })
+        .expect(200);
+      expect(preview.body.preview.problems).toEqual([]);
+      expect(preview.body.preview.refusals).toEqual([]);
+      expect(preview.body.preview.issuerId).toBe("ssh-user-1-g2");
+      const certificate = preview.body.preview.certificate as string;
+      expect(certificate).toMatch(/^ssh-ed25519-cert-v01@openssh\.com /);
+      if (hasKeygen) {
+        const listing = keygen(certificate, "-L", "-f").stdout;
+        expect(listing).toMatch(/source-address 192\.168\.15\.0\/24/);
+        const ca = (
+          await request(server())
+            .get("/v1/ssh/ca/ssh-user-1-g2")
+            .set("Authorization", harness.admin)
+        ).body.ca as SshCa;
+        expect(listing).not.toContain(ca.publicKey.split(" ")[1].slice(0, 20));
+      }
     });
   });
 });

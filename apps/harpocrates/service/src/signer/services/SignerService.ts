@@ -33,6 +33,7 @@ import type {
   KeyResponse,
   OfflineCaResponse,
   PreviewCertificateRequest,
+  PreviewSshCertificateRequest,
   RegisterSshCaRequest,
   RevocationReason,
   SshCaResponse,
@@ -220,6 +221,16 @@ export class SignerService {
       }),
     );
     return signed.certificate;
+  }
+
+  /** An SSH certificate signed by a throwaway key (ADR 0034, preview). */
+  async previewSshCertificate(
+    body: PreviewSshCertificateRequest,
+  ): Promise<string> {
+    const previewed = await this.call(() =>
+      signer.previewSshCertificate({ client: this.client, body }),
+    );
+    return previewed.certificate;
   }
 
   async signCrl(issuerId: string, spec: CrlSpec): Promise<string> {

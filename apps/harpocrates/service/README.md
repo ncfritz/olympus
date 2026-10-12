@@ -95,6 +95,16 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
     and user notice; custom extensions by OID, their value DER. A
     version's custom extensions are none Harpocrates builds itself, and
     a minimal version carries none of these.
+- **SSH certificates** (ADR 0035): a user certificate for one's own
+  OpenSSH key (Ed25519, ECDSA, RSA from 3072 bits) carries one's mapped
+  principals or fewer, its key ID `<identity>:<serial>`; a host
+  certificate carries the host's names, lower case. Both take the
+  version's validity (no longer than the CA's maximum), and a user
+  certificate its critical options and extensions. A key certified for
+  SSH is never an X.509 subject's, and is reissued only for the same
+  profile and principals while younger than the version's maximum key
+  age. Revoking with `keyCompromise` blocks the key and revokes its other
+  SSH certificates.
 - **One key, one request**: a key already seen is reissued only for the
   same profile, subject and names, and refused (`409`) for anything else.
   A CA's key is never a subject's. Weak RSA keys (ROCA, close primes) are
@@ -119,6 +129,11 @@ ADR 0020, Serials, revocation and publication; the scheduler
   (`CRL_REFRESH_HOURS`), and at once on a revocation; valid for 7 days
   (`CRL_VALIDITY_HOURS`). Listed: the CA's revoked certificates until
   they expire, and its imported revocations.
+- **SSH CAs** (ADR 0035): a KRL each, by serial, of its revoked
+  certificates until they expire, written to `krl/<slug>.krl` at once on
+  a revocation and every `CRL_REFRESH_HOURS`. Unsigned (sshd does not
+  check a KRL's signature) and built by the service, so it is written
+  while the signer is sealed too.
 - **Offline CAs**: signed in a ceremony (`POST /ceremony/{id}/crl`),
   valid for 13 months (`CRL_OFFLINE_VALIDITY_DAYS`), or imported.
 - **Imported** (`POST /issuer/{id}/crls`, or `cli import-crl`): a list
@@ -160,6 +175,10 @@ from it.
 | `POST /ssh/cas` (a CA, or its next generation), `POST /ssh/ca/{id}/retire`                                                       | admin, recent sign-in |
 | `GET /ssh/principals`                                                                                                            | admin                 |
 | `PUT /ssh/principals/{identity}` (who an identity may log in as)                                                                 | admin, recent sign-in |
+| `POST /ssh/certificates/user` (for one's own key and mapped principals; an admin, for any mapped identity)                       | anyone signed in      |
+| `POST /ssh/certificates/host`                                                                                                    | admin                 |
+| `GET /ssh/mine` (one's principals and user certificates)                                                                         | anyone signed in      |
+| `GET /ssh/certificates` (`type`, `current`), `GET /ssh/certificate/{id}`, `POST /ssh/certificate/{id}/revoke`                    | either role           |
 | `POST /certificates`, `GET /certificates`, `GET /certificate/{id}`                                                               | either role           |
 | `GET /certificate/{id}/download` (`pem`, `der`, `chain`)                                                                         | either role           |
 | `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`                                                                  | either role           |

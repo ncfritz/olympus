@@ -336,6 +336,33 @@ export class ProfileService {
     return profile;
   }
 
+  /**
+   * An SSH profile as its latest version, for a new SSH certificate of a
+   * type (ADR 0035): refused when deactivated, X.509, or of the other type.
+   */
+  async forNewSshCertificate(
+    profileId: string,
+    type: "user" | "host",
+  ): Promise<ProfileWithRules> {
+    const profile = await this.row(profileId);
+    if (profile.deactivatedAt) {
+      throw new UnprocessableEntityException(
+        `The ${profileId} profile is deactivated: no new certificate may choose it`,
+      );
+    }
+    if (profile.kind !== "ssh" || !profile.ssh) {
+      throw new UnprocessableEntityException(
+        `The ${profileId} profile issues X.509 certificates, not SSH ones`,
+      );
+    }
+    if (profile.ssh.certificateType !== type) {
+      throw new UnprocessableEntityException(
+        `The ${profileId} profile issues ${profile.ssh.certificateType} certificates, not ${type} ones`,
+      );
+    }
+    return profile;
+  }
+
   /** A profile as one of its versions: what a renewal under it takes. */
   async version(profileVersionId: string): Promise<ProfileWithRules> {
     const version = await this.prisma.profileVersion.findUnique({
