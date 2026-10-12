@@ -43,6 +43,25 @@ type Dashboard = {
   }[];
   crls: { issuerId: string; tier: string; offline: boolean; number?: string }[];
   week: { issued: number; renewals: number };
+  counts: {
+    cas: number;
+    offlineCas: number;
+    sshValid: number;
+    profiles: number;
+  };
+  health: {
+    healthy: number;
+    renewing: number;
+    needsPerson: number;
+    failing: number;
+  };
+  renewers: {
+    acme: number;
+    deployTarget: number;
+    mtls: number;
+    person: number;
+  };
+  activity: { day: string; issued: number; renewed: number; revoked: number }[];
   ocsp: { answering: number; missingOnline: number; soonestLapse?: string };
   recent: {
     kind: string;
@@ -132,6 +151,27 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
       revoked: 0,
     });
     expect(read.week.issued).toBe(1);
+    // Root, intermediate and the TLS CA; the seeded profiles.
+    expect(read.counts).toMatchObject({ cas: 3, offlineCas: 2, sshValid: 0 });
+    expect(read.counts.profiles).toBeGreaterThan(0);
+    expect(read.health).toEqual({
+      healthy: 1,
+      renewing: 0,
+      needsPerson: 0,
+      failing: 0,
+    });
+    expect(read.renewers).toEqual({
+      acme: 0,
+      deployTarget: 0,
+      mtls: 0,
+      person: 1,
+    });
+    expect(read.activity).toHaveLength(90);
+    expect(read.activity.at(-1)).toMatchObject({
+      day: new Date().toISOString().slice(0, 10),
+      issued: 1,
+      renewed: 0,
+    });
     // Online CAs first.
     expect(read.crls[0]).toMatchObject({
       issuerId: tls,
@@ -187,6 +227,7 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
     ).toBeUndefined();
 
     const due = await later(65);
+    expect(due.health.needsPerson).toBeGreaterThanOrEqual(1);
     expect(due.certificates.dueWithin30Days).toBeGreaterThanOrEqual(1);
     expect(due.certificates.dueManual).toBe(due.certificates.dueWithin30Days);
     expect(due.attention).toContainEqual(
@@ -221,6 +262,9 @@ describe.skipIf(!E2E_DATABASE_URL)("dashboard", () => {
     const ids = read.expiring.map((e) => e.certificateId);
     expect(ids).toContain(second.id);
     expect(ids).not.toContain(first.id);
+    // The second is counted as a renewal the day it was issued.
+    const today = (await dashboard()).activity.at(-1)!;
+    expect(today.renewed).toBe(1);
   });
 
   it("counts revocations", async () => {

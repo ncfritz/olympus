@@ -12071,12 +12071,140 @@
           "revokedThisWeek"
         ]
       },
+      "DashboardCounts": {
+        "type": "object",
+        "properties": {
+          "cas": {
+            "type": "number",
+            "description": "CAs in service: active or closed, with a certificate"
+          },
+          "offlineCas": {
+            "type": "number",
+            "description": "Of those, roots and intermediates: offline"
+          },
+          "sshValid": {
+            "type": "number",
+            "description": "Valid SSH certificates"
+          },
+          "sshUser": {
+            "type": "number",
+            "description": "Of those, user"
+          },
+          "sshHost": {
+            "type": "number",
+            "description": "Of those, host"
+          },
+          "profiles": {
+            "type": "number",
+            "description": "Active profiles, X.509 and SSH"
+          }
+        },
+        "required": [
+          "cas",
+          "offlineCas",
+          "sshValid",
+          "sshUser",
+          "sshHost",
+          "profiles"
+        ]
+      },
+      "RenewalHealth": {
+        "type": "object",
+        "properties": {
+          "healthy": {
+            "type": "number",
+            "description": "Healthy"
+          },
+          "renewing": {
+            "type": "number",
+            "description": "Renewing"
+          },
+          "needsPerson": {
+            "type": "number",
+            "description": "Needs a person"
+          },
+          "failing": {
+            "type": "number",
+            "description": "Failing"
+          }
+        },
+        "required": [
+          "healthy",
+          "renewing",
+          "needsPerson",
+          "failing"
+        ]
+      },
+      "RenewerCounts": {
+        "type": "object",
+        "properties": {
+          "acme": {
+            "type": "number",
+            "description": "ACME clients"
+          },
+          "deployTarget": {
+            "type": "number",
+            "description": "Harpocrates, to deploy targets"
+          },
+          "mtls": {
+            "type": "number",
+            "description": "Their holders, over mutual TLS"
+          },
+          "person": {
+            "type": "number",
+            "description": "A person"
+          }
+        },
+        "required": [
+          "acme",
+          "deployTarget",
+          "mtls",
+          "person"
+        ]
+      },
+      "ActivityDay": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "description": "The day, YYYY-MM-DD, UTC"
+          },
+          "issued": {
+            "type": "number",
+            "description": "Issued, not as a renewal"
+          },
+          "renewed": {
+            "type": "number",
+            "description": "Issued as a renewal, or for a subject its CA had issued for before"
+          },
+          "revoked": {
+            "type": "number",
+            "description": "Revoked"
+          }
+        },
+        "required": [
+          "day",
+          "issued",
+          "renewed",
+          "revoked"
+        ]
+      },
       "RenewalMode": {
         "type": "string",
         "description": "Whether something renews it",
         "enum": [
           "automatic",
           "manual"
+        ]
+      },
+      "Renewer": {
+        "type": "string",
+        "description": "Who renews it",
+        "enum": [
+          "acme",
+          "deploy-target",
+          "mtls",
+          "person"
         ]
       },
       "ExpiringCertificate": {
@@ -12113,6 +12241,14 @@
                 "$ref": "#/components/schemas/RenewalMode"
               }
             ]
+          },
+          "renewer": {
+            "description": "Who renews it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Renewer"
+              }
+            ]
           }
         },
         "required": [
@@ -12121,7 +12257,8 @@
           "issuerId",
           "notAfter",
           "renewalDueAt",
-          "renewal"
+          "renewal",
+          "renewer"
         ]
       },
       "AttentionKind": {
@@ -12445,6 +12582,37 @@
               }
             ]
           },
+          "counts": {
+            "description": "The headline counts beyond the certificates'",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardCounts"
+              }
+            ]
+          },
+          "health": {
+            "description": "Valid certificates by whether their renewal is in hand",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RenewalHealth"
+              }
+            ]
+          },
+          "renewers": {
+            "description": "Valid certificates by who renews them",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RenewerCounts"
+              }
+            ]
+          },
+          "activity": {
+            "description": "Each of the last 90 days (UTC), oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityDay"
+            }
+          },
           "expiring": {
             "description": "Valid certificates expiring within 90 days that nothing has replaced yet, soonest first",
             "type": "array",
@@ -12508,6 +12676,10 @@
         "required": [
           "asOf",
           "certificates",
+          "counts",
+          "health",
+          "renewers",
+          "activity",
           "expiring",
           "attention",
           "crls",

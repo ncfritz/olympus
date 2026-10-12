@@ -7,6 +7,15 @@ const when = (date: Date | undefined) => (date ? moment(date) : undefined);
 export const toDashboard = (row: DashboardRow): Dashboard => ({
   asOf: moment(row.asOf),
   certificates: row.certificates,
+  counts: row.counts,
+  health: row.health,
+  renewers: {
+    acme: row.renewers.acme,
+    deployTarget: row.renewers["deploy-target"],
+    mtls: row.renewers.mtls,
+    person: row.renewers.person,
+  },
+  activity: row.activity,
   expiring: row.expiring.map((e) => ({
     certificateId: e.certificateId,
     name: e.name,
@@ -15,6 +24,7 @@ export const toDashboard = (row: DashboardRow): Dashboard => ({
     notAfter: moment(e.notAfter),
     renewalDueAt: moment(e.renewalDueAt),
     renewal: e.renewal,
+    renewer: e.renewer,
   })),
   attention: row.attention.map((a) => ({
     kind: a.kind,

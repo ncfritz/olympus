@@ -15,6 +15,23 @@ export const RENEWAL_MODE_ENUM = {
   },
 };
 
+export const RENEWER_VALUES = [
+  "acme",
+  "deploy-target",
+  "mtls",
+  "person",
+] as const;
+export type RenewerName = (typeof RENEWER_VALUES)[number];
+
+export const RENEWER_ENUM = {
+  enum: [...RENEWER_VALUES],
+  enumName: "Renewer",
+  enumSchema: {
+    description:
+      "acme: its ACME client orders the next; deploy-target: Harpocrates renews and deploys it; mtls: its holder renews it over mutual TLS, as it did to get it; person: nothing does",
+  },
+};
+
 export const ATTENTION_KIND_VALUES = [
   "certificate-due",
   "renewal-overdue",
@@ -177,6 +194,121 @@ export class ExpiringCertificate {
     description: "Whether something renews it",
   })
   renewal: RenewalModeName;
+
+  @ApiProperty({
+    ...RENEWER_ENUM,
+    required: true,
+    description: "Who renews it",
+  })
+  renewer: RenewerName;
+}
+
+/** The headline counts beyond the certificates'. */
+export class DashboardCounts {
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "CAs in service: active or closed, with a certificate",
+  })
+  cas: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Of those, roots and intermediates: offline",
+  })
+  offlineCas: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Valid SSH certificates",
+  })
+  sshValid: number;
+
+  @ApiProperty({ type: Number, required: true, description: "Of those, user" })
+  sshUser: number;
+
+  @ApiProperty({ type: Number, required: true, description: "Of those, host" })
+  sshHost: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Active profiles, X.509 and SSH",
+  })
+  profiles: number;
+}
+
+/**
+ * Valid certificates nothing has replaced, by whether their renewal is in
+ * hand: healthy (before its renewal point), renewing (past it, something
+ * renews it, more than a week left), failing (the same, a week or less
+ * left), needs a person (past it, nothing renews it).
+ */
+export class RenewalHealth {
+  @ApiProperty({ type: Number, required: true, description: "Healthy" })
+  healthy: number;
+
+  @ApiProperty({ type: Number, required: true, description: "Renewing" })
+  renewing: number;
+
+  @ApiProperty({ type: Number, required: true, description: "Needs a person" })
+  needsPerson: number;
+
+  @ApiProperty({ type: Number, required: true, description: "Failing" })
+  failing: number;
+}
+
+/** Valid certificates nothing has replaced, by who renews them. */
+export class RenewerCounts {
+  @ApiProperty({ type: Number, required: true, description: "ACME clients" })
+  acme: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Harpocrates, to deploy targets",
+  })
+  deployTarget: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Their holders, over mutual TLS",
+  })
+  mtls: number;
+
+  @ApiProperty({ type: Number, required: true, description: "A person" })
+  person: number;
+}
+
+/** One day's certificates: issued, renewed and revoked. */
+export class ActivityDay {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The day, YYYY-MM-DD, UTC",
+  })
+  day: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Issued, not as a renewal",
+  })
+  issued: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Issued as a renewal, or for a subject its CA had issued for before",
+  })
+  renewed: number;
+
+  @ApiProperty({ type: Number, required: true, description: "Revoked" })
+  revoked: number;
 }
 
 /** Something a person should do, soonest and worst first. */
@@ -490,6 +622,35 @@ export class Dashboard {
     description: "The certificates, counted",
   })
   certificates: DashboardCertificates;
+
+  @ApiProperty({
+    type: () => DashboardCounts,
+    required: true,
+    description: "The headline counts beyond the certificates'",
+  })
+  counts: DashboardCounts;
+
+  @ApiProperty({
+    type: () => RenewalHealth,
+    required: true,
+    description: "Valid certificates by whether their renewal is in hand",
+  })
+  health: RenewalHealth;
+
+  @ApiProperty({
+    type: () => RenewerCounts,
+    required: true,
+    description: "Valid certificates by who renews them",
+  })
+  renewers: RenewerCounts;
+
+  @ApiProperty({
+    type: () => ActivityDay,
+    isArray: true,
+    required: true,
+    description: "Each of the last 90 days (UTC), oldest first",
+  })
+  activity: ActivityDay[];
 
   @ApiProperty({
     type: () => ExpiringCertificate,
