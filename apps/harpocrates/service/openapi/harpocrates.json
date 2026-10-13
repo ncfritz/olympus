@@ -6205,6 +6205,132 @@
         ]
       }
     },
+    "/v1/acme/clients": {
+      "get": {
+        "description": "Every ACME client, newest credential first: its credential and the account bound with it, the certificates it holds now with the renewal window its client is told (RFC 9773), and its last order, step by step. Never their keys.",
+        "operationId": "ListAcmeClients",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The clients.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAcmeClientsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists ACME clients",
+        "tags": [
+          "ACME Credentials"
+        ]
+      }
+    },
+    "/v1/acme/orders": {
+      "get": {
+        "description": "Every ACME order of the last days (30 by default, at most 90), newest first: its client's credential, its names, the challenges answered for each and how they ended, why it failed, and when its certificate was issued.",
+        "operationId": "ListAcmeOrders",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "How many days back, to now (30 by default, at most 90)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The orders.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAcmeOrdersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists ACME orders",
+        "tags": [
+          "ACME Credentials"
+        ]
+      }
+    },
     "/v1/acme/credential/{credentialId}/revoke": {
       "post": {
         "description": "Revokes an External Account Binding credential: unused, it can no longer register an account; bound, its account is revoked and can order nothing more. Certificates it was issued stay valid until revoked themselves.",
@@ -12539,6 +12665,335 @@
         },
         "required": [
           "credentials"
+        ]
+      },
+      "AcmeClientCertificate": {
+        "type": "object",
+        "properties": {
+          "certificateId": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "The CA that issued it"
+          },
+          "names": {
+            "description": "The names it was ordered for",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notBefore": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it becomes valid"
+          },
+          "notAfter": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it expires"
+          },
+          "renewalStart": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its renewal window opens, as renewal information (RFC 9773) tells its client"
+          },
+          "renewalEnd": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its renewal window closes"
+          },
+          "issuedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was issued"
+          }
+        },
+        "required": [
+          "certificateId",
+          "issuerId",
+          "names",
+          "notBefore",
+          "notAfter",
+          "renewalStart",
+          "renewalEnd",
+          "issuedAt"
+        ]
+      },
+      "AcmeOrderStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "ready",
+          "processing",
+          "valid",
+          "invalid"
+        ],
+        "description": "pending (names to prove), ready (to finalize), processing, valid (issued) or invalid (failed or expired)"
+      },
+      "AcmeAuthorizationStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "valid",
+          "invalid",
+          "deactivated",
+          "expired",
+          "revoked"
+        ],
+        "description": "Whether the name is proved"
+      },
+      "AcmeChallengeType": {
+        "type": "string",
+        "enum": [
+          "http-01",
+          "tls-alpn-01"
+        ],
+        "description": "http-01 or tls-alpn-01"
+      },
+      "AcmeChallengeStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "valid",
+          "invalid"
+        ],
+        "description": "processing (being checked), valid or invalid"
+      },
+      "AcmeChallengeSummary": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "http-01 or tls-alpn-01",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeChallengeType"
+              }
+            ]
+          },
+          "status": {
+            "description": "processing (being checked), valid or invalid",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeChallengeStatus"
+              }
+            ]
+          },
+          "validatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was proved"
+          },
+          "errorType": {
+            "type": "string",
+            "description": "Why it failed: an ACME error type, without urn:ietf:params:acme:error:",
+            "example": "connection"
+          },
+          "errorDetail": {
+            "type": "string",
+            "description": "Why it failed, as the check said it"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was offered"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "type",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AcmeAuthorizationSummary": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "The DNS name"
+          },
+          "status": {
+            "description": "Whether the name is proved",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeAuthorizationStatus"
+              }
+            ]
+          },
+          "challenges": {
+            "description": "The challenges its client answered (none, if it answered none)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcmeChallengeSummary"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was made"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "identifier",
+          "status",
+          "challenges",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AcmeOrderSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its ID"
+          },
+          "credentialId": {
+            "type": "string",
+            "description": "The credential of the account that placed it"
+          },
+          "status": {
+            "description": "pending (names to prove), ready (to finalize), processing, valid (issued) or invalid (failed or expired)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeOrderStatus"
+              }
+            ]
+          },
+          "identifiers": {
+            "description": "The DNS names it is for",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "authorizations": {
+            "description": "Each name, and how it was proved",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcmeAuthorizationSummary"
+            }
+          },
+          "errorType": {
+            "type": "string",
+            "description": "Why it is invalid: an ACME error type, without urn:ietf:params:acme:error:",
+            "example": "connection"
+          },
+          "errorDetail": {
+            "type": "string",
+            "description": "Why it is invalid"
+          },
+          "certificateId": {
+            "type": "string",
+            "description": "The certificate finalizing it issued"
+          },
+          "issuedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when its certificate was issued"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was placed"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it last changed"
+          }
+        },
+        "required": [
+          "id",
+          "credentialId",
+          "status",
+          "identifiers",
+          "authorizations",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AcmeClient": {
+        "type": "object",
+        "properties": {
+          "credential": {
+            "description": "Its credential, and the account bound with it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeCredential"
+              }
+            ]
+          },
+          "certificates": {
+            "description": "What it holds now: for each set of names it orders, its newest certificate, while valid; soonest to renew first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcmeClientCertificate"
+            }
+          },
+          "lastOrder": {
+            "description": "The last order it placed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AcmeOrderSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "credential",
+          "certificates"
+        ]
+      },
+      "ListAcmeClientsResponse": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was read"
+          },
+          "directoryUrl": {
+            "type": "string",
+            "description": "The ACME directory clients register at"
+          },
+          "clients": {
+            "description": "Every client, newest credential first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcmeClient"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "directoryUrl",
+          "clients"
+        ]
+      },
+      "ListAcmeOrdersResponse": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was read"
+          },
+          "since": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: the start of the days asked for"
+          },
+          "orders": {
+            "description": "Every order placed since then, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcmeOrderSummary"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "since",
+          "orders"
         ]
       },
       "CreateAcmeCredentialRequest": {

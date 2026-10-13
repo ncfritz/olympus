@@ -16,7 +16,9 @@ import { AcmeNewAccountController } from "./controllers/AcmeNewAccountController
 import { AcmeNewNonceController } from "./controllers/AcmeNewNonceController";
 import { AcmeNewNonceHeadController } from "./controllers/AcmeNewNonceHeadController";
 import { CreateAcmeCredentialController } from "./controllers/CreateAcmeCredentialController";
+import { ListAcmeClientsController } from "./controllers/ListAcmeClientsController";
 import { ListAcmeCredentialsController } from "./controllers/ListAcmeCredentialsController";
+import { ListAcmeOrdersController } from "./controllers/ListAcmeOrdersController";
 import { RevokeAcmeCredentialController } from "./controllers/RevokeAcmeCredentialController";
 import { AcmeExceptionFilter, AcmeHeadersInterceptor } from "./acmeRoute";
 import { AcmeAccountService } from "./services/AcmeAccountService";
@@ -27,6 +29,7 @@ import { AcmeJwsService } from "./services/AcmeJwsService";
 import { AcmeIssuanceService } from "./services/AcmeIssuanceService";
 import { AcmeNonceService } from "./services/AcmeNonceService";
 import { AcmeOrderService } from "./services/AcmeOrderService";
+import { AcmeOverviewService } from "./services/AcmeOverviewService";
 import { AcmeRenewalInfoService } from "./services/AcmeRenewalInfoService";
 import { AcmeUrls } from "./services/AcmeUrls";
 
@@ -53,6 +56,8 @@ import { AcmeUrls } from "./services/AcmeUrls";
     AcmeKeyChangeController,
     AcmeRenewalInfoController,
     ListAcmeCredentialsController,
+    ListAcmeClientsController,
+    ListAcmeOrdersController,
     CreateAcmeCredentialController,
     RevokeAcmeCredentialController,
   ],
@@ -67,6 +72,7 @@ import { AcmeUrls } from "./services/AcmeUrls";
     AcmeChallengeValidator,
     AcmeIssuanceService,
     AcmeRenewalInfoService,
+    AcmeOverviewService,
     AcmeExceptionFilter,
     AcmeHeadersInterceptor,
   ],

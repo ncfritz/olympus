@@ -367,6 +367,7 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
 
   describe("orders", () => {
     let client: acme.Client;
+    let clientCredential: Created;
 
     /** Serves a challenge as the host would, and says it is ready. */
     const answer = async (
@@ -398,6 +399,7 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
         exact: ["nas.internal.ncfritz.net"],
         subtrees: ["lab.internal.ncfritz.net"],
       });
+      clientCredential = created;
       client = await clientFor(created);
       await client.createAccount({ termsOfServiceAgreed: true });
     });
@@ -785,6 +787,155 @@ describe.skipIf(!E2E_DATABASE_URL)("ACME", () => {
       await expect(stranger.getOrder(order)).rejects.toThrow(
         /for this account/,
       );
+    });
+    describe("as the console reads them", () => {
+      type OrderSummary = {
+        id: string;
+        credentialId: string;
+        status: string;
+        identifiers: string[];
+        authorizations: {
+          identifier: string;
+          status: string;
+          challenges: {
+            type: string;
+            status: string;
+            errorType?: string;
+            errorDetail?: string;
+          }[];
+        }[];
+        errorType?: string;
+        certificateId?: string;
+        issuedAt?: string;
+        createdAt: string;
+      };
+      type ClientCertificate = {
+        certificateId: string;
+        names: string[];
+        notBefore: string;
+        notAfter: string;
+        renewalStart: string;
+        renewalEnd: string;
+      };
+      type Client = {
+        credential: Credential;
+        certificates: ClientCertificate[];
+        lastOrder?: OrderSummary;
+      };
+
+      it("lists each client with what it holds, when to renew it, and its last order", async () => {
+        const waiting = await createCredential(
+          { exact: ["waiting.internal.ncfritz.net"] },
+          "never bound",
+        );
+        const body = (
+          await request(server())
+            .get("/v1/acme/clients")
+            .set("Authorization", harness.admin)
+            .expect(200)
+        ).body as { directoryUrl: string; clients: Client[] };
+        expect(body.directoryUrl).toBe(directoryUrl);
+        const unbound = body.clients.find(
+          (c) => c.credential.id === waiting.credential.id,
+        )!;
+        expect(unbound).toMatchObject({ certificates: [] });
+        expect(unbound.credential.account).toBeUndefined();
+        expect(unbound.lastOrder).toBeUndefined();
+
+        const mine = body.clients.find(
+          (c) => c.credential.id === clientCredential.credential.id,
+        )!;
+        // Ordered twice for the same name: only the newer is held.
+        const h = mine.certificates.filter((c) =>
+          c.names.includes("h.lab.internal.ncfritz.net"),
+        );
+        expect(h).toHaveLength(1);
+        const newest = await harness.prisma.certificate.findFirstOrThrow({
+          where: { subject: { contains: "CN=h.lab.internal.ncfritz.net" } },
+          orderBy: { notAfter: "desc" },
+        });
+        expect(h[0].certificateId).toBe(newest.id);
+        const [start, end, notAfter] = [
+          h[0].renewalStart,
+          h[0].renewalEnd,
+          h[0].notAfter,
+        ].map(Date.parse);
+        expect(start).toBeLessThan(end);
+        expect(end).toBeLessThanOrEqual(notAfter);
+        // Revoked certificates are not held.
+        const revoked = await harness.prisma.certificate.findMany({
+          where: { status: "revoked", acmeOrder: { isNot: null } },
+        });
+        expect(revoked.length).toBeGreaterThan(0);
+        expect(mine.certificates.map((c) => c.certificateId)).not.toEqual(
+          expect.arrayContaining([revoked[0].id]),
+        );
+        const last = await harness.prisma.acmeOrder.findFirstOrThrow({
+          where: { account: { credentialId: clientCredential.credential.id } },
+          orderBy: { createdAt: "desc" },
+        });
+        expect(mine.lastOrder).toMatchObject({
+          id: last.id,
+          credentialId: clientCredential.credential.id,
+        });
+      });
+
+      it("lists the last days' orders, how each name was proved, and why one failed", async () => {
+        const { orders } = (
+          await request(server())
+            .get("/v1/acme/orders?days=7")
+            .set("Authorization", harness.admin)
+            .expect(200)
+        ).body as { orders: OrderSummary[] };
+        const times = orders.map((o) => Date.parse(o.createdAt));
+        expect(times).toEqual([...times].sort((a, b) => b - a));
+        expect(
+          orders.find((o) =>
+            o.identifiers.includes("b.lab.internal.ncfritz.net"),
+          ),
+        ).toMatchObject({
+          status: "invalid",
+          errorType: "incorrectResponse",
+          authorizations: [
+            {
+              identifier: "b.lab.internal.ncfritz.net",
+              status: "invalid",
+              challenges: [
+                {
+                  type: "http-01",
+                  status: "invalid",
+                  errorType: "incorrectResponse",
+                  errorDetail: expect.stringMatching(/key authorization/),
+                },
+              ],
+            },
+          ],
+        });
+        const issued = orders.find((o) =>
+          o.identifiers.includes("f.lab.internal.ncfritz.net"),
+        )!;
+        expect(issued).toMatchObject({
+          status: "valid",
+          identifiers: [
+            "f.lab.internal.ncfritz.net",
+            "nas.internal.ncfritz.net",
+          ],
+          certificateId: expect.any(String),
+          issuedAt: expect.any(String),
+        });
+        expect(Date.parse(issued.issuedAt!)).toBeGreaterThanOrEqual(
+          Date.parse(issued.createdAt),
+        );
+        // An order nobody answered has no challenges to show.
+        const unanswered = orders.find((o) =>
+          o.identifiers.includes("d.lab.internal.ncfritz.net"),
+        )!;
+        expect(unanswered.authorizations[0].challenges).toEqual([]);
+        await request(server())
+          .get("/v1/acme/orders?days=0")
+          .set("Authorization", harness.admin)
+          .expect(400);
+      });
     });
   });
 });

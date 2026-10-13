@@ -1308,6 +1308,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/acme/clients": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists ACME clients
+     * @description Every ACME client, newest credential first: its credential and the account bound with it, the certificates it holds now with the renewal window its client is told (RFC 9773), and its last order, step by step. Never their keys.
+     */
+    get: operations["ListAcmeClients"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/acme/orders": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists ACME orders
+     * @description Every ACME order of the last days (30 by default, at most 90), newest first: its client's credential, its names, the challenges answered for each and how they ended, why it failed, and when its certificate was issued.
+     */
+    get: operations["ListAcmeOrders"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/acme/credential/{credentialId}/revoke": {
     parameters: {
       query?: never;
@@ -3535,6 +3575,127 @@ export interface components {
     ListAcmeCredentialsResponse: {
       /** @description Every credential, newest first */
       credentials: components["schemas"]["AcmeCredential"][];
+    };
+    AcmeClientCertificate: {
+      /** @description Its ID */
+      certificateId: string;
+      /** @description The CA that issued it */
+      issuerId: string;
+      /** @description The names it was ordered for */
+      names: string[];
+      /** @description An ISO-8601 formatted string: when it becomes valid */
+      notBefore: string;
+      /** @description An ISO-8601 formatted string: when it expires */
+      notAfter: string;
+      /** @description An ISO-8601 formatted string: when its renewal window opens, as renewal information (RFC 9773) tells its client */
+      renewalStart: string;
+      /** @description An ISO-8601 formatted string: when its renewal window closes */
+      renewalEnd: string;
+      /** @description An ISO-8601 formatted string: when it was issued */
+      issuedAt: string;
+    };
+    /**
+     * @description pending (names to prove), ready (to finalize), processing, valid (issued) or invalid (failed or expired)
+     * @enum {string}
+     */
+    AcmeOrderStatus: "pending" | "ready" | "processing" | "valid" | "invalid";
+    /**
+     * @description Whether the name is proved
+     * @enum {string}
+     */
+    AcmeAuthorizationStatus:
+      "pending" | "valid" | "invalid" | "deactivated" | "expired" | "revoked";
+    /**
+     * @description http-01 or tls-alpn-01
+     * @enum {string}
+     */
+    AcmeChallengeType: "http-01" | "tls-alpn-01";
+    /**
+     * @description processing (being checked), valid or invalid
+     * @enum {string}
+     */
+    AcmeChallengeStatus: "pending" | "processing" | "valid" | "invalid";
+    AcmeChallengeSummary: {
+      /** @description http-01 or tls-alpn-01 */
+      type: components["schemas"]["AcmeChallengeType"];
+      /** @description processing (being checked), valid or invalid */
+      status: components["schemas"]["AcmeChallengeStatus"];
+      /** @description An ISO-8601 formatted string: when it was proved */
+      validatedAt?: string;
+      /**
+       * @description Why it failed: an ACME error type, without urn:ietf:params:acme:error:
+       * @example connection
+       */
+      errorType?: string;
+      /** @description Why it failed, as the check said it */
+      errorDetail?: string;
+      /** @description An ISO-8601 formatted string: when it was offered */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    AcmeAuthorizationSummary: {
+      /** @description The DNS name */
+      identifier: string;
+      /** @description Whether the name is proved */
+      status: components["schemas"]["AcmeAuthorizationStatus"];
+      /** @description The challenges its client answered (none, if it answered none) */
+      challenges: components["schemas"]["AcmeChallengeSummary"][];
+      /** @description An ISO-8601 formatted string: when it was made */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    AcmeOrderSummary: {
+      /** @description Its ID */
+      id: string;
+      /** @description The credential of the account that placed it */
+      credentialId: string;
+      /** @description pending (names to prove), ready (to finalize), processing, valid (issued) or invalid (failed or expired) */
+      status: components["schemas"]["AcmeOrderStatus"];
+      /** @description The DNS names it is for */
+      identifiers: string[];
+      /** @description Each name, and how it was proved */
+      authorizations: components["schemas"]["AcmeAuthorizationSummary"][];
+      /**
+       * @description Why it is invalid: an ACME error type, without urn:ietf:params:acme:error:
+       * @example connection
+       */
+      errorType?: string;
+      /** @description Why it is invalid */
+      errorDetail?: string;
+      /** @description The certificate finalizing it issued */
+      certificateId?: string;
+      /** @description An ISO-8601 formatted string: when its certificate was issued */
+      issuedAt?: string;
+      /** @description An ISO-8601 formatted string: when it was placed */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    AcmeClient: {
+      /** @description Its credential, and the account bound with it */
+      credential: components["schemas"]["AcmeCredential"];
+      /** @description What it holds now: for each set of names it orders, its newest certificate, while valid; soonest to renew first */
+      certificates: components["schemas"]["AcmeClientCertificate"][];
+      /** @description The last order it placed */
+      lastOrder?: components["schemas"]["AcmeOrderSummary"];
+    };
+    ListAcmeClientsResponse: {
+      /** @description An ISO-8601 formatted string: when it was read */
+      asOf: string;
+      /** @description The ACME directory clients register at */
+      directoryUrl: string;
+      /** @description Every client, newest credential first */
+      clients: components["schemas"]["AcmeClient"][];
+    };
+    ListAcmeOrdersResponse: {
+      /** @description An ISO-8601 formatted string: when it was read */
+      asOf: string;
+      /** @description An ISO-8601 formatted string: the start of the days asked for */
+      since: string;
+      /** @description Every order placed since then, newest first */
+      orders: components["schemas"]["AcmeOrderSummary"][];
     };
     CreateAcmeCredentialRequest: {
       /**
@@ -8415,6 +8576,103 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CreateAcmeCredentialResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListAcmeClients: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The clients. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListAcmeClientsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListAcmeOrders: {
+    parameters: {
+      query?: {
+        /** @description How many days back, to now (30 by default, at most 90) */
+        days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The orders. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListAcmeOrdersResponse"];
         };
       };
       /** @description The request presented was not valid */
