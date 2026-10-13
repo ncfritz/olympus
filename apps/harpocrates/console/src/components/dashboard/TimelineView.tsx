@@ -96,7 +96,7 @@ export function TimelineView({
     label: shortName(c.name),
     title: `${c.name}: expires ${formatDate(c.notAfter)} (in ${timeUntil(c.notAfter, now)}). ${HEALTH[c.health].label}; ${RENEWERS[c.renewer]}.`,
     color: HEALTH[c.health].color,
-    href: `/certificates?certificateId=${c.certificateId}`,
+    href: `/certificate?id=${c.certificateId}`,
   });
   const keys = [
     ...new Set(
@@ -280,9 +280,7 @@ export function TimelineView({
             title: "Certificate",
             key: "certificate",
             render: (_, c) => (
-              <Link href={`/certificates?certificateId=${c.certificateId}`}>
-                {c.name}
-              </Link>
+              <Link href={`/certificate?id=${c.certificateId}`}>{c.name}</Link>
             ),
           },
           {
@@ -311,9 +309,7 @@ export function TimelineView({
             key: "open",
             align: "right",
             render: (_, c) => (
-              <Link href={`/certificates?certificateId=${c.certificateId}`}>
-                Open
-              </Link>
+              <Link href={`/certificate?id=${c.certificateId}`}>Open</Link>
             ),
           },
         ]}

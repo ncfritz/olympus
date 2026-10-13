@@ -136,6 +136,8 @@ const activePageOf = (pathname: string): string => {
   ) {
     return "/roots";
   }
+  // A certificate's page is one of the certificates'.
+  if (pathname.startsWith("/certificate")) return "/certificates";
   for (const page of [
     "/ssh/cas",
     "/ssh/certificates",

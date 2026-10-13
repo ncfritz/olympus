@@ -190,7 +190,7 @@ export function CertificateList({
             key: "subject",
             render: (_, c) => (
               <Flex vertical className={styles.subject}>
-                <Link href={`/certificates?certificateId=${c.certificateId}`}>
+                <Link href={`/certificate?id=${c.certificateId}`}>
                   {c.name}
                 </Link>
                 {c.names.length > 0 && (

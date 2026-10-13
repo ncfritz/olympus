@@ -474,7 +474,7 @@ function ClientDetails({
         <Flex gap="small" wrap>
           {newest ? (
             <Link
-              href={`/certificates?certificateId=${encodeURIComponent(newest.certificateId)}`}
+              href={`/certificate?id=${encodeURIComponent(newest.certificateId)}`}
             >
               <Button>Its certificates</Button>
             </Link>

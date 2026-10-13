@@ -3,6 +3,8 @@ import { apiClient } from "./client";
 import { unwrap } from "./errors";
 import type {
   AcmeClient,
+  AuditEvent,
+  FullCertificate,
   AcmeOrderSummary,
   AuditPoint,
   AuditVerification,
@@ -307,6 +309,52 @@ export const useDeployTarget = (
         }),
       ).deployTarget,
     { refreshInterval },
+  );
+
+/** One certificate, with its PEM and its chain. */
+export const useCertificate = (certificateId: string | undefined) =>
+  useSWR<FullCertificate>(
+    certificateId ? `/certificate/${certificateId}` : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/certificate/{certificateId}", {
+          params: { path: { certificateId: certificateId! } },
+        }),
+      ).certificate,
+  );
+
+/**
+ * The audit events about some subjects (a certificate's versions, its
+ * deploy targets), newest first: the latest 50 about each.
+ */
+export const useSubjectEvents = (
+  subjects: { type: string; id: string }[] | undefined,
+) =>
+  useSWR<AuditEvent[]>(
+    subjects?.length
+      ? `/audit/events?subjects=${subjects.map((s) => `${s.type}:${s.id}`).join(",")}`
+      : null,
+    async () => {
+      const pages = await Promise.all(
+        subjects!.map(
+          async (subject) =>
+            unwrap(
+              await apiClient.GET("/v1/audit/events", {
+                params: {
+                  query: {
+                    subjectType: subject.type,
+                    subjectId: subject.id,
+                    pageSize: 50,
+                  },
+                },
+              }),
+            ).events,
+        ),
+      );
+      return pages
+        .flat()
+        .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
+    },
   );
 
 /** Every ACME client, newest credential first: what it holds, its last order. */

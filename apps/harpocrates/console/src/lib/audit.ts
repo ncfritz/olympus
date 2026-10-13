@@ -48,7 +48,7 @@ export const subjectHref = (event: AuditEvent): string | undefined => {
   const id = encodeURIComponent(event.subjectId);
   switch (event.subjectType) {
     case "certificate":
-      return `/certificates?certificateId=${id}`;
+      return `/certificate?id=${id}`;
     case "issuer":
       return `/ca?id=${id}`;
     case "ceremony":

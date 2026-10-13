@@ -107,7 +107,7 @@ export const placeChips = <T>(
 export const attentionHref = (item: AttentionItem): string => {
   switch (item.subjectType) {
     case "certificate":
-      return `/certificates?certificateId=${item.subjectId}`;
+      return `/certificate?id=${item.subjectId}`;
     case "deploy-target":
       return `/deploy-targets?id=${item.subjectId}`;
     default:

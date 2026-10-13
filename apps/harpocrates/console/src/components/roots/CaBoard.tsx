@@ -644,7 +644,7 @@ function Columns({
                 soonest.slice(0, SOONEST).map((c) => (
                   <Link
                     key={c.certificateId}
-                    href={`/certificates?certificateId=${c.certificateId}`}
+                    href={`/certificate?id=${c.certificateId}`}
                     className={styles.item}
                   >
                     <Flex vertical className={styles.grow}>

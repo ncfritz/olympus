@@ -257,9 +257,7 @@ function DeployTargetDrawer({
               </Typography.Text>
             </Descriptions.Item>
             <Descriptions.Item label="Certificate">
-              <Link
-                href={`/certificates?certificateId=${target.certificateId}`}
-              >
+              <Link href={`/certificate?id=${target.certificateId}`}>
                 {target.subject}
               </Link>
             </Descriptions.Item>

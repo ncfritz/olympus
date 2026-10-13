@@ -3,12 +3,12 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, Skeleton, Tabs, Typography } from "antd";
 import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCertificateLineages, useIssuers } from "@/lib/api/queries";
 import { countsOf } from "@/lib/lineages";
 import { Count, CountStrip } from "../CountStrip";
 import { ErrorAlert } from "../ErrorAlert";
-import { CertificateDrawer } from "./CertificateDrawer";
 import styles from "./Certificates.module.css";
 import { LineageGraphs } from "./LineageGraphs";
 import { LineageList } from "./LineageList";
@@ -22,7 +22,7 @@ type View = (typeof VIEWS)[number];
  * The certificates: each subject's lineage, its newest version what it
  * holds now and the rest beneath it. Their counts across the top; beneath,
  * the list (alerts, graphs, filters) and the timeline. One certificate at
- * a time in a drawer, from `?certificateId=`.
+ * a time on its own page; an old link's `?certificateId=` goes there.
  */
 export function CertificatesPage() {
   const { data, error, isLoading } = useCertificateLineages();
@@ -33,6 +33,10 @@ export function CertificatesPage() {
   const view: View =
     VIEWS.find((v) => v === params.get("view")) ?? "certificates";
   const open = params.get("certificateId") ?? undefined;
+  // Links from before the certificate's page: send them there.
+  useEffect(() => {
+    if (open) router.replace(`/certificate?id=${encodeURIComponent(open)}`);
+  }, [open, router]);
   const go = (changes: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(changes)) {
@@ -42,7 +46,8 @@ export function CertificatesPage() {
     const query = next.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
   };
-  const onOpen = (certificateId: string) => go({ certificateId });
+  const onOpen = (certificateId: string) =>
+    router.push(`/certificate?id=${encodeURIComponent(certificateId)}`);
 
   const lineages = data?.lineages ?? [];
   const now = data ? Date.parse(data.asOf) : 0;
@@ -74,14 +79,6 @@ export function CertificatesPage() {
     </Flex>
   );
 
-  const drawer = (
-    <CertificateDrawer
-      certificateId={open}
-      onOpen={onOpen}
-      onClose={() => go({ certificateId: undefined })}
-    />
-  );
-
   if (error || isLoading || !data) {
     return (
       <div className={styles.page}>
@@ -93,7 +90,6 @@ export function CertificatesPage() {
           />
           {!error && <Skeleton active />}
         </div>
-        {drawer}
       </div>
     );
   }
@@ -173,7 +169,6 @@ export function CertificatesPage() {
           },
         ]}
       />
-      {drawer}
     </div>
   );
 }

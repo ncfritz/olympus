@@ -1,0 +1,297 @@
+/*
+ * One certificate's page: their contents run to the shell's edges; what is in
+ * them keeps the page's 24px margin (docs/conventions/ux.md, Page edges).
+ * Doubled selectors outrank antd's own at the same specificity.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header.header {
+  padding: 16px 24px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+.padded.padded {
+  padding: 16px 24px;
+}
+
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.mono {
+  font-family: var(--ant-font-family-code, monospace);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.shrink {
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.directory.directory {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 32px;
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--ant-color-text-secondary);
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+.label {
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+}
+
+.code.code {
+  display: block;
+  margin: 0;
+  padding: 6px 10px;
+  overflow-x: auto;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-bg-container);
+  font-family: var(--ant-font-family-code, monospace);
+  font-size: 12px;
+  white-space: pre;
+}
+
+.headerTitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.headerTitle :global(.ant-tag) {
+  margin-inline-end: 0;
+}
+
+.icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--ant-color-primary-bg);
+  color: var(--ant-color-primary);
+  font-size: 20px;
+}
+
+.section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 10px;
+}
+
+.boxTitle.boxTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* The chain: a box for each CA and the certificate, joined by arrows. */
+.chain {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0 24px 16px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+@media (max-width: 900px) {
+  .chain {
+    flex-direction: column;
+  }
+}
+
+.node {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-left: 4px solid var(--tier);
+  border-radius: 8px;
+}
+
+.nodeOn {
+  box-shadow: 0 0 0 2px var(--ant-color-primary-border);
+}
+
+.arrow {
+  display: flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  color: var(--ant-color-text-tertiary);
+  font-size: 16px;
+}
+
+.alert.alert {
+  margin: 12px 24px;
+}
+
+/* Boxes in a row, divided by borders, edge to edge. */
+.boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.boxes > .box {
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+
+.boxes > .box:last-child {
+  border-right: none;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 24px;
+}
+
+.ok.ok {
+  color: var(--ant-color-success);
+}
+
+.bad.bad {
+  color: var(--ant-color-error);
+}
+
+/* The versions: a card each, newest first, joined by arrows. */
+.versions {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 0 24px 16px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  scrollbar-width: thin;
+}
+
+.version {
+  display: flex;
+  flex: 1 0 220px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-left: 4px solid var(--ant-color-border);
+  border-radius: 8px;
+  color: inherit;
+}
+
+.version:hover {
+  border-color: var(--ant-color-primary-border-hover);
+  color: inherit;
+}
+
+.versionOn.versionOn {
+  border-left-color: var(--ant-color-primary);
+  box-shadow: 0 0 0 2px var(--ant-color-primary-border);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+@media (max-width: 1000px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.split > .box + .box {
+  border-left: 1px solid var(--ant-color-border-secondary);
+}
+
+/* The story: a dot for each event, its colour from its group. */
+.story :global(.ant-timeline-item) {
+  padding-bottom: 14px;
+}
+
+.when {
+  display: inline-block;
+  width: 170px;
+  white-space: nowrap;
+  color: var(--ant-color-text-secondary);
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+/* How early each renewal came: a bar each, its height from code. */
+.leads {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  height: 52px;
+}
+
+.lead {
+  width: 28px;
+  height: var(--height);
+  border-radius: 3px 3px 0 0;
+  background: var(--color);
+}
+
+.pem.pem {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+  background: var(--ant-color-fill-quaternary);
+  font-family: var(--ant-font-family-code, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
