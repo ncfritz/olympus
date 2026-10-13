@@ -8,6 +8,11 @@
   flex-direction: column;
 }
 
+/* Beside a side panel, the page runs to the panel's edges too. */
+.page > :global(.ant-layout-content) {
+  padding: 0;
+}
+
 .header.header {
   padding: 16px 24px;
 }

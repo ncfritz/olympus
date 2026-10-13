@@ -8,6 +8,12 @@
   flex-direction: column;
 }
 
+/* Beside a side panel, the page runs to the panel's edges too. */
+.page > :global(.ant-layout-content) {
+  padding: 0;
+  container-type: inline-size;
+}
+
 .header.header {
   padding: 16px 24px;
 }
@@ -143,9 +149,23 @@
   border-bottom: 1px solid var(--ant-color-border-secondary);
 }
 
-@media (max-width: 900px) {
-  .chain {
+.chainStep {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Beside an open panel the chain is narrow: one CA to a line. */
+@container (max-width: 760px) {
+  .chain,
+  .chainStep {
     flex-direction: column;
+  }
+
+  .arrow {
+    flex-basis: 20px;
+    transform: rotate(90deg);
   }
 }
 
@@ -294,4 +314,27 @@
   font-size: 12px;
   line-height: 1.5;
   white-space: pre;
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ant-color-text-secondary);
+  white-space: nowrap;
+}
+
+.dueSwatch {
+  width: 9px;
+  height: 9px;
+  background: var(--ant-color-warning);
+  transform: rotate(45deg);
+}
+
+.lifelineBox {
+  border-bottom: 1px solid var(--ant-color-border-secondary);
 }

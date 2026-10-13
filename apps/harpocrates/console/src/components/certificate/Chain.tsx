@@ -32,12 +32,12 @@ const Mark = ({ ok }: { ok: boolean }) =>
   );
 
 /**
- * The General tab: the chain a client builds, from its root to this
+ * The Chain tab: the chain a client builds, from its root to this
  * certificate, each CA's revocation; where it is deployed and what each
  * endpoint serves; its revocation, its key, and the rules of its CA it
  * meets.
  */
-export function General({
+export function Chain({
   certificate,
   lineage,
   issuers,
@@ -89,7 +89,7 @@ export function General({
         {chain.map((ca) => {
           const revocation = revocationOf(authorities.get(ca.id), now);
           return (
-            <Flex key={ca.id} className={styles.grow} gap={4}>
+            <div key={ca.id} className={styles.chainStep}>
               <div className={styles.node} style={tierStyle(tiers[ca.tier])}>
                 <Link href={`/ca?id=${ca.id}`}>
                   <Typography.Text strong ellipsis>
@@ -114,7 +114,7 @@ export function General({
               <div className={styles.arrow} aria-hidden>
                 →
               </div>
-            </Flex>
+            </div>
           );
         })}
         <div

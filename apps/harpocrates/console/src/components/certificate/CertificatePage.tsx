@@ -4,7 +4,10 @@ import {
   DeploymentUnitOutlined,
   DownloadOutlined,
   FileProtectOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
   KeyOutlined,
+  ProfileOutlined,
   ReloadOutlined,
   StopOutlined,
 } from "@ant-design/icons";
@@ -17,11 +20,13 @@ import {
   Skeleton,
   Tabs,
   Tag,
+  Tooltip,
   Typography,
 } from "antd";
+import { SideTabPanel } from "@ncfritz/olympus-console";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
 import {
   KEYS,
@@ -45,22 +50,36 @@ import { KeyExportForm } from "../KeyExportForm";
 import { RenewForm } from "../RenewForm";
 import { RevokeForm } from "../RevokeForm";
 import styles from "./Certificate.module.css";
+import { CertificateDetails, CertificatePem } from "../CertificateDetails";
+import { Chain } from "./Chain";
 import { Details } from "./Details";
-import { General } from "./General";
+import { Overview } from "./Overview";
+import { Activity } from "./SideTabs";
 import { Versions } from "./Versions";
 
 /** The tabs, by `?view=`. */
-const VIEWS = ["general", "versions", "details"] as const;
+const VIEWS = ["general", "chain", "versions", "details"] as const;
 type View = (typeof VIEWS)[number];
 
 type Action = "renew" | "revoke" | "export" | "deploy";
 
+/** The side panel's width, open. */
+const PANEL_WIDTH = 480;
+
+const TabIcon = ({ title, icon }: { title: string; icon: ReactNode }) => (
+  <Tooltip title={title} placement="left">
+    <span aria-label={title}>{icon}</span>
+  </Tooltip>
+);
+
 /**
  * One certificate, from `?id=`: what it is and what to do with it across
- * the top, its counts, then General (its chain, where it is used, its
- * revocation, key and CA's rules), Versions (each version, its story,
+ * the top, its counts, then General (its lifeline, what it says and how
+ * it is kept), Chain (its chain, where it is used, its revocation, key and
+ * CA's rules), Versions (each version, its story,
  * what happens next) and Details (decoded, its PEM and files, commands to
- * check it).
+ * check it); in a side panel, its activity, its PEM, and its fingerprints
+ * and extensions.
  */
 export function CertificatePage() {
   const params = useSearchParams();
@@ -207,7 +226,48 @@ export function CertificatePage() {
   );
 
   return (
-    <div className={styles.page}>
+    <SideTabPanel
+      panelId="harpocrates.certificate"
+      width={PANEL_WIDTH}
+      className={styles.page}
+      tabs={[
+        {
+          key: "activity",
+          label: <TabIcon title="Activity" icon={<HistoryOutlined />} />,
+          children: (
+            <Activity
+              events={events ?? []}
+              lineage={lineage}
+              onMore={() => go({ view: "versions" })}
+            />
+          ),
+        },
+        {
+          key: "pem",
+          label: (
+            <TabIcon title="Certificate (PEM)" icon={<FileTextOutlined />} />
+          ),
+          children: (
+            <CertificatePem pem={certificate.certificate} fileName={fileName} />
+          ),
+        },
+        {
+          key: "extensions",
+          label: (
+            <TabIcon
+              title="Fingerprints and extensions"
+              icon={<ProfileOutlined />}
+            />
+          ),
+          children: (
+            <CertificateDetails
+              pem={certificate.certificate}
+              nameConstraints={[]}
+            />
+          ),
+        },
+      ]}
+    >
       {messageHolder}
       <Flex
         justify="space-between"
@@ -356,7 +416,19 @@ export function CertificatePage() {
             key: "general",
             label: "General",
             children: (
-              <General
+              <Overview
+                certificate={certificate}
+                lineage={lineage}
+                targets={targets}
+                now={now}
+              />
+            ),
+          },
+          {
+            key: "chain",
+            label: "Chain",
+            children: (
+              <Chain
                 certificate={certificate}
                 lineage={lineage}
                 issuers={issuers ?? []}
@@ -447,6 +519,6 @@ export function CertificatePage() {
           />
         )}
       </Modal>
-    </div>
+    </SideTabPanel>
   );
 }
