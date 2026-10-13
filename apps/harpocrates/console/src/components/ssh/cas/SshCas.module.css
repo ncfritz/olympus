@@ -429,3 +429,34 @@
 .actions.actions {
   padding-inline-end: 24px;
 }
+
+/* A CA's expander: a caret, turned down when it is open. */
+.caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--ant-color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.caret:hover {
+  background: var(--ant-color-fill-secondary);
+  color: var(--ant-color-text);
+}
+
+.caret:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: 1px;
+}
+
+.caretOpen {
+  transform: rotate(90deg);
+}

@@ -1,3 +1,4 @@
+import { RightOutlined } from "@ant-design/icons";
 import { Flex, Table, Tag, Typography } from "antd";
 import type { CSSProperties } from "react";
 import type {
@@ -87,6 +88,20 @@ export function CaList({
       locale={{ emptyText: "No SSH CA yet: make the user CA first" }}
       expandable={{
         expandRowByClick: true,
+        expandIcon: ({ expanded, onExpand, record }) => (
+          <button
+            type="button"
+            className={`${styles.caret} ${expanded ? styles.caretOpen : ""}`}
+            aria-label={`${expanded ? "Close" : "Open"} ${record.name}`}
+            aria-expanded={expanded}
+            onClick={(e) => {
+              e.stopPropagation();
+              onExpand(record, e);
+            }}
+          >
+            <RightOutlined />
+          </button>
+        ),
         expandedRowClassName: () => styles.expandedRow,
         expandedRowRender: (ca) => (
           <CaDetails
