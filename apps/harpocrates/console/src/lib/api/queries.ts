@@ -311,6 +311,18 @@ export const useDeployTarget = (
     { refreshInterval },
   );
 
+/** The SSH principal mappings' changes, newest first: the latest 50. */
+export const useSshPrincipalChanges = (enabled = true) =>
+  useSWR<AuditEvent[]>(
+    enabled ? "/audit/events?subjectType=ssh-identity" : null,
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/audit/events", {
+          params: { query: { subjectType: "ssh-identity", pageSize: 50 } },
+        }),
+      ).events,
+  );
+
 /** One certificate, with its PEM and its chain. */
 export const useCertificate = (certificateId: string | undefined) =>
   useSWR<FullCertificate>(

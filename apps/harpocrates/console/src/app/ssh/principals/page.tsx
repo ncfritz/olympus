@@ -1,10 +1,12 @@
-import { SshPrincipalsPage } from "@/components/ssh/SshPrincipalsPage";
-import { PaddedPage } from "@/components/PaddedPage";
+import { Suspense } from "react";
+import { SshPrincipalsPage } from "@/components/ssh/principals/SshPrincipalsPage";
 
+// It reads its tab from its query (useSearchParams), which needs a
+// Suspense boundary.
 export default function SshPrincipals() {
   return (
-    <PaddedPage>
+    <Suspense>
       <SshPrincipalsPage />
-    </PaddedPage>
+    </Suspense>
   );
 }
