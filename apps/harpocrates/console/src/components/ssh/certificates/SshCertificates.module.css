@@ -1,0 +1,310 @@
+/*
+ * The SSH certificates page: their contents run to the shell's edges; what is in
+ * them keeps the page's 24px margin (docs/conventions/ux.md, Page edges).
+ * Doubled selectors outrank antd's own at the same specificity.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header.header {
+  padding: 16px 24px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+.padded.padded {
+  padding: 16px 24px;
+}
+
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.mono {
+  font-family: var(--ant-font-family-code, monospace);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.shrink {
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.directory.directory {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 32px;
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--ant-color-text-secondary);
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+.track {
+  position: relative;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--ant-color-fill-tertiary);
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: max(var(--width), 2px);
+  border-radius: 3px;
+  background: var(--color);
+}
+
+.right {
+  text-align: right;
+}
+
+.low {
+  opacity: 0.55;
+}
+
+.search.search {
+  flex: 1 1 280px;
+  max-width: 460px;
+}
+
+.timeLeft {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 8px;
+  align-items: center;
+}
+
+.expandedGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  padding-inline-end: 24px;
+}
+
+@media (max-width: 1100px) {
+  .expandedGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.label {
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+}
+
+.code.code {
+  display: block;
+  margin: 0;
+  padding: 6px 10px;
+  overflow-x: auto;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-bg-container);
+  font-family: var(--ant-font-family-code, monospace);
+  font-size: 12px;
+  white-space: pre;
+}
+
+/*
+ * The timeline: each person's key, or each host, a lane on one axis, its
+ * certificates as bars; each bar's start (--from) and length (--width)
+ * set from code.
+ */
+.section {
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-fill-quaternary);
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-secondary);
+}
+
+.lane {
+  display: grid;
+  grid-template-columns: minmax(160px, 260px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 6px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.laneHead {
+  padding-block: 8px 4px;
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+}
+
+.laneTrack {
+  position: relative;
+  height: 24px;
+}
+
+.axis {
+  position: relative;
+  height: 18px;
+  font-weight: 400;
+}
+
+.tick {
+  position: absolute;
+  left: var(--from);
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.tickToday {
+  color: var(--ant-color-primary);
+  font-weight: 600;
+}
+
+.bar {
+  position: absolute;
+  top: 3px;
+  left: var(--from);
+  width: max(var(--width), 3px);
+  height: 18px;
+  overflow: hidden;
+  padding: 0 6px;
+  border: none;
+  border-radius: 4px;
+  background: var(--color);
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bar:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: 1px;
+}
+
+.expired {
+  opacity: 0.45;
+}
+
+.revokedBar.revokedBar {
+  background: #d03b3b;
+}
+
+.now,
+.nowSwatch {
+  width: 2px;
+  background: var(--ant-color-primary);
+}
+
+.now {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: var(--from);
+}
+
+.nowSwatch {
+  height: 12px;
+}
+
+.swatch {
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--color);
+}
+
+.alert.alert {
+  margin: 14px 24px;
+}
+
+/*
+ * A certificate opened in the list: its details start where its name does (past
+ * the expand column), and run to the page's edge.
+ */
+.expandedRow > :global(td.ant-table-cell.ant-table-cell:first-child) {
+  padding: 0 !important;
+  background: var(--ant-color-fill-quaternary) !important;
+}
+
+.indented {
+  padding-inline-start: 56px;
+  padding-block: 12px 4px;
+}
+
+/* A certificate's expander: a caret, turned down when it is open. */
+.caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--ant-color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.caret:hover {
+  background: var(--ant-color-fill-secondary);
+  color: var(--ant-color-text);
+}
+
+.caret:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
+  outline-offset: 1px;
+}
+
+.caretOpen {
+  transform: rotate(90deg);
+}
