@@ -46,6 +46,11 @@ export type DeploymentStatus = Schemas["DeploymentStatus"];
 export type EndpointObservation = Schemas["EndpointObservation"];
 export type EndpointResult = Schemas["EndpointResult"];
 export type AcmeCredential = Schemas["AcmeCredential"];
+export type AcmeClient = Schemas["AcmeClient"];
+export type AcmeClientCertificate = Schemas["AcmeClientCertificate"];
+export type AcmeOrderSummary = Schemas["AcmeOrderSummary"];
+export type AcmeAuthorizationSummary = Schemas["AcmeAuthorizationSummary"];
+export type AcmeChallengeSummary = Schemas["AcmeChallengeSummary"];
 export type CreateAcmeCredentialResponse =
   Schemas["CreateAcmeCredentialResponse"];
 export type ProfileSettings = Schemas["ProfileSettings"];

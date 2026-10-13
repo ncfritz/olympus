@@ -11,14 +11,17 @@ export const CountStrip = ({ children }: { children: ReactNode }) => (
 export const Count = ({
   title,
   value,
+  suffix,
   note,
 }: {
   title: string;
-  value: number;
+  /** A count; or, where the count is a thing's name, that name. */
+  value: number | string;
+  suffix?: ReactNode;
   note?: ReactNode;
 }) => (
   <div className={styles.cell}>
-    <Statistic title={title} value={value} />
+    <Statistic title={title} value={value} suffix={suffix} />
     {typeof note === "string" ? (
       <Typography.Text
         type="secondary"

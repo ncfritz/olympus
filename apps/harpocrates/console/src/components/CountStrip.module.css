@@ -23,3 +23,10 @@
 .note {
   font-size: var(--ant-font-size-sm, 12px);
 }
+
+/* A count that is a name (a host): cut to its cell, never past it. */
+.cell :global(.ant-statistic-content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

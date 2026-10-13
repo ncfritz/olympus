@@ -2,7 +2,8 @@ import useSWR from "swr";
 import { apiClient } from "./client";
 import { unwrap } from "./errors";
 import type {
-  AcmeCredential,
+  AcmeClient,
+  AcmeOrderSummary,
   AuditPoint,
   AuditVerification,
   Ceremony,
@@ -59,7 +60,8 @@ export const KEYS = {
   dashboard: "/dashboard",
   deployTargets: "/deploy-targets",
   deployTarget: (id: string) => `/deploy-target/${id}`,
-  acmeCredentials: "/acme/credentials",
+  acmeClients: "/acme/clients",
+  acmeOrders: (days: number) => `/acme/orders?days=${days}`,
   sshCas: "/ssh/cas",
   sshCertificates: (filter: SshCertificateFilter) =>
     `/ssh/certificates?${new URLSearchParams(
@@ -304,11 +306,24 @@ export const useDeployTarget = (
     { refreshInterval },
   );
 
-/** Every ACME credential, newest first, with its account. */
-export const useAcmeCredentials = () =>
-  useSWR<AcmeCredential[]>(
-    KEYS.acmeCredentials,
-    async () => unwrap(await apiClient.GET("/v1/acme/credentials")).credentials,
+/** Every ACME client, newest credential first: what it holds, its last order. */
+export const useAcmeClients = (refreshInterval?: number) =>
+  useSWR<{ asOf: string; directoryUrl: string; clients: AcmeClient[] }>(
+    KEYS.acmeClients,
+    async () => unwrap(await apiClient.GET("/v1/acme/clients")),
+    { refreshInterval },
+  );
+
+/** The ACME orders of the last `days`, newest first, step by step. */
+export const useAcmeOrders = (days: number) =>
+  useSWR<{ asOf: string; since: string; orders: AcmeOrderSummary[] }>(
+    KEYS.acmeOrders(days),
+    async () =>
+      unwrap(
+        await apiClient.GET("/v1/acme/orders", {
+          params: { query: { days } },
+        }),
+      ),
   );
 
 /** The SSH CAs, users' first, newest generation first. */

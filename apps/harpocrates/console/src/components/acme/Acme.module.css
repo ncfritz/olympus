@@ -1,0 +1,370 @@
+/*
+ * The ACME pages: their contents run to the shell's edges; what is in
+ * them keeps the page's 24px margin (docs/conventions/ux.md, Page edges).
+ * Doubled selectors outrank antd's own at the same specificity.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header.header {
+  padding: 16px 24px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+.padded.padded {
+  padding: 16px 24px;
+}
+
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.mono {
+  font-family: var(--ant-font-family-code, monospace);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.shrink {
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.directory.directory {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 32px;
+}
+
+/* The graphs: two boxes to a row, four where there is room. */
+.graphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.graphs > * {
+  margin-bottom: -1px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--ant-color-text-secondary);
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.search.search {
+  flex: 1 1 260px;
+  max-width: 420px;
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+.flushTable :global(.ant-table-pagination) {
+  padding-inline: 24px;
+}
+
+/* A client's outcome each day: a dot, its colour from code (--color). */
+.dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color, var(--ant-color-fill-secondary));
+}
+
+.issued {
+  --color: #0ca30c;
+}
+
+.failed {
+  --color: #d03b3b;
+}
+
+.pending {
+  --color: var(--ant-color-primary);
+}
+
+/* An order's steps: a dot each, joined; done green, failed red. */
+.steps {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.link {
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  background: var(--ant-color-border);
+}
+
+/* A client opened: its details and actions beside its recent orders. */
+.expanded {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(260px, 2fr) minmax(0, 3fr);
+  gap: 24px;
+  padding: 8px 0 8px 24px;
+}
+
+@media (max-width: 1000px) {
+  .expanded {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.label {
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-secondary);
+}
+
+/*
+ * The renewal timeline: each held certificate on one axis, its validity
+ * a bar and its renewal window a box on it, today across them all; each
+ * span's start (--from) and length (--width) set from code.
+ */
+.timeline {
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.lane {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr) 190px;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.lane:last-child {
+  border-bottom: none;
+}
+
+.laneHead {
+  padding-block: 10px 6px;
+  background: var(--ant-color-fill-quaternary);
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+}
+
+.track {
+  position: relative;
+  height: 24px;
+}
+
+.axis {
+  position: relative;
+  height: 18px;
+  font-weight: 400;
+}
+
+.tick {
+  position: absolute;
+  left: var(--from);
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.tickToday {
+  color: var(--ant-color-primary);
+  font-weight: 600;
+}
+
+.valid {
+  position: absolute;
+  top: 7px;
+  left: var(--from);
+  width: var(--width);
+  height: 10px;
+  border-radius: 3px;
+  background: color-mix(
+    in srgb,
+    var(--ant-color-primary) 35%,
+    var(--ant-color-fill-secondary)
+  );
+}
+
+.window {
+  position: absolute;
+  top: 2px;
+  left: var(--from);
+  width: max(var(--width), 4px);
+  height: 20px;
+  border: 2px solid var(--state);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--state) 18%, transparent);
+}
+
+.ahead {
+  --state: #0ca30c;
+}
+
+.renewing {
+  --state: var(--ant-color-primary);
+}
+
+.overdue {
+  --state: #d03b3b;
+}
+
+.stateText.stateText {
+  color: var(--state);
+  font-weight: 600;
+}
+
+.windowSwatch {
+  width: 14px;
+  height: 10px;
+  border: 2px solid var(--state);
+  border-radius: 3px;
+}
+
+.validSwatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  background: color-mix(
+    in srgb,
+    var(--ant-color-primary) 35%,
+    var(--ant-color-fill-secondary)
+  );
+}
+
+.today,
+.todaySwatch {
+  width: 2px;
+  background: var(--ant-color-primary);
+}
+
+.today {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: var(--from);
+}
+
+.todaySwatch {
+  height: 12px;
+}
+
+/* What needs a look, in the side panel. */
+.look {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.look:first-child {
+  padding-top: 0;
+}
+
+/* The enrollment page: its steps beside what each asks for. */
+.enroll {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  border-top: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+@media (max-width: 900px) {
+  .enroll {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.stepsPane {
+  padding: 20px 24px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+
+.workPane {
+  min-width: 0;
+  padding: 20px 24px;
+}
+
+.form.form {
+  max-width: 560px;
+}
+
+.secrets {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .secrets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.code.code {
+  display: block;
+  margin: 0;
+  padding: 8px 12px;
+  overflow-x: auto;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-fill-quaternary);
+  font-family: var(--ant-font-family-code, monospace);
+  font-size: 13px;
+  white-space: pre;
+}
+
+.secret.secret {
+  margin: 0;
+  word-break: break-all;
+}
+
+.infoMark.infoMark {
+  color: var(--ant-color-primary);
+}

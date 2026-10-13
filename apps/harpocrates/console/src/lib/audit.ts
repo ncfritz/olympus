@@ -57,6 +57,8 @@ export const subjectHref = (event: AuditEvent): string | undefined => {
       return `/deploy-targets?id=${id}`;
     case "profile":
       return `/profiles?id=${id}`;
+    case "acme-credential":
+      return `/acme?id=${id}`;
     default:
       return undefined;
   }
