@@ -14,6 +14,7 @@ import {
   renewerOf,
   URGENT_DAYS,
 } from "../../certificates/renewal";
+import { subjectNamesOf } from "../../audit/subjectNames";
 import { issuingWindowClosesAt } from "../../issuers/issuingWindow";
 import { PrismaService } from "../../store/PrismaService";
 import type { IssuerTier, Prisma } from "../../store/prisma";
@@ -545,42 +546,7 @@ export class DashboardService {
       orderBy: { sequence: "desc" },
       take: RECENT_EVENTS,
     });
-    const ids = (type: string) => [
-      ...new Set(
-        events
-          .filter((e) => e.subjectType === type && e.subjectId)
-          .map((e) => e.subjectId!),
-      ),
-    ];
-    const uuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
-    const [certificates, issuers, targets] = await Promise.all([
-      this.prisma.certificate.findMany({
-        where: { id: { in: ids("certificate").filter(uuid) } },
-        select: { id: true, subject: true },
-      }),
-      this.prisma.issuer.findMany({
-        where: { id: { in: ids("issuer") } },
-        select: { id: true, subject: true },
-      }),
-      this.prisma.deployTarget.findMany({
-        where: { id: { in: ids("deploy-target").filter(uuid) } },
-        select: { id: true, name: true },
-      }),
-    ]);
-    const names = new Map<string, string>([
-      ...certificates.map((c): [string, string] => [
-        `certificate:${c.id}`,
-        nameOf(c.subject),
-      ]),
-      ...issuers.map((i): [string, string] => [
-        `issuer:${i.id}`,
-        nameOf(i.subject),
-      ]),
-      ...targets.map((t): [string, string] => [
-        `deploy-target:${t.id}`,
-        t.name,
-      ]),
-    ]);
+    const names = await subjectNamesOf(this.prisma, events);
     return events.map((event) => ({
       sequence: event.sequence,
       occurredAt: event.occurredAt,
