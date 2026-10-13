@@ -4,6 +4,7 @@ import { ProfilesModule } from "../profiles/ProfilesModule";
 import { CreateSshHostCertificateController } from "./controllers/CreateSshHostCertificateController";
 import { CreateSshRenewalChallengeController } from "./controllers/CreateSshRenewalChallengeController";
 import { CreateSshUserCertificateController } from "./controllers/CreateSshUserCertificateController";
+import { GetSshActivityController } from "./controllers/GetSshActivityController";
 import { DescribeMySshController } from "./controllers/DescribeMySshController";
 import { DescribeSshTypeKrlController } from "./controllers/DescribeSshTypeKrlController";
 import { DescribeSshCertificateController } from "./controllers/DescribeSshCertificateController";
@@ -16,6 +17,7 @@ import { ListSshCasController } from "./controllers/ListSshCasController";
 import { ListSshPrincipalsController } from "./controllers/ListSshPrincipalsController";
 import { RetireSshCaController } from "./controllers/RetireSshCaController";
 import { SetSshPrincipalsController } from "./controllers/SetSshPrincipalsController";
+import { SshActivityService } from "./services/SshActivityService";
 import { SshCaService } from "./services/SshCaService";
 import { SshCertificateService } from "./services/SshCertificateService";
 import { SshHostRenewalService } from "./services/SshHostRenewalService";
@@ -30,6 +32,7 @@ import { SshPrincipalService } from "./services/SshPrincipalService";
   imports: [KeysModule, ProfilesModule],
   controllers: [
     ListSshCasController,
+    GetSshActivityController,
     CreateSshCaController,
     DescribeSshCaController,
     RetireSshCaController,
@@ -47,6 +50,7 @@ import { SshPrincipalService } from "./services/SshPrincipalService";
   ],
   providers: [
     SshCaService,
+    SshActivityService,
     SshPrincipalService,
     SshCertificateService,
     SshKrlService,

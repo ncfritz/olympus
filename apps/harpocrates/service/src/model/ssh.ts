@@ -1,5 +1,6 @@
 import { ApiTimestamp } from "@ncfritz/olympus-model";
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -158,6 +159,27 @@ export class SshCa {
       "Where every CA of its type's KRL is published together: the one file RevokedKeys (or, for host CAs, RevokedHostKeys) fetches",
   })
   typeKrlUrl: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its KRL's version as last published; 0 before the first",
+  })
+  krlVersion: number;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when its KRL was last published",
+  })
+  krlPublishedAt?: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when a new KRL was wanted (a revocation, a new CA) and not yet published",
+  })
+  krlDueAt?: Moment;
 
   @ApiTimestamp({
     required: false,
@@ -435,6 +457,116 @@ export class SshCertificate {
   updatedAt: Moment;
 }
 
+/** An SSH CA's certificates, counted. */
+export class SshCaActivity {
+  @ApiProperty({ type: String, required: true, description: "The CA" })
+  caId: string;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its certificates valid now: neither revoked nor expired",
+  })
+  valid: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Its certificates issued in the days asked for",
+  })
+  issued: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description: "Every certificate it has issued",
+  })
+  issuedEver: number;
+
+  @ApiProperty({
+    type: Number,
+    required: true,
+    description:
+      "Its certificates in its KRL now: revoked, and not yet expired",
+  })
+  inKrl: number;
+
+  @ApiTimestamp({
+    required: false,
+    description:
+      "An ISO-8601 formatted string: when the last certificate it signed expires; once past, nothing needs its trust line",
+  })
+  lastExpiresAt?: Moment;
+}
+
+/** An SSH certificate, as the CAs' graphs draw it. */
+export class SshActivityCertificate {
+  @ApiProperty({ type: String, required: true, description: "Its ID" })
+  id: string;
+
+  @ApiProperty({ type: String, required: true, description: "Its CA" })
+  caId: string;
+
+  @ApiProperty({
+    ...SSH_CERTIFICATE_TYPE_ENUM,
+    required: true,
+    description: "A user's or a host's",
+  })
+  type: SshCertificateTypeName;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    required: true,
+    description: "The principals it names",
+  })
+  principals: string[];
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "A user certificate's Olympus identity (email)",
+  })
+  identity?: string;
+
+  @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "Whether a host renewed it itself",
+  })
+  renewal: boolean;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it becomes valid",
+  })
+  validAfter: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it expires",
+  })
+  validBefore: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description: "An ISO-8601 formatted string: when it was revoked",
+  })
+  revokedAt?: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it was issued",
+  })
+  createdAt: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it last changed",
+  })
+  updatedAt: Moment;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Request Shapes                                                                                                     */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -648,6 +780,20 @@ export class ListSshCertificatesQuery {
   current?: "true" | "false";
 }
 
+export class GetSshActivityQuery {
+  @ApiProperty({
+    type: Number,
+    required: false,
+    description: "How many days back, to now (30 by default, at most 90)",
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(90)
+  days?: number;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -821,4 +967,36 @@ export class DescribeMySshResponse {
       "The known_hosts lines that trust the hosts: each host CA's, while it is active or vouches for a current certificate",
   })
   hostTrustLines: string[];
+}
+
+export class GetSshActivityResponse {
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when it was read",
+  })
+  asOf: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string: the start of the days asked for",
+  })
+  since: Moment;
+
+  @ApiProperty({
+    type: () => SshCaActivity,
+    isArray: true,
+    required: true,
+    description: "Each CA's certificates, counted",
+  })
+  cas: SshCaActivity[];
+
+  @ApiProperty({
+    type: () => SshActivityCertificate,
+    isArray: true,
+    required: true,
+    description:
+      "Every certificate issued since then, valid now, or revoked in the last year; newest first",
+  })
+  certificates: SshActivityCertificate[];
 }

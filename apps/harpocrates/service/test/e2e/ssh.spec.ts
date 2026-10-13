@@ -583,6 +583,83 @@ describe.skipIf(!E2E_DATABASE_URL)("ssh", () => {
           where: { kind: "ssh-certificate.revoked" },
         }),
       ).toBe(1);
+      // The CA says when its KRL was published, and that none is due.
+      const after = (
+        await request(server())
+          .get("/v1/ssh/ca/ssh-user-1-g2")
+          .set("Authorization", harness.operator)
+          .expect(200)
+      ).body.ca as SshCa & {
+        krlVersion: number;
+        krlPublishedAt?: string;
+        krlDueAt?: string;
+      };
+      expect(after.krlVersion).toBeGreaterThanOrEqual(1);
+      expect(after.krlPublishedAt).toEqual(expect.any(String));
+      expect(after.krlDueAt).toBeUndefined();
+    });
+
+    it("counts each CA's certificates, and lists what the graphs draw", async () => {
+      const body = (
+        await request(server())
+          .get("/v1/ssh/activity?days=7")
+          .set("Authorization", harness.operator)
+          .expect(200)
+      ).body as {
+        cas: {
+          caId: string;
+          valid: number;
+          issued: number;
+          issuedEver: number;
+          inKrl: number;
+          lastExpiresAt?: string;
+        }[];
+        certificates: {
+          id: string;
+          caId: string;
+          type: string;
+          principals: string[];
+          identity?: string;
+          revokedAt?: string;
+          createdAt: string;
+        }[];
+      };
+      expect(body.cas.map((c) => c.caId)).toEqual([
+        "ssh-user-1-g2",
+        "ssh-user-1-g1",
+        "ssh-host-1-g1",
+      ]);
+      const rows = await harness.prisma.sshCertificate.findMany();
+      const user = body.cas[0];
+      const mine = rows.filter((r) => r.sshCaId === "ssh-user-1-g2");
+      expect(user).toMatchObject({
+        issued: mine.length,
+        issuedEver: mine.length,
+        inKrl: 1,
+        valid: mine.filter((r) => r.status === "valid").length,
+      });
+      expect(Date.parse(user.lastExpiresAt!)).toBe(
+        Math.max(...mine.map((r) => r.validBefore.getTime())),
+      );
+      expect(body.cas[1]).toMatchObject({ valid: 0, issuedEver: 0 });
+      expect(body.cas[1].lastExpiresAt).toBeUndefined();
+      expect(body.certificates).toHaveLength(rows.length);
+      const times = body.certificates.map((c) => Date.parse(c.createdAt));
+      expect(times).toEqual([...times].sort((a, b) => b - a));
+      expect(
+        body.certificates.filter((c) => c.revokedAt).map((c) => c.caId),
+      ).toEqual(["ssh-user-1-g2"]);
+      expect(body.certificates.find((c) => c.type === "host")).toMatchObject({
+        caId: "ssh-host-1-g1",
+        principals: ["mini.internal.ncfritz.net", "mini"],
+      });
+      expect(
+        body.certificates.find((c) => c.identity === "guest@ncfritz.net"),
+      ).toMatchObject({ type: "user", principals: ["guest", "backup"] });
+      await request(server())
+        .get("/v1/ssh/activity?days=91")
+        .set("Authorization", harness.operator)
+        .expect(400);
     });
 
     it("previews an SSH version, signed by no CA", async () => {

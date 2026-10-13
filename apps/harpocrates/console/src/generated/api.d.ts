@@ -912,6 +912,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/ssh/activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The SSH CAs' activity
+     * @description Each SSH CA's certificates counted (valid now, issued in the last days, issued ever, in its KRL now, and when the last expires), and the certificates the console's graphs draw: issued in the last days (30 by default, at most 90), valid now, or revoked in the last year; newest first. Never the certificates themselves.
+     */
+    get: operations["GetSshActivity"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/ssh/ca/{caId}": {
     parameters: {
       query?: never;
@@ -3159,6 +3179,12 @@ export interface components {
       krlUrl: string;
       /** @description Where every CA of its type's KRL is published together: the one file RevokedKeys (or, for host CAs, RevokedHostKeys) fetches */
       typeKrlUrl: string;
+      /** @description Its KRL's version as last published; 0 before the first */
+      krlVersion: number;
+      /** @description An ISO-8601 formatted string: when its KRL was last published */
+      krlPublishedAt?: string;
+      /** @description An ISO-8601 formatted string: when a new KRL was wanted (a revocation, a new CA) and not yet published */
+      krlDueAt?: string;
       /** @description An ISO-8601 formatted string: when it was retired */
       retiredAt?: string;
       /** @description An ISO-8601 formatted string: when it was created */
@@ -3169,6 +3195,54 @@ export interface components {
     ListSshCasResponse: {
       /** @description Every SSH CA, users' first, newest generation first */
       cas: components["schemas"]["SshCa"][];
+    };
+    SshCaActivity: {
+      /** @description The CA */
+      caId: string;
+      /** @description Its certificates valid now: neither revoked nor expired */
+      valid: number;
+      /** @description Its certificates issued in the days asked for */
+      issued: number;
+      /** @description Every certificate it has issued */
+      issuedEver: number;
+      /** @description Its certificates in its KRL now: revoked, and not yet expired */
+      inKrl: number;
+      /** @description An ISO-8601 formatted string: when the last certificate it signed expires; once past, nothing needs its trust line */
+      lastExpiresAt?: string;
+    };
+    SshActivityCertificate: {
+      /** @description Its ID */
+      id: string;
+      /** @description Its CA */
+      caId: string;
+      /** @description A user's or a host's */
+      type: components["schemas"]["SshCertificateType"];
+      /** @description The principals it names */
+      principals: string[];
+      /** @description A user certificate's Olympus identity (email) */
+      identity?: string;
+      /** @description Whether a host renewed it itself */
+      renewal: boolean;
+      /** @description An ISO-8601 formatted string: when it becomes valid */
+      validAfter: string;
+      /** @description An ISO-8601 formatted string: when it expires */
+      validBefore: string;
+      /** @description An ISO-8601 formatted string: when it was revoked */
+      revokedAt?: string;
+      /** @description An ISO-8601 formatted string: when it was issued */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when it last changed */
+      updatedAt: string;
+    };
+    GetSshActivityResponse: {
+      /** @description An ISO-8601 formatted string: when it was read */
+      asOf: string;
+      /** @description An ISO-8601 formatted string: the start of the days asked for */
+      since: string;
+      /** @description Each CA's certificates, counted */
+      cas: components["schemas"]["SshCaActivity"][];
+      /** @description Every certificate issued since then, valid now, or revoked in the last year; newest first */
+      certificates: components["schemas"]["SshActivityCertificate"][];
     };
     CreateSshCaRequest: {
       /** @description What it signs */
@@ -7218,6 +7292,56 @@ export interface operations {
       };
       /** @description The request conflicts with the current state */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  GetSshActivity: {
+    parameters: {
+      query?: {
+        /** @description How many days back, to now (30 by default, at most 90) */
+        days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The activity. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetSshActivityResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
         headers: {
           [name: string]: unknown;
         };

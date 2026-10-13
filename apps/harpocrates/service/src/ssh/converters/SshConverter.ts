@@ -24,6 +24,9 @@ export const toSshCa = (row: SshCaRow, hostPattern: string): SshCa => ({
   krlUrl: row.krlUrl,
   // Beside the CA's own: krl/ssh-<type>.krl.
   typeKrlUrl: row.krlUrl.replace(/[^/]+\.krl$/, `ssh-${row.type}.krl`),
+  krlVersion: Number(row.nextKrlNumber) - 1,
+  krlPublishedAt: row.krlPublishedAt ? moment(row.krlPublishedAt) : undefined,
+  krlDueAt: row.krlDueAt ? moment(row.krlDueAt) : undefined,
   retiredAt: row.retiredAt ? moment(row.retiredAt) : undefined,
   createdAt: moment(row.createdAt),
   updatedAt: moment(row.updatedAt),
