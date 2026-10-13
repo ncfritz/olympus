@@ -2,9 +2,7 @@ import { Injectable } from "@nestjs/common";
 import * as x509 from "@peculiar/x509";
 import { PrismaService } from "../../store/PrismaService";
 import { Acme, AcmeProblem } from "../AcmeProblem";
-
-const DAY = 24 * 60 * 60 * 1000;
-const HOUR = 60 * 60 * 1000;
+import { renewalWindowOf } from "../renewalWindow";
 
 /** How long a client waits before asking again (RFC 9773 §4.3). */
 export const RENEWAL_INFO_RETRY_SECONDS = 6 * 60 * 60;
@@ -47,25 +45,20 @@ export class AcmeRenewalInfoService {
     if (!certificate) {
       throw new AcmeProblem("malformed", 404, "No certificate has that ID");
     }
-    const now = Date.now();
-    if (certificate.status === "revoked") {
-      return window(now - 2 * HOUR, now - HOUR);
-    }
-    const notBefore = certificate.notBefore.getTime();
-    const notAfter = certificate.notAfter.getTime();
-    const start = certificate.profileVersion
-      ? Math.min(
-          notBefore + certificate.profileVersion.renewAtDays * DAY,
-          notAfter,
-        )
-      : notBefore + ((notAfter - notBefore) * 2) / 3;
-    return window(start, start + (notAfter - start) / 2);
+    const { start, end } = renewalWindowOf(
+      {
+        status: certificate.status,
+        notBefore: certificate.notBefore,
+        notAfter: certificate.notAfter,
+        renewAtDays: certificate.profileVersion?.renewAtDays,
+      },
+      Date.now(),
+    );
+    return {
+      suggestedWindow: {
+        start: new Date(start).toISOString(),
+        end: new Date(end).toISOString(),
+      },
+    };
   }
 }
-
-const window = (start: number, end: number): RenewalInfo => ({
-  suggestedWindow: {
-    start: new Date(start).toISOString(),
-    end: new Date(end).toISOString(),
-  },
-});
