@@ -9,6 +9,7 @@ import type {
   Renewer,
   SignerStatus,
 } from "./api/types";
+import { principalName } from "./principals";
 
 /**
  * The dashboard as the console shows it: how long until something, a
@@ -165,11 +166,13 @@ export const describeEvent = (event: DashboardEvent): string => {
 };
 
 /** Who did it, briefly: a person's email, ACME, a renewal, or Harpocrates. */
-export const describeActor = (event: DashboardEvent): string => {
-  if (event.principal === "system") return "Harpocrates";
+export const describeActor = (
+  event: DashboardEvent,
+  emails: Map<string, string> | undefined,
+): string => {
   if (event.surface === "acme") return "ACME";
   if (event.surface === "renewal") return "Renewal";
-  return event.principal.replace(/^(user|cli):/, "");
+  return principalName(event.principal, emails);
 };
 
 /** An event's colour on the timeline: failures red, issuance blue. */

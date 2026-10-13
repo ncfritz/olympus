@@ -24,6 +24,7 @@ import { ErrorAlert } from "../ErrorAlert";
 import { KeyExportForm } from "../KeyExportForm";
 import { RenewForm } from "../RenewForm";
 import { RevokeForm } from "../RevokeForm";
+import { PrincipalName } from "../PrincipalName";
 
 type Action = "renew" | "revoke" | "export" | "deploy";
 
@@ -117,7 +118,7 @@ export function CertificateDrawer({
             {certificate.revocation && (
               <Descriptions.Item label="Revoked">
                 {formatDateTime(certificate.revocation.revokedAt)} by{" "}
-                {certificate.revocation.principal}:{" "}
+                <PrincipalName principal={certificate.revocation.principal} />:{" "}
                 {certificate.revocation.reason}
                 {certificate.revocation.comment
                   ? ` (${certificate.revocation.comment})`

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
+import { usePrincipals } from "@/lib/api/queries";
 import type { AuditVerification, Dashboard } from "@/lib/api/types";
 import {
   describeActor,
@@ -157,6 +158,7 @@ export function AttentionTab({
 /** What was handled without a person this week, then the latest audit events. */
 export function ActivityTab({ dashboard }: { dashboard: Dashboard }) {
   const handled = handledRows(dashboard.handled);
+  const { data: emails } = usePrincipals();
   return (
     <Flex vertical gap="large">
       <Section title="Handled without you, this week">
@@ -186,7 +188,8 @@ export function ActivityTab({ dashboard }: { dashboard: Dashboard }) {
               <Flex vertical className={styles.shrink}>
                 <Typography.Text>{describeEvent(event)}</Typography.Text>
                 <Typography.Text type="secondary" className={styles.small}>
-                  {describeActor(event)} · {formatDateTime(event.occurredAt)}
+                  {describeActor(event, emails)} ·{" "}
+                  {formatDateTime(event.occurredAt)}
                 </Typography.Text>
               </Flex>
             ),

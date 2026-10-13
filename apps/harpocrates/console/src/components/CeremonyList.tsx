@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/queries";
 import type { CeremonySummary } from "@/lib/api/types";
 import { formatDateTime } from "@/lib/labels";
+import { PrincipalName } from "./PrincipalName";
 
 /**
  * An offline CA's ceremonies, newest first: who opened each, when, and
@@ -49,7 +50,13 @@ export function CeremonyList({ issuerId }: { issuerId: string }) {
             </Link>
           ),
         },
-        { title: "By", dataIndex: "principal" },
+        {
+          title: "By",
+          dataIndex: "principal",
+          render: (principal: string) => (
+            <PrincipalName principal={principal} />
+          ),
+        },
         {
           title: "Closed",
           dataIndex: "closedAt",

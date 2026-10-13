@@ -42,6 +42,7 @@ import {
 } from "@/lib/labels";
 import { DeployTargetForm, ENDPOINT } from "./DeployTargetForm";
 import { ErrorAlert } from "./ErrorAlert";
+import { PrincipalName } from "./PrincipalName";
 
 const DeploymentTag = ({ deployment }: { deployment?: Deployment }) => {
   const { label, color } = deploymentState(deployment);
@@ -420,7 +421,13 @@ function DeployTargetDrawer({
                 render: formatDateTime,
               },
               { title: "Serial", dataIndex: "serial", ellipsis: true },
-              { title: "By", dataIndex: "principal" },
+              {
+                title: "By",
+                dataIndex: "principal",
+                render: (principal: string) => (
+                  <PrincipalName principal={principal} />
+                ),
+              },
               {
                 title: "State",
                 key: "state",

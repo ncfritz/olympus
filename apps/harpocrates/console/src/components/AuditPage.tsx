@@ -5,6 +5,7 @@ import { useAuditEvents } from "@/lib/api/queries";
 import type { AuditEvent } from "@/lib/api/types";
 import { formatDateTime } from "@/lib/labels";
 import { ErrorAlert } from "./ErrorAlert";
+import { PrincipalName } from "./PrincipalName";
 
 /** The audit log (ADR 0020): who did what to which CA, key or certificate. */
 export function AuditPage() {
@@ -45,7 +46,13 @@ export function AuditPage() {
             dataIndex: "kind",
             render: (kind: string) => <Tag>{kind}</Tag>,
           },
-          { title: "Who", dataIndex: "principal" },
+          {
+            title: "Who",
+            dataIndex: "principal",
+            render: (principal: string) => (
+              <PrincipalName principal={principal} />
+            ),
+          },
           {
             title: "Subject",
             key: "subject",

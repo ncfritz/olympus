@@ -30,6 +30,7 @@ import type {
 } from "@/lib/api/types";
 import { formatDate, formatDateTime } from "@/lib/labels";
 import { ErrorAlert } from "./ErrorAlert";
+import { PrincipalName } from "./PrincipalName";
 
 /** A credential's state: never used, its account's, or revoked. */
 const stateOf = (
@@ -370,7 +371,8 @@ function CredentialDrawer({
               {(credential.names.subtrees ?? []).join(", ") || "—"}
             </Descriptions.Item>
             <Descriptions.Item label="Made">
-              {formatDateTime(credential.createdAt)} by {credential.principal}
+              {formatDateTime(credential.createdAt)} by{" "}
+              <PrincipalName principal={credential.principal} />
             </Descriptions.Item>
             <Descriptions.Item label="Bound">
               {formatDateTime(credential.boundAt)}

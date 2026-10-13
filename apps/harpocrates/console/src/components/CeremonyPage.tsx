@@ -26,6 +26,7 @@ import { CeremonyCaPanel } from "./CeremonyCaPanel";
 import { CeremonyLeafPanel } from "./CeremonyLeafPanel";
 import { CeremonyOcspPanel } from "./CeremonyOcspPanel";
 import { ErrorAlert } from "./ErrorAlert";
+import { PrincipalName } from "./PrincipalName";
 
 /**
  * An open ceremony (ADR 0020, 0032, 0036): what its CA signs, offered by
@@ -113,7 +114,8 @@ export function CeremonyPage() {
             {SIGNS_LABEL[signs]}
           </Descriptions.Item>
           <Descriptions.Item label="Opened">
-            {formatDateTime(ceremony.openedAt)} by {ceremony.principal}
+            {formatDateTime(ceremony.openedAt)} by{" "}
+            <PrincipalName principal={ceremony.principal} />
           </Descriptions.Item>
           <Descriptions.Item label="Closed">
             {formatDateTime(ceremony.closedAt)}

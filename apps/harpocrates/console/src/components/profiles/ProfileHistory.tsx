@@ -4,6 +4,7 @@ import type { ProfileVersion } from "@/lib/api/types";
 import { formatDateTime } from "@/lib/labels";
 import { changedSettings, settingsOf } from "@/lib/profileSettings";
 import { ProfileDiff } from "./ProfileDiff";
+import { PrincipalName } from "../PrincipalName";
 
 /**
  * A profile's versions, newest first, each with what changed from the
@@ -56,7 +57,12 @@ export function ProfileHistory({ versions }: { versions: ProfileVersion[] }) {
               return changes.map((c) => c.label).join(", ") || "Nothing";
             },
           },
-          { title: "By", dataIndex: "createdBy" },
+          {
+            title: "By",
+            dataIndex: "createdBy",
+            render: (by: string) =>
+              by === "migration" ? "Seeded" : <PrincipalName principal={by} />,
+          },
           {
             title: "Made",
             dataIndex: "createdAt",

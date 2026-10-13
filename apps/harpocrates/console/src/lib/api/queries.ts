@@ -52,6 +52,7 @@ export const KEYS = {
       ),
     ).toString()}`,
   lineages: "/certificate-lineages",
+  principals: "/principals",
   audit: "/audit/events",
   dashboard: "/dashboard",
   deployTargets: "/deploy-targets",
@@ -127,6 +128,23 @@ export const useCertificateLineages = (refreshInterval = 60_000) =>
     KEYS.lineages,
     async () => unwrap(await apiClient.GET("/v1/certificate-lineages")),
     { refreshInterval },
+  );
+
+/**
+ * Who each recorded `user:<id>` is, by their email: the users Harpocrates
+ * has seen. Records name people by ID; this names them.
+ */
+export const usePrincipals = () =>
+  useSWR<Map<string, string>>(
+    KEYS.principals,
+    async () =>
+      new Map(
+        unwrap(await apiClient.GET("/v1/principals")).principals.map((p) => [
+          p.principal,
+          p.email,
+        ]),
+      ),
+    { revalidateOnFocus: false },
   );
 
 /** Every CA, parents before children. */
