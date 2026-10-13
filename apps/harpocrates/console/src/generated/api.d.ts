@@ -1435,6 +1435,8 @@ export interface components {
       subjectType?: string;
       /** @description The ID of the thing it concerns */
       subjectId?: string;
+      /** @description What it concerns, by name: a certificate's or CA's common name, a deploy target's name */
+      subjectName?: string;
       /** @description The reason given, where one is required */
       reason?: string;
       /** @description Its details */

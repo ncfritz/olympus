@@ -15,6 +15,7 @@ import {
   sensitiveOnly,
 } from "../auditGroups";
 import { GENESIS_HASH, hashEvent } from "../auditHash";
+import { subjectNamesOf } from "../subjectNames";
 
 export type AuditRecord = {
   kind: AuditKindName;
@@ -154,6 +155,7 @@ export class AuditService {
       since: query.since ? new Date(query.since) : undefined,
       search: query.search?.trim() || undefined,
     });
+    const names = await subjectNamesOf(this.prisma, rows);
     return rows.map((row) => ({
       sequence: row.sequence.toString(),
       occurredAt: moment(row.occurredAt),
@@ -164,6 +166,7 @@ export class AuditService {
       surface: row.surface,
       subjectType: row.subjectType ?? undefined,
       subjectId: row.subjectId ?? undefined,
+      subjectName: names.get(`${row.subjectType}:${row.subjectId}`),
       reason: row.reason ?? undefined,
       attributes: row.attributes
         .map((a) => ({ name: a.name, value: a.value }))

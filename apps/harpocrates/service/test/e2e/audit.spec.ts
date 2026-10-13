@@ -17,6 +17,7 @@ type Event = {
   principal: string;
   surface: string;
   reason?: string;
+  subjectName?: string;
 };
 
 /**
@@ -81,6 +82,8 @@ describe.skipIf(!E2E_DATABASE_URL)("audit", () => {
     expect(all.find((e) => e.kind === "certificate.revoked")).toMatchObject({
       group: "certificates",
       sensitive: true,
+      // Named, not only by its ID.
+      subjectName: "audit-a.internal.ncfritz.net",
     });
     expect(all.find((e) => e.kind === "ceremony.opened")).toMatchObject({
       group: "ceremonies",

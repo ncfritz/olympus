@@ -118,6 +118,14 @@ export class AuditEvent {
   @ApiProperty({
     type: String,
     required: false,
+    description:
+      "What it concerns, by name: a certificate's or CA's common name, a deploy target's name",
+  })
+  subjectName?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
     description: "The reason given, where one is required",
   })
   reason?: string;
