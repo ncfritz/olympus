@@ -1,10 +1,5 @@
-import { AuditPage } from "@/components/AuditPage";
-import { PaddedPage } from "@/components/PaddedPage";
+import { AuditPage } from "@/components/audit/AuditPage";
 
 export default function Audit() {
-  return (
-    <PaddedPage>
-      <AuditPage />
-    </PaddedPage>
-  );
+  return <AuditPage />;
 }

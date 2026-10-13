@@ -3,7 +3,8 @@ import { apiClient } from "./client";
 import { unwrap } from "./errors";
 import type {
   AcmeCredential,
-  AuditEvent,
+  AuditPoint,
+  AuditVerification,
   Ceremony,
   CeremonySummary,
   Certificate,
@@ -53,7 +54,8 @@ export const KEYS = {
     ).toString()}`,
   lineages: "/certificate-lineages",
   principals: "/principals",
-  audit: "/audit/events",
+  auditActivity: (days: number) => `/audit/activity?days=${days}`,
+  auditVerification: "/audit/verification",
   dashboard: "/dashboard",
   deployTargets: "/deploy-targets",
   deployTarget: (id: string) => `/deploy-target/${id}`,
@@ -257,15 +259,26 @@ export const useCertificates = (filter: CertificateFilter) =>
       ),
   );
 
-export const useAuditEvents = (pageSize = 200) =>
-  useSWR<AuditEvent[]>(
-    KEYS.audit,
+/** Every event of the last `days`, oldest first, for the audit's graphs. */
+export const useAuditActivity = (days: number) =>
+  useSWR<{ asOf: string; since: string; points: AuditPoint[] }>(
+    KEYS.auditActivity(days),
     async () =>
       unwrap(
-        await apiClient.GET("/v1/audit/events", {
-          params: { query: { pageSize } },
+        await apiClient.GET("/v1/audit/activity", {
+          params: { query: { days } },
         }),
-      ).events,
+      ),
+    { revalidateOnFocus: false },
+  );
+
+/** The audit chain, walked from its first event: whether every link holds. */
+export const useAuditVerification = () =>
+  useSWR<AuditVerification>(
+    KEYS.auditVerification,
+    async () =>
+      unwrap(await apiClient.GET("/v1/audit/verification")).verification,
+    { revalidateOnFocus: false },
   );
 
 /** Every deploy target, by name, polled: the service deploys unasked. */
