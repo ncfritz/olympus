@@ -25,7 +25,9 @@ import type {
   RevocationList,
   SignerStatus,
   MySsh,
+  SshActivityCertificate,
   SshCa,
+  SshCaActivity,
   SshCertificate,
   SshCertificateType,
   SshPrincipalMapping,
@@ -63,6 +65,7 @@ export const KEYS = {
   acmeClients: "/acme/clients",
   acmeOrders: (days: number) => `/acme/orders?days=${days}`,
   sshCas: "/ssh/cas",
+  sshActivity: (days: number) => `/ssh/activity?days=${days}`,
   sshCertificates: (filter: SshCertificateFilter) =>
     `/ssh/certificates?${new URLSearchParams(
       Object.entries(filter).flatMap(([key, value]) =>
@@ -331,6 +334,21 @@ export const useSshCas = () =>
   useSWR<SshCa[]>(
     KEYS.sshCas,
     async () => unwrap(await apiClient.GET("/v1/ssh/cas")).cas,
+  );
+
+/** The SSH CAs' certificates, counted, and those the graphs draw. */
+export const useSshActivity = (days: number) =>
+  useSWR<{
+    asOf: string;
+    since: string;
+    cas: SshCaActivity[];
+    certificates: SshActivityCertificate[];
+  }>(KEYS.sshActivity(days), async () =>
+    unwrap(
+      await apiClient.GET("/v1/ssh/activity", {
+        params: { query: { days } },
+      }),
+    ),
   );
 
 /** SSH certificates, newest first (the latest 500). */

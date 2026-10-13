@@ -1,0 +1,439 @@
+/*
+ * The SSH CAs page: their contents run to the shell's edges; what is in
+ * them keeps the page's 24px margin (docs/conventions/ux.md, Page edges).
+ * Doubled selectors outrank antd's own at the same specificity.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.header.header {
+  padding: 16px 24px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+.padded.padded {
+  padding: 16px 24px;
+}
+
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.mono {
+  font-family: var(--ant-font-family-code, monospace);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.shrink {
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.directory.directory {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 32px;
+}
+
+/* The graphs: two boxes to a row, four where there is room. */
+.graphs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.graphs > * {
+  margin-bottom: -1px;
+  border-right: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.legend {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--ant-color-text-secondary);
+}
+
+/* A list's filters, above its table, edge to edge. */
+.filters.filters {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+/* A table to the page's edges: its outer cells keep the page's margin. */
+.flushTable :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.flushTable :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+/* The counts stay at the top of the page as it scrolls. */
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--ant-color-bg-container);
+}
+
+.section {
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  background: var(--ant-color-fill-quaternary);
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-secondary);
+}
+
+/* A bar of a horizontal list: its length (--width) from code. */
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) minmax(0, 1fr) 48px;
+  gap: 8px;
+  align-items: center;
+}
+
+.track {
+  position: relative;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--ant-color-fill-tertiary);
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: max(var(--width), 2px);
+  border-radius: 3px;
+  background: var(--color);
+}
+
+.low {
+  opacity: 0.55;
+}
+
+.right {
+  text-align: right;
+}
+
+/* A CA's issuance each day, in its row: a bar each, height from code. */
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 22px;
+}
+
+.spark i {
+  width: 4px;
+  height: var(--height);
+  background: var(--color);
+}
+
+/* A CA family in the Configuration tab. */
+.collapse.collapse {
+  border-radius: 0;
+  border-inline: none;
+  border-top: none;
+  background: transparent;
+}
+
+.collapse :global(.ant-collapse-header) {
+  padding-inline: 24px !important;
+}
+
+.collapse :global(.ant-collapse-body) {
+  padding: 0 !important;
+}
+
+.collapse :global(.ant-collapse-item) {
+  border-radius: 0 !important;
+}
+
+/* How a CA is trusted: three boxes, the issuer first, joined by arrows. */
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 14px 24px;
+}
+
+@media (max-width: 800px) {
+  .flow {
+    flex-direction: column;
+  }
+}
+
+.flowBox {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-left: 4px solid var(--color, var(--ant-color-text-quaternary));
+  border-radius: 8px;
+}
+
+.flowArrow {
+  display: flex;
+  flex: 0 0 130px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+}
+
+.familyBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+@media (max-width: 1000px) {
+  .familyBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 24px;
+}
+
+.box + .box {
+  border-left: 1px solid var(--ant-color-border-secondary);
+}
+
+.label {
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+}
+
+.code.code {
+  display: block;
+  margin: 0;
+  padding: 6px 10px;
+  overflow: hidden;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 6px;
+  background: var(--ant-color-fill-quaternary);
+  font-family: var(--ant-font-family-code, monospace);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/*
+ * The timeline: each CA family's generations on one axis, signing as a
+ * bar in its type's colour and its trust line's span beneath; each
+ * span's start (--from) and length (--width) set from code.
+ */
+.lane {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 6px 24px;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+  cursor: pointer;
+}
+
+.lane:hover {
+  background: var(--ant-color-fill-quaternary);
+}
+
+.laneOn.laneOn {
+  background: var(--ant-color-primary-bg);
+}
+
+.laneSub {
+  cursor: default;
+}
+
+.laneSub:hover {
+  background: none;
+}
+
+.laneSub > :first-child {
+  padding-inline-start: 16px;
+}
+
+.laneHead {
+  padding-block: 10px 6px;
+  background: var(--ant-color-fill-quaternary);
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  cursor: default;
+}
+
+.laneTrack {
+  position: relative;
+  height: 30px;
+}
+
+.axis {
+  position: relative;
+  height: 18px;
+  font-weight: 400;
+}
+
+.tick {
+  position: absolute;
+  left: var(--from);
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-secondary);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.tickToday {
+  color: var(--ant-color-primary);
+  font-weight: 600;
+}
+
+.span {
+  position: absolute;
+  top: 6px;
+  left: var(--from);
+  width: max(var(--width), 3px);
+  height: 18px;
+  overflow: hidden;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.trustSpan {
+  background: var(--ant-color-text-tertiary);
+}
+
+.open {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.diamond,
+.diamondSwatch {
+  width: 10px;
+  height: 10px;
+  background: var(--ant-color-warning);
+  transform: rotate(45deg);
+}
+
+.diamond {
+  position: absolute;
+  top: 10px;
+  left: calc(var(--from) - 5px);
+  box-shadow: 0 0 0 2px var(--ant-color-bg-container);
+}
+
+.today,
+.todaySwatch {
+  width: 2px;
+  background: var(--ant-color-primary);
+}
+
+.today {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: var(--from);
+}
+
+.todaySwatch {
+  height: 12px;
+}
+
+.swatch {
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--color);
+}
+
+.trustSwatch {
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ant-color-text-tertiary);
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+@media (max-width: 1000px) {
+  .detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.stepDone.stepDone {
+  color: var(--ant-color-success);
+}
+
+.stepNext.stepNext {
+  color: var(--ant-color-warning);
+}
+
+.stepLater.stepLater {
+  color: var(--ant-color-text-quaternary);
+}
+
+.boxTitle.boxTitle {
+  font-size: 16px;
+}
+
+.copyRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.copyRow > .code {
+  flex: 1;
+  min-width: 0;
+}
