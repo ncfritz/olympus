@@ -44,6 +44,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/principals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lists who the recorded principals are
+     * @description The Olympus users Harpocrates has seen, each as the principal its records keep (user:<id>) and their email, so the console names people rather than IDs. A user is remembered when the console asks who is signed in.
+     */
+    get: operations["ListPrincipals"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/audit/events": {
     parameters: {
       query?: never;
@@ -1332,6 +1352,20 @@ export interface components {
       message: string;
       /** @description The HTTP status code */
       statusCode: number;
+    };
+    KnownPrincipal: {
+      /** @description The principal as Harpocrates records it: user:<id> */
+      principal: string;
+      /** @description Their email, as the Olympus API last described them */
+      email: string;
+      /** @description An ISO-8601 formatted string: when they were first seen */
+      createdAt: string;
+      /** @description An ISO-8601 formatted string: when they were last described */
+      updatedAt: string;
+    };
+    ListPrincipalsResponse: {
+      /** @description The users seen, by email */
+      principals: components["schemas"]["KnownPrincipal"][];
     };
     AuditAttribute: {
       /** @description Its name */
@@ -3789,6 +3823,44 @@ export interface operations {
       };
       /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
       503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  ListPrincipals: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The users seen. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListPrincipalsResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
         headers: {
           [name: string]: unknown;
         };

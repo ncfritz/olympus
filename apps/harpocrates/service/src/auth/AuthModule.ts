@@ -6,10 +6,12 @@ import { COOKIE_PREFIX, DEVICE_NAME, OLYMPUS_CLIENT_ID } from "./consoleSignIn";
 import { DescribeCurrentUserController } from "./controllers/DescribeCurrentUserController";
 import { EndSessionController } from "./controllers/EndSessionController";
 import { LoginCallbackController } from "./controllers/LoginCallbackController";
+import { ListPrincipalsController } from "./controllers/ListPrincipalsController";
 import { LoginController } from "./controllers/LoginController";
 import { AuthGuard } from "./guards/AuthGuard";
 import { AccessTokenService } from "./services/AccessTokenService";
 import { ConsoleAuthService } from "./services/ConsoleAuthService";
+import { OlympusUserService } from "./services/OlympusUserService";
 
 /**
  * Users' access tokens, verified against the API's keys (ADR 0018, 0020),
@@ -39,10 +41,12 @@ import { ConsoleAuthService } from "./services/ConsoleAuthService";
     LoginCallbackController,
     DescribeCurrentUserController,
     EndSessionController,
+    ListPrincipalsController,
   ],
   providers: [
     AccessTokenService,
     ConsoleAuthService,
+    OlympusUserService,
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
   exports: [AccessTokenService, ConsoleAuthService],

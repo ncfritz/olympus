@@ -85,6 +85,54 @@
         ]
       }
     },
+    "/v1/principals": {
+      "get": {
+        "description": "The Olympus users Harpocrates has seen, each as the principal its records keep (user:<id>) and their email, so the console names people rather than IDs. A user is remembered when the console asks who is signed in.",
+        "operationId": "ListPrincipals",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The users seen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPrincipalsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lists who the recorded principals are",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/v1/audit/events": {
       "get": {
         "description": "The audit log, newest first, filtered by kind, principal or subject; page with `before`.",
@@ -6285,6 +6333,48 @@
         "required": [
           "message",
           "statusCode"
+        ]
+      },
+      "KnownPrincipal": {
+        "type": "object",
+        "properties": {
+          "principal": {
+            "type": "string",
+            "description": "The principal as Harpocrates records it: user:<id>"
+          },
+          "email": {
+            "type": "string",
+            "description": "Their email, as the Olympus API last described them"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when they were first seen"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when they were last described"
+          }
+        },
+        "required": [
+          "principal",
+          "email",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ListPrincipalsResponse": {
+        "type": "object",
+        "properties": {
+          "principals": {
+            "description": "The users seen, by email",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnownPrincipal"
+            }
+          }
+        },
+        "required": [
+          "principals"
         ]
       },
       "AuditAttribute": {

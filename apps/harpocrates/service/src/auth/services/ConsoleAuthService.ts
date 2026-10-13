@@ -23,6 +23,7 @@ import type { CurrentUser } from "../../model/auth";
 import { COOKIE_PREFIX } from "../consoleSignIn";
 import type { Principal } from "../principal";
 import { AccessTokenService } from "./AccessTokenService";
+import { OlympusUserService } from "./OlympusUserService";
 
 /** How long a sign-in may take between leaving for Olympus and coming back. */
 const SIGN_IN_TXN_COOKIE_TTL_MS = 5 * 60 * 1000;
@@ -39,6 +40,7 @@ export class ConsoleAuthService {
     private readonly signIn: ConsoleSignIn,
     private readonly session: ConsoleSession,
     private readonly tokens: AccessTokenService,
+    private readonly users: OlympusUserService,
     @Inject(authConfig.KEY) private readonly auth: AuthConfigType,
   ) {}
 
@@ -95,6 +97,8 @@ export class ConsoleAuthService {
   ): Promise<CurrentUser> {
     this.consoleConfig();
     const { email } = await this.session.describe(accessToken);
+    // Records name a user by ID: remember who this one is.
+    await this.users.remember(principal, email);
     return { email, roles: principal.roles };
   }
 

@@ -1265,3 +1265,18 @@ model OcspResponse {
   @@index([nextUpdate])
   @@map("ocsp_responses")
 }
+
+/// The Olympus users Harpocrates has seen (ADR 0020, Audit): an access
+/// token names a user by their ID alone, so the audit log and everything
+/// else records `user:<id>`; this says who that is. Written when the
+/// console asks who is signed in (the Olympus API describes them).
+model OlympusUser {
+  /// The user's ID, the access token's `sub`.
+  id        String   @id
+  /// Their email, as the Olympus API last described them.
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("olympus_users")
+}

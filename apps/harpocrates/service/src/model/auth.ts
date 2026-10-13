@@ -1,4 +1,6 @@
+import { ApiTimestamp } from "@ncfritz/olympus-model";
 import { ApiProperty } from "@nestjs/swagger";
+import type { Moment } from "moment";
 import { PkiRole } from "../auth/principal";
 
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -25,6 +27,35 @@ export class CurrentUser {
   roles: PkiRole[];
 }
 
+/** Who a recorded principal is: an Olympus user Harpocrates has seen. */
+export class KnownPrincipal {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "The principal as Harpocrates records it: user:<id>",
+  })
+  principal: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Their email, as the Olympus API last described them",
+  })
+  email: string;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when they were first seen",
+  })
+  createdAt: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description: "An ISO-8601 formatted string: when they were last described",
+  })
+  updatedAt: Moment;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 /* Response Shapes                                                                                                    */
 /* ------------------------------------------------------------------------------------------------------------------ */
@@ -36,4 +67,14 @@ export class DescribeCurrentUserResponse {
     description: "The signed-in user.",
   })
   user: CurrentUser;
+}
+
+export class ListPrincipalsResponse {
+  @ApiProperty({
+    type: () => KnownPrincipal,
+    isArray: true,
+    required: true,
+    description: "The users seen, by email",
+  })
+  principals: KnownPrincipal[];
 }
