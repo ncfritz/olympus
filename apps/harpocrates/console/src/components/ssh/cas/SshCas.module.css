@@ -100,17 +100,6 @@
   background: var(--ant-color-bg-container);
 }
 
-.section {
-  padding: 10px 24px;
-  border-bottom: 1px solid var(--ant-color-border-secondary);
-  background: var(--ant-color-fill-quaternary);
-  font-size: var(--ant-font-size-sm, 12px);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ant-color-text-secondary);
-}
-
 /* A bar of a horizontal list: its length (--width) from code. */
 .barRow {
   display: grid;
@@ -156,26 +145,6 @@
   width: 4px;
   height: var(--height);
   background: var(--color);
-}
-
-/* A CA family in the Configuration tab. */
-.collapse.collapse {
-  border-radius: 0;
-  border-inline: none;
-  border-top: none;
-  background: transparent;
-}
-
-.collapse :global(.ant-collapse-header) {
-  padding-inline: 24px !important;
-}
-
-.collapse :global(.ant-collapse-body) {
-  padding: 0 !important;
-}
-
-.collapse :global(.ant-collapse-item) {
-  border-radius: 0 !important;
 }
 
 /* How a CA is trusted: three boxes, the issuer first, joined by arrows. */
@@ -436,4 +405,27 @@
 .copyRow > .code {
   flex: 1;
   min-width: 0;
+}
+
+/*
+ * A CA opened in the list: its details start where its name does (past
+ * the expand column), and run to the page's edge.
+ */
+.expandedRow > :global(td.ant-table-cell.ant-table-cell:first-child) {
+  padding: 0 !important;
+  background: var(--ant-color-fill-quaternary) !important;
+}
+
+.indented {
+  padding-inline-start: 56px;
+  padding-block: 12px 4px;
+}
+
+.indented .flow,
+.indented .box:first-child {
+  padding-inline-start: 0;
+}
+
+.actions.actions {
+  padding-inline-end: 24px;
 }

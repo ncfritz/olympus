@@ -13,7 +13,7 @@ import {
   rotationOf,
 } from "@/lib/sshCas";
 import { StatusTag, TypeTag } from "./CaList";
-import { Copyable, RotationSteps } from "./Configuration";
+import { Copyable, RotationSteps } from "./CaDetails";
 import styles from "./SshCas.module.css";
 import { useTypeColors } from "./SshGraphs";
 

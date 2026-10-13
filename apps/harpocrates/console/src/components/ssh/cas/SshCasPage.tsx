@@ -14,7 +14,7 @@ import {
   Typography,
 } from "antd";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
@@ -31,13 +31,12 @@ import { ACTIVITY_DAYS, DAY, familiesOf, krlState } from "@/lib/sshCas";
 import { Count, CountStrip } from "../../CountStrip";
 import { ErrorAlert } from "../../ErrorAlert";
 import { CaList } from "./CaList";
-import { Configuration } from "./Configuration";
 import styles from "./SshCas.module.css";
 import { AuthorityGraphs, SshGraphs } from "./SshGraphs";
 import { Timeline } from "./Timeline";
 
 /** The tabs, by `?view=`. */
-const VIEWS = ["authorities", "configuration", "timeline"] as const;
+const VIEWS = ["authorities", "timeline"] as const;
 type View = (typeof VIEWS)[number];
 
 interface NewCa {
@@ -50,9 +49,9 @@ interface NewCa {
  * The SSH CAs (ADR 0035): online Ed25519 keys in the signer, one per type
  * and number, rotated by generation. Their counts across the top, kept in
  * view; the certificates issued each day and the KRLs' revocations; then
- * Authorities (graphs and the list), Configuration (each CA's trust line,
- * KRL and rotation, opened or closed) and Timeline (generations and how
- * long each line is needed).
+ * Authorities (graphs, and the list, each CA opened to its trust line, KRL
+ * and rotation) and Timeline (generations and how long each line is
+ * needed).
  */
 export function SshCasPage() {
   const { mutate } = useSWRConfig();
@@ -72,23 +71,11 @@ export function SshCasPage() {
   const [form] = Form.useForm<NewCa>();
   const type = Form.useWatch("type", form);
   const families = useMemo(() => familiesOf(cas ?? []), [cas]);
-  const [closed, setClosed] = useState<string[]>([]);
-  const [reveal, setReveal] = useState<string>();
-  const open = families.map((f) => f.key).filter((k) => !closed.includes(k));
-
   const go = (next: View) => {
     const query = new URLSearchParams(params.toString());
     query.set("view", next);
     router.replace(`${pathname}?${query}`, { scroll: false });
   };
-
-  // A CA chosen in the list: its panel, opened and in view.
-  useEffect(() => {
-    if (!reveal || view !== "configuration") return;
-    document
-      .getElementById(`ssh-family-${reveal}`)
-      ?.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, [reveal, view]);
 
   const refresh = () =>
     Promise.all([mutate(KEYS.sshCas), mutate(KEYS.sshActivity(ACTIVITY_DAYS))]);
@@ -333,35 +320,12 @@ export function SshCasPage() {
                   activity={counts}
                   certificates={certificates}
                   now={now}
-                  onOpen={(ca) => {
-                    const key = `${ca.type}-${ca.number}`;
-                    setClosed((keys) => keys.filter((k) => k !== key));
-                    setReveal(key);
-                    go("configuration");
-                  }}
+                  isAdmin={isAdmin}
+                  busy={busy}
+                  onRotate={rotate}
+                  onRetire={retire}
                 />
               </>
-            ),
-          },
-          {
-            key: "configuration",
-            label: "Configuration",
-            children: (
-              <Configuration
-                families={families}
-                activity={counts}
-                now={now}
-                open={open}
-                onOpenChange={(keys) =>
-                  setClosed(
-                    families.map((f) => f.key).filter((k) => !keys.includes(k)),
-                  )
-                }
-                isAdmin={isAdmin}
-                busy={busy}
-                onRotate={rotate}
-                onRetire={retire}
-              />
             ),
           },
           {
