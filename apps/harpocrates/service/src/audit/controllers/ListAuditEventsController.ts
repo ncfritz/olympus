@@ -23,7 +23,7 @@ export class ListAuditEventsController {
   @ApiOperation({
     summary: "Lists audit events",
     description:
-      "The audit log, newest first, filtered by kind, principal or subject; page with `before`.",
+      "The audit log, newest first, filtered by kind, group, principal or who acted, surface, subject, sensitivity, time or text; page with `before`.",
     operationId: "ListAuditEvents",
     tags: ["Audit"],
   })

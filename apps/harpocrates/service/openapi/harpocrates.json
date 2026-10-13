@@ -135,7 +135,7 @@
     },
     "/v1/audit/events": {
       "get": {
-        "description": "The audit log, newest first, filtered by kind, principal or subject; page with `before`.",
+        "description": "The audit log, newest first, filtered by kind, group, principal or who acted, surface, subject, sensitivity, time or text; page with `before`.",
         "operationId": "ListAuditEvents",
         "parameters": [
           {
@@ -170,6 +170,64 @@
             "required": false,
             "in": "query",
             "description": "Only events about this thing",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groups",
+            "required": false,
+            "in": "query",
+            "description": "Only events in these groups, comma-separated (certificates,keys)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actor",
+            "required": false,
+            "in": "query",
+            "description": "Only events by these",
+            "schema": {
+              "$ref": "#/components/schemas/AuditActor"
+            }
+          },
+          {
+            "name": "surface",
+            "required": false,
+            "in": "query",
+            "description": "Only events from this surface: api, cli, acme, renewal or system",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sensitive",
+            "required": false,
+            "in": "query",
+            "description": "Only sensitive events",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "since",
+            "required": false,
+            "in": "query",
+            "description": "An ISO-8601 formatted string: only events since then",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Only events whose kind, principal, subject, reason or details contain this, in any case",
             "schema": {
               "type": "string"
             }
@@ -241,6 +299,74 @@
           }
         ],
         "summary": "Lists audit events",
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/v1/audit/activity": {
+      "get": {
+        "description": "Every event of the last days (30 by default, at most 90), oldest first, as the console's graphs draw them: its kind and group, when, who and from where, and whether it is sensitive. Its details are GET /audit/events.",
+        "operationId": "GetAuditActivity",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "How many days back, to now (30 by default, at most 90)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The activity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAuditActivityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The audit log's activity",
         "tags": [
           "Audit"
         ]
@@ -6377,6 +6503,35 @@
           "principals"
         ]
       },
+      "AuditActor": {
+        "type": "string",
+        "enum": [
+          "people",
+          "system",
+          "acme",
+          "holders"
+        ],
+        "description": "Who acted: people (users and the CLI), system (Harpocrates itself), acme (ACME accounts) or holders (renewing over mTLS)"
+      },
+      "AuditGroup": {
+        "type": "string",
+        "description": "What an event concerns, from its kind: certificates, cas, ceremonies, keys, signer, lists, ocsp, acme, deploy, profiles, ssh, refused (a request refused) or other",
+        "enum": [
+          "certificates",
+          "cas",
+          "ceremonies",
+          "keys",
+          "signer",
+          "lists",
+          "ocsp",
+          "acme",
+          "deploy",
+          "profiles",
+          "ssh",
+          "refused",
+          "other"
+        ]
+      },
       "AuditAttribute": {
         "type": "object",
         "properties": {
@@ -6409,9 +6564,21 @@
             "type": "string",
             "description": "What happened, e.g. certificate.issued"
           },
+          "group": {
+            "description": "What it concerns, from its kind",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditGroup"
+              }
+            ]
+          },
+          "sensitive": {
+            "type": "boolean",
+            "description": "Whether it is sensitive: a key exported or imported, the seal, a ceremony, a revocation, a request refused"
+          },
           "principal": {
             "type": "string",
-            "description": "Who: user:<id>, cli:<name> or system"
+            "description": "Who: user:<id> (GET /principals names them), cli:<name>, acme:<account>, certificate:<serial> or system"
           },
           "surface": {
             "type": "string",
@@ -6445,6 +6612,8 @@
           "sequence",
           "occurredAt",
           "kind",
+          "group",
+          "sensitive",
           "principal",
           "surface",
           "attributes",
@@ -6464,6 +6633,77 @@
         },
         "required": [
           "events"
+        ]
+      },
+      "AuditPoint": {
+        "type": "object",
+        "properties": {
+          "sequence": {
+            "type": "string",
+            "description": "Its sequence"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it happened"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Its kind"
+          },
+          "group": {
+            "description": "What it concerns",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditGroup"
+              }
+            ]
+          },
+          "surface": {
+            "type": "string",
+            "description": "Its surface"
+          },
+          "principal": {
+            "type": "string",
+            "description": "Its principal"
+          },
+          "sensitive": {
+            "type": "boolean",
+            "description": "Whether it is sensitive"
+          }
+        },
+        "required": [
+          "sequence",
+          "occurredAt",
+          "kind",
+          "group",
+          "surface",
+          "principal",
+          "sensitive"
+        ]
+      },
+      "GetAuditActivityResponse": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was read"
+          },
+          "since": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: the start of the days asked for"
+          },
+          "points": {
+            "description": "Every event since then, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditPoint"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "since",
+          "points"
         ]
       },
       "AuditVerification": {

@@ -73,9 +73,29 @@ export interface paths {
     };
     /**
      * Lists audit events
-     * @description The audit log, newest first, filtered by kind, principal or subject; page with `before`.
+     * @description The audit log, newest first, filtered by kind, group, principal or who acted, surface, subject, sensitivity, time or text; page with `before`.
      */
     get: operations["ListAuditEvents"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/audit/activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * The audit log's activity
+     * @description Every event of the last days (30 by default, at most 90), oldest first, as the console's graphs draw them: its kind and group, when, who and from where, and whether it is sensitive. Its details are GET /audit/events.
+     */
+    get: operations["GetAuditActivity"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1367,6 +1387,29 @@ export interface components {
       /** @description The users seen, by email */
       principals: components["schemas"]["KnownPrincipal"][];
     };
+    /**
+     * @description Who acted: people (users and the CLI), system (Harpocrates itself), acme (ACME accounts) or holders (renewing over mTLS)
+     * @enum {string}
+     */
+    AuditActor: "people" | "system" | "acme" | "holders";
+    /**
+     * @description What an event concerns, from its kind: certificates, cas, ceremonies, keys, signer, lists, ocsp, acme, deploy, profiles, ssh, refused (a request refused) or other
+     * @enum {string}
+     */
+    AuditGroup:
+      | "certificates"
+      | "cas"
+      | "ceremonies"
+      | "keys"
+      | "signer"
+      | "lists"
+      | "ocsp"
+      | "acme"
+      | "deploy"
+      | "profiles"
+      | "ssh"
+      | "refused"
+      | "other";
     AuditAttribute: {
       /** @description Its name */
       name: string;
@@ -1380,7 +1423,11 @@ export interface components {
       occurredAt: string;
       /** @description What happened, e.g. certificate.issued */
       kind: string;
-      /** @description Who: user:<id>, cli:<name> or system */
+      /** @description What it concerns, from its kind */
+      group: components["schemas"]["AuditGroup"];
+      /** @description Whether it is sensitive: a key exported or imported, the seal, a ceremony, a revocation, a request refused */
+      sensitive: boolean;
+      /** @description Who: user:<id> (GET /principals names them), cli:<name>, acme:<account>, certificate:<serial> or system */
       principal: string;
       /** @description Where from: api, cli, acme, renewal or system */
       surface: string;
@@ -1398,6 +1445,30 @@ export interface components {
     ListAuditEventsResponse: {
       /** @description The events, newest first */
       events: components["schemas"]["AuditEvent"][];
+    };
+    AuditPoint: {
+      /** @description Its sequence */
+      sequence: string;
+      /** @description An ISO-8601 formatted string: when it happened */
+      occurredAt: string;
+      /** @description Its kind */
+      kind: string;
+      /** @description What it concerns */
+      group: components["schemas"]["AuditGroup"];
+      /** @description Its surface */
+      surface: string;
+      /** @description Its principal */
+      principal: string;
+      /** @description Whether it is sensitive */
+      sensitive: boolean;
+    };
+    GetAuditActivityResponse: {
+      /** @description An ISO-8601 formatted string: when it was read */
+      asOf: string;
+      /** @description An ISO-8601 formatted string: the start of the days asked for */
+      since: string;
+      /** @description Every event since then, oldest first */
+      points: components["schemas"]["AuditPoint"][];
     };
     AuditVerification: {
       /** @description How many events verified */
@@ -3881,6 +3952,18 @@ export interface operations {
         subjectType?: string;
         /** @description Only events about this thing */
         subjectId?: string;
+        /** @description Only events in these groups, comma-separated (certificates,keys) */
+        groups?: string;
+        /** @description Only events by these */
+        actor?: components["schemas"]["AuditActor"];
+        /** @description Only events from this surface: api, cli, acme, renewal or system */
+        surface?: string;
+        /** @description Only sensitive events */
+        sensitive?: "true" | "false";
+        /** @description An ISO-8601 formatted string: only events since then */
+        since?: string;
+        /** @description Only events whose kind, principal, subject, reason or details contain this, in any case */
+        search?: string;
         /** @description Events before this sequence: the next page */
         before?: string;
         /** @description How many, newest first (100 by default, at most 500) */
@@ -3899,6 +3982,56 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ListAuditEventsResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  GetAuditActivity: {
+    parameters: {
+      query?: {
+        /** @description How many days back, to now (30 by default, at most 90) */
+        days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The activity. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetAuditActivityResponse"];
         };
       };
       /** @description The request presented was not valid */

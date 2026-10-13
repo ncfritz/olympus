@@ -5,6 +5,15 @@ import moment from "moment";
 import type { AuditEvent, ListAuditEventsQuery } from "../../model/audit";
 import { PrismaService } from "../../store/PrismaService";
 import type { AuditKindName } from "../auditKinds";
+import {
+  type AuditActorName,
+  type AuditGroupName,
+  byActor,
+  groupOf,
+  inGroups,
+  isSensitive,
+  sensitiveOnly,
+} from "../auditGroups";
 import { GENESIS_HASH, hashEvent } from "../auditHash";
 
 export type AuditRecord = {
@@ -138,11 +147,19 @@ export class AuditService {
       subjectId: query.subjectId,
       before,
       limit: query.pageSize ?? 100,
+      groups: query.groups?.split(",") as AuditGroupName[] | undefined,
+      actor: query.actor,
+      surface: query.surface,
+      sensitive: query.sensitive === "true",
+      since: query.since ? new Date(query.since) : undefined,
+      search: query.search?.trim() || undefined,
     });
     return rows.map((row) => ({
       sequence: row.sequence.toString(),
       occurredAt: moment(row.occurredAt),
       kind: row.kind,
+      group: groupOf(row.kind),
+      sensitive: isSensitive(row.kind),
       principal: row.principal,
       surface: row.surface,
       subjectType: row.subjectType ?? undefined,
@@ -162,20 +179,75 @@ export class AuditService {
     subjectId?: string;
     before?: bigint;
     limit: number;
+    groups?: AuditGroupName[];
+    actor?: AuditActorName;
+    surface?: string;
+    sensitive?: boolean;
+    since?: Date;
+    search?: string;
   }) {
+    const and: Prisma.AuditEventWhereInput[] = [];
+    if (filter.groups?.length) and.push(inGroups(filter.groups));
+    if (filter.actor) and.push(byActor(filter.actor));
+    if (filter.sensitive) and.push(sensitiveOnly);
+    if (filter.search) {
+      const contains = {
+        contains: filter.search,
+        mode: "insensitive",
+      } as const;
+      and.push({
+        OR: [
+          { kind: contains },
+          { principal: contains },
+          { subjectId: contains },
+          { reason: contains },
+          { attributes: { some: { value: contains } } },
+        ],
+      });
+    }
     return this.prisma.auditEvent.findMany({
       where: {
         kind: filter.kind,
         principal: filter.principal,
         subjectType: filter.subjectType,
         subjectId: filter.subjectId,
+        surface: filter.surface,
+        ...(filter.since ? { occurredAt: { gte: filter.since } } : {}),
         ...(filter.before === undefined
           ? {}
           : { sequence: { lt: filter.before } }),
+        ...(and.length ? { AND: and } : {}),
       },
       orderBy: { sequence: "desc" },
       take: filter.limit,
       include: { attributes: true },
     });
+  }
+
+  /**
+   * Every event of the last `days`, oldest first, as the activity graphs
+   * draw them: what, when, by whom, and whether it is sensitive.
+   */
+  async activity(days: number, now = new Date()) {
+    const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const rows = await this.prisma.auditEvent.findMany({
+      where: { occurredAt: { gte: since } },
+      orderBy: { sequence: "asc" },
+      select: {
+        sequence: true,
+        occurredAt: true,
+        kind: true,
+        surface: true,
+        principal: true,
+      },
+    });
+    return {
+      since,
+      points: rows.map((row) => ({
+        ...row,
+        group: groupOf(row.kind),
+        sensitive: isSensitive(row.kind),
+      })),
+    };
   }
 }
