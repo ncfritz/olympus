@@ -119,9 +119,15 @@ const shipped = (pkg: Package, entry: string): boolean => {
  * A Next.js app is not one. Nothing depends on it, and its image copies
  * the traced `.next/standalone` output rather than packing it, so `files`
  * has no part in what it ships.
+ *
+ * Nor is a Python package, whose build is `uv sync`: it makes its own
+ * environment rather than an output to pack, and its image installs it
+ * from source with uv.
  */
 const builds = (pkg: Package): boolean =>
-  pkg.scripts.build !== undefined && !/\bnext build\b/.test(pkg.scripts.build);
+  pkg.scripts.build !== undefined &&
+  !/\bnext build\b/.test(pkg.scripts.build) &&
+  !/^uv\b/.test(pkg.scripts.build);
 
 describe("what workspace packages ship", () => {
   it("reads the workspace's own globs", () => {
