@@ -16,7 +16,15 @@ import {
   Table,
   Typography,
 } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
 import type {
@@ -109,12 +117,12 @@ function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
               {
                 title: "Setting",
                 dataIndex: "setting",
-                width: "22%",
+                width: "18%",
                 render: (setting: string) => (
                   <Typography.Text strong>{setting}</Typography.Text>
                 ),
               },
-              { title: "Value", dataIndex: "value", width: "38%" },
+              { title: "Value", dataIndex: "value", width: "40%" },
               {
                 title: "Why",
                 dataIndex: "why",
@@ -129,6 +137,56 @@ function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
     </Flex>
   );
 }
+
+/** Room kept below the open step: the Back and Next bar, and the page's edge. */
+const BAR_ROOM = 72;
+
+/** The open step's height, at least this, however little room is left. */
+const MIN_STEP_HEIGHT = 240;
+
+/** The element that scrolls `element`: the shell's content, or the page. */
+const scrollerOf = (element: HTMLElement): HTMLElement => {
+  for (let parent = element.parentElement; parent;) {
+    const { overflowY } = getComputedStyle(parent);
+    if (overflowY === "auto" || overflowY === "scroll") return parent;
+    parent = parent.parentElement;
+  }
+  return document.documentElement;
+};
+
+/**
+ * How tall the open step may be: what is left of the scrolling area below
+ * where it starts, less the bar beneath it, measured as a step opens and
+ * as the window changes size. Taller contents scroll within it.
+ */
+const useFitHeight = (
+  ref: RefObject<HTMLElement | null>,
+  step: number,
+): number | undefined => {
+  const [height, setHeight] = useState<number>();
+  useLayoutEffect(() => {
+    const measure = () => {
+      const element = ref.current;
+      if (!element) return;
+      const scroller = scrollerOf(element);
+      const top =
+        element.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop;
+      setHeight(
+        Math.max(MIN_STEP_HEIGHT, scroller.clientHeight - top - BAR_ROOM),
+      );
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [ref, step]);
+  return height;
+};
+
+/** A height as the one value set from code: the CSS reads it as --fit. */
+const fitStyle = (height: number | undefined) =>
+  (height === undefined ? {} : { "--fit": `${height}px` }) as CSSProperties;
 
 /** Each step's fields, checked before the next step opens. */
 const STEP_FIELDS: (string | (string | number)[])[][] = [
@@ -229,6 +287,8 @@ export function RootSettings({
   const numbering = `${values?.number ?? 1} - G${values?.generation ?? 1}`;
   const validityDays = formValidityDays(values ?? {});
   const ready = answer !== undefined && answer.problems.length === 0;
+  const open = useRef<HTMLDivElement>(null);
+  const fit = useFitHeight(open, step);
 
   const next = async () => {
     try {
@@ -241,7 +301,7 @@ export function RootSettings({
 
   const keyStep = (
     <>
-      <Row gutter={16}>
+      <Row gutter={12}>
         <Col xs={24} sm={12}>
           <Form.Item
             name="keyFamily"
@@ -339,6 +399,12 @@ export function RootSettings({
 
   const nameStep = (
     <>
+      <Flex vertical gap={4} className={styles.subject}>
+        <Typography.Text type="secondary">Its subject</Typography.Text>
+        <div className={styles.dn} aria-live="polite">
+          {answer?.preview.subject ?? "…"}
+        </div>
+      </Flex>
       <Form.Item
         name="commonName"
         label="Common name"
@@ -356,7 +422,7 @@ export function RootSettings({
           suffix={<span className={styles.numbering}>{numbering}</span>}
         />
       </Form.Item>
-      <Row gutter={16}>
+      <Row gutter={12}>
         <Col xs={24} sm={12}>
           <Form.Item
             name="purpose"
@@ -393,7 +459,7 @@ export function RootSettings({
           </Form.Item>
         </Col>
       </Row>
-      <Row gutter={16}>
+      <Row gutter={12}>
         {ROOT_SUBJECT_ATTRIBUTES.map((a) => (
           <Col key={a.type} xs={24} sm={12}>
             <Form.Item
@@ -418,12 +484,6 @@ export function RootSettings({
           </Col>
         ))}
       </Row>
-      <Flex vertical gap={4} className={styles.subject}>
-        <Typography.Text type="secondary">Its subject</Typography.Text>
-        <div className={styles.dn} aria-live="polite">
-          {answer?.preview.subject ?? "…"}
-        </div>
-      </Flex>
     </>
   );
 
@@ -468,11 +528,13 @@ export function RootSettings({
   ];
   const contents = [keyStep, nameStep, constraintsStep, reviewStep];
   const titles = ["Key", "Name", "Name constraints", "Review"];
+  const last = step === titles.length - 1;
 
   return (
     <Form<RootFormValues>
       form={form}
       layout="vertical"
+      size="small"
       initialValues={{
         number: 1,
         generation: 1,
@@ -494,6 +556,7 @@ export function RootSettings({
       <Steps
         orientation="vertical"
         type="dot"
+        size="small"
         current={step}
         className={styles.steps}
         // A step already taken can be opened again; one ahead, only by Next.
@@ -503,27 +566,13 @@ export function RootSettings({
           disabled: index > step,
           content:
             index === step ? (
-              <Flex vertical gap="middle" className={styles.open}>
+              <div
+                ref={open}
+                className={`${styles.open} ${index < 2 ? styles.narrow : ""}`}
+                style={fitStyle(fit)}
+              >
                 {contents[index]}
-                <Flex gap="small">
-                  <Button
-                    onClick={() =>
-                      index === 0 ? onBack() : setStep(index - 1)
-                    }
-                  >
-                    Back
-                  </Button>
-                  {index < titles.length - 1 ? (
-                    <Button type="primary" onClick={() => void next()}>
-                      Next
-                    </Button>
-                  ) : (
-                    <Button type="primary" disabled={!ready} onClick={onNext}>
-                      Next
-                    </Button>
-                  )}
-                </Flex>
-              </Flex>
+              </div>
             ) : index < step ? (
               <Typography.Text
                 type="secondary"
@@ -534,6 +583,22 @@ export function RootSettings({
             ) : null,
         }))}
       />
+      <Flex gap="small" className={styles.bar}>
+        <Button
+          size="middle"
+          onClick={() => (step === 0 ? onBack() : setStep(step - 1))}
+        >
+          Back
+        </Button>
+        <Button
+          size="middle"
+          type="primary"
+          disabled={last && !ready}
+          onClick={() => (last ? onNext() : void next())}
+        >
+          Next
+        </Button>
+      </Flex>
     </Form>
   );
 }

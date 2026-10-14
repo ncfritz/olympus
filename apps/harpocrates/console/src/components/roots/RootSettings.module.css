@@ -1,7 +1,22 @@
 /* A new root's name and settings: four steps down the page, the open
-   one's fields beneath its title; compact, not the page's whole width. */
+   one's fields beneath its title; compact, not the page's whole width.
+   The key and the name are narrower still; the constraints' two columns
+   and the review take the rest. */
 .form {
+  max-width: 960px;
+}
+
+.narrow {
   max-width: 760px;
+}
+
+/* Tight: small fields, little between them. */
+.form :global(.ant-form-item) {
+  margin-bottom: 12px;
+}
+
+.form :global(.ant-form-item-label) {
+  padding-bottom: 2px;
 }
 
 .steps :global(.ant-steps-item-content) {
@@ -11,7 +26,7 @@
 
 .steps :global(.ant-steps-item-description) {
   max-width: none;
-  padding-bottom: 24px;
+  padding-bottom: 12px;
 }
 
 .mono.mono,
@@ -112,9 +127,22 @@
   margin: 0;
 }
 
-/* The open step: its fields, then Back and Next. */
+/* The open step: no taller than the room left above the bar (--fit, set
+   as it opens), its contents scrolling within it. */
 .open {
-  padding-top: 8px;
+  max-height: var(--fit, none);
+  overflow-y: auto;
+  padding: 4px 8px 0 0;
+}
+
+/* Back and Next, beneath the steps: kept at the bottom of the page while
+   the page scrolls. */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 12px 0;
+  background: var(--ant-color-bg-container);
 }
 
 /* Validity: a choice of years; "Other", a number and its unit, and what
@@ -132,7 +160,7 @@
 }
 
 .subject {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 /* A step taken, closed: what it came to, in a line. */
