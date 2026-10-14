@@ -18,3 +18,10 @@ body {
 html[data-theme="dark"] body {
   background: #141414;
 }
+
+/* A form field's help tooltip: the pointer stays a pointer rather than
+   antd's question mark, across the console. Long enough to outrank antd's
+   own rule, which is zero-specificity :where() plus three classes. */
+.ant-form .ant-form-item .ant-form-item-label > label .ant-form-item-tooltip {
+  cursor: default;
+}
