@@ -1,22 +1,15 @@
 "use client";
 
-import {
-  CheckOutlined,
-  CloseOutlined,
-  CopyOutlined,
-  DownloadOutlined,
-} from "@ant-design/icons";
+import { DownloadOutlined } from "@ant-design/icons";
 import {
   Alert,
   Button,
-  Card,
   Descriptions,
   Divider,
   Flex,
   Tag,
   Typography,
 } from "antd";
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import {
   type ExtensionDetail,
@@ -25,6 +18,7 @@ import {
 } from "@/lib/certificateDetails";
 import { fromBase64, saveFile } from "@/lib/download";
 import styles from "./CertificateDetails.module.css";
+import { COPY_LABELS, useCopy, ValueCard } from "./ValueCard";
 
 /** A value in the theme's code font. */
 const Mono = ({ children }: { children: string }) => (
@@ -37,85 +31,12 @@ const KEY_IDENTIFIERS = new Set([
   "2.5.29.35", // authority key identifier
 ]);
 
-type CopyStatus = "idle" | "copied" | "failed";
-
-/** How long a copy's outcome shows before the action reads Copy again. */
-const COPY_STATUS_MS = 2000;
-
-/**
- * Copying to the clipboard, its outcome held for a moment so the control
- * that did it can show it (rather than a message announcing it).
- */
-const useCopy = (text: string) => {
-  const [status, setStatus] = useState<CopyStatus>("idle");
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  const copy = async () => {
-    clearTimeout(timer.current);
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus("copied");
-    } catch {
-      setStatus("failed");
-    }
-    timer.current = setTimeout(() => setStatus("idle"), COPY_STATUS_MS);
-  };
-  return { status, copy };
-};
-
-/** A copy control's icon and words for its status. */
-const COPY_LABELS: Record<CopyStatus, { icon: React.ReactNode; text: string }> =
-  {
-    idle: { icon: <CopyOutlined />, text: "Copy" },
-    copied: { icon: <CheckOutlined />, text: "Copied" },
-    failed: { icon: <CloseOutlined />, text: "Couldn't copy" },
-  };
-
-/**
- * A long hex value (a serial, a fingerprint, a key identifier) in a card
- * of its own, small enough to read whole. The card's action row is the
- * copy control, as antd's card actions are: the whole row is clickable,
- * and it says Copied (or that it couldn't) for a moment after.
- */
-function HexCard({ value, label }: { value: string; label: string }) {
-  const { status, copy } = useCopy(value);
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      void copy();
-    }
-  };
-  return (
-    <Card
-      size="small"
-      className={styles.hexCard}
-      classNames={{ body: styles.hexBody, actions: styles.hexActions }}
-      actions={[
-        <span
-          key="copy"
-          role="button"
-          tabIndex={0}
-          aria-label={`Copy the ${label}`}
-          aria-live="polite"
-          className={`${styles.hexCopy} ${styles[status] ?? ""}`}
-          onClick={() => void copy()}
-          onKeyDown={onKeyDown}
-        >
-          {COPY_LABELS[status].icon} {COPY_LABELS[status].text}
-        </span>,
-      ]}
-    >
-      <span className={styles.hex}>{value}</span>
-    </Card>
-  );
-}
-
 /** A labelled hex value: its label above its card, left-aligned. */
 function HexField({ label, value }: { label: string; value: string }) {
   return (
     <Flex vertical gap={4}>
       <Typography.Text type="secondary">{label}</Typography.Text>
-      <HexCard value={value} label={label} />
+      <ValueCard value={value} label={label} />
     </Flex>
   );
 }
@@ -148,7 +69,7 @@ function ExtensionSection({
       {KEY_IDENTIFIERS.has(extension.oid) ? (
         <Flex vertical gap={4} className={styles.identifiers}>
           {values.map((value) => (
-            <HexCard key={value} value={value} label={extension.name} />
+            <ValueCard key={value} value={value} label={extension.name} />
           ))}
         </Flex>
       ) : (

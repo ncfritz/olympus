@@ -16,50 +16,10 @@
   word-break: break-all;
 }
 
-/* The hex values (serial, fingerprints, key identifiers): each in a flat
-   card, 4px in, 4px round, small enough to read whole. */
+/* The hex values (serial, fingerprints, key identifiers): each in a
+   ValueCard. */
 .hexFields {
   margin-bottom: 16px;
-}
-
-.hexCard:global(.ant-card) {
-  border-radius: 4px;
-  box-shadow: none;
-}
-
-/* Doubled, and under the card, to outrank antd's own small-card rules. */
-.hexCard .hexBody.hexBody {
-  padding: 4px;
-}
-
-.hex {
-  font-family: var(--ant-font-family-code);
-  font-size: 11px;
-  line-height: 1.4;
-  word-break: break-all;
-}
-
-.hexCard .hexActions.hexActions {
-  border-radius: 0 0 4px 4px;
-}
-
-.hexCard .hexActions.hexActions > li {
-  margin: 0;
-  padding: 0;
-}
-
-/* The action row is the copy control: antd wraps each action in a span
-   it styles as clickable (pointer, hover colour); that span and the
-   control in it fill the row, so all of it copies, 4px in, small. */
-.hexCard .hexActions.hexActions > li > span {
-  display: block;
-}
-
-.hexCard .hexActions.hexActions .hexCopy {
-  display: block;
-  padding: 4px;
-  font-size: var(--ant-font-size-sm, 12px);
-  line-height: 1.5;
 }
 
 /* A copy's outcome, in the control that did it, for a moment. */

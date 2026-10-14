@@ -1,0 +1,64 @@
+/* A value in a flat card of its own (a serial, a fingerprint, a key
+   identifier, the signer's unseal key): 4px in, 4px round, its actions
+   in the card's action row. */
+.card:global(.ant-card) {
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+/* Doubled, and under the card, to outrank antd's own small-card rules. */
+.card .body.body {
+  padding: 4px;
+}
+
+.value {
+  font-family: var(--ant-font-family-code);
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+/* Hex: small enough to read whole. */
+.small {
+  font-size: 11px;
+}
+
+/* A secret to be read and typed: the body's size, more room. */
+.large {
+  font-size: var(--ant-font-size);
+}
+
+.card .body.body:has(.large) {
+  padding: 12px;
+}
+
+.card .actions.actions {
+  border-radius: 0 0 4px 4px;
+}
+
+.card .actions.actions > li {
+  margin: 0;
+  padding: 0;
+}
+
+/* Each action fills its part of the row: antd wraps an action in a span
+   it styles as clickable (pointer, hover colour); that span and the
+   control in it fill the cell, so all of it acts, 4px in, small. */
+.card .actions.actions > li > span {
+  display: block;
+}
+
+.card .actions.actions .action {
+  display: block;
+  padding: 4px;
+  font-size: var(--ant-font-size-sm, 12px);
+  line-height: 1.5;
+}
+
+/* A copy's outcome, in the control that did it, for a moment. */
+.copied.copied {
+  color: var(--ant-color-success);
+}
+
+.failed.failed {
+  color: var(--ant-color-error);
+}
