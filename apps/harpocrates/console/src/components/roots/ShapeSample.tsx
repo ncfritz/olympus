@@ -7,9 +7,9 @@ import { useTierColors } from "./shared";
 /** A CA's node, and a certificate's (smaller), as the Graph tab draws them. */
 const W = 184;
 const H = 52;
-const LEAF_W = 150;
+const LEAF_W = 130;
 const LEAF_H = 36;
-const STEP = 220;
+const STEP = 210;
 const PITCH = 52;
 
 type SampleNode = {
@@ -150,6 +150,7 @@ export function ShapeSample({ shape }: { shape: IssuerShape }) {
           width={width}
           height={height}
           viewBox={`0 0 ${width} ${height}`}
+          className={styles.sampleSvg}
           role="img"
           aria-label={`${SHAPES[shape].label}, root on the left`}
         >

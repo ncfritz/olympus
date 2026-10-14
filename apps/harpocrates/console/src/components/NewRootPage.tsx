@@ -101,23 +101,28 @@ export function NewRootPage() {
 
       {step === 0 && (
         <Flex vertical gap="large">
-          <Radio.Group
-            value={shape}
-            onChange={(event) => setShape(event.target.value as IssuerShape)}
-          >
-            <div className={styles.options}>
-              {(Object.keys(SHAPES) as IssuerShape[]).map((key) => (
-                <Radio key={key} value={key} className={styles.option}>
-                  <Typography.Text strong>{SHAPES[key].label}</Typography.Text>
-                  <br />
-                  <Typography.Text type="secondary">
-                    {SHAPES[key].summary}
-                  </Typography.Text>
-                </Radio>
-              ))}
-            </div>
-          </Radio.Group>
-          <ShapeSample shape={shape} />
+          <div className={styles.shape}>
+            <Radio.Group
+              className={styles.column}
+              value={shape}
+              onChange={(event) => setShape(event.target.value as IssuerShape)}
+            >
+              <div className={styles.options}>
+                {(Object.keys(SHAPES) as IssuerShape[]).map((key) => (
+                  <Radio key={key} value={key} className={styles.option}>
+                    <Typography.Text strong>
+                      {SHAPES[key].label}
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      {SHAPES[key].summary}
+                    </Typography.Text>
+                  </Radio>
+                ))}
+              </div>
+            </Radio.Group>
+            <ShapeSample shape={shape} />
+          </div>
           <div>
             <Button type="primary" onClick={() => setStep(1)}>
               Next

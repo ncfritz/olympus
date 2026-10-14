@@ -472,3 +472,9 @@
   gap: 12px;
   min-width: 0;
 }
+
+/* Its drawing scales down to the space it has rather than scroll. */
+.sampleSvg {
+  max-width: 100%;
+  height: auto;
+}

@@ -4,18 +4,39 @@
   margin-top: 0;
 }
 
-/* The shapes to choose from, side by side; the chosen one's sample below
-   them, the page's width. */
-.options {
+/* The shapes to choose from in a column on the left, the chosen one's
+   sample on the right; on a narrow page, the sample below. */
+.shape {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 32px;
+  gap: 24px;
+  align-items: flex-start;
 }
 
+.column {
+  flex: 0 1 340px;
+  min-width: 0;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Each shape a block of its own, its summary wrapping to four lines; the
+   chosen one on the primary colour's lightest background, rounded, with
+   no border. */
 .option.option {
-  flex: 1 1 260px;
+  display: flex;
   align-items: flex-start;
   margin-inline-end: 0;
+  padding: 12px;
+  border-radius: var(--ant-border-radius-lg);
+}
+
+.option.option:global(.ant-radio-wrapper-checked) {
+  background: var(--ant-color-primary-bg);
 }
 
 /* The radio beside the shape's name, not the middle of its summary. */
