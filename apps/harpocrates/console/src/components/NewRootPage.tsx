@@ -29,6 +29,7 @@ import { CaSettings } from "./CaSettings";
 import { ErrorAlert } from "./ErrorAlert";
 import { KeyHandover } from "./KeyHandover";
 import { PassphraseFields } from "./PassphraseFields";
+import { RecentSignInNotice } from "./RecentSignIn";
 
 const STEPS = [
   { title: "Shape" },
@@ -91,6 +92,7 @@ export function NewRootPage() {
   return (
     <Flex vertical gap="large">
       <Typography.Title level={3}>New root</Typography.Title>
+      <RecentSignInNotice doing="Creating a root" />
       <Steps current={step} items={STEPS} />
 
       {step === 0 && (

@@ -458,3 +458,8 @@
 .narrow.narrow {
   max-width: 720px;
 }
+
+/* The recent sign-in notice, kept off the page's edges. */
+.notice:not(:empty) {
+  padding: 0 24px 16px;
+}

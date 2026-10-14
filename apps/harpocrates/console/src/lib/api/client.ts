@@ -31,9 +31,3 @@ export const apiClient = createConsoleClient<paths>({
   key: CONSOLE_KEY,
   baseUrl: configuredApiUrl,
 });
-
-/** Signing in again, back to this page: what a recent sign-in needs. */
-export const signInAgainHref = (): string => {
-  const here = typeof window === "undefined" ? "" : window.location.href;
-  return `${API_URL}/auth/login/google?returnTo=${encodeURIComponent(here)}`;
-};

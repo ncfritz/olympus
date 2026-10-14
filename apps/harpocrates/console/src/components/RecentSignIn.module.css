@@ -1,0 +1,41 @@
+/* The header's countdown: on the shell's dark header in either theme. */
+.countdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 150px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  line-height: 14px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.left {
+  color: #fff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown :global(.ant-progress) {
+  line-height: 0;
+}
+
+.lapsed.lapsed {
+  color: var(--ant-color-warning);
+  padding-inline: 0;
+  font-size: 12px;
+}
+
+/* The page's notice: the time left, then the bar under its text. */
+.clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  margin-top: 8px;
+  line-height: 0;
+}

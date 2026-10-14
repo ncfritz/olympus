@@ -24,6 +24,7 @@ import { saveFile } from "@/lib/download";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
 import { ErrorAlert } from "./ErrorAlert";
 import { PassphraseFields } from "./PassphraseFields";
+import { RecentSignInNotice } from "./RecentSignIn";
 import styles from "./SetupPage.module.css";
 
 const STEPS = [
@@ -131,6 +132,7 @@ export function SetupPage() {
       <Typography.Title level={3} className={styles.title}>
         Set up the signer
       </Typography.Title>
+      {step === 0 && <RecentSignInNotice doing="Setting up the signer" />}
       <Steps current={step} items={STEPS} />
 
       {step === 0 && (

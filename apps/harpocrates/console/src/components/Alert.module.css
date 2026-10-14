@@ -1,0 +1,66 @@
+/*
+ * Every Alert in this console, through ConfigProvider (AppLayout): a box
+ * of the page's card colour with a 1px border, and its status as a 5px
+ * stripe down its left. The stripe is drawn over the box's left edge, so
+ * it takes the left corners' radius while its right edge stays square.
+ * A banner (SealedBanner) spans the page and keeps antd's own look.
+ */
+.alert.alert:not(:global(.ant-alert-banner)) {
+  position: relative;
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border);
+  border-left: 0;
+  border-radius: var(--ant-border-radius-lg);
+  padding: 12px 16px 12px 21px;
+}
+
+.alert.alert:not(:global(.ant-alert-banner))::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  bottom: -1px;
+  width: 5px;
+  border-radius: var(--ant-border-radius-lg) 0 0 var(--ant-border-radius-lg);
+  background: var(--stripe);
+}
+
+.alert:global(.ant-alert-info) {
+  --stripe: var(--ant-color-info);
+}
+
+.alert:global(.ant-alert-success) {
+  --stripe: var(--ant-color-success);
+}
+
+.alert:global(.ant-alert-warning) {
+  --stripe: var(--ant-color-warning);
+}
+
+.alert:global(.ant-alert-error) {
+  --stripe: var(--ant-color-error);
+}
+
+.alert.alert :global(.ant-alert-title) {
+  font-weight: 600;
+}
+
+.alert.alert.alert :global(.ant-alert-description) {
+  color: var(--ant-color-text-secondary);
+}
+
+/* One size whether or not it has a description: a 16px icon, the title
+   at the body's size, an action centred on the box. */
+/* Three classes: antd's own rules for these have two and a tag. */
+.alert.alert.alert :global(.ant-alert-icon) {
+  font-size: 16px;
+  margin-top: 3px;
+}
+
+.alert.alert:global(.ant-alert-with-description) :global(.ant-alert-title) {
+  font-size: var(--ant-font-size);
+}
+
+.alert.alert :global(.ant-alert-actions) {
+  align-self: center;
+}

@@ -21,11 +21,15 @@ import {
   type Registry,
   type ShellPage,
 } from "@ncfritz/olympus-console";
+import { ConfigProvider, Flex } from "antd";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { API_URL, BASE_PATH, CONSOLE_KEY } from "@/lib/api/client";
 import { useCurrentUser } from "@/lib/api/queries";
+import { SIGNED_IN_PATH } from "@/lib/recentSignIn";
+import alertStyles from "./Alert.module.css";
 import styles from "./AppLayout.module.css";
+import { RecentSignInCountdown } from "./RecentSignIn";
 import { SealedBanner } from "./SealedBanner";
 import { SignerStatusTag } from "./SignerStatusTag";
 
@@ -175,30 +179,40 @@ export function AppLayout({ nav, origin, children }: AppLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // The sign-in window's page: it says so and closes, without the shell.
+  if (pathname === SIGNED_IN_PATH) return children;
+
   return (
-    <ControlShell
-      nav={nav}
-      current={CONSOLE_KEY}
-      origin={origin}
-      auth={auth}
-      pages={pagesFor(user.isAdmin, operator)}
-      activePage={activePageOf(pathname)}
-      // The router takes the route, without the base path the anchor
-      // carries for a new tab.
-      onNavigate={(href) => router.push(href.slice(BASE_PATH.length) || "/")}
-      actions={
-        auth.status === "authenticated" && operator ? <SignerStatusTag /> : null
-      }
-      signIn={[
-        {
-          name: "google",
-          label: "Sign in with Google",
-          icon: <GoogleOutlined />,
-        },
-      ]}
-    >
-      {operator && <SealedBanner />}
-      <div className={styles.page}>{children}</div>
-    </ControlShell>
+    <ConfigProvider alert={{ className: alertStyles.alert }}>
+      <ControlShell
+        nav={nav}
+        current={CONSOLE_KEY}
+        origin={origin}
+        auth={auth}
+        pages={pagesFor(user.isAdmin, operator)}
+        activePage={activePageOf(pathname)}
+        // The router takes the route, without the base path the anchor
+        // carries for a new tab.
+        onNavigate={(href) => router.push(href.slice(BASE_PATH.length) || "/")}
+        actions={
+          auth.status === "authenticated" && operator ? (
+            <Flex align="center" gap="middle">
+              <RecentSignInCountdown />
+              <SignerStatusTag />
+            </Flex>
+          ) : null
+        }
+        signIn={[
+          {
+            name: "google",
+            label: "Sign in with Google",
+            icon: <GoogleOutlined />,
+          },
+        ]}
+      >
+        {operator && <SealedBanner />}
+        <div className={styles.page}>{children}</div>
+      </ControlShell>
+    </ConfigProvider>
   );
 }

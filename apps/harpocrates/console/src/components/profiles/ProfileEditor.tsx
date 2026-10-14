@@ -60,6 +60,7 @@ import { ErrorAlert } from "../ErrorAlert";
 import styles from "./ProfileEditor.module.css";
 import { ProfilePreviewPanel } from "./ProfilePreviewPanel";
 import { SettingLabel, SshSettingLabel } from "./SettingLabel";
+import { RecentSignInNotice } from "../RecentSignIn";
 
 /** The service's rule for a profile's name. */
 const PROFILE_SLUG = /^[a-z][a-z0-9-]{0,62}$/;
@@ -776,6 +777,9 @@ export function ProfileEditor() {
               ? "New SSH profile"
               : "New profile"}
         </Typography.Title>
+        <RecentSignInNotice
+          doing={editing ? "Changing a profile" : "Making a profile"}
+        />
         {editing && (
           <Typography.Text type="secondary">
             A change of settings makes v{profile!.version + 1}; certificates

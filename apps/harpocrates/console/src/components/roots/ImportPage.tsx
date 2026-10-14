@@ -48,6 +48,7 @@ import { commonName, shortCaName } from "@/lib/tree";
 import { ErrorAlert } from "../ErrorAlert";
 import { PemInput } from "../PemInput";
 import styles from "./Roots.module.css";
+import { RecentSignInNotice } from "../RecentSignIn";
 
 /** The longest certificate an imported issuing CA signs, by default. */
 const ISSUING_MAX_VALIDITY_DAYS = 825;
@@ -118,6 +119,9 @@ export function ImportPage() {
           <Button icon={<ArrowLeftOutlined />}>Roots</Button>
         </Link>
       </Flex>
+      <div className={styles.notice}>
+        <RecentSignInNotice doing="Importing a CA" />
+      </div>
       {!isAdmin && (
         <Alert
           type="info"

@@ -1,8 +1,8 @@
 "use client";
 
-import { Alert, Button } from "antd";
-import { signInAgainHref } from "@/lib/api/client";
+import { Alert } from "antd";
 import { ApiError, messageOf } from "@/lib/api/errors";
+import { SignInAgainButton } from "./RecentSignIn";
 
 export interface ErrorAlertProps {
   error: unknown;
@@ -24,16 +24,10 @@ export function ErrorAlert({ error, title = "Refused" }: ErrorAlertProps) {
       title={recent ? "Sign in again to do this" : title}
       description={
         recent
-          ? "This needs a sign-in from the last few minutes. Signing in again brings you back here; what you entered on this page is not kept."
+          ? "This needs a sign-in from the last few minutes. Signing in again opens in a small window; this page, and what you entered on it, stays as it is. Then try again."
           : messageOf(error)
       }
-      action={
-        recent ? (
-          <Button size="small" href={signInAgainHref()}>
-            Sign in again
-          </Button>
-        ) : undefined
-      }
+      action={recent ? <SignInAgainButton primary /> : undefined}
     />
   );
 }

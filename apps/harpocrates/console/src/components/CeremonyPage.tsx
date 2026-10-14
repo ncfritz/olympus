@@ -27,6 +27,7 @@ import { CeremonyLeafPanel } from "./CeremonyLeafPanel";
 import { CeremonyOcspPanel } from "./CeremonyOcspPanel";
 import { ErrorAlert } from "./ErrorAlert";
 import { PrincipalName } from "./PrincipalName";
+import { RecentSignInNotice } from "./RecentSignIn";
 
 /**
  * An open ceremony (ADR 0020, 0032, 0036): what its CA signs, offered by
@@ -105,6 +106,7 @@ export function CeremonyPage() {
           </Popconfirm>
         )}
       </Flex>
+      {!closed && <RecentSignInNotice doing="A ceremony" />}
       <Card>
         <Descriptions column={{ xs: 1, md: 2 }} size="small">
           <Descriptions.Item label="CA">
