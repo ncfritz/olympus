@@ -38,10 +38,22 @@ const STEPS = [
 /** The stack's name for it; the signer says which file it actually reads. */
 const STACK_SECRET = "harpocrates_signer_unseal_key";
 
+/** Where the signer reads its unseal key on the host, in the code font. */
+const keyPathOf = (file: string) => (
+  <span className={styles.mono}>{`\${HARPOCRATES_SECRETS_DIR}/${file}`}</span>
+);
+
 const checklistFor = (file: string) => [
-  "The unseal key is in the password manager, beside the recovery passphrase",
-  `It is in \${HARPOCRATES_SECRETS_DIR}/${file}, mode 600`,
-  "It is not in the same backup as the signer's data directory",
+  {
+    key: "manager",
+    label:
+      "The unseal key is in the password manager, beside the recovery passphrase",
+  },
+  { key: "host", label: <>It is in {keyPathOf(file)}, mode 600</> },
+  {
+    key: "backup",
+    label: "It is not in the same backup as the signer's data directory",
+  },
 ];
 
 /**
@@ -68,7 +80,7 @@ const secretsFor = (file: string) => [
   {
     key: "unseal",
     secret: "Unseal key",
-    where: `\${HARPOCRATES_SECRETS_DIR}/${file}, and the password manager`,
+    where: <>{keyPathOf(file)}, and the password manager</>,
     opens: "The signer, by itself, at every start",
   },
   {
@@ -218,8 +230,8 @@ export function SetupPage() {
           >
             <Flex vertical gap="small">
               {checklist.map((item) => (
-                <Checkbox key={item} value={item}>
-                  {item}
+                <Checkbox key={item.key} value={item.key}>
+                  {item.label}
                 </Checkbox>
               ))}
             </Flex>

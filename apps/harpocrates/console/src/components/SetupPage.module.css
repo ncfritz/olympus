@@ -28,3 +28,8 @@
 .section.section {
   margin: 0;
 }
+
+/* A path on the host, in the code font. */
+.mono {
+  font-family: var(--ant-font-family-code);
+}
