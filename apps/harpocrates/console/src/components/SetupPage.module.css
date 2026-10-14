@@ -9,3 +9,22 @@
   width: 450px;
   max-width: 100%;
 }
+
+/* The unseal key and the command that installs it: wide enough for the
+   command on one line, no wider. */
+.unseal {
+  max-width: 900px;
+}
+
+.mono.mono {
+  font-family: var(--ant-font-family-code);
+}
+
+/* A copy's outcome, in the button that did it, for a moment. */
+.copied.copied {
+  color: var(--ant-color-success);
+}
+
+.failed.failed {
+  color: var(--ant-color-error);
+}

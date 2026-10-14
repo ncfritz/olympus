@@ -8,7 +8,9 @@ import {
   Checkbox,
   Flex,
   Form,
+  Input,
   Result,
+  Space,
   Spin,
   Steps,
   Table,
@@ -26,6 +28,7 @@ import { ErrorAlert } from "./ErrorAlert";
 import { PassphraseFields } from "./PassphraseFields";
 import { RecentSignInNotice } from "./RecentSignIn";
 import styles from "./SetupPage.module.css";
+import { COPY_LABELS, useCopy, ValueCard } from "./ValueCard";
 
 const STEPS = [
   { title: "Recovery passphrase" },
@@ -65,6 +68,33 @@ const secretsFor = (file: string) => [
     opens: "A ceremony with that CA",
   },
 ];
+
+/**
+ * A value to copy whole, such as a command: read-only, in the code font,
+ * its copy button attached.
+ */
+function CopyInput({ value, label }: { value: string; label: string }) {
+  const { status, copy } = useCopy(value);
+  return (
+    <Space.Compact block>
+      <Input
+        readOnly
+        value={value}
+        className={styles.mono}
+        aria-label={label}
+        onFocus={(event) => event.target.select()}
+      />
+      <Button
+        icon={COPY_LABELS[status].icon}
+        className={styles[status]}
+        aria-live="polite"
+        onClick={() => void copy()}
+      >
+        {COPY_LABELS[status].text}
+      </Button>
+    </Space.Compact>
+  );
+}
 
 /**
  * The signer's first run (ADR 0032, Bootstrap): the recovery passphrase,
@@ -171,55 +201,62 @@ export function SetupPage() {
       )}
 
       {step === 1 && unsealKey && (
-        <Card title="The unseal key: shown once">
-          <Flex vertical gap="middle">
-            <Alert
-              type="warning"
-              showIcon
-              title="This page is the only place it is shown"
-              description="With it the signer unseals itself at every start. Leaving the page without storing it means sealing and unsealing by hand until the passphrase is rotated."
+        <Flex vertical gap="middle">
+          <Alert
+            type="warning"
+            showIcon
+            title="This page is the only place it is shown"
+            description="With it the signer unseals itself at every start. Leaving the page without storing it means sealing and unsealing by hand until the passphrase is rotated."
+          />
+          <Flex vertical gap={4} className={styles.unseal}>
+            <Typography.Text type="secondary">Unseal key</Typography.Text>
+            <ValueCard
+              value={unsealKey}
+              label="unseal key"
+              size="large"
+              actions={[
+                {
+                  key: "save",
+                  icon: <DownloadOutlined />,
+                  text: "Save to file",
+                  label: `Save the unseal key as ${keyFile}`,
+                  onClick: () => saveFile(keyFile, unsealKey, "text/plain"),
+                },
+              ]}
             />
-            <Typography.Paragraph copyable code>
-              {unsealKey}
-            </Typography.Paragraph>
-            <div>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={() => saveFile(keyFile, unsealKey, "text/plain")}
-              >
-                Save as {keyFile}
-              </Button>
-            </div>
-            <Typography.Text>On the host:</Typography.Text>
-            <Typography.Paragraph code copyable>
-              {`install -m 600 ${keyFile} "$HARPOCRATES_SECRETS_DIR/${keyFile}" && rm ${keyFile}`}
-            </Typography.Paragraph>
-            <Checkbox.Group
-              value={checked}
-              onChange={(values) => setChecked(values as string[])}
-            >
-              <Flex vertical gap="small">
-                {checklist.map((item) => (
-                  <Checkbox key={item} value={item}>
-                    {item}
-                  </Checkbox>
-                ))}
-              </Flex>
-            </Checkbox.Group>
-            <div>
-              <Button
-                type="primary"
-                disabled={checked.length < checklist.length}
-                onClick={() => {
-                  setUnsealKey(undefined);
-                  setStep(2);
-                }}
-              >
-                Next
-              </Button>
-            </div>
           </Flex>
-        </Card>
+          <Flex vertical gap={4} className={styles.unseal}>
+            <Typography.Text type="secondary">On the host</Typography.Text>
+            <CopyInput
+              label="command"
+              value={`install -m 600 ${keyFile} "$HARPOCRATES_SECRETS_DIR/${keyFile}" && rm ${keyFile}`}
+            />
+          </Flex>
+          <Checkbox.Group
+            value={checked}
+            onChange={(values) => setChecked(values as string[])}
+          >
+            <Flex vertical gap="small">
+              {checklist.map((item) => (
+                <Checkbox key={item} value={item}>
+                  {item}
+                </Checkbox>
+              ))}
+            </Flex>
+          </Checkbox.Group>
+          <div>
+            <Button
+              type="primary"
+              disabled={checked.length < checklist.length}
+              onClick={() => {
+                setUnsealKey(undefined);
+                setStep(2);
+              }}
+            >
+              Next
+            </Button>
+          </div>
+        </Flex>
       )}
 
       {step === 2 && (
