@@ -209,37 +209,6 @@ const useFitHeight = (
   return height;
 };
 
-/**
- * How far in the open step's contents start from the bar's left edge, so
- * Back and Next line up with them.
- */
-const useIndent = (
-  open: RefObject<HTMLElement | null>,
-  bar: RefObject<HTMLElement | null>,
-  step: number,
-): number | undefined => {
-  const [indent, setIndent] = useState<number>();
-  useLayoutEffect(() => {
-    const measure = () => {
-      if (!open.current || !bar.current) return;
-      setIndent(
-        open.current.getBoundingClientRect().left -
-          bar.current.getBoundingClientRect().left,
-      );
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [open, bar, step]);
-  return indent;
-};
-
-/** An indent as the one value set from code: the CSS reads it as --step-indent. */
-const indentStyle = (indent: number | undefined) =>
-  (indent === undefined
-    ? {}
-    : { "--step-indent": `${indent}px` }) as CSSProperties;
-
 /** A height as the one value set from code: the CSS reads it as --fit. */
 const fitStyle = (height: number | undefined) =>
   (height === undefined ? {} : { "--fit": `${height}px` }) as CSSProperties;
@@ -287,6 +256,10 @@ export function RootSettings({
   const values = Form.useWatch([], { form, preserve: true }) as
     RootFormValues | undefined;
   const [step, setStep] = useState(0);
+  // The furthest step reached: any step up to it can be opened again.
+  const [reached, setReached] = useState(0);
+  // Which steps were left, or are, with fields in error.
+  const [faulty, setFaulty] = useState<boolean[]>([false, false, false, false]);
   const [answer, setAnswer] = useState<PreviewIssuerResponse>();
   const [error, setError] = useState<unknown>();
   const [loading, setLoading] = useState(false);
@@ -346,21 +319,46 @@ export function RootSettings({
   const open = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const fit = useFitHeight(open, step);
-  const indent = useIndent(open, bar, step);
 
-  const next = async () => {
-    try {
-      await form.validateFields(STEP_FIELDS[step]);
-      setStep(step + 1);
-    } catch {
-      // The fields say what is wrong.
+  /** Whether a field of step `index` is wrong, as the form last checked it. */
+  const wrongIn = (index: number) =>
+    form
+      .getFieldsError(
+        STEP_FIELDS[index] as Parameters<typeof form.getFieldsError>[0],
+      )
+      .some((field) => field.errors.length > 0);
+
+  const markFaulty = (index: number, isFaulty: boolean) =>
+    setFaulty((current) =>
+      current[index] === isFaulty
+        ? current
+        : current.map((f, i) => (i === index ? isFaulty : f)),
+    );
+
+  /**
+   * Opens step `to`. Going forward checks the open step first and stays
+   * on it if a field is wrong; going back does not, but a step left with
+   * a field wrong shows it at its dot.
+   */
+  const go = async (to: number) => {
+    if (to === step) return;
+    if (to > step) {
+      try {
+        await form.validateFields(STEP_FIELDS[step]);
+      } catch {
+        markFaulty(step, true);
+        return;
+      }
     }
+    markFaulty(step, wrongIn(step));
+    setStep(to);
+    setReached((r) => Math.max(r, to));
   };
 
   const keyStep = (
     <>
-      <Row gutter={12}>
-        <Col xs={24} sm={12}>
+      <Flex gap="middle" wrap>
+        <div>
           <Form.Item
             name="keyFamily"
             label="Key type"
@@ -375,9 +373,9 @@ export function RootSettings({
               }))}
             />
           </Form.Item>
-        </Col>
+        </div>
         {family?.choice && (
-          <Col xs={24} sm={12}>
+          <div>
             <Form.Item
               name="algorithm"
               label={family.choice}
@@ -387,11 +385,11 @@ export function RootSettings({
                   : "Its key's size: 2048 bits suits nearly everything; longer keys are slower to generate and to sign with"
               }
             >
-              <Select options={family.algorithms} />
+              <Select options={family.algorithms} className={styles.curve} />
             </Form.Item>
-          </Col>
+          </div>
         )}
-      </Row>
+      </Flex>
       <Form.Item
         label="Validity"
         tooltip="How long the root is valid: 20 years by default, since every device trusts it by hand and it is replaced rarely"
@@ -480,8 +478,8 @@ export function RootSettings({
           suffix={<span className={styles.numbering}>{numbering}</span>}
         />
       </Form.Item>
-      <Row gutter={12}>
-        <Col xs={24} sm={12}>
+      <Flex gap="middle" wrap>
+        <div className={styles.purpose}>
           <Form.Item
             name="purpose"
             label="Purpose"
@@ -495,28 +493,26 @@ export function RootSettings({
           >
             <Input allowClear />
           </Form.Item>
-        </Col>
-        <Col xs={12} sm={6}>
+        </div>
+        <Flex gap="small">
           <Form.Item
             name="number"
             label="Number"
             tooltip="Tells apart roots of the same purpose: 1 for the first"
             rules={[{ required: true, message: "Required" }]}
           >
-            <InputNumber min={1} className={styles.number} />
+            <InputNumber min={1} max={999} className={styles.number} />
           </Form.Item>
-        </Col>
-        <Col xs={12} sm={6}>
           <Form.Item
             name="generation"
             label="Generation"
             tooltip="1, unless it succeeds a root: its successor keeps the number and counts up the generation"
             rules={[{ required: true, message: "Required" }]}
           >
-            <InputNumber min={1} className={styles.number} />
+            <InputNumber min={1} max={999} className={styles.number} />
           </Form.Item>
-        </Col>
-      </Row>
+        </Flex>
+      </Flex>
       <Row gutter={12}>
         {ROOT_SUBJECT_ATTRIBUTES.map((a) => (
           <Col key={a.type} xs={24} sm={12}>
@@ -573,17 +569,6 @@ export function RootSettings({
     </Flex>
   );
 
-  // A step taken, closed: what it came to, in a line.
-  const constraintCount =
-    (values?.permitted?.length ?? 0) + (values?.excluded?.length ?? 0);
-  const summaries = [
-    `${values?.algorithm ?? ""} · ${describeValidity(validityDays ?? defaults?.validityDays ?? 0)}`,
-    answer?.preview.subject ?? "",
-    constraintCount
-      ? `${values?.permitted?.length ?? 0} permitted, ${values?.excluded?.length ?? 0} excluded`
-      : "None",
-    "",
-  ];
   const contents = [keyStep, nameStep, constraintsStep, reviewStep];
   const titles = ["Key", "Name", "Name constraints", "Review"];
   const last = step === titles.length - 1;
@@ -600,6 +585,8 @@ export function RootSettings({
         validityUnit: "years",
       }}
       className={styles.form}
+      // The open step's dot follows its fields as they are corrected.
+      onFieldsChange={() => markFaulty(step, wrongIn(step))}
       onValuesChange={(changed: RootFormValues) => {
         // A family starts at its first size or curve.
         if (changed.keyFamily) {
@@ -611,57 +598,57 @@ export function RootSettings({
         }
       }}
     >
-      <Steps
-        orientation="vertical"
-        type="dot"
-        size="small"
-        current={step}
-        className={styles.steps}
-        // A step already taken can be opened again; one ahead, only by Next.
-        onChange={(to) => to < step && setStep(to)}
-        items={titles.map((title, index) => ({
-          title,
-          disabled: index > step,
-          content:
-            index === step ? (
-              <div
-                ref={open}
-                className={`${styles.open} ${index < 2 ? styles.narrow : index === 2 ? styles.medium : ""}`}
-                style={fitStyle(fit)}
-              >
-                {contents[index]}
-              </div>
-            ) : index < step ? (
-              <Typography.Text
-                type="secondary"
-                className={index === 1 ? styles.summaryMono : styles.summary}
-              >
-                {summaries[index]}
-              </Typography.Text>
-            ) : null,
-        }))}
-      />
-      <Flex
-        gap="small"
-        className={styles.bar}
-        ref={bar}
-        style={indentStyle(indent)}
-      >
-        <Button
-          size="middle"
-          onClick={() => (step === 0 ? onBack() : setStep(step - 1))}
-        >
-          Back
-        </Button>
-        <Button
-          size="middle"
-          type="primary"
-          disabled={last && !ready}
-          onClick={() => (last ? onNext() : void next())}
-        >
-          Next
-        </Button>
-      </Flex>
+      <div className={styles.layout}>
+        <Steps
+          orientation="vertical"
+          type="dot"
+          size="small"
+          current={step}
+          className={styles.steps}
+          // Any step reached so far opens again; going forward checks the
+          // open one first.
+          onChange={(to) => void go(to)}
+          items={titles.map((title, index) => ({
+            title,
+            disabled: index > reached,
+            status:
+              faulty[index] && index !== step
+                ? "error"
+                : index === step
+                  ? faulty[index]
+                    ? "error"
+                    : "process"
+                  : index <= reached
+                    ? "finish"
+                    : "wait",
+          }))}
+        />
+        <div className={styles.content}>
+          <div
+            ref={open}
+            className={`${styles.open} ${step < 2 ? styles.narrow : step === 2 ? styles.medium : ""}`}
+            style={fitStyle(fit)}
+          >
+            {contents[step]}
+          </div>
+          <Flex gap="small" className={styles.bar} ref={bar}>
+            <Button
+              size="middle"
+              onClick={() => (step === 0 ? onBack() : void go(step - 1))}
+            >
+              Back
+            </Button>
+            <Button
+              size="middle"
+              type="primary"
+              disabled={last && (!ready || faulty.some(Boolean))}
+              onClick={() => (last ? onNext() : void go(step + 1))}
+            >
+              Next
+            </Button>
+          </Flex>
+        </div>
+      </div>
     </Form>
   );
 }

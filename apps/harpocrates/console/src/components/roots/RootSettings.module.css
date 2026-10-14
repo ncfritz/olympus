@@ -26,17 +26,30 @@
 }
 
 .form :global(.ant-form-item-label) {
-  padding-bottom: 2px;
+  padding-bottom: 0;
 }
 
-.steps :global(.ant-steps-item-content) {
+.form :global(.ant-form-item-label > label) {
+  height: auto;
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+/* The steps in a column of their own; the open step's fields, and Back
+   and Next beneath them, in the column beside it. */
+.layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.steps.steps {
+  flex: 0 0 160px;
+  width: 160px;
+}
+
+.content {
   flex: 1;
   min-width: 0;
-}
-
-.steps :global(.ant-steps-item-description) {
-  max-width: none;
-  padding-bottom: 12px;
 }
 
 .mono.mono,
@@ -50,8 +63,17 @@
   color: var(--ant-color-text-tertiary);
 }
 
+/* Room for three digits. */
 .number.number {
-  width: 100%;
+  width: 72px;
+}
+
+.purpose {
+  width: 240px;
+}
+
+.curve.curve {
+  width: 120px;
 }
 
 /* The subject as the service would write it, as the fields change. */
@@ -156,7 +178,7 @@
   position: sticky;
   bottom: 0;
   z-index: 2;
-  padding: 12px 0 12px var(--step-indent, 0);
+  padding: 12px 0;
   background: var(--ant-color-bg-container);
 }
 
@@ -176,17 +198,6 @@
 
 .subject {
   margin-bottom: 12px;
-}
-
-/* A step taken, closed: what it came to, in a line. */
-.summary {
-  font-size: var(--ant-font-size-sm, 12px);
-}
-
-.summaryMono.summaryMono {
-  font-family: var(--ant-font-family-code);
-  font-size: var(--ant-font-size-sm, 12px);
-  word-break: break-all;
 }
 
 /* The review: each cell's contents at its top, the setting and value
