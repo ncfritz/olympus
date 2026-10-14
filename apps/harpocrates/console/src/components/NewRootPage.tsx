@@ -30,6 +30,8 @@ import { ErrorAlert } from "./ErrorAlert";
 import { KeyHandover } from "./KeyHandover";
 import { PassphraseFields } from "./PassphraseFields";
 import { RecentSignInNotice } from "./RecentSignIn";
+import styles from "./NewRootPage.module.css";
+import { ShapeSample } from "./roots/ShapeSample";
 
 const STEPS = [
   { title: "Shape" },
@@ -91,38 +93,37 @@ export function NewRootPage() {
 
   return (
     <Flex vertical gap="large">
-      <Typography.Title level={3}>New root</Typography.Title>
+      <Typography.Title level={3} className={styles.title}>
+        New root
+      </Typography.Title>
       <Steps current={step} items={STEPS} />
       <RecentSignInNotice doing="Creating a root" />
 
       {step === 0 && (
-        <Card title="What will it sign?">
-          <Flex vertical gap="middle">
-            <Radio.Group
-              value={shape}
-              onChange={(event) => setShape(event.target.value as IssuerShape)}
-            >
-              <Flex vertical gap="middle">
-                {(Object.keys(SHAPES) as IssuerShape[]).map((key) => (
-                  <Radio key={key} value={key}>
-                    <Typography.Text strong>
-                      {SHAPES[key].label}
-                    </Typography.Text>
-                    <br />
-                    <Typography.Text type="secondary">
-                      {SHAPES[key].summary}
-                    </Typography.Text>
-                  </Radio>
-                ))}
-              </Flex>
-            </Radio.Group>
-            <div>
-              <Button type="primary" onClick={() => setStep(1)}>
-                Next
-              </Button>
+        <Flex vertical gap="large">
+          <Radio.Group
+            value={shape}
+            onChange={(event) => setShape(event.target.value as IssuerShape)}
+          >
+            <div className={styles.options}>
+              {(Object.keys(SHAPES) as IssuerShape[]).map((key) => (
+                <Radio key={key} value={key} className={styles.option}>
+                  <Typography.Text strong>{SHAPES[key].label}</Typography.Text>
+                  <br />
+                  <Typography.Text type="secondary">
+                    {SHAPES[key].summary}
+                  </Typography.Text>
+                </Radio>
+              ))}
             </div>
-          </Flex>
-        </Card>
+          </Radio.Group>
+          <ShapeSample shape={shape} />
+          <div>
+            <Button type="primary" onClick={() => setStep(1)}>
+              Next
+            </Button>
+          </div>
+        </Flex>
       )}
 
       {/* Kept mounted through the later steps, so Back keeps the form. */}

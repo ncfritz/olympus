@@ -1,0 +1,25 @@
+/* The page's padding is the gap above the title, as it is at its left:
+   antd's top margin on a heading would double it. */
+.title.title {
+  margin-top: 0;
+}
+
+/* The shapes to choose from, side by side; the chosen one's sample below
+   them, the page's width. */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+}
+
+.option.option {
+  flex: 1 1 260px;
+  align-items: flex-start;
+  margin-inline-end: 0;
+}
+
+/* The radio beside the shape's name, not the middle of its summary. */
+.option.option :global(.ant-radio) {
+  margin-top: 3px;
+  align-self: flex-start;
+}

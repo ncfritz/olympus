@@ -463,3 +463,12 @@
 .notice:not(:empty) {
   padding: 0 24px 16px;
 }
+
+/* A shape's sample hierarchy (ShapeSample), on the new root page. */
+.sample {
+  display: flex;
+  flex: 1 1 560px;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
