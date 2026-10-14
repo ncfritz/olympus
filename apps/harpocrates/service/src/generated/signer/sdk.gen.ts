@@ -69,6 +69,9 @@ import type {
   PreviewSshCertificateData,
   PreviewSshCertificateErrors,
   PreviewSshCertificateResponses,
+  ReadKeyData,
+  ReadKeyErrors,
+  ReadKeyResponses,
   RegisterIssuerData,
   RegisterIssuerErrors,
   RegisterIssuerResponses,
@@ -276,6 +279,28 @@ export const importKey = <ThrowOnError extends boolean = true>(
   >({
     responseType: "json",
     url: "/v1/keys/import",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Reads a key without keeping it
+ *
+ * An encrypted PKCS#8 key, or the key in a PKCS#12 file, decrypted for its type and public key and then forgotten: so the service can check where a key belongs before importing it, since a key once imported is refused for good after.
+ */
+export const readKey = <ThrowOnError extends boolean = true>(
+  options: Options<ReadKeyData, ThrowOnError>,
+): RequestResult<ReadKeyResponses, ReadKeyErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    ReadKeyResponses,
+    ReadKeyErrors,
+    ThrowOnError
+  >({
+    responseType: "json",
+    url: "/v1/keys/read",
     ...options,
     headers: {
       "Content-Type": "application/json",

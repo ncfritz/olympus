@@ -24,7 +24,9 @@ from harpocrates_signer.keys import (
     KeyInfo,
     KeyPurpose,
     Keys,
+    PrivateKey,
     PublicKey,
+    algorithm_of,
 )
 from harpocrates_signer.ocsp import (
     CertIdHash,
@@ -137,6 +139,26 @@ class ImportKeyRequest(Wire):
     )
     passphrase: str
     format: ImportFormat = ImportFormat.PEM
+
+
+class ReadKeyRequest(Wire):
+    private_key: str = Field(
+        description="Encrypted PKCS#8, PEM; or a PKCS#12 file, base64."
+    )
+    passphrase: str
+    format: ImportFormat = ImportFormat.PEM
+
+
+class PublicKeyResponse(Wire):
+    algorithm: str
+    public_key: str = Field(description="SubjectPublicKeyInfo, PEM.")
+
+    @staticmethod
+    def of(key: PrivateKey) -> "PublicKeyResponse":
+        return PublicKeyResponse(
+            algorithm=algorithm_of(key),
+            public_key=pem_public_key(key.public_key()),
+        )
 
 
 class KeyResponse(Wire):

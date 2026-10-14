@@ -715,6 +715,39 @@ export type PreviewSshCertificateRequest = {
 };
 
 /**
+ * PublicKeyResponse
+ */
+export type PublicKeyResponse = {
+  /**
+   * Algorithm
+   */
+  algorithm: string;
+  /**
+   * Publickey
+   *
+   * SubjectPublicKeyInfo, PEM.
+   */
+  publicKey: string;
+};
+
+/**
+ * ReadKeyRequest
+ */
+export type ReadKeyRequest = {
+  /**
+   * Privatekey
+   *
+   * Encrypted PKCS#8, PEM; or a PKCS#12 file, base64.
+   */
+  privateKey: string;
+  /**
+   * Passphrase
+   */
+  passphrase: string;
+  format?: ImportFormat;
+};
+
+/**
  * RegisterIssuerRequest
  */
 export type RegisterIssuerRequest = {
@@ -1404,6 +1437,45 @@ export type ImportKeyResponses = {
 };
 
 export type ImportKeyResponse = ImportKeyResponses[keyof ImportKeyResponses];
+
+export type ReadKeyData = {
+  body: ReadKeyRequest;
+  headers?: {
+    /**
+     * Authorization
+     */
+    authorization?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: "/v1/keys/read";
+};
+
+export type ReadKeyErrors = {
+  /**
+   * The request is malformed.
+   */
+  400: ErrorResponse;
+  /**
+   * No token, or the wrong one.
+   */
+  401: ErrorResponse;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ReadKeyError = ReadKeyErrors[keyof ReadKeyErrors];
+
+export type ReadKeyResponses = {
+  /**
+   * Successful Response
+   */
+  200: PublicKeyResponse;
+};
+
+export type ReadKeyResponse = ReadKeyResponses[keyof ReadKeyResponses];
 
 export type DestroyKeyData = {
   body?: never;

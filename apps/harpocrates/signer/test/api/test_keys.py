@@ -171,6 +171,45 @@ def test_refuses_the_wrong_pkcs12_passphrase(unsealed: TestClient):
     assert response.status_code == 400
 
 
+def test_reads_a_key_without_keeping_it(unsealed: TestClient):
+    key = ec.generate_private_key(ec.SECP384R1())
+    data = p12(key, b"bring me")
+    body = {
+        "privateKey": data,
+        "passphrase": "bring me",
+        "format": "pkcs12",
+    }
+    read = ok(unsealed.post("/v1/keys/read", json=body), 200)
+    assert read["algorithm"] == "P-384"
+    assert read["publicKey"] == (
+        key.public_key()
+        .public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode()
+    )
+    # Nothing was kept: it is still taken afterwards.
+    imported = ok(unsealed.post("/v1/keys/import", json={"purpose": "subject", **body}))
+    assert imported["publicKey"] == read["publicKey"]
+
+
+def test_refuses_to_read_with_the_wrong_passphrase(unsealed: TestClient):
+    pem = (
+        ec.generate_private_key(ec.SECP256R1())
+        .private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.BestAvailableEncryption(b"bring me"),
+        )
+        .decode()
+    )
+    response = unsealed.post(
+        "/v1/keys/read", json={"privateKey": pem, "passphrase": "not it"}
+    )
+    assert response.status_code == 400
+
+
 def test_refuses_a_short_dsa_key(unsealed: TestClient):
     data = p12(dsa.generate_private_key(key_size=1024), b"bring me")
     response = unsealed.post(

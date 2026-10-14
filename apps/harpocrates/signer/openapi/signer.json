@@ -670,6 +670,86 @@
         }
       }
     },
+    "/v1/keys/read": {
+      "post": {
+        "tags": [
+          "Keys"
+        ],
+        "summary": "Reads a key without keeping it",
+        "description": "An encrypted PKCS#8 key, or the key in a PKCS#12 file, decrypted for its type and public key and then forgotten: so the service can check where a key belongs before importing it, since a key once imported is refused for good after.",
+        "operationId": "ReadKey",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No token, or the wrong one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/keys/{key_id}": {
       "get": {
         "tags": [
@@ -3925,6 +4005,50 @@
         ],
         "title": "PreviewSshCertificateRequest",
         "description": "An SSH certificate as a CA of this kind would sign it."
+      },
+      "PublicKeyResponse": {
+        "properties": {
+          "algorithm": {
+            "type": "string",
+            "title": "Algorithm"
+          },
+          "publicKey": {
+            "type": "string",
+            "title": "Publickey",
+            "description": "SubjectPublicKeyInfo, PEM."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "algorithm",
+          "publicKey"
+        ],
+        "title": "PublicKeyResponse"
+      },
+      "ReadKeyRequest": {
+        "properties": {
+          "privateKey": {
+            "type": "string",
+            "title": "Privatekey",
+            "description": "Encrypted PKCS#8, PEM; or a PKCS#12 file, base64."
+          },
+          "passphrase": {
+            "type": "string",
+            "title": "Passphrase"
+          },
+          "format": {
+            "$ref": "#/components/schemas/ImportFormat",
+            "default": "pem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "privateKey",
+          "passphrase"
+        ],
+        "title": "ReadKeyRequest"
       },
       "RegisterIssuerRequest": {
         "properties": {

@@ -173,6 +173,17 @@ def load_pkcs12_key(data: str, passphrase: str) -> PrivateKey:
     return _supported(key)
 
 
+def load_brought_key(
+    data: str, passphrase: str, import_format: "ImportFormat"
+) -> PrivateKey:
+    """A key brought to the signer, as `/keys/import` and `/keys/read` take it."""
+    return (
+        load_pkcs12_key(data, passphrase)
+        if import_format is ImportFormat.PKCS12
+        else load_encrypted_pkcs8(data, passphrase)
+    )
+
+
 def _supported(key: object) -> PrivateKey:
     if not isinstance(key, PRIVATE_KEY_TYPES):
         raise BadRequestError("the key type is not supported")
@@ -201,12 +212,7 @@ class Keys:
             raise RefusedError(
                 "ocsp-key", "an OCSP responder's key is generated here, not brought"
             )
-        key = (
-            load_pkcs12_key(data, passphrase)
-            if import_format is ImportFormat.PKCS12
-            else load_encrypted_pkcs8(data, passphrase)
-        )
-        return self._keep(purpose, key)
+        return self._keep(purpose, load_brought_key(data, passphrase, import_format))
 
     def _keep(self, purpose: KeyPurpose, key: PrivateKey) -> KeyInfo:
         key_id = str(uuid.uuid4())

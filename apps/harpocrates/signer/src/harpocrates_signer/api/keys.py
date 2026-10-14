@@ -1,4 +1,4 @@
-"""Keys: generate, import, describe, destroy, and export an escrowed one."""
+"""Keys: generate, import (or read), describe, destroy, and export an escrowed one."""
 
 import base64
 
@@ -6,12 +6,15 @@ from fastapi import APIRouter, Depends, status
 
 from harpocrates_signer.api.common import SignerDep, errors, require_token
 from harpocrates_signer.escrow import ExportFormat, export_key
+from harpocrates_signer.keys import load_brought_key
 from harpocrates_signer.models import (
     ExportKeyRequest,
     ExportKeyResponse,
     GenerateKeyRequest,
     ImportKeyRequest,
     KeyResponse,
+    PublicKeyResponse,
+    ReadKeyRequest,
     load_certificate,
 )
 
@@ -44,6 +47,21 @@ def import_key(body: ImportKeyRequest, signer: SignerDep) -> KeyResponse:
         signer.keys.import_key(
             body.purpose, body.private_key, body.passphrase, body.format
         )
+    )
+
+
+@router.post(
+    "/keys/read",
+    summary="Reads a key without keeping it",
+    description="An encrypted PKCS#8 key, or the key in a PKCS#12 file, "
+    "decrypted for its type and public key and then forgotten: so the "
+    "service can check where a key belongs before importing it, since a "
+    "key once imported is refused for good after.",
+    responses=errors(400),
+)
+def read_key(body: ReadKeyRequest) -> PublicKeyResponse:
+    return PublicKeyResponse.of(
+        load_brought_key(body.private_key, body.passphrase, body.format)
     )
 
 
