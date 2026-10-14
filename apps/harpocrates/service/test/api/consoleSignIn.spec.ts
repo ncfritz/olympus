@@ -180,7 +180,12 @@ describe("the CA console's sign-in (ADR 0029, 0032)", () => {
         )
         .expect(200);
       expect(me.body).toEqual({
-        user: { email: "neil@example.test", roles: ["pki-operator"] },
+        user: {
+          email: "neil@example.test",
+          roles: ["pki-operator"],
+          signedInAt: expect.any(String),
+          recentUntil: expect.any(String),
+        },
       });
     });
 

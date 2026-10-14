@@ -25,6 +25,20 @@ export class CurrentUser {
       "The user's Harpocrates roles, from their access token; none means they may sign in but do nothing here",
   })
   roles: PkiRole[];
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string: when the user's sign-in completed, the access token's auth_time",
+  })
+  signedInAt: Moment;
+
+  @ApiTimestamp({
+    required: true,
+    description:
+      "An ISO-8601 formatted string: until when the sign-in is recent enough for ceremonies, changes to CAs, profiles and deploy targets, and key export (AUTH_RECENT_SIGN_IN_SECONDS after signedInAt)",
+  })
+  recentUntil: Moment;
 }
 
 /** Who a recorded principal is: an Olympus user Harpocrates has seen. */

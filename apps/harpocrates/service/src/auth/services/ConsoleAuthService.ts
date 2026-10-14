@@ -14,6 +14,7 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
+import moment from "moment";
 import {
   authConfig,
   type AuthConfigType,
@@ -99,7 +100,15 @@ export class ConsoleAuthService {
     const { email } = await this.session.describe(accessToken);
     // Records name a user by ID: remember who this one is.
     await this.users.remember(principal, email);
-    return { email, roles: principal.roles };
+    const signedInAt = moment.unix(principal.authTime);
+    return {
+      email,
+      roles: principal.roles,
+      signedInAt,
+      recentUntil: signedInAt
+        .clone()
+        .add(this.auth.recentSignInSeconds, "seconds"),
+    };
   }
 
   /**

@@ -71,6 +71,25 @@ describe.skipIf(!E2E_DATABASE_URL)("principals", () => {
     );
   });
 
+  it("says when the user signed in, and until when that is recent enough", async () => {
+    const answer = await request(server())
+      .get("/v1/auth/current-user")
+      .set(
+        "Authorization",
+        `Bearer ${await accessToken({ roles: ["pki-admin"], sub: "person-2", signedInAgo: 100 })}`,
+      )
+      .expect(200);
+    const { signedInAt, recentUntil } = answer.body.user as {
+      signedInAt: string;
+      recentUntil: string;
+    };
+    const ago = (Date.now() - Date.parse(signedInAt)) / 1000;
+    expect(ago).toBeGreaterThanOrEqual(99);
+    expect(ago).toBeLessThan(110);
+    // AUTH_RECENT_SIGN_IN_SECONDS, at its default.
+    expect((Date.parse(recentUntil) - Date.parse(signedInAt)) / 1000).toBe(300);
+  });
+
   it("keeps the email the Olympus API last gave", async () => {
     email = "neil@ncfritz.net";
     await request(server())

@@ -1422,6 +1422,10 @@ export interface components {
       email: string;
       /** @description The user's Harpocrates roles, from their access token; none means they may sign in but do nothing here */
       roles: components["schemas"]["PkiRole"][];
+      /** @description An ISO-8601 formatted string: when the user's sign-in completed, the access token's auth_time */
+      signedInAt: string;
+      /** @description An ISO-8601 formatted string: until when the sign-in is recent enough for ceremonies, changes to CAs, profiles and deploy targets, and key export (AUTH_RECENT_SIGN_IN_SECONDS after signedInAt) */
+      recentUntil: string;
     };
     DescribeCurrentUserResponse: {
       /** @description The signed-in user. */

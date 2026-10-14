@@ -6615,11 +6615,21 @@
             "items": {
               "$ref": "#/components/schemas/PkiRole"
             }
+          },
+          "signedInAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when the user's sign-in completed, the access token's auth_time"
+          },
+          "recentUntil": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: until when the sign-in is recent enough for ceremonies, changes to CAs, profiles and deploy targets, and key export (AUTH_RECENT_SIGN_IN_SECONDS after signedInAt)"
           }
         },
         "required": [
           "email",
-          "roles"
+          "roles",
+          "signedInAt",
+          "recentUntil"
         ]
       },
       "DescribeCurrentUserResponse": {
