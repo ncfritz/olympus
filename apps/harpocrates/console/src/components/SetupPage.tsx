@@ -132,8 +132,8 @@ export function SetupPage() {
       <Typography.Title level={3} className={styles.title}>
         Set up the signer
       </Typography.Title>
-      {step === 0 && <RecentSignInNotice doing="Setting up the signer" />}
       <Steps current={step} items={STEPS} />
+      {step === 0 && <RecentSignInNotice doing="Setting up the signer" />}
 
       {step === 0 && (
         <Flex vertical gap="middle">

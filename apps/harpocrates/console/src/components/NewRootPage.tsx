@@ -92,8 +92,8 @@ export function NewRootPage() {
   return (
     <Flex vertical gap="large">
       <Typography.Title level={3}>New root</Typography.Title>
-      <RecentSignInNotice doing="Creating a root" />
       <Steps current={step} items={STEPS} />
+      <RecentSignInNotice doing="Creating a root" />
 
       {step === 0 && (
         <Card title="What will it sign?">
