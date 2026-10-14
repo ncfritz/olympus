@@ -221,6 +221,50 @@ describe.skipIf(!E2E_DATABASE_URL)("roots", () => {
       .expect(400);
   });
 
+  it("takes a larger key, and signs with it in its ceremony (ADR 0038)", async () => {
+    const root = await createRoot({
+      number: 10,
+      purpose: "Curves",
+      algorithm: "P-384",
+    });
+    const certificate = new X509Certificate(root.issuer.certificate);
+    expect(certificate.publicKey.asymmetricKeyDetails?.namedCurve).toBe(
+      "secp384r1",
+    );
+    // Its first ceremony signs its first list with that key.
+    const ceremonyId = await openCeremony(root.issuer.id, root.encryptedKey);
+    const intermediate = (
+      await request(server())
+        .post(`/v1/ceremony/${ceremonyId}/intermediates`)
+        .set("Authorization", harness.admin)
+        .send({
+          number: 1,
+          generation: 1,
+          purpose: "Curves",
+          algorithm: "RSA-3072",
+          exportPassphrase: EXPORT_PASSPHRASE,
+        })
+        .expect(201)
+    ).body as Created;
+    await closeCeremony(ceremonyId);
+    const child = new X509Certificate(intermediate.issuer.certificate);
+    expect(child.publicKey.asymmetricKeyDetails?.modulusLength).toBe(3072);
+    expect(child.verify(certificate.publicKey)).toBe(true);
+    // A DSA or Ed25519 key is a leaf's, not a CA's.
+    for (const algorithm of ["DSA-2048", "Ed25519"]) {
+      await request(server())
+        .post("/v1/issuers/roots")
+        .set("Authorization", harness.admin)
+        .send({
+          number: 11,
+          generation: 1,
+          algorithm,
+          exportPassphrase: EXPORT_PASSPHRASE,
+        })
+        .expect(400);
+    }
+  });
+
   describe("a root that has signed nothing", () => {
     it("is discarded, and cannot open a ceremony after", async () => {
       const root = await createRoot({ number: 7, purpose: "Spare" });

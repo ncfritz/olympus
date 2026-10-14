@@ -15,7 +15,10 @@ Its own Postgres, `harpocrates-postgres` (`prisma/schema.prisma`):
 - **Issuers**: the root, intermediates and issuing CAs, with their
   certificates, usages, name constraints and maximum validity. Roots and
   intermediates are offline; their keys leave encrypted when created and
-  come back only for a ceremony.
+  come back only for a ceremony. A CA's key is P-256 by default, or
+  P-384, P-521 or RSA of 2048 to 8192 bits (ADR 0038). A CA is named by
+  its parts, by its common name and subject attributes (its number and
+  generation still ending the CN), or by a subject given outright.
 - **Profiles**: what a certificate may be (seeded: `service`,
   `api-server`, `device`, `internal-tls`, `legacy-device`,
   `code-signing`, `email`, `document`), in versions (ADR 0034): every

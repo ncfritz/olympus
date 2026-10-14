@@ -1680,10 +1680,17 @@ export interface components {
       value: string;
     };
     /**
-     * @description A CA's key type: P-256 or RSA 2048
+     * @description A CA's key type: P-256, P-384 or P-521, or RSA of 2048 to 8192 bits (ADR 0038)
      * @enum {string}
      */
-    CaKeyAlgorithm: "P-256" | "RSA-2048";
+    CaKeyAlgorithm:
+      | "P-256"
+      | "P-384"
+      | "P-521"
+      | "RSA-2048"
+      | "RSA-3072"
+      | "RSA-4096"
+      | "RSA-8192";
     CreateRootIssuerRequest: {
       /** @description Its organisation: O, and the start of the CN; by default its root's, or the CA's configured one for a root */
       organization?: string;

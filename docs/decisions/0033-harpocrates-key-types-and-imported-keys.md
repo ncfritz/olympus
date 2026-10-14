@@ -1,6 +1,6 @@
 # 0033. Harpocrates: the key type chosen at issuance, and keys brought in
 
-- **Status:** Accepted; amended by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): a profile version may limit the key types a request chooses from
+- **Status:** Accepted; amended by [ADR 0034](0034-harpocrates-profiles-versioned-presets.md) (2026-10-11): a profile version may limit the key types a request chooses from; amended by [ADR 0038](0038-harpocrates-ca-key-types.md) (2026-10-14): a CA's key may be P-384, P-521 or RSA of up to 8192 bits as well
 - **Date:** 2026-10-11; accepted 2026-10-11 (Neil)
 - **Amends:** [ADR 0020](0020-internal-certificate-authority.md)
 

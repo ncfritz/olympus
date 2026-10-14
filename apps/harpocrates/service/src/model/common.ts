@@ -74,14 +74,28 @@ export const KEY_ALGORITHM_ENUM = {
   },
 };
 
-/** A CA's key: still P-256, or RSA 2048 (ADR 0018, ADR 0020). */
-export const CA_KEY_ALGORITHM_VALUES = ["P-256", "RSA-2048"] as const;
+/**
+ * A CA's key (ADR 0038): an EC curve or RSA of 2048 bits or more, P-256 by
+ * default; DSA and Ed25519 are for leaves only.
+ */
+export const CA_KEY_ALGORITHM_VALUES = [
+  "P-256",
+  "P-384",
+  "P-521",
+  "RSA-2048",
+  "RSA-3072",
+  "RSA-4096",
+  "RSA-8192",
+] as const;
 export type CaKeyAlgorithmName = (typeof CA_KEY_ALGORITHM_VALUES)[number];
 
 export const CA_KEY_ALGORITHM_ENUM = {
   enum: [...CA_KEY_ALGORITHM_VALUES],
   enumName: "CaKeyAlgorithm",
-  enumSchema: { description: "A CA's key type: P-256 or RSA 2048" },
+  enumSchema: {
+    description:
+      "A CA's key type: P-256, P-384 or P-521, or RSA of 2048 to 8192 bits (ADR 0038)",
+  },
 };
 
 /** Names by type, as a certificate carries them. */
