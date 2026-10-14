@@ -3479,6 +3479,234 @@
         ]
       }
     },
+    "/v1/certificate/{certificateId}/key": {
+      "post": {
+        "description": "Escrows the private key of a certificate imported from another CA product (XCA) as a record, and keeps the CSR it was issued from if one is given (ADR 0039). The key must be the certificate's, and the CSR signed by it; a profile that takes CSRs only keeps its keys with the subscriber.",
+        "operationId": "AddCertificateKey",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The imported certificate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The key, its passphrase, and optionally the CSR.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCertificateKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The certificate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddCertificateKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gives an imported certificate its key",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
+    "/v1/certificate/{certificateId}/csr": {
+      "post": {
+        "description": "Keeps the CSR an imported certificate was issued from, once its key is escrowed and while it has none (ADR 0039). The CSR must be signed by that key.",
+        "operationId": "AddCertificateCsr",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "description": "The imported certificate",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The CSR, PEM.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCertificateCsrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The certificate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddCertificateCsrResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gives an imported certificate its CSR",
+        "tags": [
+          "Certificates"
+        ]
+      }
+    },
     "/v1/profiles/preview": {
       "post": {
         "description": "Returns the certificate a version's settings would produce, saved or not (ADR 0034): a sample request, as given or made up, taken through the version's rules and the signer's invariants as issuance takes one, and built by the signer with a throwaway key, so it reads as the real one and never verifies. Nothing is written. Why the version would not save, and why the request would be refused, come back with it.",
@@ -8519,6 +8747,15 @@
         ],
         "description": "Where its private key is: escrowed in the signer, or with the subscriber only"
       },
+      "EnrollmentMode": {
+        "type": "string",
+        "enum": [
+          "csr",
+          "generated",
+          "imported"
+        ],
+        "description": "How its key came to be certified: a CSR, generated by the signer, or imported from another CA product (XCA)"
+      },
       "FullCertificate": {
         "type": "object",
         "properties": {
@@ -8582,6 +8819,18 @@
               }
             ]
           },
+          "enrollmentMode": {
+            "description": "How its key came to be certified: a CSR, generated by the signer, or imported from another CA product (XCA)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentMode"
+              }
+            ]
+          },
+          "hasCsr": {
+            "type": "boolean",
+            "description": "Whether the CSR its key was certified from is kept"
+          },
           "keyAlgorithm": {
             "type": "string",
             "description": "Its key type, e.g. P-256"
@@ -8620,6 +8869,7 @@
           "notAfter",
           "state",
           "keyLocation",
+          "hasCsr",
           "keyAlgorithm",
           "keyCreatedAt",
           "certificate",
@@ -8970,6 +9220,18 @@
               }
             ]
           },
+          "enrollmentMode": {
+            "description": "How its key came to be certified: a CSR, generated by the signer, or imported from another CA product (XCA)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentMode"
+              }
+            ]
+          },
+          "hasCsr": {
+            "type": "boolean",
+            "description": "Whether the CSR its key was certified from is kept"
+          },
           "keyAlgorithm": {
             "type": "string",
             "description": "Its key type, e.g. P-256"
@@ -8997,6 +9259,7 @@
           "notAfter",
           "state",
           "keyLocation",
+          "hasCsr",
           "keyAlgorithm",
           "keyCreatedAt"
         ]
@@ -9586,6 +9849,70 @@
           "imported",
           "skipped",
           "keyed"
+        ]
+      },
+      "AddCertificateKeyRequest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "Its private key, escrowed in the signer (ADR 0039)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportedKey"
+              }
+            ]
+          },
+          "csr": {
+            "type": "string",
+            "description": "The CSR it was issued from, PEM, signed by the key; unless it has one already"
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "AddCertificateKeyResponse": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "description": "The certificate, its key escrowed",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Certificate"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificate"
+        ]
+      },
+      "AddCertificateCsrRequest": {
+        "type": "object",
+        "properties": {
+          "csr": {
+            "type": "string",
+            "description": "The CSR it was issued from, PEM, signed by its escrowed key"
+          }
+        },
+        "required": [
+          "csr"
+        ]
+      },
+      "AddCertificateCsrResponse": {
+        "type": "object",
+        "properties": {
+          "certificate": {
+            "description": "The certificate, its CSR kept",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Certificate"
+              }
+            ]
+          }
+        },
+        "required": [
+          "certificate"
         ]
       },
       "KeyUsage": {

@@ -57,16 +57,36 @@ so XCA's certificates imported as a record can be completed afterwards,
 one at a time, without importing them again. The response says which
 certificates were imported and which gained their key.
 
+### From the certificate's page
+
+A certificate imported as a record is completed from its own page too,
+without importing it again:
+
+- `POST /certificate/{id}/key` gives it its key (and, optionally, its
+  CSR), as above.
+- `POST /certificate/{id}/csr` gives it its CSR alone, once its key is
+  escrowed and while it has none: a CSR still comes with its key, here
+  one already kept.
+
+Only a certificate imported from another CA product (enrollment mode
+`imported`) takes either: one issued here already has its key where its
+enrollment put it, and its CSR if it had one. A certificate says how it
+was enrolled (`enrollmentMode`) and whether its CSR is kept (`hasCsr`),
+so the page offers only what applies.
+
 ### Audited
 
 The key's import is audited (`key.imported`, with the certificate and
-its enrollment), as a key brought at issuance is.
+its enrollment), as a key brought at issuance is; a CSR added alone, as
+`certificate.csr-added`.
 
 ### The console
 
 The import's certificates step takes, beside many certificates as a
 record, one certificate with its key (PKCS#8 or PKCS#12, and its
-password) and, optionally, its CSR.
+password) and, optionally, its CSR. An imported certificate's page
+offers "Add its key" while its key is with the subscriber, and "Add its
+CSR" once the key is escrowed and the CSR is not kept.
 
 ## Consequences
 

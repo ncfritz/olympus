@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import type { Issuer as IssuerRow, Key as KeyRow } from "../../store/prisma";
@@ -10,6 +11,9 @@ import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";
 import { KeyService } from "../../keys/services/KeyService";
 import type {
+  AddCertificateCsrRequest,
+  AddCertificateKeyRequest,
+  Certificate,
   ImportCertificatesRequest,
   ImportCertificatesResponse,
   ImportedKey,
@@ -262,6 +266,130 @@ export class CertificateImportService {
         .filter((row) => keyedIds.includes(row.id))
         .map(toDomainObject),
     };
+  }
+
+  /**
+   * Gives a certificate imported as a record its key, escrowed, and the
+   * CSR it came from if it has none (ADR 0039): from its page rather than
+   * by importing it again.
+   */
+  async addKey(
+    principal: Principal,
+    certificateId: string,
+    request: AddCertificateKeyRequest,
+  ): Promise<Certificate> {
+    const row = await this.importedRow(certificateId);
+    const enrollment = row.enrollment;
+    if (request.csr && enrollment.csr) {
+      throw new ConflictException("It has its CSR already");
+    }
+    const profile = await this.profiles.row(enrollment.profileId);
+    if (!profile.allowGenerated) {
+      throw new UnprocessableEntityException(
+        `The ${profile.id} profile takes a CSR: its keys are the subscriber's`,
+      );
+    }
+    const problem = await this.keyProblem(enrollment.key, enrollment.id);
+    if (problem) {
+      const sentence = problem.charAt(0).toUpperCase() + problem.slice(1);
+      throw enrollment.key.location === "signer"
+        ? new ConflictException(sentence)
+        : new UnprocessableEntityException(sentence);
+    }
+    const csr = request.csr ? await this.csrOf(request.csr) : undefined;
+    const ours = Buffer.from(enrollment.key.publicKey);
+    if (csr && !csr.spki.equals(ours)) {
+      throw new UnprocessableEntityException(
+        "The CSR is not this certificate's: its public key differs",
+      );
+    }
+    const spki = await this.publicKeyOf(request.key);
+    if (!spki.equals(ours)) {
+      throw new UnprocessableEntityException(
+        "The key is not this certificate's: its public key differs",
+      );
+    }
+    await this.keeping({ key: request.key, spki }, (signerKeyId) =>
+      this.prisma.$transaction((tx) =>
+        this.escrow(tx, principal, {
+          key: enrollment.key,
+          signerKeyId,
+          enrollmentId: enrollment.id,
+          certificateId: row.id,
+          csr: csr?.pem,
+        }),
+      ),
+    );
+    return toDomainObject(await this.importedRow(certificateId));
+  }
+
+  /**
+   * Keeps the CSR an imported certificate's escrowed key was certified
+   * from (ADR 0039), when it has none: signed by that key.
+   */
+  async addCsr(
+    principal: Principal,
+    certificateId: string,
+    request: AddCertificateCsrRequest,
+  ): Promise<Certificate> {
+    const row = await this.importedRow(certificateId);
+    const enrollment = row.enrollment;
+    if (enrollment.key.location !== "signer") {
+      throw new UnprocessableEntityException(
+        "A CSR comes with its key: add the key first",
+      );
+    }
+    if (enrollment.csr) {
+      throw new ConflictException("It has its CSR already");
+    }
+    const csr = await this.csrOf(request.csr);
+    if (!csr.spki.equals(Buffer.from(enrollment.key.publicKey))) {
+      throw new UnprocessableEntityException(
+        "The CSR is not this certificate's: its public key differs",
+      );
+    }
+    await this.prisma.$transaction(async (tx) => {
+      const kept = await tx.enrollment.updateMany({
+        where: { id: enrollment.id, csr: null },
+        data: { csr: bytes(Buffer.from(csr.pem, "utf8")) },
+      });
+      if (kept.count === 0) {
+        throw new ConflictException("It has its CSR already");
+      }
+      await this.audit.record(
+        {
+          kind: AuditKind.CertificateCsrAdded,
+          principal,
+          subjectType: "certificate",
+          subjectId: row.id,
+          attributes: {
+            enrollmentId: enrollment.id,
+            subject: csr.subject,
+          },
+        },
+        tx,
+      );
+    });
+    return toDomainObject(await this.importedRow(certificateId));
+  }
+
+  /** A certificate imported from another CA product, with its enrollment. */
+  private async importedRow(certificateId: string) {
+    const row = await this.prisma.certificate.findUnique({
+      where: { id: certificateId },
+      include: CERTIFICATE_LINEAGE,
+    });
+    if (!row) {
+      throw new NotFoundException(
+        `Certificate with id ${certificateId} not found`,
+      );
+    }
+    if (row.enrollment?.mode !== "imported") {
+      throw new UnprocessableEntityException(
+        "Only a certificate imported from another CA product is given its key or CSR",
+      );
+    }
+    return { ...row, enrollment: row.enrollment };
   }
 
   /**

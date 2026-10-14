@@ -17,6 +17,7 @@ export const AuditKind = {
   CertificateIssued: "certificate.issued",
   CertificateRenewed: "certificate.renewed",
   CertificateImported: "certificate.imported",
+  CertificateCsrAdded: "certificate.csr-added",
   CertificateRevoked: "certificate.revoked",
   ProfileCreated: "profile.created",
   ProfileUpdated: "profile.updated",

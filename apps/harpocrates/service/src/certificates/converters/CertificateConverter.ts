@@ -64,6 +64,8 @@ export const toDomainObject = (row: CertificateWithLineage): Certificate => ({
       }
     : undefined,
   keyLocation: row.enrollment?.key.location ?? "subscriber",
+  enrollmentMode: row.enrollment?.mode,
+  hasCsr: Boolean(row.enrollment?.csr),
   keyAlgorithm: row.enrollment?.key.algorithm ?? "unknown",
   keyCreatedAt: moment(row.enrollment?.key.createdAt ?? row.createdAt),
   renewsId: row.renewsId ?? undefined,

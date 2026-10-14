@@ -426,6 +426,145 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
         expect(again.skipped[0].reason).toMatch(/already escrowed/);
       });
 
+      describe("from the certificate's page", () => {
+        const idOf = async (name: string) =>
+          (
+            await harness.prisma.certificate.findFirstOrThrow({
+              where: { serial: parseCertificate(certificate(name)).serial },
+            })
+          ).id;
+        const add = async (
+          name: string,
+          what: "key" | "csr",
+          body: object,
+          status: number,
+        ) =>
+          request(server())
+            .post(`/v1/certificate/${await idOf(name)}/${what}`)
+            .set("Authorization", harness.admin)
+            .send(body)
+            .expect(status);
+        type Added = {
+          certificate: {
+            keyLocation: string;
+            enrollmentMode?: string;
+            hasCsr: boolean;
+          };
+        };
+
+        it("gives an imported certificate its key and CSR, its own only", async () => {
+          await add(
+            "dionysus-asset-agent",
+            "csr",
+            {
+              csr: csr("dionysus-asset-agent"),
+            },
+            422,
+          );
+          await add(
+            "dionysus-asset-agent",
+            "key",
+            {
+              key: pkcs8("dionysus-metadata-agent"),
+            },
+            422,
+          );
+          await add(
+            "dionysus-asset-agent",
+            "key",
+            {
+              key: pkcs8("dionysus-asset-agent"),
+              csr: csr("dionysus-metadata-agent"),
+            },
+            422,
+          );
+          const added = (
+            await add(
+              "dionysus-asset-agent",
+              "key",
+              {
+                key: pkcs8("dionysus-asset-agent"),
+                csr: csr("dionysus-asset-agent"),
+              },
+              200,
+            )
+          ).body as Added;
+          expect(added.certificate).toMatchObject({
+            keyLocation: "signer",
+            enrollmentMode: "imported",
+            hasCsr: true,
+          });
+          await add(
+            "dionysus-asset-agent",
+            "key",
+            {
+              key: pkcs8("dionysus-asset-agent"),
+            },
+            409,
+          );
+          await add(
+            "dionysus-asset-agent",
+            "csr",
+            {
+              csr: csr("dionysus-asset-agent"),
+            },
+            409,
+          );
+        });
+
+        it("takes the CSR afterwards, once the key is escrowed", async () => {
+          const keyed = (
+            await add(
+              "dionysus-metadata-agent",
+              "key",
+              {
+                key: pkcs8("dionysus-metadata-agent"),
+              },
+              200,
+            )
+          ).body as Added;
+          expect(keyed.certificate).toMatchObject({
+            keyLocation: "signer",
+            hasCsr: false,
+          });
+          await add(
+            "dionysus-metadata-agent",
+            "csr",
+            {
+              csr: csr("dionysus-asset-agent"),
+            },
+            422,
+          );
+          const withCsr = (
+            await add(
+              "dionysus-metadata-agent",
+              "csr",
+              {
+                csr: csr("dionysus-metadata-agent"),
+              },
+              200,
+            )
+          ).body as Added;
+          expect(withCsr.certificate.hasCsr).toBe(true);
+          expect(
+            await harness.prisma.auditEvent.count({
+              where: {
+                kind: "certificate.csr-added",
+                subjectId: await idOf("dionysus-metadata-agent"),
+              },
+            }),
+          ).toBe(1);
+        });
+
+        it("is an admin's to do", async () => {
+          await request(server())
+            .post(`/v1/certificate/${await idOf("dionysus-asset-agent")}/csr`)
+            .set("Authorization", harness.operator)
+            .send({ csr: csr("dionysus-asset-agent") })
+            .expect(403);
+        });
+      });
+
       it("imports a new certificate with its key from a PKCS#12 file", async () => {
         const answer = (
           await send({

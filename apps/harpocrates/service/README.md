@@ -235,6 +235,7 @@ from it.
 | `POST /certificate/{id}/renew`, `POST /certificate/{id}/revoke`                                                                                       | either role           |
 | `POST /certificate/{id}/key-export` (PEM, PKCS#12, legacy PKCS#12)                                                                                    | admin, recent sign-in |
 | `POST /certificates/import` (another CA product's, XCA's)                                                                                             | admin                 |
+| `POST /certificate/{id}/key`, `POST /certificate/{id}/csr` (an imported one's key and CSR)                                                            | admin                 |
 | `GET /dashboard` (the console's dashboard: counts, what expires within 90 days unreplaced, what needs a person, each CA's newest list, the last week) | either role           |
 | `GET /signer/status`; `POST /signer/seal`, `POST /signer/unseal`                                                                                      | either role; admin    |
 | `GET /audit/events`, `GET /audit/verification`                                                                                                        | either role           |
