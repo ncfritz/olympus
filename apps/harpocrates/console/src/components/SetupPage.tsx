@@ -144,6 +144,7 @@ export function SetupPage() {
                 type="warning"
                 showIcon
                 title="Only a pki-admin can set up the signer"
+                description="pki-admin is granted in the Olympus user directory (auth:user roles). A new role reaches this page with your next access token, within ten minutes, or at once if you sign out and in again."
               />
             )}
             <Form<{ passphrase: string }>

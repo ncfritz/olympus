@@ -13,7 +13,7 @@ and shows the unseal key once.
 
 ## Before: decide
 
-These cannot change without a new CA, so settle them before step 6:
+These cannot change without a new CA, so settle them before step 7:
 
 - **Each CA's name and shape.** The console proposes names from
   `PKI_REALM` (`ncfritz.net Root CA 1 - G1` and so on) and three shapes
@@ -67,7 +67,27 @@ password and the database URL if missing, and leaves
 Check: `https://control.olympus.ncfritz.net/harpocrates/ca` signs in
 through Olympus and opens the first-run page.
 
-## 4. Initialise the signer
+## 4. Make yourself a pki-admin
+
+Setting up the signer, making roots and holding ceremonies are
+`pki-admin`'s alone ([ADR 0020](../decisions/0020-internal-certificate-authority.md));
+Olympus's `admin` is not it. Roles live in the Olympus user directory
+([the user directory](users.md)), and `roles` replaces the whole set, so
+name every role `show` lists as well as the new one:
+
+```sh
+infra/docker/stack.sh compose olympus exec olympus-api node dist/authUser.js show you@ncfritz.net
+infra/docker/stack.sh compose olympus exec olympus-api node dist/authUser.js roles you@ncfritz.net admin pki-admin
+```
+
+`pki-operator` is the other role: issuing, renewing and revoking, without
+the CAs or the seal. Give it to anyone else who issues.
+
+A role reaches the console with the session's next access token, within
+ten minutes; signing out and in again is sooner. Check: the first-run page
+no longer says only a pki-admin can set up the signer.
+
+## 5. Initialise the signer
 
 On the console's first-run page (`/harpocrates/ca/setup`):
 
@@ -80,7 +100,7 @@ On the console's first-run page (`/harpocrates/ca/setup`):
    turns green when the signer comes back unsealed with nobody typing
    anything. Reboot the Mac Mini once, later, to prove it (C1.2).
 
-## 5. Backups, before any key exists
+## 6. Backups, before any key exists
 
 | What                                                          | How                                                       | Not with       |
 | ------------------------------------------------------------- | --------------------------------------------------------- | -------------- |
@@ -92,7 +112,7 @@ On the console's first-run page (`/harpocrates/ca/setup`):
 The key store is useless without the unseal key, and the unseal key
 without the store; keep them apart.
 
-## 6. The roots and their CAs
+## 7. The roots and their CAs
 
 In the console, **Roots → New root**, once per root:
 
@@ -108,7 +128,7 @@ In the console, **Roots → New root**, once per root:
 
 Then point the profiles at their CAs (**Profiles**: `internal-tls`,
 `service`, `api-server`, `device`, the signing ones, and the SSH ones once
-step 8 is done). `internal-tls` is also `ACME_PROFILE` and
+step 9 is done). `internal-tls` is also `ACME_PROFILE` and
 `RENEWAL_TLS_PROFILE`: once it signs, the service issues the renewal
 listener its own certificate and `9443` comes up by itself.
 
@@ -117,14 +137,14 @@ each CA's list is at `http://pki.internal.ncfritz.net/crl/<id>.crl`
 (`openssl crl -inform DER -noout -text`); and `openssl s_client -connect
 pki.internal.ncfritz.net:9443` shows a certificate from the TLS CA.
 
-## 7. Trust the new roots
+## 8. Trust the new roots
 
 Each root's certificate (its CA page, **Certificate**) onto the devices
 that are to trust it: the Macs' keychains, the phones' profiles, the
 NAS, and `NODE_EXTRA_CA_CERTS` where a service needs it. XCA's root stays
 trusted beside it until the migration retires it (ADR 0032).
 
-## 8. SSH, ACME, deploy targets
+## 9. SSH, ACME, deploy targets
 
 As each is needed, not all at once:
 
@@ -137,7 +157,7 @@ As each is needed, not all at once:
 - **Deploy targets**: for what nginx serves on the Mac Mini
   ([infra/docker](../../infra/docker/README.md#harpocrates)).
 
-## 9. Monitoring
+## 10. Monitoring
 
 Load `apps/harpocrates/service/monitoring/harpocrates.rules.yml` into the
 monitoring stack's Prometheus and scrape the service as job
