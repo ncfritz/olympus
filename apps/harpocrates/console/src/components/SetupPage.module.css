@@ -4,10 +4,8 @@
   margin-top: 0;
 }
 
-/* The passphrase inputs: a quarter of the page, never too narrow to type
-   in on a phone. */
+/* The passphrase inputs: 250px, or the page's width on a narrower one. */
 .passphrase {
-  width: 25%;
-  min-width: 280px;
+  width: 250px;
   max-width: 100%;
 }
