@@ -91,7 +91,10 @@ describe("Mail filters", () => {
   describe("CreateMailFilter", () => {
     const create = (body: unknown) =>
       ctx.as(
-        ctx.t.http().post(`${BASE}/account/${ACCOUNT_ID}/filters`).send(body),
+        ctx.t
+          .http()
+          .post(`${BASE}/account/${ACCOUNT_ID}/filters`)
+          .send(body as object),
       );
 
     it("makes the filter in Gmail and keeps it", async () => {
