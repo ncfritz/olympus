@@ -5,44 +5,116 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as tls from "tls";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   createClientCertificateListener,
   readRevocationList,
   refusalMessage,
 } from "../../../src/mtls/clientCertificateListener";
 
-/** The repository's dev CA (`scripts/dev-ca.sh`), run once first. */
+/** The repository's dev CA (`scripts/dev-ca.sh`): the suites below skip without it. */
 const DEV_CA = path.resolve(__dirname, "../../../../../infra/dev-ca/certs");
 
+/**
+ * A revocation list from a throwaway CA, made with openssl in a temporary
+ * directory: the test needs no dev CA (`scripts/dev-ca.sh`) to have run.
+ */
+const makeRevocationList = (dir: string): string => {
+  const at = (name: string) => path.join(dir, name);
+  fs.writeFileSync(at("index.txt"), "");
+  fs.writeFileSync(at("crlnumber"), "01\n");
+  fs.writeFileSync(
+    at("ca.cnf"),
+    [
+      "[ca]",
+      "default_ca = test",
+      "[test]",
+      `database = ${at("index.txt")}`,
+      `crlnumber = ${at("crlnumber")}`,
+      "default_md = sha256",
+      "default_crl_days = 1",
+      "",
+    ].join("\n"),
+  );
+  execFileSync(
+    "openssl",
+    [
+      "req",
+      "-x509",
+      "-newkey",
+      "rsa:2048",
+      "-nodes",
+      "-keyout",
+      at("ca.key"),
+      "-out",
+      at("ca.crt"),
+      "-subj",
+      "/CN=readRevocationList test CA",
+      "-days",
+      "1",
+    ],
+    { stdio: "ignore" },
+  );
+  execFileSync(
+    "openssl",
+    [
+      "ca",
+      "-gencrl",
+      "-config",
+      at("ca.cnf"),
+      "-keyfile",
+      at("ca.key"),
+      "-cert",
+      at("ca.crt"),
+      "-out",
+      at("list.crl"),
+    ],
+    { stdio: "ignore" },
+  );
+  return at("list.crl");
+};
+
 describe("readRevocationList", () => {
-  const list = path.join(DEV_CA, "services.crl");
+  let dir: string;
+  let list: string;
+
+  beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "nest-crl-"));
+    list = makeRevocationList(dir);
+  });
+
+  afterAll(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
 
   it("returns a PEM list as it is", () => {
     expect(readRevocationList(list)).toEqual(fs.readFileSync(list));
   });
 
   it("turns a DER list, as Harpocrates publishes, into the same PEM", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nest-crl-"));
-    try {
-      const der = path.join(dir, "services.crl");
-      execFileSync("openssl", [
-        "crl",
-        "-in",
-        list,
-        "-outform",
-        "DER",
-        "-out",
-        der,
-      ]);
-      const pem = readRevocationList(der).toString("latin1");
-      expect(pem).toMatch(/^-----BEGIN X509 CRL-----\n/);
-      expect(pem.replace(/\s/g, "")).toBe(
-        fs.readFileSync(list, "latin1").replace(/\s/g, ""),
-      );
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
+    const der = path.join(dir, "list.der");
+    execFileSync("openssl", [
+      "crl",
+      "-in",
+      list,
+      "-outform",
+      "DER",
+      "-out",
+      der,
+    ]);
+    const pem = readRevocationList(der).toString("latin1");
+    expect(pem).toMatch(/^-----BEGIN X509 CRL-----\n/);
+    expect(pem.replace(/\s/g, "")).toBe(
+      fs.readFileSync(list, "latin1").replace(/\s/g, ""),
+    );
   });
 });
 
