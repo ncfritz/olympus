@@ -154,7 +154,7 @@ export function AuthoritiesTable({
       size="middle"
       pagination={false}
       dataSource={authorities}
-      scroll={{ x: "max-content" }}
+      scroll={authorities.length ? { x: "max-content" } : undefined}
       className={styles.flushTable}
       columns={[
         {

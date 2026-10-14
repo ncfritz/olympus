@@ -176,7 +176,7 @@ export function CertificateList({
         rowKey="certificateId"
         size="middle"
         dataSource={shown}
-        scroll={{ x: "max-content" }}
+        scroll={shown.length ? { x: "max-content" } : undefined}
         pagination={{
           pageSize: 10,
           hideOnSinglePage: true,

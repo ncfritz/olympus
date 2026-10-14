@@ -263,7 +263,7 @@ export function TimelineView({
         size="middle"
         pagination={false}
         dataSource={next}
-        scroll={{ x: "max-content" }}
+        scroll={next.length ? { x: "max-content" } : undefined}
         className={styles.flushTable}
         locale={{ emptyText: "Nothing to renew" }}
         columns={[
