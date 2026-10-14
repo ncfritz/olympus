@@ -302,9 +302,11 @@ export function Overview({
                   certificate.keyLocation === "signer"
                     ? "kept in the signer"
                     : certificate.keyLocation === "subscriber"
-                      ? "its holder's alone (a CSR)"
+                      ? certificate.enrollmentMode === "imported"
+                        ? "its holder's alone (imported without it)"
+                        : "its holder's alone (a CSR)"
                       : "on offline media"
-                }`,
+                }${certificate.hasCsr ? "; its CSR kept" : ""}`,
               },
             ]}
           />

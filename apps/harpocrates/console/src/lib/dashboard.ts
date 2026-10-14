@@ -135,6 +135,8 @@ const EVENT_PHRASES: Record<string, string> = {
   "signer.sealed": "Sealed the signer",
   "signer.unsealed": "Unsealed the signer",
   "key.exported": "Exported the key of",
+  "key.imported": "Imported a key",
+  "certificate.csr-added": "Added the CSR of",
   "ocsp-responder.issued": "Issued an OCSP responder for",
   "ocsp-responder.retired": "Retired an OCSP responder for",
   "ssh-certificate.issued": "Issued an SSH certificate",

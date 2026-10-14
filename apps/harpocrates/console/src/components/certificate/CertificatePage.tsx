@@ -3,9 +3,11 @@
 import {
   DeploymentUnitOutlined,
   DownloadOutlined,
+  FileAddOutlined,
   FileProtectOutlined,
   FileTextOutlined,
   HistoryOutlined,
+  ImportOutlined,
   KeyOutlined,
   ProfileOutlined,
   ReloadOutlined,
@@ -43,6 +45,7 @@ import { HEALTH, timeUntil } from "@/lib/dashboard";
 import { saveFile } from "@/lib/download";
 import { formatDate, formatDateTime } from "@/lib/labels";
 import { shortCaName } from "@/lib/tree";
+import { AddCsrForm, AddKeyForm } from "../AddKeyForms";
 import { Count, CountStrip } from "../CountStrip";
 import { DeployTargetForm } from "../DeployTargetForm";
 import { ErrorAlert } from "../ErrorAlert";
@@ -61,7 +64,7 @@ import { Versions } from "./Versions";
 const VIEWS = ["general", "chain", "versions", "details"] as const;
 type View = (typeof VIEWS)[number];
 
-type Action = "renew" | "revoke" | "export" | "deploy";
+type Action = "renew" | "revoke" | "export" | "deploy" | "add-key" | "add-csr";
 
 /** The side panel's width, open. */
 const PANEL_WIDTH = 480;
@@ -178,6 +181,15 @@ export function CertificatePage() {
     ? Date.parse(lineage.renewalDueAt)
     : undefined;
   const canKey = isAdmin && certificate.keyLocation === "signer";
+  // XCA's certificates imported as a record gain their key, then their
+  // CSR (ADR 0039); nothing else does.
+  const completable =
+    isAdmin &&
+    valid &&
+    certificate.enrollmentMode === "imported" &&
+    !certificate.hasCsr;
+  const canAddKey = completable && certificate.keyLocation === "subscriber";
+  const canAddCsr = completable && certificate.keyLocation === "signer";
   const actions: {
     key: Action;
     label: string;
@@ -202,6 +214,24 @@ export function CertificatePage() {
             key: "export" as const,
             label: "Export the key",
             icon: <KeyOutlined />,
+          },
+        ]
+      : []),
+    ...(canAddKey
+      ? [
+          {
+            key: "add-key" as const,
+            label: "Add its key",
+            icon: <ImportOutlined />,
+          },
+        ]
+      : []),
+    ...(canAddCsr
+      ? [
+          {
+            key: "add-csr" as const,
+            label: "Add its CSR",
+            icon: <FileAddOutlined />,
           },
         ]
       : []),
@@ -475,7 +505,11 @@ export function CertificatePage() {
               ? `Revoke ${name}`
               : action === "export"
                 ? "Export its key"
-                : `Deploy ${name}`
+                : action === "add-key"
+                  ? "Add its key"
+                  : action === "add-csr"
+                    ? "Add its CSR"
+                    : `Deploy ${name}`
         }
         footer={null}
         width={640}
@@ -509,6 +543,30 @@ export function CertificatePage() {
         )}
         {action === "export" && (
           <KeyExportForm certificateId={certificate.id} />
+        )}
+        {action === "add-key" && (
+          <AddKeyForm
+            certificateId={certificate.id}
+            onAdded={async (added) => {
+              await refresh();
+              setAction(undefined);
+              void messages.success(
+                added.hasCsr
+                  ? "Its key is escrowed and its CSR kept"
+                  : "Its key is escrowed",
+              );
+            }}
+          />
+        )}
+        {action === "add-csr" && (
+          <AddCsrForm
+            certificateId={certificate.id}
+            onAdded={async () => {
+              await refresh();
+              setAction(undefined);
+              void messages.success("Its CSR is kept");
+            }}
+          />
         )}
         {action === "deploy" && (
           <DeployTargetForm

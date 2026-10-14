@@ -191,6 +191,7 @@ export const STORY_KINDS: Record<string, string> = {
   "certificate.issued": "Issued",
   "certificate.renewed": "Renewed",
   "certificate.imported": "Imported",
+  "certificate.csr-added": "Its CSR added",
   "certificate.revoked": "Revoked",
   "deployment.deployed": "Deployed",
   "deployment.failed": "Deploying failed",
@@ -199,6 +200,7 @@ export const STORY_KINDS: Record<string, string> = {
   "deploy-target.deleted": "Deploy target removed",
   "key.exported": "Its key exported",
   "key.generated": "Its key made",
+  "key.imported": "Its key imported",
   "key.blocked": "Its key blocked",
 };
 
