@@ -3,7 +3,6 @@
 import {
   Alert,
   Button,
-  Card,
   Descriptions,
   Flex,
   Form,
@@ -193,14 +192,12 @@ export function NewRootPage() {
       )}
 
       {step === 3 && created && (
-        <Card title="Take the key">
-          <KeyHandover
-            issuerId={created.id}
-            encryptedKey={created.key}
-            doneLabel="Next: prove the backup"
-            onDone={() => router.push(`/ca?id=${created.id}&ceremony=open`)}
-          />
-        </Card>
+        <KeyHandover
+          issuerId={created.id}
+          encryptedKey={created.key}
+          doneLabel="Next: prove the backup"
+          onDone={() => router.push(`/ca?id=${created.id}&ceremony=open`)}
+        />
       )}
     </Flex>
   );
