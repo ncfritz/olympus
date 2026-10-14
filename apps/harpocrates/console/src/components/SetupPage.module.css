@@ -4,8 +4,8 @@
   margin-top: 0;
 }
 
-/* The passphrase inputs: 250px, or the page's width on a narrower one. */
+/* The passphrase inputs: 450px, or the page's width on a narrower one. */
 .passphrase {
-  width: 250px;
+  width: 450px;
   max-width: 100%;
 }
