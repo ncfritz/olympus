@@ -22,6 +22,7 @@ import { unwrap } from "@/lib/api/errors";
 import { KEYS, useCurrentUser, useSignerStatus } from "@/lib/api/queries";
 import { saveFile } from "@/lib/download";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
+import { CopyInput } from "./CopyInput";
 import { ErrorAlert } from "./ErrorAlert";
 import { PassphraseFields } from "./PassphraseFields";
 import { RecentSignInNotice } from "./RecentSignIn";
@@ -240,46 +241,47 @@ export function SetupPage() {
       )}
 
       {step === 2 && (
-        <Card title="Restart, and watch it unseal itself">
-          <Flex vertical gap="middle">
-            <Typography.Paragraph>
-              Restart the stack so the signer starts with its unseal key:
-            </Typography.Paragraph>
-            <Typography.Paragraph code copyable>
-              infra/docker/stack.sh restart harpocrates
-            </Typography.Paragraph>
-            {restarted ? (
-              <Alert
-                type="success"
-                showIcon
-                icon={<CheckCircleOutlined />}
-                title="Unsealed, with nobody typing anything"
-                description="Reboot the host later to prove it again."
-              />
-            ) : (
-              <Alert
-                type="info"
-                showIcon
-                icon={<Spin size="small" />}
-                title={
-                  wentAway
-                    ? "Waiting for the signer to come back unsealed"
-                    : "Waiting for the restart"
-                }
-                description="This page checks every few seconds."
-              />
-            )}
-            <div>
-              <Button
-                type="primary"
-                disabled={!restarted}
-                onClick={() => setStep(3)}
-              >
-                Next
-              </Button>
-            </div>
+        <Flex vertical gap="middle">
+          <Flex vertical gap={4} className={styles.restart}>
+            <Typography.Text type="secondary">
+              Restart the stack so the signer starts with its unseal key
+            </Typography.Text>
+            <CopyInput
+              label="Restart command"
+              value="infra/docker/stack.sh restart harpocrates"
+            />
           </Flex>
-        </Card>
+          {restarted ? (
+            <Alert
+              type="success"
+              showIcon
+              icon={<CheckCircleOutlined />}
+              title="Unsealed, with nobody typing anything"
+              description="Reboot the host later to prove it again."
+            />
+          ) : (
+            <Alert
+              type="info"
+              showIcon
+              icon={<Spin size="small" />}
+              title={
+                wentAway
+                  ? "Waiting for the signer to come back unsealed"
+                  : "Waiting for the restart"
+              }
+              description="This page checks every few seconds."
+            />
+          )}
+          <div>
+            <Button
+              type="primary"
+              disabled={!restarted}
+              onClick={() => setStep(3)}
+            >
+              Next
+            </Button>
+          </div>
+        </Flex>
       )}
 
       {step === 3 && (

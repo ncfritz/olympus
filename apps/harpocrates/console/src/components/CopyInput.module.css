@@ -1,0 +1,13 @@
+/* The value in the code font, as it is typed. */
+.input.input {
+  font-family: var(--ant-font-family-code);
+}
+
+/* A copy's outcome, in the button that did it, for a moment. */
+.copied.copied {
+  color: var(--ant-color-success);
+}
+
+.failed.failed {
+  color: var(--ant-color-error);
+}

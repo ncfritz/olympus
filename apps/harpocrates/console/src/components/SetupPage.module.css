@@ -18,3 +18,8 @@
 .host {
   max-width: 600px;
 }
+
+/* The restart command: wide enough for it whole. */
+.restart {
+  max-width: 520px;
+}
