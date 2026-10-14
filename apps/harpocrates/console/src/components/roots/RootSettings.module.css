@@ -1,0 +1,111 @@
+/* A new root's name and settings: four steps down the page, each step's
+   fields beneath its title, as wide as the page allows. */
+.steps :global(.ant-steps-item-content) {
+  flex: 1;
+  min-width: 0;
+}
+
+.steps :global(.ant-steps-item-description) {
+  max-width: none;
+  padding-bottom: 24px;
+}
+
+.mono.mono,
+.mono.mono input {
+  font-family: var(--ant-font-family-code);
+}
+
+/* The number and generation the service adds to the common name. */
+.numbering {
+  font-family: var(--ant-font-family-code);
+  color: var(--ant-color-text-tertiary);
+}
+
+.number.number {
+  width: 100%;
+}
+
+/* The subject as the service would write it, as the fields change. */
+.dn {
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text);
+  padding: 8px 12px;
+  border-radius: var(--ant-border-radius);
+  background: var(--ant-color-fill-quaternary);
+  word-break: break-all;
+}
+
+/* Permitted on the left, excluded on the right: equal columns, not the
+   page's whole width. */
+.constraintColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  max-width: 960px;
+}
+
+@media (max-width: 767px) {
+  .constraintColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.constraints {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.constraintType.constraintType {
+  width: 96px;
+  flex: 0 0 96px;
+}
+
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+/* Those added: plain, in the code font, removed with their close icon;
+   the edit icon shows on hover (or focus). */
+.items {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.itemType {
+  flex: 0 0 40px;
+  font-size: var(--ant-font-size-sm, 12px);
+  color: var(--ant-color-text-tertiary);
+}
+
+.itemValue {
+  font-family: var(--ant-font-family-code);
+  word-break: break-all;
+}
+
+.itemInput.itemInput {
+  flex: 1;
+  font-family: var(--ant-font-family-code);
+}
+
+.itemEdit.itemEdit {
+  visibility: hidden;
+}
+
+.item:hover .itemEdit,
+.item:focus-within .itemEdit {
+  visibility: visible;
+}
+
+.reviewTitle.reviewTitle {
+  margin: 0;
+}

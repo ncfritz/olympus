@@ -12,7 +12,7 @@ import {
   Typography,
 } from "antd";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
@@ -25,12 +25,12 @@ import type {
 import { createBodyOf } from "@/lib/caRequest";
 import { describeDays, SHAPES } from "@/lib/labels";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
-import { CaSettings } from "./CaSettings";
 import { ErrorAlert } from "./ErrorAlert";
 import { KeyHandover } from "./KeyHandover";
 import { PassphraseFields } from "./PassphraseFields";
 import { RecentSignInNotice } from "./RecentSignIn";
 import styles from "./NewRootPage.module.css";
+import { RootSettings } from "./roots/RootSettings";
 import { ShapeSample } from "./roots/ShapeSample";
 
 const STEPS = [
@@ -59,8 +59,6 @@ export function NewRootPage() {
   const [error, setError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
   useLeaveWarning(Boolean(created));
-  // One object per shape: CaSettings previews again when it changes.
-  const target = useMemo(() => ({ tier: "root" as const, shape }), [shape]);
 
   const ready =
     reviewed?.answer !== undefined && reviewed.answer.problems.length === 0;
@@ -133,29 +131,18 @@ export function NewRootPage() {
 
       {/* Kept mounted through the later steps, so Back keeps the form. */}
       <div hidden={step !== 1}>
-        <Card title="Name and settings">
-          <Flex vertical gap="large">
-            <Typography.Text type="secondary">
-              Every setting starts at its recommended default. Change any of
-              them; the review below shows what will be signed, beside the
-              default and why it is the default.
-            </Typography.Text>
-            <CaSettings
-              target={target}
-              onReviewed={(request, answer) => setReviewed({ request, answer })}
-            />
-            <Flex gap="small">
-              <Button onClick={() => setStep(0)}>Back</Button>
-              <Button
-                type="primary"
-                disabled={!ready}
-                onClick={() => setStep(2)}
-              >
-                Next
-              </Button>
-            </Flex>
+        <Flex vertical gap="large">
+          <RootSettings
+            shape={shape}
+            onReviewed={(request, answer) => setReviewed({ request, answer })}
+          />
+          <Flex gap="small">
+            <Button onClick={() => setStep(0)}>Back</Button>
+            <Button type="primary" disabled={!ready} onClick={() => setStep(2)}>
+              Next
+            </Button>
           </Flex>
-        </Card>
+        </Flex>
       </div>
 
       {step === 2 && reviewed?.answer && (
