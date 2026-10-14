@@ -23,3 +23,8 @@
 .restart {
   max-width: 520px;
 }
+
+/* A section's title: the gap above it is the page's. */
+.section.section {
+  margin: 0;
+}

@@ -4,7 +4,6 @@ import { CheckCircleOutlined, DownloadOutlined } from "@ant-design/icons";
 import {
   Alert,
   Button,
-  Card,
   Checkbox,
   Flex,
   Form,
@@ -285,25 +284,26 @@ export function SetupPage() {
       )}
 
       {step === 3 && (
-        <Card title="Who holds what">
-          <Flex vertical gap="middle">
-            <Table
-              size="small"
-              pagination={false}
-              dataSource={secretsFor(keyFile)}
-              columns={[
-                { title: "Secret", dataIndex: "secret" },
-                { title: "Where", dataIndex: "where" },
-                { title: "Opens", dataIndex: "opens" },
-              ]}
-            />
-            <div>
-              <Link href="/roots/new">
-                <Button type="primary">Create the first root</Button>
-              </Link>
-            </div>
-          </Flex>
-        </Card>
+        <Flex vertical gap="middle">
+          <Typography.Title level={5} className={styles.section}>
+            Who holds what
+          </Typography.Title>
+          <Table
+            size="small"
+            pagination={false}
+            dataSource={secretsFor(keyFile)}
+            columns={[
+              { title: "Secret", dataIndex: "secret" },
+              { title: "Where", dataIndex: "where" },
+              { title: "Opens", dataIndex: "opens" },
+            ]}
+          />
+          <div>
+            <Link href="/roots/new">
+              <Button type="primary">Create the first root</Button>
+            </Link>
+          </div>
+        </Flex>
       )}
     </Flex>
   );
