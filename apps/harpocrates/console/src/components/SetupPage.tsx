@@ -24,6 +24,7 @@ import { saveFile } from "@/lib/download";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
 import { ErrorAlert } from "./ErrorAlert";
 import { PassphraseFields } from "./PassphraseFields";
+import styles from "./SetupPage.module.css";
 
 const STEPS = [
   { title: "Recovery passphrase" },
@@ -127,43 +128,44 @@ export function SetupPage() {
 
   return (
     <Flex vertical gap="large">
-      <Typography.Title level={3}>Set up the signer</Typography.Title>
+      <Typography.Title level={3} className={styles.title}>
+        Set up the signer
+      </Typography.Title>
       <Steps current={step} items={STEPS} />
 
       {step === 0 && (
-        <Card title="The recovery passphrase">
-          <Flex vertical gap="middle">
-            <Typography.Paragraph type="secondary">
-              The signer encrypts its keys under a master key, which the
-              recovery passphrase and the unseal key each open. The passphrase
-              is for people: after a deliberate seal, or a start without the
-              unseal key. Put it in the password manager now.
-            </Typography.Paragraph>
-            {!isAdmin && (
-              <Alert
-                type="warning"
-                showIcon
-                title="Only a pki-admin can set up the signer"
-                description="pki-admin is granted in the Olympus user directory (auth:user roles). A new role reaches this page with your next access token, within ten minutes, or at once if you sign out and in again."
-              />
-            )}
-            <Form<{ passphrase: string }>
-              layout="vertical"
-              onFinish={initialise}
+        <Flex vertical gap="middle">
+          <Typography.Paragraph type="secondary">
+            The signer encrypts its keys under a master key, which the recovery
+            passphrase and the unseal key each open. The passphrase is for
+            people: after a deliberate seal, or a start without the unseal key.
+            Put it in the password manager now.
+          </Typography.Paragraph>
+          {!isAdmin && (
+            <Alert
+              type="warning"
+              showIcon
+              title="Only a pki-admin can set up the signer"
+              description="pki-admin is granted in the Olympus user directory (auth:user roles). A new role reaches this page with your next access token, within ten minutes, or at once if you sign out and in again."
+            />
+          )}
+          <Form<{ passphrase: string }>
+            layout="vertical"
+            onFinish={initialise}
+            className={styles.passphrase}
+          >
+            <PassphraseFields label="Recovery passphrase" />
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={busy}
+              disabled={!isAdmin}
             >
-              <PassphraseFields label="Recovery passphrase" />
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={busy}
-                disabled={!isAdmin}
-              >
-                Initialise
-              </Button>
-            </Form>
-            <ErrorAlert error={error} />
-          </Flex>
-        </Card>
+              Set passphrase
+            </Button>
+          </Form>
+          <ErrorAlert error={error} />
+        </Flex>
       )}
 
       {step === 1 && unsealKey && (

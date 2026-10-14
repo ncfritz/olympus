@@ -1,0 +1,13 @@
+/* The page's padding is the gap above the title, as it is at its left:
+   antd's top margin on a heading would double it. */
+.title.title {
+  margin-top: 0;
+}
+
+/* The passphrase inputs: a quarter of the page, never too narrow to type
+   in on a phone. */
+.passphrase {
+  width: 25%;
+  min-width: 280px;
+  max-width: 100%;
+}
