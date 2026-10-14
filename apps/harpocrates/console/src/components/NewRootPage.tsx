@@ -23,7 +23,8 @@ import type {
   PreviewIssuerResponse,
 } from "@/lib/api/types";
 import { createBodyOf } from "@/lib/caRequest";
-import { describeDays, SHAPES } from "@/lib/labels";
+import { SHAPES } from "@/lib/labels";
+import { describeValidity } from "@/lib/rootRequest";
 import { useLeaveWarning } from "@/lib/useLeaveWarning";
 import { ErrorAlert } from "./ErrorAlert";
 import { KeyHandover } from "./KeyHandover";
@@ -140,45 +141,55 @@ export function NewRootPage() {
       </div>
 
       {step === 2 && reviewed?.answer && (
-        <Card title="Create the root">
-          <Flex vertical gap="large">
-            <Descriptions column={1} size="small" bordered>
-              <Descriptions.Item label="Subject">
-                <Typography.Text code>
-                  {reviewed.answer.preview.subject}
-                </Typography.Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="Shape">
-                {SHAPES[shape].label}
-              </Descriptions.Item>
-              <Descriptions.Item label="Validity">
-                {describeDays(reviewed.answer.preview.validityDays)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Key">
-                {reviewed.answer.preview.algorithm}
-              </Descriptions.Item>
-            </Descriptions>
-            <Alert
-              type="info"
-              showIcon
-              title="The signer generates the key and gives it back once"
-              description="It is encrypted under the passphrase below and Harpocrates keeps no copy. Choose the passphrase now and put it in the password manager; the key file goes on offline media in the next step."
+        <Flex vertical gap="large" className={styles.create}>
+          <Descriptions column={1} size="small" bordered>
+            <Descriptions.Item label="Subject">
+              <span className={styles.mono}>
+                {reviewed.answer.preview.subject}
+              </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Shape">
+              {SHAPES[shape].label}
+            </Descriptions.Item>
+            <Descriptions.Item label="Validity">
+              {describeValidity(reviewed.answer.preview.validityDays)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Key">
+              {reviewed.answer.preview.algorithm}
+            </Descriptions.Item>
+          </Descriptions>
+          <Alert
+            type="info"
+            showIcon
+            title="The signer generates the key and gives it back once"
+            description="It is encrypted under the passphrase below and Harpocrates keeps no copy. Choose the passphrase now and put it in the password manager; the key file goes on offline media in the next step."
+          />
+          <Form<{ passphrase: string }>
+            layout="vertical"
+            size="small"
+            className={styles.passphrase}
+            onFinish={create}
+          >
+            <PassphraseFields
+              label="Export passphrase"
+              extra="Opens the key file at every ceremony"
             />
-            <Form<{ passphrase: string }> layout="vertical" onFinish={create}>
-              <PassphraseFields
-                label="Export passphrase"
-                extra="Opens the key file at every ceremony"
-              />
-              <Flex gap="small">
-                <Button onClick={() => setStep(1)}>Back</Button>
-                <Button type="primary" htmlType="submit" loading={busy}>
-                  Create root
-                </Button>
-              </Flex>
-            </Form>
-            <ErrorAlert error={error} />
-          </Flex>
-        </Card>
+            <Flex gap="small">
+              <Button size="middle" onClick={() => setStep(1)}>
+                Back
+              </Button>
+              <Button
+                size="middle"
+                type="primary"
+                htmlType="submit"
+                loading={busy}
+              >
+                Create root
+              </Button>
+            </Flex>
+          </Form>
+          <ErrorAlert error={error} />
+        </Flex>
       )}
 
       {step === 3 && created && (

@@ -44,3 +44,35 @@
   margin-top: 3px;
   align-self: flex-start;
 }
+
+/* Creating it: what it will be, then the passphrase its key leaves
+   under, its fields as small as the settings' before it. */
+.create {
+  max-width: 960px;
+}
+
+.mono {
+  font-family: var(--ant-font-family-code);
+}
+
+.passphrase {
+  width: 450px;
+  max-width: 100%;
+}
+
+.passphrase.passphrase :global(.ant-form-item) {
+  margin-bottom: 12px;
+}
+
+.passphrase.passphrase :global(.ant-form-item-label) {
+  padding-bottom: 0;
+}
+
+.passphrase.passphrase :global(.ant-form-item-label > label) {
+  height: auto;
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.passphrase.passphrase :global(.ant-form-item-extra) {
+  font-size: var(--ant-font-size-sm, 12px);
+}
