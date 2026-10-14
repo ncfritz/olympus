@@ -14,8 +14,12 @@ import { describeDays, ekuName, formatDate } from "@/lib/labels";
 /** A form field the operator may put back to its default. */
 export type ResettableField = keyof CaFormValues;
 
-interface Row {
+/** Where a setting belongs, for a review grouped by it. */
+export type ReviewGroup = "key" | "name" | "constraints" | "details";
+
+export interface ReviewRow {
   key: string;
+  group: ReviewGroup;
   setting: string;
   value: ReactNode;
   byDefault: ReactNode;
@@ -56,26 +60,21 @@ const ekuText = (oids: string[]) =>
   oids.length ? oids.map(ekuName).join(", ") : "Not restricted";
 
 /**
- * Every setting of a CA before it is signed (ADR 0032, Names and
- * settings): its value, its default and the reason for the default. A
- * changed row is marked and can be put back; the invariants are listed
- * too, so the review is of the whole certificate.
+ * Every setting of a CA before it is signed, the invariants too, so a
+ * review is of the whole certificate: its value, its default, and the
+ * reason for the default.
  */
-export function SettingsReview({
-  tier,
-  answer,
-  onReset,
-}: {
-  tier: IssuerTier;
-  answer: PreviewIssuerResponse;
-  onReset?: (fields: ResettableField[]) => void;
-}) {
+export const reviewRowsOf = (
+  tier: IssuerTier,
+  answer: PreviewIssuerResponse,
+): ReviewRow[] => {
   const { preview: p, defaults: d } = answer;
   const same = (a: unknown, b: unknown) =>
     JSON.stringify(a) === JSON.stringify(b);
-  const rows: Row[] = [
+  return [
     {
       key: "subject",
+      group: "name" as const,
       setting: "Subject",
       value: <Typography.Text code>{p.subject}</Typography.Text>,
       byDefault: <Typography.Text code>{d.subject}</Typography.Text>,
@@ -85,6 +84,7 @@ export function SettingsReview({
     },
     {
       key: "organization",
+      group: "name" as const,
       setting: "Organisation",
       value: p.organization,
       byDefault: d.organization,
@@ -97,6 +97,7 @@ export function SettingsReview({
     },
     {
       key: "validity",
+      group: "key" as const,
       setting: "Validity",
       value: `${describeDays(p.validityDays)} (until ${formatDate(p.notAfter)})`,
       byDefault: `${describeDays(d.validityDays)} (until ${formatDate(d.notAfter)})`,
@@ -106,6 +107,7 @@ export function SettingsReview({
     },
     {
       key: "algorithm",
+      group: "key" as const,
       setting: "Key",
       value: `${p.algorithm}${p.algorithm === "P-256" ? ", ecdsa-with-SHA256" : ", sha256WithRSAEncryption"}`,
       byDefault: `${d.algorithm}, ecdsa-with-SHA256`,
@@ -115,6 +117,7 @@ export function SettingsReview({
     },
     {
       key: "nameConstraints",
+      group: "constraints" as const,
       setting: "Name constraints",
       value: constraintsText(p.nameConstraints),
       byDefault: constraintsText(d.nameConstraints),
@@ -132,6 +135,7 @@ export function SettingsReview({
       ? [
           {
             key: "extendedKeyUsages",
+            group: "details" as const,
             setting: "Extended key usages it signs",
             value: ekuText(p.extendedKeyUsages),
             byDefault: ekuText(d.extendedKeyUsages),
@@ -141,6 +145,7 @@ export function SettingsReview({
           },
           {
             key: "maxValidityDays",
+            group: "details" as const,
             setting: "Longest certificate it signs",
             value: describeDays(p.maxValidityDays),
             byDefault: describeDays(d.maxValidityDays),
@@ -152,6 +157,7 @@ export function SettingsReview({
       : [
           {
             key: "maxValidityDays",
+            group: "details" as const,
             setting: "Longest certificate it signs",
             value: describeDays(p.maxValidityDays),
             byDefault: describeDays(d.maxValidityDays),
@@ -161,6 +167,7 @@ export function SettingsReview({
         ]),
     {
       key: "pathLength",
+      group: "details" as const,
       setting: "Path length",
       value: String(p.pathLength),
       byDefault: String(d.pathLength),
@@ -172,6 +179,7 @@ export function SettingsReview({
     },
     {
       key: "keyUsages",
+      group: "details" as const,
       setting: "Key usage",
       value: p.keyUsages.map((u) => KEY_USAGE_NAMES[u] ?? u).join(", "),
       byDefault: d.keyUsages.map((u) => KEY_USAGE_NAMES[u] ?? u).join(", "),
@@ -180,6 +188,7 @@ export function SettingsReview({
     },
     {
       key: "urls",
+      group: "details" as const,
       setting: "Published at",
       value: (
         <Flex vertical>
@@ -195,6 +204,7 @@ export function SettingsReview({
       ? [
           {
             key: "parent",
+            group: "details" as const,
             setting: "Checked against",
             value: (
               <Flex vertical>
@@ -210,6 +220,7 @@ export function SettingsReview({
       : []),
     {
       key: "crlValidity",
+      group: "details" as const,
       setting: "Its revocation list",
       value: tier === "issuing" ? "7 days, re-signed daily" : "13 months",
       byDefault: "",
@@ -220,24 +231,47 @@ export function SettingsReview({
       changed: false,
     },
   ];
+};
 
+/** Why creating it would be refused, when it would be. */
+export function ReviewProblems({ problems }: { problems: string[] }) {
+  if (!problems.length) return null;
+  return (
+    <Alert
+      type="error"
+      showIcon
+      title="Creating it would be refused"
+      description={
+        <ul>
+          {problems.map((problem) => (
+            <li key={problem}>{problem}</li>
+          ))}
+        </ul>
+      }
+    />
+  );
+}
+
+/**
+ * Every setting of a CA before it is signed (ADR 0032, Names and
+ * settings): its value, its default and the reason for the default. A
+ * changed row is marked and can be put back; the invariants are listed
+ * too, so the review is of the whole certificate.
+ */
+export function SettingsReview({
+  tier,
+  answer,
+  onReset,
+}: {
+  tier: IssuerTier;
+  answer: PreviewIssuerResponse;
+  onReset?: (fields: ResettableField[]) => void;
+}) {
+  const rows = reviewRowsOf(tier, answer);
   return (
     <Flex vertical gap="middle">
-      {answer.problems.length > 0 && (
-        <Alert
-          type="error"
-          showIcon
-          title="Creating it would be refused"
-          description={
-            <ul>
-              {answer.problems.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
-            </ul>
-          }
-        />
-      )}
-      <Table<Row>
+      <ReviewProblems problems={answer.problems} />
+      <Table<ReviewRow>
         size="small"
         pagination={false}
         rowKey="key"
