@@ -23,14 +23,18 @@ export type Recent = {
   fraction: number;
 };
 
-/** Where the recent sign-in stands at `now`. */
+/**
+ * Where the recent sign-in stands at `now`; undefined when the service
+ * did not say (one older than the console), so nothing counts down.
+ */
 export const recentOf = (
-  signedInAt: string,
-  recentUntil: string,
+  signedInAt: string | undefined,
+  recentUntil: string | undefined,
   now: number,
-): Recent => {
-  const start = Date.parse(signedInAt);
-  const end = Date.parse(recentUntil);
+): Recent | undefined => {
+  const start = Date.parse(signedInAt ?? "");
+  const end = Date.parse(recentUntil ?? "");
+  if (Number.isNaN(start) || Number.isNaN(end)) return undefined;
   const remainingMs = Math.max(0, end - now);
   const whole = Math.max(1, end - start);
   return {
