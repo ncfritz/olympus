@@ -33,6 +33,7 @@ const match = (
 const bill = (overrides: Partial<MailOpenBill> = {}): MailOpenBill => ({
   accountId: "a1",
   gmailId: "b0",
+  snippet: "",
   receivedTime: "2026-09-01T08:00:00.000Z",
   label: "Bills/*Payable",
   toLabel: "Bills/*Paid",
@@ -58,9 +59,12 @@ describe("payments", () => {
   it("says what it does", () => {
     expect(stateName("Bills/*Paid")).toBe("Paid");
     expect(paymentText(match())).toBe("Marks “Your bill” of Sep 3 Paid");
-    expect(openDays(bill(), DateTime.fromISO("2026-10-01T09:00:00.000Z"))).toBe(
-      30,
-    );
+    expect(
+      openDays(
+        bill(),
+        DateTime.fromISO("2026-10-01T09:00:00.000Z") as DateTime<true>,
+      ),
+    ).toBe(30);
   });
 
   it("colours a bill's age from green through yellow to red", () => {

@@ -1,5 +1,5 @@
 import type { ReviewItem } from "@ncfritz/olympus-sdk/minerva";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
   deleteItem: vi.fn(async () => undefined),
@@ -25,7 +25,7 @@ const calls = () => [
 ];
 
 describe("applyTriage", () => {
-  let carry: ReturnType<typeof vi.fn>;
+  let carry: Mock<() => Promise<void>>;
   beforeEach(() => {
     vi.clearAllMocks();
     carry = vi.fn(async () => undefined);

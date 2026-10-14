@@ -18,6 +18,7 @@ const label = (name: string, messages = 1) => ({
   proposedOut: 0,
   highConfidence: 0,
   mergeCandidate: false,
+  processed: 0,
 });
 
 describe("mail audit helpers", () => {
