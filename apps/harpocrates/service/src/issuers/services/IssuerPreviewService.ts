@@ -22,6 +22,7 @@ import {
   TIER_VALIDITY_DAYS,
 } from "../issuingWindow";
 import { IssuerService, startNow } from "./IssuerService";
+import { caOrganizationOf, caSubjectProblems } from "../caSubject";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -30,6 +31,8 @@ type Overridable = Pick<
   PreviewIssuerRequest,
   | "organization"
   | "subject"
+  | "commonName"
+  | "subjectAttributes"
   | "validityDays"
   | "algorithm"
   | "nameConstraints"
@@ -85,10 +88,13 @@ export class IssuerPreviewService {
       );
     }
 
+    // A naming that would be refused is shown as the problem it is, the
+    // subject built from the CA's parts meanwhile.
+    const naming = caSubjectProblems(request);
     const now = startNow();
     const build = (overrides: Overridable): IssuerPreview => {
       const organization =
-        overrides.organization ?? parent?.organization ?? undefined;
+        caOrganizationOf(overrides) ?? parent?.organization ?? undefined;
       const notAfter = this.notAfter(
         request,
         parent,
@@ -98,7 +104,12 @@ export class IssuerPreviewService {
       return {
         id,
         subject:
-          overrides.subject ?? this.issuers.subjectFor(parts, organization),
+          overrides.subject ??
+          this.issuers.subjectFor(
+            parts,
+            organization,
+            naming.length ? {} : overrides,
+          ),
         organization: this.issuers.organizationFor(organization),
         validityDays: Math.round((notAfter.getTime() - now.getTime()) / DAY),
         notAfter: moment(notAfter),
@@ -132,6 +143,7 @@ export class IssuerPreviewService {
     };
 
     const preview = build(request);
+    problems.push(...naming);
     const defaults = build({});
 
     if (

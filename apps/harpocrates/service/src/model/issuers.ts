@@ -24,6 +24,7 @@ import {
   ContactNames,
   NameConstraints,
 } from "./common";
+import { SubjectAttributeValue } from "./certificates";
 
 export const ISSUER_TIER_VALUES = ["root", "intermediate", "issuing"] as const;
 export type IssuerTierName = (typeof ISSUER_TIER_VALUES)[number];
@@ -451,6 +452,30 @@ export class CaOverrides {
   @IsString()
   @Matches(/(^|,)CN=/)
   subject?: string;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA",
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[^,=+<>#;"\\]{1,48}$/)
+  commonName?: string;
+
+  @ApiProperty({
+    type: () => SubjectAttributeValue,
+    isArray: true,
+    required: false,
+    description:
+      "The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them",
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubjectAttributeValue)
+  subjectAttributes?: SubjectAttributeValue[];
 
   @ApiProperty({
     type: Number,

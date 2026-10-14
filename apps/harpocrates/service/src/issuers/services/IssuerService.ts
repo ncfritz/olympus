@@ -44,7 +44,9 @@ import {
 import {
   distributionUrls,
   issuerCommonName,
+  issuerCommonNameStem,
   type IssuerNameParts,
+  issuerNumbering,
   issuerSlug,
 } from "../issuerNames";
 import {
@@ -56,6 +58,13 @@ import {
   shapeOfPathLength,
   TIER_VALIDITY_DAYS,
 } from "../issuingWindow";
+import {
+  caOrganizationOf,
+  type CaNaming,
+  caSubjectOf,
+  caSubjectProblems,
+  namedByParts,
+} from "../caSubject";
 import { overridesGiven, signerConstraints } from "../overrides";
 
 const TIER_ORDER = { root: 0, intermediate: 1, issuing: 2 } as const;
@@ -197,9 +206,23 @@ export class IssuerService {
   /**
    * A CA's subject from its parts: `organization` (its root's, or set for
    * it) begins the CN and is the O; without one, the configured realm and
-   * organisation (ADR 0032, Names and settings).
+   * organisation (ADR 0032, Names and settings). Named by its common name
+   * or attributes, those, its number and generation still ending the CN.
    */
-  subjectFor(parts: IssuerNameParts, organization?: string): string {
+  subjectFor(
+    parts: IssuerNameParts,
+    organization?: string,
+    naming: CaNaming = {},
+  ): string {
+    if (namedByParts(naming)) {
+      return caSubjectOf(
+        naming.commonName ??
+          issuerCommonNameStem(organization ?? this.pki.realm, parts),
+        issuerNumbering(parts),
+        naming.subjectAttributes,
+        organization ?? this.pki.organization,
+      );
+    }
     return subjectName({
       commonName: issuerCommonName(organization ?? this.pki.realm, parts),
       organization: organization ?? this.pki.organization,
@@ -220,7 +243,10 @@ export class IssuerService {
     overrides: CaOverrides,
     organization?: string,
   ): Promise<string> {
-    const subject = overrides.subject ?? this.subjectFor(parts, organization);
+    const problems = caSubjectProblems(overrides);
+    if (problems.length) throw new BadRequestException(problems.join("; "));
+    const subject =
+      overrides.subject ?? this.subjectFor(parts, organization, overrides);
     if (await this.prisma.issuer.findUnique({ where: { subject } })) {
       throw new ConflictException(
         `A CA with the subject ${subject} exists: a subject is never reused`,
@@ -252,7 +278,11 @@ export class IssuerService {
     };
     const id = issuerSlug(parts);
     await this.assertNew(id);
-    const subject = await this.newSubject(parts, request, request.organization);
+    const subject = await this.newSubject(
+      parts,
+      request,
+      caOrganizationOf(request),
+    );
     const notBefore = startNow();
     const notAfter = addDays(
       notBefore,
@@ -284,7 +314,7 @@ export class IssuerService {
       certificatePem: created.certificate,
       parentId: null,
       kind: AuditKind.IssuerCreated,
-      organization: request.organization,
+      organization: caOrganizationOf(request),
       shape,
       constraints: constraintRows(request.nameConstraints),
       overrides: overridesGiven(request),

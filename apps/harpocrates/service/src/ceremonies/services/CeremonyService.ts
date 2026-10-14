@@ -32,6 +32,7 @@ import type {
   CreateIssuingIssuerRequest,
   FullIssuer,
 } from "../../model/issuers";
+import { caOrganizationOf } from "../../issuers/caSubject";
 import { certificatePem, randomSerial, spkiFromPem } from "../../pki/x509";
 import { SignerService } from "../../signer/services/SignerService";
 import { PrismaService } from "../../store/PrismaService";
@@ -209,7 +210,7 @@ export class CeremonyService {
       throw new ConflictException(`Issuer ${id} already exists`);
     }
     const organization =
-      request.organization ?? parent.organization ?? undefined;
+      caOrganizationOf(request) ?? parent.organization ?? undefined;
     const subject = await this.issuers.newSubject(parts, request, organization);
     const notBefore = startNow();
     const notAfter = notAfterFor(
@@ -277,7 +278,7 @@ export class CeremonyService {
       throw new ConflictException(`Issuer ${id} already exists`);
     }
     const organization =
-      request.organization ?? parent.organization ?? undefined;
+      caOrganizationOf(request) ?? parent.organization ?? undefined;
     const subject = await this.issuers.newSubject(parts, request, organization);
     const notBefore = startNow();
     const notAfter = notAfterFor(

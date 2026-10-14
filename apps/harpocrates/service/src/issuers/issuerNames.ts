@@ -18,15 +18,18 @@ const TIER_WORDS: Record<IssuerTierName, string> = {
   issuing: "Issuing",
 };
 
-export const issuerCommonName = (realm: string, parts: IssuerNameParts) =>
-  [
-    realm,
-    parts.purpose,
-    TIER_WORDS[parts.tier],
-    `CA ${parts.number} - G${parts.generation}`,
-  ]
+/** A CA's common name before its numbering: `<realm> [<purpose>] <tier> CA`. */
+export const issuerCommonNameStem = (realm: string, parts: IssuerNameParts) =>
+  [realm, parts.purpose, TIER_WORDS[parts.tier], "CA"]
     .filter(Boolean)
     .join(" ");
+
+/** What ends every CA's common name: `<n> - G<generation>`. */
+export const issuerNumbering = (parts: IssuerNameParts) =>
+  `${parts.number} - G${parts.generation}`;
+
+export const issuerCommonName = (realm: string, parts: IssuerNameParts) =>
+  `${issuerCommonNameStem(realm, parts)} ${issuerNumbering(parts)}`;
 
 export const issuerSlug = (parts: IssuerNameParts) =>
   [

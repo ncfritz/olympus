@@ -97,6 +97,36 @@ describe.skipIf(!E2E_DATABASE_URL)("previewing a CA", () => {
     });
   });
 
+  it("names a CA by its common name and attributes, its numbering appended", async () => {
+    const { preview: root, problems } = await preview({
+      tier: "root",
+      number: 5,
+      commonName: "Example Lab Root CA",
+      subjectAttributes: [
+        { type: "C", value: "US" },
+        { type: "O", value: "Example Lab" },
+        { type: "OU", value: "PKI" },
+      ],
+    });
+    expect(problems).toEqual([]);
+    expect(root).toMatchObject({
+      id: "root-5-g1",
+      subject: "CN=Example Lab Root CA 5 - G1,OU=PKI,O=Example Lab,C=US",
+      organization: "Example Lab",
+    });
+    const named = await preview({
+      tier: "root",
+      number: 5,
+      subject: "CN=Whole,O=Example Lab",
+      commonName: "Example Lab Root CA",
+      subjectAttributes: [{ type: "CN", value: "x" }],
+    });
+    expect(named.problems).toEqual([
+      "Give the subject outright or its common name and attributes, not both",
+      "The common name is given on its own: its number and generation are appended to it",
+    ]);
+  });
+
   it("refuses a CA too short-lived to sign what it signs", async () => {
     const { problems } = await preview({
       tier: "root",

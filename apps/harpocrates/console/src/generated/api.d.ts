@@ -1673,6 +1673,12 @@ export interface components {
       /** @description Every CA, parents before children */
       issuers: components["schemas"]["Issuer"][];
     };
+    SubjectAttributeValue: {
+      /** @description The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID */
+      type: string;
+      /** @description Its value */
+      value: string;
+    };
     /**
      * @description A CA's key type: P-256 or RSA 2048
      * @enum {string}
@@ -1683,6 +1689,10 @@ export interface components {
       organization?: string;
       /** @description The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued */
       subject?: string;
+      /** @description Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA */
+      commonName?: string;
+      /** @description The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them */
+      subjectAttributes?: components["schemas"]["SubjectAttributeValue"][];
       /** @description Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry */
       validityDays?: number;
       /** @description Its key type (P-256 by default) */
@@ -1832,6 +1842,10 @@ export interface components {
       organization?: string;
       /** @description The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued */
       subject?: string;
+      /** @description Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA */
+      commonName?: string;
+      /** @description The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them */
+      subjectAttributes?: components["schemas"]["SubjectAttributeValue"][];
       /** @description Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry */
       validityDays?: number;
       /** @description Its key type (P-256 by default) */
@@ -1948,6 +1962,10 @@ export interface components {
       organization?: string;
       /** @description The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued */
       subject?: string;
+      /** @description Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA */
+      commonName?: string;
+      /** @description The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them */
+      subjectAttributes?: components["schemas"]["SubjectAttributeValue"][];
       /** @description Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry */
       validityDays?: number;
       /** @description Its key type (P-256 by default) */
@@ -1974,6 +1992,10 @@ export interface components {
       organization?: string;
       /** @description The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued */
       subject?: string;
+      /** @description Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA */
+      commonName?: string;
+      /** @description The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them */
+      subjectAttributes?: components["schemas"]["SubjectAttributeValue"][];
       /** @description Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry */
       validityDays?: number;
       /** @description Its key type (P-256 by default) */
@@ -1994,12 +2016,6 @@ export interface components {
     CreateIssuingIssuerResponse: {
       /** @description The new issuing CA, registered with the signer */
       issuer: components["schemas"]["FullIssuer"];
-    };
-    SubjectAttributeValue: {
-      /** @description The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID */
-      type: string;
-      /** @description Its value */
-      value: string;
     };
     CertificateSubject: {
       /** @description The common name: an app name, a person-device, a host (required unless the profile says otherwise) */

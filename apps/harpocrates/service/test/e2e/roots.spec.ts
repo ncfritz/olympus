@@ -183,6 +183,44 @@ describe.skipIf(!E2E_DATABASE_URL)("roots", () => {
     });
   });
 
+  it("is named by its common name and attributes, its O its organisation", async () => {
+    const created = await createRoot({
+      number: 7,
+      shape: "direct",
+      commonName: "Example Lab Root CA",
+      subjectAttributes: [
+        { type: "C", value: "US" },
+        { type: "ST", value: "California" },
+        { type: "O", value: "Example Lab" },
+      ],
+    });
+    expect(created.issuer).toMatchObject({
+      id: "root-7-g1",
+      subject: "CN=Example Lab Root CA 7 - G1,O=Example Lab,ST=California,C=US",
+      organization: "Example Lab",
+    });
+    const certificate = new X509Certificate(created.issuer.certificate);
+    expect(certificate.subject.split("\n")).toEqual([
+      "C=US",
+      "ST=California",
+      "O=Example Lab",
+      "CN=Example Lab Root CA 7 - G1",
+    ]);
+    expect((await attributes("issuer.created", "root-7-g1")).overrides).toMatch(
+      /subjectAttributes/,
+    );
+    await request(server())
+      .post("/v1/issuers/roots")
+      .set("Authorization", harness.admin)
+      .send({
+        number: 8,
+        generation: 1,
+        exportPassphrase: EXPORT_PASSPHRASE,
+        subjectAttributes: [{ type: "C", value: "USA" }],
+      })
+      .expect(400);
+  });
+
   describe("a root that has signed nothing", () => {
     it("is discarded, and cannot open a ceremony after", async () => {
       const root = await createRoot({ number: 7, purpose: "Spare" });

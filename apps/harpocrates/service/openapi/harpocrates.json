@@ -7302,6 +7302,23 @@
           "issuers"
         ]
       },
+      "SubjectAttributeValue": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID"
+          },
+          "value": {
+            "type": "string",
+            "description": "Its value"
+          }
+        },
+        "required": [
+          "type",
+          "value"
+        ]
+      },
       "CaKeyAlgorithm": {
         "type": "string",
         "description": "A CA's key type: P-256 or RSA 2048",
@@ -7320,6 +7337,17 @@
           "subject": {
             "type": "string",
             "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
+          },
+          "commonName": {
+            "type": "string",
+            "description": "Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA"
+          },
+          "subjectAttributes": {
+            "description": "The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubjectAttributeValue"
+            }
           },
           "validityDays": {
             "type": "number",
@@ -7764,6 +7792,17 @@
             "type": "string",
             "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
           },
+          "commonName": {
+            "type": "string",
+            "description": "Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA"
+          },
+          "subjectAttributes": {
+            "description": "The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubjectAttributeValue"
+            }
+          },
           "validityDays": {
             "type": "number",
             "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
@@ -8112,6 +8151,17 @@
             "type": "string",
             "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
           },
+          "commonName": {
+            "type": "string",
+            "description": "Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA"
+          },
+          "subjectAttributes": {
+            "description": "The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubjectAttributeValue"
+            }
+          },
           "validityDays": {
             "type": "number",
             "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
@@ -8187,6 +8237,17 @@
             "type": "string",
             "description": "The whole subject, RFC 4514, instead of the one built from its parts; it must have a CN and differ from every subject Harpocrates has issued"
           },
+          "commonName": {
+            "type": "string",
+            "description": "Its common name before its number and generation, which are appended (<n> - G<generation>); by default <organisation> [<purpose>] <tier> CA"
+          },
+          "subjectAttributes": {
+            "description": "The subject's other attributes, as a certificate's (C, ST, L, O, OU, emailAddress, …), instead of its organisation alone; its O is its organisation, and CN is not among them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubjectAttributeValue"
+            }
+          },
           "validityDays": {
             "type": "number",
             "description": "Its validity in days; by default its tier's (20, 10 or 5 years), never past its parent's expiry"
@@ -8253,23 +8314,6 @@
         },
         "required": [
           "issuer"
-        ]
-      },
-      "SubjectAttributeValue": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "The attribute: a name (C, ST, L, O, OU, CN, emailAddress, title, …) or a dotted OID"
-          },
-          "value": {
-            "type": "string",
-            "description": "Its value"
-          }
-        },
-        "required": [
-          "type",
-          "value"
         ]
       },
       "CertificateSubject": {

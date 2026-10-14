@@ -7,6 +7,8 @@ export const overridesGiven = (request: CaOverrides): string[] =>
     [
       "organization",
       "subject",
+      "commonName",
+      "subjectAttributes",
       "validityDays",
       "algorithm",
       "nameConstraints",
