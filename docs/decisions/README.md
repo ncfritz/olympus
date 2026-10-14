@@ -45,7 +45,8 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0034](0034-harpocrates-profiles-versioned-presets.md)       | Harpocrates: profiles as versioned, editable presets                       | Accepted (amended by 0035–0036)  |
 | [0035](0035-harpocrates-ssh-certificates.md)                 | Harpocrates: SSH certificates                                              | Accepted                         |
 | [0036](0036-harpocrates-ocsp.md)                             | Harpocrates: OCSP                                                          | Accepted                         |
-| [0037](0037-harpocrates-xca-imported-for-the-record.md)      | Harpocrates: XCA's CAs imported, as a record and to revoke                 | Accepted                         |
+| [0037](0037-harpocrates-xca-imported-for-the-record.md)      | Harpocrates: XCA's CAs imported, as a record and to revoke                 | Accepted (amended by 0039)       |
 | [0038](0038-harpocrates-ca-key-types.md)                     | Harpocrates: the key types a CA may have                                   | Accepted                         |
+| [0039](0039-harpocrates-xca-certificates-with-their-keys.md) | Harpocrates: XCA's certificates imported with their keys and CSRs          | Accepted                         |
 
 New records: copy [template.md](template.md), take the next number.
