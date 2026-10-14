@@ -2,12 +2,22 @@
    one's fields beneath its title; compact, not the page's whole width.
    The key and the name are narrower still; the constraints' two columns
    and the review take the rest. */
-.form {
-  max-width: 960px;
+/* Doubled to outrank antd's own form rules. */
+.form.form {
+  max-width: 1400px;
+  /* In line with the page's steps above: past their 32px circle (antd's
+     control height) and its gap, where "Shape" begins. */
+  padding-inline-start: calc(
+    var(--ant-control-height, 32px) + var(--ant-margin-xs, 8px)
+  );
 }
 
 .narrow {
   max-width: 760px;
+}
+
+.medium {
+  max-width: 960px;
 }
 
 /* Tight: small fields, little between them. */
@@ -133,15 +143,20 @@
   max-height: var(--fit, none);
   overflow-y: auto;
   padding: 4px 8px 0 0;
+  scrollbar-width: none;
+}
+
+.open::-webkit-scrollbar {
+  display: none;
 }
 
 /* Back and Next, beneath the steps: kept at the bottom of the page while
    the page scrolls. */
-.bar {
+.bar.bar {
   position: sticky;
   bottom: 0;
   z-index: 2;
-  padding: 12px 0;
+  padding: 12px 0 12px var(--step-indent, 0);
   background: var(--ant-color-bg-container);
 }
 
@@ -172,4 +187,16 @@
   font-family: var(--ant-font-family-code);
   font-size: var(--ant-font-size-sm, 12px);
   word-break: break-all;
+}
+
+/* The review: each cell's contents at its top, the setting and value
+   smaller than the page's text. */
+.review :global(.ant-table-cell) {
+  vertical-align: top;
+}
+
+.review :global(.ant-table-tbody .ant-table-cell:nth-child(-n + 2)),
+.review
+  :global(.ant-table-tbody .ant-table-cell:nth-child(-n + 2) .ant-typography) {
+  font-size: var(--ant-font-size-sm, 12px);
 }

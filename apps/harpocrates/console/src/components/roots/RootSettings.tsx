@@ -86,20 +86,44 @@ const defaultsOf = (
  * listed, so the review is of the whole certificate.
  */
 function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
-  const rows = reviewRowsOf("root", answer).map((row) =>
-    row.key === "subject"
-      ? {
-          ...row,
-          why: "Its common name, with its number and generation appended, and its other attributes. A subject is never used twice.",
-        }
-      : row.key === "validity"
+  const rows = reviewRowsOf("root", answer)
+    .map((row) =>
+      row.key === "subject"
         ? {
             ...row,
-            // As the form says it: years, months and days.
-            value: `${describeValidity(answer.preview.validityDays)} (until ${formatDate(answer.preview.notAfter)})`,
+            why: "Its common name, with its number and generation appended, and its other attributes. A subject is never used twice.",
           }
-        : row,
-  );
+        : row.key === "validity"
+          ? {
+              ...row,
+              // As the form says it: years, months and days.
+              value: `${describeValidity(answer.preview.validityDays)} (until ${formatDate(answer.preview.notAfter)})`,
+            }
+          : row,
+    )
+    .map((row) =>
+      // Names and URLs in the code font, and nothing else about them.
+      row.key === "subject"
+        ? {
+            ...row,
+            value: (
+              <span className={styles.mono}>{answer.preview.subject}</span>
+            ),
+          }
+        : row.key === "urls"
+          ? {
+              ...row,
+              value: (
+                <Flex vertical>
+                  <span className={styles.mono}>
+                    {answer.preview.caIssuersUrl}
+                  </span>
+                  <span className={styles.mono}>{answer.preview.crlUrl}</span>
+                </Flex>
+              ),
+            }
+          : row,
+    );
   return (
     <Flex vertical gap="large">
       <ReviewProblems problems={answer.problems} />
@@ -110,6 +134,7 @@ function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
           </Typography.Title>
           <Table<ReviewRow>
             size="small"
+            className={styles.review}
             pagination={false}
             rowKey="key"
             dataSource={rows.filter((row) => row.group === group)}
@@ -117,12 +142,12 @@ function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
               {
                 title: "Setting",
                 dataIndex: "setting",
-                width: "18%",
+                width: "16%",
                 render: (setting: string) => (
                   <Typography.Text strong>{setting}</Typography.Text>
                 ),
               },
-              { title: "Value", dataIndex: "value", width: "40%" },
+              { title: "Value", dataIndex: "value", width: "42%" },
               {
                 title: "Why",
                 dataIndex: "why",
@@ -183,6 +208,37 @@ const useFitHeight = (
   }, [ref, step]);
   return height;
 };
+
+/**
+ * How far in the open step's contents start from the bar's left edge, so
+ * Back and Next line up with them.
+ */
+const useIndent = (
+  open: RefObject<HTMLElement | null>,
+  bar: RefObject<HTMLElement | null>,
+  step: number,
+): number | undefined => {
+  const [indent, setIndent] = useState<number>();
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (!open.current || !bar.current) return;
+      setIndent(
+        open.current.getBoundingClientRect().left -
+          bar.current.getBoundingClientRect().left,
+      );
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [open, bar, step]);
+  return indent;
+};
+
+/** An indent as the one value set from code: the CSS reads it as --step-indent. */
+const indentStyle = (indent: number | undefined) =>
+  (indent === undefined
+    ? {}
+    : { "--step-indent": `${indent}px` }) as CSSProperties;
 
 /** A height as the one value set from code: the CSS reads it as --fit. */
 const fitStyle = (height: number | undefined) =>
@@ -288,7 +344,9 @@ export function RootSettings({
   const validityDays = formValidityDays(values ?? {});
   const ready = answer !== undefined && answer.problems.length === 0;
   const open = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
   const fit = useFitHeight(open, step);
+  const indent = useIndent(open, bar, step);
 
   const next = async () => {
     try {
@@ -568,7 +626,7 @@ export function RootSettings({
             index === step ? (
               <div
                 ref={open}
-                className={`${styles.open} ${index < 2 ? styles.narrow : ""}`}
+                className={`${styles.open} ${index < 2 ? styles.narrow : index === 2 ? styles.medium : ""}`}
                 style={fitStyle(fit)}
               >
                 {contents[index]}
@@ -583,7 +641,12 @@ export function RootSettings({
             ) : null,
         }))}
       />
-      <Flex gap="small" className={styles.bar}>
+      <Flex
+        gap="small"
+        className={styles.bar}
+        ref={bar}
+        style={indentStyle(indent)}
+      >
         <Button
           size="middle"
           onClick={() => (step === 0 ? onBack() : setStep(step - 1))}
