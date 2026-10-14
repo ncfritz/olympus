@@ -13,22 +13,17 @@
 
 .value {
   font-family: var(--ant-font-family-code);
+  font-size: 11px;
   line-height: 1.4;
   word-break: break-all;
 }
 
-/* Hex: small enough to read whole. */
-.small {
-  font-size: 11px;
-}
-
-/* A secret to be read and typed: the body's size, more room. */
-.large {
-  font-size: var(--ant-font-size);
-}
-
-.card .body.body:has(.large) {
-  padding: 12px;
+/* A command: its own lines, each kept whole. */
+.lines {
+  display: block;
+  white-space: pre;
+  word-break: normal;
+  overflow-x: auto;
 }
 
 .card .actions.actions {

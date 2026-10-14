@@ -91,9 +91,10 @@ function Action({
 }
 
 /**
- * A value in a card of its own: a long hex value (a serial, a fingerprint,
- * a key identifier), small enough to read whole, or a secret shown once
- * (the signer's unseal key), larger. The card's action row is its copy
+ * A value in a card of its own, small enough to read whole: a long hex
+ * value (a serial, a fingerprint, a key identifier), a secret shown once
+ * (the signer's unseal key), or a command, its lines kept as they are
+ * (`lines`). The card's action row is its copy
  * control, as antd's card actions are: the whole row is clickable, and it
  * says Copied (or that it couldn't) for a moment after; other actions,
  * when given, come before it.
@@ -101,13 +102,14 @@ function Action({
 export function ValueCard({
   value,
   label,
-  size = "small",
+  lines = false,
   actions = [],
 }: {
   value: string;
   /** What the value is, for the copy control's name. */
   label: string;
-  size?: "small" | "large";
+  /** Keep the value's own line breaks, rather than break it anywhere. */
+  lines?: boolean;
   actions?: ValueCardAction[];
 }) {
   const { status, copy } = useCopy(value);
@@ -132,7 +134,9 @@ export function ValueCard({
         </Action>,
       ]}
     >
-      <span className={`${styles.value} ${styles[size]}`}>{value}</span>
+      <span className={`${styles.value} ${lines ? styles.lines : ""}`}>
+        {value}
+      </span>
     </Card>
   );
 }

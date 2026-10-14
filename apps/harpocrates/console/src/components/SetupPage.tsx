@@ -8,9 +8,7 @@ import {
   Checkbox,
   Flex,
   Form,
-  Input,
   Result,
-  Space,
   Spin,
   Steps,
   Table,
@@ -28,7 +26,7 @@ import { ErrorAlert } from "./ErrorAlert";
 import { PassphraseFields } from "./PassphraseFields";
 import { RecentSignInNotice } from "./RecentSignIn";
 import styles from "./SetupPage.module.css";
-import { COPY_LABELS, useCopy, ValueCard } from "./ValueCard";
+import { ValueCard } from "./ValueCard";
 
 const STEPS = [
   { title: "Recovery passphrase" },
@@ -45,6 +43,19 @@ const checklistFor = (file: string) => [
   `It is in \${HARPOCRATES_SECRETS_DIR}/${file}, mode 600`,
   "It is not in the same backup as the signer's data directory",
 ];
+
+/**
+ * Installing the saved key file on the host, a line to each step so it
+ * reads in the card; each ends in a backslash with nothing after it, so
+ * it pastes as one command.
+ */
+const installOf = (file: string) =>
+  [
+    "install -m 600 \\",
+    `  ${file} \\`,
+    `  "$HARPOCRATES_SECRETS_DIR/${file}" && \\`,
+    `  rm ${file}`,
+  ].join("\n");
 
 /** Who holds what, once the signer is set up (ADR 0020, Key protection). */
 const secretsFor = (file: string) => [
@@ -68,33 +79,6 @@ const secretsFor = (file: string) => [
     opens: "A ceremony with that CA",
   },
 ];
-
-/**
- * A value to copy whole, such as a command: read-only, in the code font,
- * its copy button attached.
- */
-function CopyInput({ value, label }: { value: string; label: string }) {
-  const { status, copy } = useCopy(value);
-  return (
-    <Space.Compact block>
-      <Input
-        readOnly
-        value={value}
-        className={styles.mono}
-        aria-label={label}
-        onFocus={(event) => event.target.select()}
-      />
-      <Button
-        icon={COPY_LABELS[status].icon}
-        className={styles[status]}
-        aria-live="polite"
-        onClick={() => void copy()}
-      >
-        {COPY_LABELS[status].text}
-      </Button>
-    </Space.Compact>
-  );
-}
 
 /**
  * The signer's first run (ADR 0032, Bootstrap): the recovery passphrase,
@@ -208,12 +192,11 @@ export function SetupPage() {
             title="This page is the only place it is shown"
             description="With it the signer unseals itself at every start. Leaving the page without storing it means sealing and unsealing by hand until the passphrase is rotated."
           />
-          <Flex vertical gap={4} className={styles.unseal}>
+          <Flex vertical gap={4} className={styles.key}>
             <Typography.Text type="secondary">Unseal key</Typography.Text>
             <ValueCard
               value={unsealKey}
               label="unseal key"
-              size="large"
               actions={[
                 {
                   key: "save",
@@ -225,12 +208,9 @@ export function SetupPage() {
               ]}
             />
           </Flex>
-          <Flex vertical gap={4} className={styles.unseal}>
+          <Flex vertical gap={4} className={styles.host}>
             <Typography.Text type="secondary">On the host</Typography.Text>
-            <CopyInput
-              label="command"
-              value={`install -m 600 ${keyFile} "$HARPOCRATES_SECRETS_DIR/${keyFile}" && rm ${keyFile}`}
-            />
+            <ValueCard value={installOf(keyFile)} label="command" lines />
           </Flex>
           <Checkbox.Group
             value={checked}
