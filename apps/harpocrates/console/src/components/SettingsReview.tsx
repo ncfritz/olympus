@@ -56,6 +56,10 @@ const constraintsText = (constraints: NameConstraints | undefined) => {
   return lines.length ? lines.join("; ") : "None";
 };
 
+/** A CA's key, and how it signs: SHA-256, whatever the key (ADR 0038). */
+const keyText = (algorithm: string) =>
+  `${algorithm}, ${algorithm.startsWith("P-") ? "ecdsa-with-SHA256" : "sha256WithRSAEncryption"}`;
+
 const ekuText = (oids: string[]) =>
   oids.length ? oids.map(ekuName).join(", ") : "Not restricted";
 
@@ -109,9 +113,9 @@ export const reviewRowsOf = (
       key: "algorithm",
       group: "key" as const,
       setting: "Key",
-      value: `${p.algorithm}${p.algorithm === "P-256" ? ", ecdsa-with-SHA256" : ", sha256WithRSAEncryption"}`,
-      byDefault: `${d.algorithm}, ecdsa-with-SHA256`,
-      why: "P-256: small keys and signatures, and accepted by everything here. RSA only for a relying party that needs it.",
+      value: keyText(p.algorithm),
+      byDefault: keyText(d.algorithm),
+      why: "P-256 by default: small keys and signatures, accepted by everything here. A larger curve or an RSA key where a relying party asks for one (ADR 0038).",
       changed: p.algorithm !== d.algorithm,
       reset: ["algorithm"],
     },

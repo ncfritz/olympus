@@ -1,5 +1,9 @@
-/* A new root's name and settings: four steps down the page, each step's
-   fields beneath its title, as wide as the page allows. */
+/* A new root's name and settings: four steps down the page, the open
+   one's fields beneath its title; compact, not the page's whole width. */
+.form {
+  max-width: 760px;
+}
+
 .steps :global(.ant-steps-item-content) {
   flex: 1;
   min-width: 0;
@@ -36,13 +40,11 @@
   word-break: break-all;
 }
 
-/* Permitted on the left, excluded on the right: equal columns, not the
-   page's whole width. */
+/* Permitted on the left, excluded on the right: equal columns. */
 .constraintColumns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 32px;
-  max-width: 960px;
 }
 
 @media (max-width: 767px) {
@@ -108,4 +110,38 @@
 
 .reviewTitle.reviewTitle {
   margin: 0;
+}
+
+/* The open step: its fields, then Back and Next. */
+.open {
+  padding-top: 8px;
+}
+
+/* Validity: a choice of years; "Other", a number and its unit, and what
+   that comes to beside them. */
+.validity.validity.validity {
+  width: 140px;
+}
+
+.amount.amount.amount {
+  width: 96px;
+}
+
+.unit.unit.unit {
+  width: 110px;
+}
+
+.subject {
+  margin-bottom: 8px;
+}
+
+/* A step taken, closed: what it came to, in a line. */
+.summary {
+  font-size: var(--ant-font-size-sm, 12px);
+}
+
+.summaryMono.summaryMono {
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-font-size-sm, 12px);
+  word-break: break-all;
 }

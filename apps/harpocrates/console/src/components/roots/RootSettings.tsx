@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Button,
   Col,
   Flex,
   Form,
@@ -9,6 +10,7 @@ import {
   Radio,
   Row,
   Select,
+  Space,
   Spin,
   Steps,
   Table,
@@ -26,11 +28,17 @@ import {
   CA_KEY_FAMILIES,
   caFamilyOf,
   commonNameStemOf,
+  describeValidity,
+  formValidityDays,
+  VALIDITY_CHOICES,
+  validityDaysOf,
+  type ValidityUnit,
   ROOT_SUBJECT_ATTRIBUTES,
   type RootDefaults,
   type RootFormValues,
   rootRequestOf,
 } from "@/lib/rootRequest";
+import { formatDate } from "@/lib/labels";
 import { ErrorAlert } from "../ErrorAlert";
 import {
   type ReviewGroup,
@@ -59,6 +67,7 @@ const defaultsOf = (
 ): RootDefaults | undefined =>
   answer && {
     algorithm: answer.defaults.algorithm,
+    validityDays: answer.defaults.validityDays,
     commonName: commonNameStemOf(answer.defaults.subject) ?? "",
     organization: answer.defaults.organization,
   };
@@ -75,7 +84,13 @@ function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
           ...row,
           why: "Its common name, with its number and generation appended, and its other attributes. A subject is never used twice.",
         }
-      : row,
+      : row.key === "validity"
+        ? {
+            ...row,
+            // As the form says it: years, months and days.
+            value: `${describeValidity(answer.preview.validityDays)} (until ${formatDate(answer.preview.notAfter)})`,
+          }
+        : row,
   );
   return (
     <Flex vertical gap="large">
@@ -115,16 +130,33 @@ function RootReview({ answer }: { answer: PreviewIssuerResponse }) {
   );
 }
 
+/** Each step's fields, checked before the next step opens. */
+const STEP_FIELDS: (string | (string | number)[])[][] = [
+  ["keyFamily", "algorithm", "validity", "validityAmount", "validityUnit"],
+  [
+    "commonName",
+    "purpose",
+    "number",
+    "generation",
+    ...ROOT_SUBJECT_ATTRIBUTES.map((a) => ["attributes", a.type]),
+  ],
+  [],
+  [],
+];
+
 /**
- * A new root's name and settings (ADR 0032, Names and settings), in four
- * steps down the page: its key, its name, its name constraints, and the
- * review of all of it. Every change is previewed by the service, which
- * builds the subject and checks it exactly as creating the root would;
- * nothing is signed here.
+ * A new root's name and settings (ADR 0032, Names and settings), as four
+ * steps taken in turn: its key, its name, its name constraints, and the
+ * review of all of it. Only the step at hand is open; Next checks it
+ * first, and a step already taken can be opened again. Every change is
+ * previewed by the service, which builds the subject and checks it
+ * exactly as creating the root would; nothing is signed here.
  */
 export function RootSettings({
   shape,
   onReviewed,
+  onBack,
+  onNext,
 }: {
   shape: IssuerShape;
   /** The request as reviewed, and its preview, whenever either changes. */
@@ -132,10 +164,15 @@ export function RootSettings({
     request: PreviewIssuerRequest,
     answer: PreviewIssuerResponse | undefined,
   ) => void;
+  /** Back from the first step: to the shape. */
+  onBack: () => void;
+  /** On from the review: to creating it. */
+  onNext: () => void;
 }) {
   const [form] = Form.useForm<RootFormValues>();
   const values = Form.useWatch([], { form, preserve: true }) as
     RootFormValues | undefined;
+  const [step, setStep] = useState(0);
   const [answer, setAnswer] = useState<PreviewIssuerResponse>();
   const [error, setError] = useState<unknown>();
   const [loading, setLoading] = useState(false);
@@ -190,83 +227,137 @@ export function RootSettings({
 
   const family = CA_KEY_FAMILIES.find((f) => f.family === values?.keyFamily);
   const numbering = `${values?.number ?? 1} - G${values?.generation ?? 1}`;
-  const named = Boolean(values?.commonName?.trim());
+  const validityDays = formValidityDays(values ?? {});
+  const ready = answer !== undefined && answer.problems.length === 0;
 
-  const key_ = (
-    <Row gutter={16}>
-      <Col xs={24} md={8}>
-        <Form.Item
-          name="keyFamily"
-          label="Key type"
-          tooltip="EC keys are small and fast, and every client here takes them; RSA for a relying party that needs it"
-        >
-          <Radio.Group
-            optionType="button"
-            buttonStyle="solid"
-            options={CA_KEY_FAMILIES.map((f) => ({
-              value: f.family,
-              label: f.label,
-            }))}
-          />
-        </Form.Item>
-      </Col>
-      {family?.choice && (
-        <Col xs={24} md={8}>
-          <Form.Item
-            name="algorithm"
-            label={family.choice}
-            tooltip={
-              family.family === "EC"
-                ? "The curve its key is on: a CA's key is P-256 (ADR 0033)"
-                : "Its key's size: a CA's RSA key is 2048 bits (ADR 0033)"
-            }
-          >
-            <Select options={family.algorithms} />
-          </Form.Item>
-        </Col>
-      )}
-      <Col xs={24} md={8}>
-        <Form.Item
-          name="validityDays"
-          label="Validity"
-          tooltip="How long the root is valid: 20 years by default, since every device trusts it by hand and it is replaced rarely"
-        >
-          <InputNumber
-            min={1}
-            max={36500}
-            suffix="days"
-            className={styles.number}
-            placeholder={String(answer?.defaults.validityDays ?? "")}
-          />
-        </Form.Item>
-      </Col>
-    </Row>
-  );
+  const next = async () => {
+    try {
+      await form.validateFields(STEP_FIELDS[step]);
+      setStep(step + 1);
+    } catch {
+      // The fields say what is wrong.
+    }
+  };
 
-  const name = (
-    <Flex vertical>
+  const keyStep = (
+    <>
       <Row gutter={16}>
-        <Col xs={24} md={10}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            name="commonName"
-            label="Common name"
-            tooltip="The CN: its number and generation are added to the end"
-            rules={[
-              { required: true, whitespace: true, message: "Required" },
-              {
-                pattern: /^[^,=+<>#;"\\]{1,48}$/,
-                message:
-                  'At most 48 characters, and none of , = + < > # ; " \\',
-              },
-            ]}
+            name="keyFamily"
+            label="Key type"
+            tooltip="EC keys are small and fast, and every client here takes them; RSA for a relying party that needs it"
           >
-            <Input
-              className={styles.mono}
-              suffix={<span className={styles.numbering}>{numbering}</span>}
+            <Radio.Group
+              optionType="button"
+              buttonStyle="solid"
+              options={CA_KEY_FAMILIES.map((f) => ({
+                value: f.family,
+                label: f.label,
+              }))}
             />
           </Form.Item>
         </Col>
-        <Col xs={24} md={6}>
+        {family?.choice && (
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="algorithm"
+              label={family.choice}
+              tooltip={
+                family.family === "EC"
+                  ? "The curve its key is on: P-256 suits nearly everything; P-384 or P-521 where a relying party asks for them"
+                  : "Its key's size: 2048 bits suits nearly everything; longer keys are slower to generate and to sign with"
+              }
+            >
+              <Select options={family.algorithms} />
+            </Form.Item>
+          </Col>
+        )}
+      </Row>
+      <Form.Item
+        label="Validity"
+        tooltip="How long the root is valid: 20 years by default, since every device trusts it by hand and it is replaced rarely"
+      >
+        <Flex gap="small" align="center" wrap>
+          <Form.Item name="validity" noStyle>
+            <Select
+              className={styles.validity}
+              options={VALIDITY_CHOICES}
+              aria-label="Validity"
+            />
+          </Form.Item>
+          {values?.validity === "other" && (
+            <>
+              <Space.Compact>
+                <Form.Item
+                  name="validityAmount"
+                  noStyle
+                  rules={[
+                    { required: true, message: "How long" },
+                    {
+                      validator: (_, amount: number | undefined) =>
+                        !amount ||
+                        (validityDaysOf(
+                          amount,
+                          form.getFieldValue("validityUnit"),
+                        ) ?? 0) <= 36500
+                          ? Promise.resolve()
+                          : Promise.reject(new Error("At most 100 years")),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    min={1}
+                    precision={0}
+                    className={styles.amount}
+                    aria-label="Validity: how many"
+                  />
+                </Form.Item>
+                <Form.Item name="validityUnit" noStyle>
+                  <Select<ValidityUnit>
+                    className={styles.unit}
+                    aria-label="Validity: of what"
+                    options={[
+                      { value: "days", label: "Days" },
+                      { value: "months", label: "Months" },
+                      { value: "years", label: "Years" },
+                    ]}
+                  />
+                </Form.Item>
+              </Space.Compact>
+              {validityDays !== undefined && (
+                <Typography.Text type="secondary">
+                  {describeValidity(validityDays)}
+                </Typography.Text>
+              )}
+            </>
+          )}
+        </Flex>
+      </Form.Item>
+    </>
+  );
+
+  const nameStep = (
+    <>
+      <Form.Item
+        name="commonName"
+        label="Common name"
+        tooltip="The CN: its number and generation are added to the end"
+        rules={[
+          { required: true, whitespace: true, message: "Required" },
+          {
+            pattern: /^[^,=+<>#;"\\]{1,48}$/,
+            message: 'At most 48 characters, and none of , = + < > # ; " \\',
+          },
+        ]}
+      >
+        <Input
+          className={styles.mono}
+          suffix={<span className={styles.numbering}>{numbering}</span>}
+        />
+      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} sm={12}>
           <Form.Item
             name="purpose"
             label="Purpose"
@@ -281,7 +372,7 @@ export function RootSettings({
             <Input allowClear />
           </Form.Item>
         </Col>
-        <Col xs={12} md={4}>
+        <Col xs={12} sm={6}>
           <Form.Item
             name="number"
             label="Number"
@@ -291,7 +382,7 @@ export function RootSettings({
             <InputNumber min={1} className={styles.number} />
           </Form.Item>
         </Col>
-        <Col xs={12} md={4}>
+        <Col xs={12} sm={6}>
           <Form.Item
             name="generation"
             label="Generation"
@@ -304,10 +395,15 @@ export function RootSettings({
       </Row>
       <Row gutter={16}>
         {ROOT_SUBJECT_ATTRIBUTES.map((a) => (
-          <Col key={a.type} xs={24} md={8}>
+          <Col key={a.type} xs={24} sm={12}>
             <Form.Item
               name={["attributes", a.type]}
               label={a.label}
+              normalize={
+                a.type === "C"
+                  ? (value?: string) => value?.toUpperCase()
+                  : undefined
+              }
               tooltip={`${a.type}: ${a.help}`}
               rules={
                 a.type === "C"
@@ -322,16 +418,16 @@ export function RootSettings({
           </Col>
         ))}
       </Row>
-      <Flex vertical gap={4}>
+      <Flex vertical gap={4} className={styles.subject}>
         <Typography.Text type="secondary">Its subject</Typography.Text>
         <div className={styles.dn} aria-live="polite">
           {answer?.preview.subject ?? "…"}
         </div>
       </Flex>
-    </Flex>
+    </>
   );
 
-  const constraints = (
+  const constraintsStep = (
     <div className={styles.constraintColumns}>
       <Form.Item
         name="permitted"
@@ -350,11 +446,39 @@ export function RootSettings({
     </div>
   );
 
+  const reviewStep = (
+    <Flex vertical gap="middle">
+      <ErrorAlert error={error} title="The preview failed" />
+      <Spin spinning={loading && !answer}>
+        {answer ? <RootReview answer={answer} /> : <div />}
+      </Spin>
+    </Flex>
+  );
+
+  // A step taken, closed: what it came to, in a line.
+  const constraintCount =
+    (values?.permitted?.length ?? 0) + (values?.excluded?.length ?? 0);
+  const summaries = [
+    `${values?.algorithm ?? ""} · ${describeValidity(validityDays ?? defaults?.validityDays ?? 0)}`,
+    answer?.preview.subject ?? "",
+    constraintCount
+      ? `${values?.permitted?.length ?? 0} permitted, ${values?.excluded?.length ?? 0} excluded`
+      : "None",
+    "",
+  ];
+  const contents = [keyStep, nameStep, constraintsStep, reviewStep];
+  const titles = ["Key", "Name", "Name constraints", "Review"];
+
   return (
     <Form<RootFormValues>
       form={form}
       layout="vertical"
-      initialValues={{ number: 1, generation: 1 }}
+      initialValues={{
+        number: 1,
+        generation: 1,
+        validity: "20",
+        validityUnit: "years",
+      }}
       className={styles.form}
       onValuesChange={(changed: RootFormValues) => {
         // A family starts at its first size or curve.
@@ -370,24 +494,45 @@ export function RootSettings({
       <Steps
         orientation="vertical"
         type="dot"
-        current={named ? 3 : 1}
+        current={step}
         className={styles.steps}
-        items={[
-          { title: "Key", content: key_ },
-          { title: "Name", content: name },
-          { title: "Name constraints", content: constraints },
-          {
-            title: "Review",
-            content: (
-              <Flex vertical gap="middle">
-                <ErrorAlert error={error} title="The preview failed" />
-                <Spin spinning={loading && !answer}>
-                  {answer ? <RootReview answer={answer} /> : <div />}
-                </Spin>
+        // A step already taken can be opened again; one ahead, only by Next.
+        onChange={(to) => to < step && setStep(to)}
+        items={titles.map((title, index) => ({
+          title,
+          disabled: index > step,
+          content:
+            index === step ? (
+              <Flex vertical gap="middle" className={styles.open}>
+                {contents[index]}
+                <Flex gap="small">
+                  <Button
+                    onClick={() =>
+                      index === 0 ? onBack() : setStep(index - 1)
+                    }
+                  >
+                    Back
+                  </Button>
+                  {index < titles.length - 1 ? (
+                    <Button type="primary" onClick={() => void next()}>
+                      Next
+                    </Button>
+                  ) : (
+                    <Button type="primary" disabled={!ready} onClick={onNext}>
+                      Next
+                    </Button>
+                  )}
+                </Flex>
               </Flex>
-            ),
-          },
-        ]}
+            ) : index < step ? (
+              <Typography.Text
+                type="secondary"
+                className={index === 1 ? styles.summaryMono : styles.summary}
+              >
+                {summaries[index]}
+              </Typography.Text>
+            ) : null,
+        }))}
       />
     </Form>
   );

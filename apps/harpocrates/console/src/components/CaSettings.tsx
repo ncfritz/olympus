@@ -22,6 +22,7 @@ import type {
 } from "@/lib/api/types";
 import { type CaFormValues, type CaTarget, caRequestOf } from "@/lib/caRequest";
 import { EKU_NAMES } from "@/lib/labels";
+import { CA_KEY_FAMILIES } from "@/lib/rootRequest";
 import { ErrorAlert } from "./ErrorAlert";
 import { SettingsReview } from "./SettingsReview";
 
@@ -219,10 +220,12 @@ export function CaSettings({
                         <Select
                           allowClear
                           placeholder={defaults?.algorithm}
-                          options={[
-                            { value: "P-256", label: "P-256 (EC)" },
-                            { value: "RSA-2048", label: "RSA 2048" },
-                          ]}
+                          options={CA_KEY_FAMILIES.flatMap((f) =>
+                            f.algorithms.map((a) => ({
+                              value: a.value,
+                              label: `${f.label} ${a.label}`,
+                            })),
+                          )}
                         />
                       </Form.Item>
                     </Col>

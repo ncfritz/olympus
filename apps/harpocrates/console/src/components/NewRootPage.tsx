@@ -131,18 +131,12 @@ export function NewRootPage() {
 
       {/* Kept mounted through the later steps, so Back keeps the form. */}
       <div hidden={step !== 1}>
-        <Flex vertical gap="large">
-          <RootSettings
-            shape={shape}
-            onReviewed={(request, answer) => setReviewed({ request, answer })}
-          />
-          <Flex gap="small">
-            <Button onClick={() => setStep(0)}>Back</Button>
-            <Button type="primary" disabled={!ready} onClick={() => setStep(2)}>
-              Next
-            </Button>
-          </Flex>
-        </Flex>
+        <RootSettings
+          shape={shape}
+          onReviewed={(request, answer) => setReviewed({ request, answer })}
+          onBack={() => setStep(0)}
+          onNext={() => ready && setStep(2)}
+        />
       </div>
 
       {step === 2 && reviewed?.answer && (

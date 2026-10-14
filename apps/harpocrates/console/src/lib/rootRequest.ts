@@ -11,8 +11,16 @@ import { KEY_FAMILIES, type KeyFamily } from "./keyTypes";
  * and settings), and the preview request they make.
  */
 
-/** The key types a CA's key may be (ADR 0033): the signer's others are for leaves. */
-export const CA_KEY_ALGORITHMS: CaKeyAlgorithm[] = ["P-256", "RSA-2048"];
+/** The key types a CA's key may be (ADR 0038): DSA and Ed25519 are for leaves. */
+export const CA_KEY_ALGORITHMS: CaKeyAlgorithm[] = [
+  "P-256",
+  "P-384",
+  "P-521",
+  "RSA-2048",
+  "RSA-3072",
+  "RSA-4096",
+  "RSA-8192",
+];
 
 /** The key families and sizes or curves a CA may have, as the issuance form offers them. */
 export const CA_KEY_FAMILIES = KEY_FAMILIES.map((family) => ({
@@ -56,10 +64,67 @@ export type ConstraintType = "dns" | "ip" | "email" | "uri";
 
 export type Constraint = { type: ConstraintType; value: string };
 
+/** A root's validity: a number of years, or another length. */
+export type ValidityChoice =
+  "5" | "10" | "15" | "20" | "25" | "50" | "75" | "other";
+
+export const VALIDITY_CHOICES: { value: ValidityChoice; label: string }[] = [
+  ...(["5", "10", "15", "20", "25", "50", "75"] as const).map((years) => ({
+    value: years,
+    label: `${years} years`,
+  })),
+  { value: "other", label: "Other" },
+];
+
+export type ValidityUnit = "days" | "months" | "years";
+
+/** Days in a unit, as the service counts a CA's validity: a year is 365. */
+const UNIT_DAYS: Record<ValidityUnit, number> = {
+  days: 1,
+  months: 30,
+  years: 365,
+};
+
+/** Another length in days: whole years of 365, months of 30. */
+export const validityDaysOf = (
+  amount: number | undefined,
+  unit: ValidityUnit = "years",
+): number | undefined => {
+  if (!amount || amount < 1) return undefined;
+  if (unit === "months") {
+    return Math.floor(amount / 12) * 365 + (amount % 12) * 30;
+  }
+  return amount * UNIT_DAYS[unit];
+};
+
+/** A number of days as "X years, Y months, Z days", leaving out the zeros. */
+export const describeValidity = (days: number): string => {
+  const years = Math.floor(days / 365);
+  const months = Math.floor((days % 365) / 30);
+  const rest = (days % 365) % 30;
+  const part = (n: number, unit: string) =>
+    n ? `${n} ${unit}${n === 1 ? "" : "s"}` : undefined;
+  return (
+    [part(years, "year"), part(months, "month"), part(rest, "day")]
+      .filter(Boolean)
+      .join(", ") || "0 days"
+  );
+};
+
+/** The validity the form holds, in days. */
+export const formValidityDays = (values: RootFormValues): number | undefined =>
+  values.validity === "other"
+    ? validityDaysOf(values.validityAmount, values.validityUnit)
+    : values.validity
+      ? Number(values.validity) * 365
+      : undefined;
+
 export interface RootFormValues {
   keyFamily?: KeyFamily;
   algorithm?: CaKeyAlgorithm;
-  validityDays?: number;
+  validity?: ValidityChoice;
+  validityAmount?: number;
+  validityUnit?: ValidityUnit;
   commonName?: string;
   purpose?: string;
   number?: number;
@@ -72,6 +137,7 @@ export interface RootFormValues {
 /** What the service builds by default, to leave out what was not changed. */
 export interface RootDefaults {
   algorithm: CaKeyAlgorithm;
+  validityDays: number;
   commonName: string;
   organization: string;
 }
@@ -126,6 +192,7 @@ export const rootRequestOf = (
     attributes[0].type === "O" &&
     attributes[0].value === defaults?.organization;
   const commonName = text(values.commonName);
+  const validityDays = formValidityDays(values);
   const subjectAttributes =
     defaults && !onlyTheOrganization ? attributes : undefined;
   return {
@@ -141,7 +208,10 @@ export const rootRequestOf = (
         ? commonName
         : undefined,
     subjectAttributes,
-    validityDays: values.validityDays ?? undefined,
+    validityDays:
+      validityDays !== undefined && validityDays !== defaults?.validityDays
+        ? validityDays
+        : undefined,
     algorithm:
       values.algorithm && values.algorithm !== defaults?.algorithm
         ? values.algorithm
