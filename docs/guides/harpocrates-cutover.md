@@ -4,9 +4,9 @@
 > replaces this cutover: production Harpocrates starts empty,
 > creates its own roots through the console (plan phase 5), and replaces
 > what XCA issued in a later migration (phase 8). Steps 1 and 2 below
-> (the stack, and initialising the signer) still apply until the console
-> does them; nothing from step 3 on is to be run. The guide is removed in
-> phase 5.
+> are now [the production guide](harpocrates-production.md)'s, the
+> console initialising the signer; nothing here is to be run. Kept for
+> the record, and for `scripts/dev-ca-import.sh`'s rehearsal.
 
 Followed once, on the Mac Mini, and recorded (at the end). It brings up
 the `harpocrates` stack, moves XCA's CAs, certificates and revocations into

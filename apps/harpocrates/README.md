@@ -14,7 +14,7 @@ In production they run as the `harpocrates` stack
 (`infra/docker/compose/harpocrates.yml`, [infra/docker](../../infra/docker/README.md#harpocrates)),
 brought up empty, with its roots created through the console
 ([ADR 0032](../../docs/decisions/0032-harpocrates-roots-and-migration.md);
-until then [the cutover guide](../../docs/guides/harpocrates-cutover.md)'s first two steps);
+[the production guide](../../docs/guides/harpocrates-production.md));
 issuing, revoking and OCSP is [the certificates guide](../../docs/guides/certificates.md),
 and SSH certificates [the SSH guide](../../docs/guides/ssh.md).
 
