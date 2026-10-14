@@ -34,6 +34,7 @@ import type {
   ImportCertificatesResponse,
   Issuer,
   IssuerTier,
+  KeyImportFormat,
   RevocationList,
   SkippedCertificate,
 } from "@/lib/api/types";
@@ -46,6 +47,7 @@ import {
 } from "@/lib/pem";
 import { commonName, shortCaName } from "@/lib/tree";
 import { ErrorAlert } from "../ErrorAlert";
+import { ImportKeyInput } from "../ImportKeyInput";
 import { PemInput } from "../PemInput";
 import styles from "./Roots.module.css";
 import { RecentSignInNotice } from "../RecentSignIn";
@@ -622,24 +624,36 @@ function ImportCrl({
   );
 }
 
+type CertificatesValues = {
+  mode: "record" | "key";
+  certificates?: string;
+  profileId?: string;
+  importFormat: KeyImportFormat;
+  keyData?: string;
+  passphrase?: string;
+  csr?: string;
+};
+
 /**
- * What a CA issued, as a record: one export or several files, each
- * certificate under the profile it would renew by. Those that are not
- * leaves, or whose CA is not here, are skipped and said why.
+ * What a CA issued: many as a record, one export or several files, each
+ * certificate under the profile it would renew by; or one with its key
+ * (and the CSR it came from), the key escrowed (ADR 0039), which a
+ * certificate already imported gains. Those that are not leaves, or whose
+ * CA is not here, are skipped and said why.
  */
 function ImportCertificates() {
-  const [form] = Form.useForm<{ profileId?: string; certificates?: string }>();
+  const [form] = Form.useForm<CertificatesValues>();
   const { mutate } = useSWRConfig();
   const { data: profiles } = useProfiles();
   const { isAdmin } = useCurrentUser();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const [answer, setAnswer] = useState<ImportCertificatesResponse>();
+  const mode = Form.useWatch("mode", form) ?? "record";
+  const importFormat = Form.useWatch("importFormat", form) ?? "pem";
+  const withKey = mode === "key";
 
-  const submit = async (values: {
-    profileId?: string;
-    certificates?: string;
-  }) => {
+  const submit = async (values: CertificatesValues) => {
     setBusy(true);
     setError(undefined);
     try {
@@ -648,12 +662,27 @@ function ImportCertificates() {
           body: {
             profileId: values.profileId!,
             certificates: [values.certificates!],
+            ...(withKey
+              ? {
+                  key: {
+                    format: values.importFormat,
+                    data: values.keyData!,
+                    passphrase: values.passphrase!,
+                  },
+                  csr: values.csr || undefined,
+                }
+              : {}),
           },
         }),
       );
       await mutate(REFRESHED);
       setAnswer(result);
-      form.setFieldsValue({ certificates: undefined });
+      form.setFieldsValue({
+        certificates: undefined,
+        keyData: undefined,
+        passphrase: undefined,
+        csr: undefined,
+      });
     } catch (caught) {
       setError(caught);
     } finally {
@@ -661,40 +690,127 @@ function ImportCertificates() {
     }
   };
 
+  const summary = !answer
+    ? ""
+    : answer.keyed.length
+      ? "The certificate already here gained its key, escrowed"
+      : withKey && answer.imported.length
+        ? "Imported with its key, escrowed"
+        : `Imported ${answer.imported.length}; skipped ${answer.skipped.length}`;
+
   return (
     <Flex vertical>
-      <Form
+      <Form<CertificatesValues>
         form={form}
         layout="vertical"
         className={`${styles.padded} ${styles.narrow}`}
         disabled={!isAdmin}
+        initialValues={{ mode: "record", importFormat: "pem" }}
+        onValuesChange={() => setAnswer(undefined)}
         onFinish={submit}
       >
-        <Form.Item
-          name="certificates"
-          label="The certificates"
-          extra="XCA: select them all → Export → PEM, one file; or drop several. CAs among them are skipped: import those as CAs."
-          rules={[{ required: true, message: "Drop, choose or paste them" }]}
-        >
-          <PemInput kind="certificates" rows={4} />
+        <Form.Item name="mode">
+          <Radio.Group
+            optionType="button"
+            options={[
+              { value: "record", label: "Many, as a record" },
+              { value: "key", label: "One, with its key" },
+            ]}
+          />
         </Form.Item>
+        {withKey ? (
+          <Form.Item
+            name="certificates"
+            label="The certificate"
+            extra="XCA: Certificates → the certificate → Export, PEM. One already imported as a record gains its key."
+            rules={[{ required: true, message: "Drop, choose or paste it" }]}
+          >
+            <PemInput kind="certificate" rows={4} />
+          </Form.Item>
+        ) : (
+          <Form.Item
+            name="certificates"
+            label="The certificates"
+            extra="XCA: select them all → Export → PEM, one file; or drop several. CAs among them are skipped: import those as CAs."
+            rules={[{ required: true, message: "Drop, choose or paste them" }]}
+          >
+            <PemInput kind="certificates" rows={4} />
+          </Form.Item>
+        )}
+        {withKey && (
+          <>
+            <Form.Item name="importFormat" label="Its key">
+              <Radio.Group
+                options={[
+                  { value: "pem", label: "Encrypted PKCS#8 (PEM)" },
+                  { value: "pkcs12", label: "PKCS#12 (.p12, .pfx)" },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="keyData"
+              extra={
+                importFormat === "pkcs12"
+                  ? "XCA: Certificates → the certificate → Export, PKCS#12. Only its key is used; it goes to the signer, escrowed."
+                  : "XCA: Private keys → the key → Export, PKCS#8 encrypted. It goes to the signer, escrowed."
+              }
+              rules={[
+                { required: true, message: "Bring the key" },
+                ...(importFormat === "pem"
+                  ? [
+                      {
+                        pattern: /-----BEGIN ENCRYPTED PRIVATE KEY-----/,
+                        message: "An encrypted PKCS#8 key",
+                      },
+                    ]
+                  : []),
+              ]}
+            >
+              <ImportKeyInput format={importFormat} />
+            </Form.Item>
+            <Form.Item
+              name="passphrase"
+              label="The key's password"
+              extra="Used once to read it, never kept"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Input.Password autoComplete="off" />
+            </Form.Item>
+            <Form.Item
+              name="csr"
+              label="Its CSR"
+              extra="Optional. XCA: Certificate signing requests → Export, PEM. It must be signed by the key."
+            >
+              <PemInput kind="csr" rows={3} />
+            </Form.Item>
+          </>
+        )}
         <Form.Item
           name="profileId"
           label="Taken as issued under"
-          extra="Renewing one later follows this profile, from its CA in the new hierarchy. Split an export whose certificates renew differently."
+          extra={
+            withKey
+              ? "Renewing it later follows this profile, from its CA in the new hierarchy. Its keys must be the signer's to hold: not a CSR-only profile."
+              : "Renewing one later follows this profile, from its CA in the new hierarchy. Split an export whose certificates renew differently."
+          }
           rules={[{ required: true, message: "A profile" }]}
         >
           <Select
             showSearch
             placeholder="A profile"
             options={(profiles ?? [])
-              .filter((p) => !p.ssh)
+              .filter((p) => !p.ssh && (!withKey || p.allowGenerated))
               .map((p) => ({ value: p.id, label: p.id }))}
           />
         </Form.Item>
-        <ErrorAlert error={error} title="They could not be imported" />
+        <ErrorAlert
+          error={error}
+          title={
+            withKey ? "It could not be imported" : "They could not be imported"
+          }
+        />
         <Button type="primary" htmlType="submit" loading={busy}>
-          Import the certificates
+          {withKey ? "Import it with its key" : "Import the certificates"}
         </Button>
       </Form>
       {answer && (
@@ -703,7 +819,7 @@ function ImportCertificates() {
             type={answer.skipped.length ? "warning" : "success"}
             showIcon
             banner
-            title={`Imported ${answer.imported.length}; skipped ${answer.skipped.length}`}
+            title={summary}
           />
           {answer.skipped.length > 0 && (
             <Table<SkippedCertificate>

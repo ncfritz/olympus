@@ -711,7 +711,7 @@ export interface paths {
     put?: never;
     /**
      * Imports certificates another CA product issued
-     * @description Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name.
+     * @description Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name. With a key (ADR 0039), the certificate it belongs to is imported with it, escrowed in the signer, and with its CSR if one is given; a certificate already imported gains them.
      */
     post: operations["ImportCertificates"];
     delete?: never;
@@ -2436,6 +2436,10 @@ export interface components {
       profileId: string;
       /** @description The certificates, PEM; each item may hold several (an XCA export) */
       certificates: string[];
+      /** @description The private key of one of them, escrowed in the signer (ADR 0039); a certificate already imported gains it */
+      key?: components["schemas"]["ImportedKey"];
+      /** @description The CSR that certificate was issued from, PEM; only with its key, and signed by it */
+      csr?: string;
     };
     SkippedCertificate: {
       /** @description Its subject, RFC 4514, if it could be read */
@@ -2450,6 +2454,8 @@ export interface components {
       imported: components["schemas"]["Certificate"][];
       /** @description Those passed over: already imported, CAs, keys of CAs, or signed by no CA here */
       skipped: components["schemas"]["SkippedCertificate"][];
+      /** @description Certificates already imported that gained their key (and CSR) from this import */
+      keyed: components["schemas"]["Certificate"][];
     };
     /**
      * @description The usage
@@ -6563,7 +6569,7 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    /** @description The profile, and the certificates as PEM. */
+    /** @description The profile, the certificates as PEM, and optionally one's key and CSR. */
     requestBody: {
       content: {
         "application/json": components["schemas"]["ImportCertificatesRequest"];
@@ -6608,6 +6614,33 @@ export interface operations {
       };
       /** @description The entity with the specified identifiers was not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
         headers: {
           [name: string]: unknown;
         };
