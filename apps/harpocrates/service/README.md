@@ -499,12 +499,15 @@ import-issuer --id <slug> --tier <root|intermediate|issuing> --number <n> --gene
               [--key <encrypted PKCS#8> [--passphrase-file <file>]] [--closed]
 import-crl --issuer <slug> --crl <file>   # PEM or DER
 import-certificates --profile <id> --file <PEM bundle or DER>...
+              [--key <encrypted PKCS#8 or .p12> [--passphrase-file <file>] [--csr <file>]]
 export-key --certificate <id> --format <pem|pkcs12|pkcs12-legacy> --reason <text> --out <file>
 ceremony --issuer <slug> --key <encrypted PKCS#8> [--plan <JSON>] [--crl] [--remove-key]
 ```
 
 `import-issuer --closed` imports an issuing CA that signs its lists and
-nothing new. A passphrase not given with `--passphrase-file` is asked for
+nothing new. `import-certificates --key` brings the key of one of the
+certificates, escrowed in the signer, and with `--csr` the CSR it was
+issued from (ADR 0039); a certificate already imported gains them. A passphrase not given with `--passphrase-file` is asked for
 on the terminal, never taken as an argument. `ceremony` opens the offline
 CA's key in the signer, creates the issuing CAs its plan lists
 (`../ceremonies`), signs its list with `--crl`, and closes whatever

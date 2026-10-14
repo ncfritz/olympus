@@ -17,6 +17,8 @@
  *         [--max-validity-days <days>] [--eku <oid>]...
  *         [--key <encrypted PKCS#8 file> --passphrase-file <file>] [--closed]
  *   import-certificates --profile <id> --file <PEM bundle or DER>...
+ *         [--key <encrypted PKCS#8 or .p12 file> --passphrase-file <file>
+ *          [--csr <file>]]
  *   import-crl --issuer <slug> --crl <file, PEM or DER>
  *   export-key --certificate <id> --format <pem|pkcs12|pkcs12-legacy>
  *         --reason <text> --out <file> [--passphrase-file <file>]
@@ -162,7 +164,7 @@ const required = (options: Options, name: string): string => {
   return value;
 };
 
-const USAGE = `usage: cli.js status | issue --profile <id> --cn <name> [...] | revoke --certificate <id> --reason <reason> | audit-verify | crls | import-issuer --id <slug> --tier <tier> [...] | import-certificates --profile <id> --file <file>... | import-crl --issuer <slug> --crl <file> | export-key --certificate <id> --format <format> --reason <text> --out <file> | ceremony --issuer <slug> --key <file> [--plan <file>] [--crl]`;
+const USAGE = `usage: cli.js status | issue --profile <id> --cn <name> [...] | revoke --certificate <id> --reason <reason> | audit-verify | crls | import-issuer --id <slug> --tier <tier> [...] | import-certificates --profile <id> --file <file>... [--key <file> [--csr <file>]] | import-crl --issuer <slug> --crl <file> | export-key --certificate <id> --format <format> --reason <text> --out <file> | ceremony --issuer <slug> --key <file> [--plan <file>] [--crl]`;
 
 const integerOption = (options: Options, name: string, fallback?: number) => {
   const raw = one(options, name);
@@ -303,6 +305,12 @@ async function main(args: string[]): Promise<number> {
       case "import-certificates": {
         const files = options.file ?? [];
         if (files.length === 0) throw new Error("--file is required");
+        const keyFile = one(options, "key");
+        const csrFile = one(options, "csr");
+        if (csrFile && !keyFile) throw new Error("--csr comes with its --key");
+        // A key in PEM is encrypted PKCS#8; anything else, PKCS#12.
+        const keyData = keyFile ? fs.readFileSync(keyFile) : undefined;
+        const keyIsPem = keyData?.includes("-----BEGIN") ?? false;
         const result = await app
           .get(CertificateImportService)
           .import(principal, {
@@ -313,6 +321,19 @@ async function main(args: string[]): Promise<number> {
                 ? data.toString("utf8")
                 : toPem(data, "CERTIFICATE");
             }),
+            key: keyData
+              ? {
+                  format: keyIsPem ? "pem" : "pkcs12",
+                  data: keyIsPem
+                    ? keyData.toString("utf8")
+                    : keyData.toString("base64"),
+                  passphrase: await passphraseFor(
+                    options,
+                    "The key's passphrase",
+                  ),
+                }
+              : undefined,
+            csr: csrFile ? fs.readFileSync(csrFile, "utf8") : undefined,
           });
         for (const certificate of result.imported) {
           console.log(
@@ -324,8 +345,13 @@ async function main(args: string[]): Promise<number> {
             `skipped ${skipped.serial ?? "?"} ${skipped.subject ?? ""}: ${skipped.reason}`,
           );
         }
+        for (const certificate of result.keyed) {
+          console.log(
+            `key escrowed for ${certificate.issuerId} ${certificate.serial} ${certificate.subject}`,
+          );
+        }
         console.error(
-          `${result.imported.length} imported, ${result.skipped.length} skipped`,
+          `${result.imported.length} imported, ${result.keyed.length} gained their key, ${result.skipped.length} skipped`,
         );
         return 0;
       }

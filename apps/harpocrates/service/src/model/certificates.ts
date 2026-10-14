@@ -506,6 +506,28 @@ export class ImportCertificatesRequest {
   @ArrayNotEmpty()
   @IsString({ each: true })
   certificates: string[];
+
+  @ApiProperty({
+    type: () => ImportedKey,
+    required: false,
+    description:
+      "The private key of one of them, escrowed in the signer (ADR 0039); a certificate already imported gains it",
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ImportedKey)
+  key?: ImportedKey;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The CSR that certificate was issued from, PEM; only with its key, and signed by it",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  csr?: string;
 }
 
 export class RenewCertificateRequest {
@@ -767,6 +789,15 @@ export class ImportCertificatesResponse {
       "Those passed over: already imported, CAs, keys of CAs, or signed by no CA here",
   })
   skipped: SkippedCertificate[];
+
+  @ApiProperty({
+    type: () => Certificate,
+    isArray: true,
+    required: true,
+    description:
+      "Certificates already imported that gained their key (and CSR) from this import",
+  })
+  keyed: Certificate[];
 }
 
 export class ListCertificatesResponse extends PaginatedResults {

@@ -35,6 +35,7 @@ import type {
   OfflineCaResponse,
   PreviewCertificateRequest,
   PreviewSshCertificateRequest,
+  PublicKeyResponse,
   RegisterSshCaRequest,
   ResponderResponse,
   ResponderSpec,
@@ -147,6 +148,20 @@ export class SignerService {
       signer.importKey({
         client: this.client,
         body: { purpose, privateKey, passphrase, format },
+      }),
+    );
+  }
+
+  /** A brought key's type and public key, read and not kept. */
+  readKey(
+    privateKey: string,
+    passphrase: string,
+    format: ImportFormat = "pem",
+  ): Promise<PublicKeyResponse> {
+    return this.call(() =>
+      signer.readKey({
+        client: this.client,
+        body: { privateKey, passphrase, format },
       }),
     );
   }

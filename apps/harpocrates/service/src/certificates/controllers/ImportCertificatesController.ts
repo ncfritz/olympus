@@ -27,7 +27,7 @@ export class ImportCertificatesController {
   @ApiOperation({
     summary: "Imports certificates another CA product issued",
     description:
-      "Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name.",
+      "Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name. With a key (ADR 0039), the certificate it belongs to is imported with it, escrowed in the signer, and with its CSR if one is given; a certificate already imported gains them.",
     operationId: "ImportCertificates",
     tags: ["Certificates"],
   })
@@ -36,13 +36,21 @@ export class ImportCertificatesController {
   @ApiBody({
     type: ImportCertificatesRequest,
     required: true,
-    description: "The profile, and the certificates as PEM.",
+    description:
+      "The profile, the certificates as PEM, and optionally one's key and CSR.",
   })
   @ApiOkResponse({
     description: "What was imported and what was passed over.",
     type: ImportCertificatesResponse,
   })
-  @ApiStandardErrorResponses({ include: [HttpStatus.FORBIDDEN] })
+  @ApiStandardErrorResponses({
+    include: [
+      HttpStatus.FORBIDDEN,
+      HttpStatus.CONFLICT,
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      HttpStatus.SERVICE_UNAVAILABLE,
+    ],
+  })
   @AdminOnly()
   async handle(
     @Body() request: ImportCertificatesRequest,

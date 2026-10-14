@@ -1,6 +1,6 @@
 import * as x509 from "@peculiar/x509";
 import { execFileSync } from "child_process";
-import { webcrypto } from "crypto";
+import { createPrivateKey, webcrypto } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import request from "supertest";
@@ -314,6 +314,139 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
         .send({ profileId: "service", certificates: ["x"] })
         .expect(403);
     });
+
+    describe("with their keys and CSRs (ADR 0039)", () => {
+      const PASSPHRASE = "bring me";
+      /** An agent's key, as XCA exports it: encrypted PKCS#8. */
+      const pkcs8 = (name: string) => ({
+        format: "pem",
+        data: createPrivateKey(read(CERTS, "agents", `${name}.key`))
+          .export({
+            type: "pkcs8",
+            format: "pem",
+            cipher: "aes-256-cbc",
+            passphrase: PASSPHRASE,
+          })
+          .toString(),
+        passphrase: PASSPHRASE,
+      });
+      const send = (body: object) =>
+        request(server())
+          .post("/v1/certificates/import")
+          .set("Authorization", harness.admin)
+          .send({ profileId: "service", ...body });
+      const certificate = (name: string) =>
+        read(CERTS, "agents", `${name}.crt`);
+      const csr = (name: string) => read(CA, `${name}.csr`);
+      const escrowed = async (name: string) =>
+        harness.prisma.key.findUniqueOrThrow({
+          where: {
+            spkiSha256: (
+              await harness.prisma.certificate.findFirstOrThrow({
+                where: { serial: parseCertificate(certificate(name)).serial },
+                include: { enrollment: { include: { key: true } } },
+              })
+            ).enrollment!.key.spkiSha256,
+          },
+          include: { enrollment: true },
+        });
+
+      it("refuses a CSR without its key, and a key under a CSR-only profile", async () => {
+        await send({
+          certificates: [certificate("dionysus-search-agent")],
+          csr: csr("dionysus-search-agent"),
+        }).expect(422);
+        await send({
+          profileId: "code-signing",
+          certificates: [certificate("dionysus-search-agent")],
+          key: pkcs8("dionysus-search-agent"),
+        }).expect(422);
+      });
+
+      it("refuses, keeping nothing, a key none of the certificates have, or another key's CSR", async () => {
+        const none = await send({
+          certificates: [certificate("minerva-mail-ml")],
+          key: pkcs8("dionysus-search-agent"),
+        }).expect(422);
+        expect(String(none.body.message)).toMatch(/none of these/);
+        await send({
+          certificates: [certificate("dionysus-search-agent")],
+          key: pkcs8("dionysus-search-agent"),
+          csr: csr("dionysus-metadata-agent"),
+        }).expect(422);
+        await send({
+          certificates: [certificate("dionysus-search-agent")],
+          key: { ...pkcs8("dionysus-search-agent"), passphrase: "not it" },
+        }).expect(400);
+        // Nothing was recorded, and the signer kept nothing (it would
+        // refuse the key below if it had).
+        expect((await escrowed("dionysus-search-agent")).location).toBe(
+          "subscriber",
+        );
+        expect(
+          await harness.prisma.certificate.count({
+            where: {
+              serial: parseCertificate(certificate("minerva-mail-ml")).serial,
+            },
+          }),
+        ).toBe(0);
+      });
+
+      it("gives a certificate imported as a record its key and CSR, escrowed", async () => {
+        const answer = (
+          await send({
+            certificates: [certificate("dionysus-search-agent")],
+            key: pkcs8("dionysus-search-agent"),
+            csr: csr("dionysus-search-agent"),
+          }).expect(200)
+        ).body as Imported & { keyed: Imported["imported"] };
+        expect(answer.imported).toEqual([]);
+        expect(answer.skipped).toEqual([]);
+        expect(answer.keyed).toEqual([
+          expect.objectContaining({ keyLocation: "signer" }),
+        ]);
+        const key = await escrowed("dionysus-search-agent");
+        expect(key).toMatchObject({ location: "signer", exportOnce: false });
+        expect(key.signerKeyId).toBeTruthy();
+        expect(Buffer.from(key.enrollment!.csr!).toString("utf8")).toBe(
+          csr("dionysus-search-agent"),
+        );
+        expect(
+          await harness.prisma.auditEvent.count({
+            where: { kind: "key.imported", subjectId: key.id },
+          }),
+        ).toBe(1);
+
+        const again = (
+          await send({
+            certificates: [certificate("dionysus-search-agent")],
+            key: pkcs8("dionysus-search-agent"),
+          }).expect(200)
+        ).body as Imported;
+        expect(again.skipped[0].reason).toMatch(/already escrowed/);
+      });
+
+      it("imports a new certificate with its key from a PKCS#12 file", async () => {
+        const answer = (
+          await send({
+            certificates: [certificate("minerva-mail-ml")],
+            key: {
+              format: "pkcs12",
+              data: fs
+                .readFileSync(path.join(CERTS, "agents", "minerva-mail-ml.p12"))
+                .toString("base64"),
+              passphrase: "olympus",
+            },
+          }).expect(200)
+        ).body as Imported;
+        expect(answer.imported).toEqual([
+          expect.objectContaining({ keyLocation: "signer" }),
+        ]);
+        expect((await escrowed("minerva-mail-ml")).enrollment?.mode).toBe(
+          "imported",
+        );
+      });
+    });
   });
 
   describe("their last lists", () => {
@@ -459,8 +592,9 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
       const kinds = (
         await harness.prisma.auditEvent.findMany({ select: { kind: true } })
       ).map((e) => e.kind);
+      // 15 as a record, and one more with its key (ADR 0039).
       expect(kinds.filter((k) => k === "certificate.imported")).toHaveLength(
-        15,
+        16,
       );
       expect(kinds.filter((k) => k === "issuer.imported")).toHaveLength(7);
       const verification = await request(server())

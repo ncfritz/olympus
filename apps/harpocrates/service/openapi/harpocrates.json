@@ -3372,12 +3372,12 @@
     },
     "/v1/certificates/import": {
       "post": {
-        "description": "Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name.",
+        "description": "Records certificates XCA issued, each under the CA here that signed it, with its serial, dates and key, as issued under the named profile. Already imported ones, CAs, CA keys and certificates no CA here signed are passed over and listed. Import the CAs first, and their last revocation lists after, which revoke what they name. With a key (ADR 0039), the certificate it belongs to is imported with it, escrowed in the signer, and with its CSR if one is given; a certificate already imported gains them.",
         "operationId": "ImportCertificates",
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "The profile, and the certificates as PEM.",
+          "description": "The profile, the certificates as PEM, and optionally one's key and CSR.",
           "content": {
             "application/json": {
               "schema": {
@@ -3429,6 +3429,36 @@
           },
           "404": {
             "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -9488,6 +9518,18 @@
             "items": {
               "type": "string"
             }
+          },
+          "key": {
+            "description": "The private key of one of them, escrowed in the signer (ADR 0039); a certificate already imported gains it",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImportedKey"
+              }
+            ]
+          },
+          "csr": {
+            "type": "string",
+            "description": "The CSR that certificate was issued from, PEM; only with its key, and signed by it"
           }
         },
         "required": [
@@ -9531,11 +9573,19 @@
             "items": {
               "$ref": "#/components/schemas/SkippedCertificate"
             }
+          },
+          "keyed": {
+            "description": "Certificates already imported that gained their key (and CSR) from this import",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Certificate"
+            }
           }
         },
         "required": [
           "imported",
-          "skipped"
+          "skipped",
+          "keyed"
         ]
       },
       "KeyUsage": {
