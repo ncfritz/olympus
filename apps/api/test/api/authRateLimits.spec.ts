@@ -37,8 +37,13 @@ describe("the auth endpoints' rate limits", () => {
     expect(over.status).toBe(429);
     // What a client can act on, and the reason a 429 is the answer here
     // rather than an OAuth error: every HTTP client already understands it.
-    expect(over.headers["retry-after"]).toBe(
-      String(AUTH_LIMITS.beginSignIn.windowSeconds),
+    // Counted from the first request in the window, so a slow run sees a
+    // second or two less than the whole window; never more, never none.
+    const retryAfter = Number(over.headers["retry-after"]);
+    expect(Number.isInteger(retryAfter)).toBe(true);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(
+      AUTH_LIMITS.beginSignIn.windowSeconds,
     );
   });
 
