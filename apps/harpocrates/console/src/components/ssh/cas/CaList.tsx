@@ -1,4 +1,4 @@
-import { RightOutlined } from "@ant-design/icons";
+import { ExpandCaret } from "@ncfritz/olympus-console";
 import { Flex, Table, Tag, Typography } from "antd";
 import type { CSSProperties } from "react";
 import type {
@@ -89,18 +89,11 @@ export function CaList({
       expandable={{
         expandRowByClick: true,
         expandIcon: ({ expanded, onExpand, record }) => (
-          <button
-            type="button"
-            className={`${styles.caret} ${expanded ? styles.caretOpen : ""}`}
-            aria-label={`${expanded ? "Close" : "Open"} ${record.name}`}
-            aria-expanded={expanded}
-            onClick={(e) => {
-              e.stopPropagation();
-              onExpand(record, e);
-            }}
-          >
-            <RightOutlined />
-          </button>
+          <ExpandCaret
+            expanded={expanded}
+            label={record.name}
+            onToggle={(event) => onExpand(record, event)}
+          />
         ),
         expandedRowClassName: () => styles.expandedRow,
         expandedRowRender: (ca) => (

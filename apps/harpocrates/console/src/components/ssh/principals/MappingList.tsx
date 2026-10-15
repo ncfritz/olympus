@@ -1,4 +1,5 @@
-import { PlusOutlined, RightOutlined } from "@ant-design/icons";
+import { ExpandCaret } from "@ncfritz/olympus-console";
+import { PlusOutlined } from "@ant-design/icons";
 import {
   Button,
   Flex,
@@ -206,18 +207,11 @@ export function MappingList({
             onExpand: (expanded, r) => setOpen(expanded ? [r.identity] : []),
             expandedRowClassName: () => styles.expandedRow,
             expandIcon: ({ expanded, onExpand, record }) => (
-              <button
-                type="button"
-                className={`${styles.caret} ${expanded ? styles.caretOpen : ""}`}
-                aria-label={`${expanded ? "Close" : "Open"} ${record.identity}`}
-                aria-expanded={expanded}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExpand(record, e);
-                }}
-              >
-                <RightOutlined />
-              </button>
+              <ExpandCaret
+                expanded={expanded}
+                label={record.identity}
+                onToggle={(event) => onExpand(record, event)}
+              />
             ),
             expandedRowRender: (r) => (
               <Certificates

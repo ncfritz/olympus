@@ -1,6 +1,7 @@
 "use client";
 
-import { ConfigProvider, theme as antdTheme } from "antd";
+import { ConfigProvider, theme as antdTheme, type TableProps } from "antd";
+import { ExpandCaret, PanelCaret } from "../shell/ExpandCaret";
 import {
   createContext,
   useContext,
@@ -53,6 +54,28 @@ const useSystemPrefersDark = (): boolean => {
  * control host shares one origin, so choosing dark in one is choosing it
  * for the suite.
  */
+/** A table row's expander, where the row expands at all. */
+type TableExpandIcon = NonNullable<
+  NonNullable<TableProps["expandable"]>["expandIcon"]
+>;
+
+const tableExpandIcon: TableExpandIcon = ({
+  expanded,
+  expandable,
+  onExpand,
+  record,
+}) =>
+  expandable ? (
+    <ExpandCaret
+      expanded={expanded}
+      onToggle={(event) => onExpand(record, event)}
+    />
+  ) : null;
+
+const collapseExpandIcon = ({ isActive }: { isActive?: boolean }) => (
+  <PanelCaret isActive={isActive} />
+);
+
 export const ThemeModeProvider = ({ children }: { children: ReactNode }) => {
   const [mode, setModeState] = useState<ThemeMode>(() =>
     typeof window === "undefined" ? defaultThemeMode() : loadThemeMode(),
@@ -93,6 +116,9 @@ export const ThemeModeProvider = ({ children }: { children: ReactNode }) => {
             Layout: { headerBg: "#001529", siderBg: "#001529" },
           },
         }}
+        // Every expander is a filled caret (a table row's, a panel's).
+        table={{ expandable: { expandIcon: tableExpandIcon } }}
+        collapse={{ expandIcon: collapseExpandIcon }}
       >
         {children}
       </ConfigProvider>

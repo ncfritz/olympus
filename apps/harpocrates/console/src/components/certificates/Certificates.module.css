@@ -6,6 +6,8 @@
 .page {
   display: flex;
   flex-direction: column;
+  /* As tall as the shell leaves (below its header, 64px, and breadcrumbs, 28px). */
+  min-height: calc(100vh - 92px);
 }
 
 .header.header {
@@ -23,6 +25,88 @@
 .tabs.tabs > :global(.ant-tabs-nav) {
   margin-bottom: 0;
   padding-inline: 24px;
+}
+
+/*
+ * Each tab's list takes the height the rest of the page leaves (at least
+ * enough for a few rows; shorter, the page scrolls instead): its rows
+ * scroll beneath its header, and its pagination stays at the page's
+ * foot. antd 6.6 calls each pane .ant-tabs-content.
+ */
+.tabs.tabs {
+  flex: 1 1 0;
+}
+
+.tabs :global(.ant-tabs-body-holder),
+.tabs :global(.ant-tabs-body),
+.tabs :global(.ant-tabs-content-active) {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill.fill {
+  flex: 1 1 0;
+}
+
+.fill > :global(.ant-table-wrapper) {
+  flex: 1 1 0;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill > :global(.ant-table-wrapper > .ant-spin),
+.fill > :global(.ant-table-wrapper .ant-spin-container),
+.fill > :global(.ant-table-wrapper .ant-table),
+.fill > :global(.ant-table-wrapper .ant-table-container) {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill > :global(.ant-table-wrapper .ant-table-content) {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto !important;
+}
+
+.fill :global(.ant-table-thead > tr > th) {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* A list's pagination at its foot, the table's or its own. */
+.fill > :global(.ant-table-wrapper .ant-table-pagination.ant-pagination),
+.pager.pager {
+  flex: none;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 8px 24px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
+/* A group's heading in the timeline: a row across its table. */
+.groupLine > :global(td.ant-table-cell) {
+  background: var(--ant-color-fill-quaternary);
+}
+
+.groupRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--ant-font-size-sm, 12px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ant-color-text-secondary);
+}
+
+/* The graphs' bodies fill their boxes, so the rings in a row line up. */
+.graphs > section > :last-child {
+  flex: 1 1 auto;
 }
 
 .small {

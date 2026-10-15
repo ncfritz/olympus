@@ -3,6 +3,7 @@ import {
   Card,
   Flex,
   Input,
+  Pagination,
   Segmented,
   Switch,
   Table,
@@ -11,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, type ReactNode, useMemo, useState } from "react";
 import type { CertificateLineage, Issuer } from "@/lib/api/types";
 import { RENEWERS } from "@/lib/dashboard";
 import { formatDate, REVOCATION_REASONS } from "@/lib/labels";
@@ -43,6 +44,15 @@ const RANGES = {
 type Range = keyof typeof RANGES;
 
 type GroupBy = "CA" | "Profile" | "Renewer" | "None";
+
+/** A page of the timeline holds this many certificates, besides its groups' headings. */
+const PAGE_SIZE = 50;
+
+/** A group's heading, as a row across the table. */
+type GroupRow = { kind: "group"; key: string; label: string; count: number };
+type Row = CertificateLineage | GroupRow;
+const isGroup = (row: Row): row is GroupRow =>
+  (row as GroupRow).kind === "group";
 
 /** A week's colour in the heat strip: how many expire in it. */
 const heatClass = (count: number) =>
@@ -76,6 +86,7 @@ export function LineageTimeline({
   const [groupBy, setGroupBy] = useState<GroupBy>("CA");
   const [ended, setEnded] = useState(false);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const names = useMemo(
     () => new Map(issuers.map((i) => [i.id, shortCaName(i)])),
     [issuers],
@@ -210,8 +221,59 @@ export function LineageTimeline({
     },
   ];
 
+  // One table: each group's heading a row across it, repeated on each page
+  // the group reaches, so the header stays and the rows scroll beneath it.
+  const ordered = [...groups.entries()].flatMap(([group, members]) =>
+    members.map((l) => ({ group, l })),
+  );
+  const pages = Math.max(1, Math.ceil(ordered.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const rows: Row[] = [];
+  let heading: string | undefined;
+  for (const { group, l } of ordered.slice(
+    (current - 1) * PAGE_SIZE,
+    current * PAGE_SIZE,
+  )) {
+    if (groupBy !== "None" && group !== heading) {
+      heading = group;
+      rows.push({
+        kind: "group",
+        key: `group:${group}`,
+        label: group,
+        count: groups.get(group)!.length,
+      });
+    }
+    rows.push(l);
+  }
+  const rowColumns: TableColumnsType<Row> = columns.map((column, index) => ({
+    key: column.key,
+    title: column.title as ReactNode,
+    width: column.width,
+    render: (value: unknown, row: Row, i: number) =>
+      isGroup(row)
+        ? index === 0 && (
+            <span className={styles.groupRow}>
+              {row.label}
+              <span>
+                {row.count} certificate{row.count === 1 ? "" : "s"}
+              </span>
+            </span>
+          )
+        : (
+            column as {
+              render: (
+                v: unknown,
+                l: CertificateLineage,
+                i: number,
+              ) => ReactNode;
+            }
+          ).render(value, row, i),
+    onCell: (row: Row) =>
+      isGroup(row) ? { colSpan: index === 0 ? columns.length : 0 } : {},
+  }));
+
   return (
-    <Flex vertical>
+    <Flex vertical className={styles.fill}>
       <div className={styles.heatRow}>
         <div>
           <Typography.Text strong>Expiring, by week</Typography.Text>
@@ -311,45 +373,42 @@ export function LineageTimeline({
           </span>
         </Flex>
       </Flex>
-      {[...groups.entries()].map(([group, rows], i) => (
-        <Fragment key={group}>
-          {groupBy !== "None" && (
-            <div className={styles.section}>
-              {group}
-              <span>
-                {rows.length} certificate{rows.length === 1 ? "" : "s"}
-              </span>
-            </div>
-          )}
-          <Table<CertificateLineage>
-            rowKey="lineageId"
-            size="small"
-            showHeader={i === 0}
-            dataSource={rows}
-            columns={columns}
-            pagination={false}
-            tableLayout="fixed"
-            scroll={{ x: 900 }}
-            className={styles.flushTable}
-            expandable={{
-              expandRowByClick: true,
-              expandedRowRender: (l) => (
-                <Chain lineage={l} names={names} onOpen={onOpen} />
-              ),
-            }}
-          />
-        </Fragment>
-      ))}
-      {groups.size === 0 && (
-        <Typography.Text type="secondary" className={styles.padded}>
-          No certificate matches.
-        </Typography.Text>
-      )}
-      {!ended && hidden > 0 && (
-        <div className={styles.section}>
-          Expired and revoked: {hidden}, hidden
-        </div>
-      )}
+      <Table<Row>
+        rowKey="key"
+        size="small"
+        dataSource={rows.map((row) =>
+          isGroup(row) ? row : { ...row, key: row.lineageId },
+        )}
+        columns={rowColumns}
+        pagination={false}
+        tableLayout="fixed"
+        scroll={{ x: 900 }}
+        className={styles.flushTable}
+        rowClassName={(row) => (isGroup(row) ? styles.groupLine : "")}
+        locale={{ emptyText: "No certificate matches" }}
+        expandable={{
+          expandRowByClick: true,
+          rowExpandable: (row) => !isGroup(row),
+          expandedRowRender: (row) =>
+            isGroup(row) ? null : (
+              <Chain lineage={row} names={names} onOpen={onOpen} />
+            ),
+        }}
+      />
+      <Pagination
+        className={styles.pager}
+        size="small"
+        current={current}
+        pageSize={PAGE_SIZE}
+        total={ordered.length}
+        showSizeChanger={false}
+        onChange={setPage}
+        showTotal={(total) =>
+          `${total} certificate${total === 1 ? "" : "s"}${
+            !ended && hidden > 0 ? `; ${hidden} expired or revoked, hidden` : ""
+          }`
+        }
+      />
     </Flex>
   );
 }

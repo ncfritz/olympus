@@ -129,8 +129,6 @@
   padding-inline-end: 24px !important;
 }
 
-
-
 /* A long value (an ID, a URL), a size down. */
 .small {
   font-size: var(--ant-font-size-sm, 12px);

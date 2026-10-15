@@ -1,4 +1,4 @@
-import { RightOutlined } from "@ant-design/icons";
+import { ExpandCaret } from "@ncfritz/olympus-console";
 import {
   Button,
   Flex,
@@ -167,18 +167,11 @@ export function CertificateList({
           onExpand: (expanded, c) => onOpen(expanded ? c.id : undefined),
           expandedRowClassName: () => styles.expandedRow,
           expandIcon: ({ expanded, onExpand, record }) => (
-            <button
-              type="button"
-              className={`${styles.caret} ${expanded ? styles.caretOpen : ""}`}
-              aria-label={`${expanded ? "Close" : "Open"} ${holderOf(record)}`}
-              aria-expanded={expanded}
-              onClick={(e) => {
-                e.stopPropagation();
-                onExpand(record, e);
-              }}
-            >
-              <RightOutlined />
-            </button>
+            <ExpandCaret
+              expanded={expanded}
+              label={holderOf(record)}
+              onToggle={(event) => onExpand(record, event)}
+            />
           ),
           expandedRowRender: (c) => (
             <Details

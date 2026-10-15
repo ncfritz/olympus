@@ -256,7 +256,7 @@ export function LineageList({
   ];
 
   return (
-    <Flex vertical>
+    <Flex vertical className={styles.fill}>
       <div className={styles.alerts}>
         {panel("Expiry", EXPIRY_BUCKETS)}
         {panel("Renewal", RENEWAL_BUCKETS)}
@@ -344,7 +344,12 @@ export function LineageList({
         className={styles.flushTable}
         tableLayout="fixed"
         scroll={{ x: 1000 }}
-        pagination={{ pageSize: 50, hideOnSinglePage: true }}
+        pagination={{
+          pageSize: 50,
+          size: "small",
+          showSizeChanger: false,
+          showTotal: (total) => `${total} certificate${total === 1 ? "" : "s"}`,
+        }}
         locale={{ emptyText: "No certificate matches" }}
         expandable={{
           expandRowByClick: true,
