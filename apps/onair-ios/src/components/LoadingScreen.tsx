@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors } from "../theme";
@@ -5,20 +6,30 @@ import { colors } from "../theme";
 /**
  * The ON AIR loading screen: a lit sign tilted across the screen, its ends
  * past both edges. Static for now; the flicker-on animation is phase 6.
+ *
+ * With `children` it is the backdrop for a choice instead of a wait (sign
+ * in, retry): the progress bar gives way to them.
  */
 export function LoadingScreen({
   message = "Syncing your calendars",
+  children,
 }: {
   message?: string;
+  children?: ReactNode;
 }) {
+  const waiting = children === undefined;
   return (
     <View
       style={styles.screen}
-      accessibilityRole="progressbar"
-      accessibilityLabel="Loading OnAir"
+      {...(waiting
+        ? {
+            accessibilityRole: "progressbar" as const,
+            accessibilityLabel: `Loading OnAir. ${message}`,
+          }
+        : {})}
     >
       <View style={styles.glow} />
-      <View style={styles.sign} importantForAccessibility="no-hide-descendants">
+      <View style={styles.sign} accessibilityElementsHidden>
         <View style={styles.signFace}>
           <Text style={styles.signText}>ON AIR</Text>
         </View>
@@ -31,9 +42,13 @@ export function LoadingScreen({
 
       <View style={styles.footer}>
         <Text style={styles.message}>{message}</Text>
-        <View style={styles.track}>
-          <View style={styles.progress} />
-        </View>
+        {waiting ? (
+          <View style={styles.track}>
+            <View style={styles.progress} />
+          </View>
+        ) : (
+          children
+        )}
       </View>
     </View>
   );

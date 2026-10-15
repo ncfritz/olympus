@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Pressable } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 
 import { LoadingScreen } from "../components/LoadingScreen";
 
@@ -11,7 +11,7 @@ import { LoadingScreen } from "../components/LoadingScreen";
 export default function LoadingPreview() {
   return (
     <Pressable
-      style={{ flex: 1 }}
+      style={styles.fill}
       onPress={() => router.back()}
       accessibilityHint="Closes the preview"
     >
@@ -19,3 +19,5 @@ export default function LoadingPreview() {
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({ fill: { flex: 1 } });

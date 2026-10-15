@@ -36,11 +36,18 @@ border ([authentication plan](../authentication/README.md), phase 6).
    modules with unit tests and the boundary guard. **Done 2026-10-14.**
 2. Sign-in through `packages/auth-flow` as `olympus-ios`; tokens in
    `expo-secure-store`; the root layout shows the loading screen while the
-   session and the first availability load.
-3. The `client-identity` Swift module, moved from `tools/auth-tester-mobile`
-   to a place both apps use, for the device certificate.
-4. API calls through `@ncfritz/olympus-client`, types from
-   `@ncfritz/olympus-sdk/minerva`.
+   Keychain is read and today loads, then the tabs or the sign-in screen
+   (`Stack.Protected`). A refused refresh or a 401 signs out; an API it
+   cannot reach keeps the session and offers Try again. `createSession`
+   moved from the mobile tester into `auth-flow` so both apps share it.
+   **Done 2026-10-14.**
+3. API calls through `@ncfritz/olympus-client`'s new `AvailabilityApi`,
+   types from `@ncfritz/olympus-sdk/minerva`. Now shows the current status
+   as the proof. **Done 2026-10-14.**
+4. The `client-identity` Swift module, moved from `tools/auth-tester-mobile`
+   to a place both apps use, for the device certificate. Needed once the
+   border is live; until then the app uses `olympus.internal.ncfritz.net`
+   on the LAN.
 
 ## Phase 2 — Screens
 

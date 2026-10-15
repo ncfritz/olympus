@@ -1,14 +1,15 @@
 import {
   checkReuseDetection,
+  createSession,
   type FormAnswer,
   oauthError,
   refreshTokens,
   type ReuseVerdict,
+  type Session,
 } from "@ncfritz/olympus-auth-flow";
 import { AuthApi, createOlympusClients } from "@ncfritz/olympus-client";
 import { type Answered, type Called, timed } from "./called";
 import { CLIENT_ID, formPoster } from "./signIn";
-import { createSession, type Session } from "./session";
 import type { SavedTokens } from "@ncfritz/olympus-auth-flow";
 
 export type { Called };

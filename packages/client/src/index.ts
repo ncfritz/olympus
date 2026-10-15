@@ -6,6 +6,7 @@ export * from "./dionysus/MediaSearchApi";
 export * from "./dionysus/MetadataApi";
 export * from "./dionysus/MetadataWorkflowApi";
 export * from "./filters";
+export * from "./minerva/AvailabilityApi";
 export * from "./minerva/MailApi";
 export * from "./olympus/AuthApi";
 export * from "./olympus/NotificationApi";
@@ -17,6 +18,7 @@ import { MediaApi } from "./dionysus/MediaApi";
 import { MediaSearchApi } from "./dionysus/MediaSearchApi";
 import { MetadataApi } from "./dionysus/MetadataApi";
 import { MetadataWorkflowApi } from "./dionysus/MetadataWorkflowApi";
+import { AvailabilityApi } from "./minerva/AvailabilityApi";
 import { MailApi } from "./minerva/MailApi";
 import { AuthApi } from "./olympus/AuthApi";
 import { NotificationApi } from "./olympus/NotificationApi";
@@ -25,6 +27,7 @@ import { WeatherApi } from "./olympus/WeatherApi";
 /** Every wrapper; each is constructed with the OlympusClients. */
 export const OLYMPUS_APIS = [
   AuthApi,
+  AvailabilityApi,
   ContentApi,
   JobApi,
   MailApi,

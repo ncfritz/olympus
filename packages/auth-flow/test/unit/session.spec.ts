@@ -1,6 +1,5 @@
-import type { IssuedTokens, SavedTokens } from "@ncfritz/olympus-auth-flow";
 import { describe, expect, it, vi } from "vitest";
-import { createSession } from "../../src/session";
+import { createSession, type IssuedTokens, type SavedTokens } from "../../src";
 
 const TOKENS: SavedTokens = {
   apiBaseUrl: "https://olympus.dev.ncfritz.net/api/v1",

@@ -1,10 +1,6 @@
-import {
-  afterIssue,
-  AuthFlowError,
-  expired,
-  type IssuedTokens,
-  type SavedTokens,
-} from "@ncfritz/olympus-auth-flow";
+import { AuthFlowError } from "./errors";
+import type { IssuedTokens } from "./oauth";
+import { afterIssue, expired, type SavedTokens } from "./tokens";
 
 /**
  * The tokens in force, in memory, with the Keychain written through.
@@ -15,7 +11,8 @@ import {
  * one -- and everything after that works from here.
  *
  * Nothing platform-specific is imported: persisting and refreshing are the
- * caller's, which is what lets this be tested.
+ * caller's, which is what lets this be tested and shared -- the mobile tester
+ * and the OnAir app hold their tokens through it.
  */
 export type Session = {
   /** What is held now, without touching the Keychain. */

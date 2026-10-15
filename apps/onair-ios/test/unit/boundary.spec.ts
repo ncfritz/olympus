@@ -10,7 +10,14 @@ import { describe, expect, it } from "vitest";
  * them would die on `Parse failure: Flow is not supported` rather than on
  * anything to do with the code (`docs/conventions/mobile.md`).
  */
-const PURE = ["status.ts", "theme.ts"];
+const PURE = [
+  "auth/failure.ts",
+  "auth/keys.ts",
+  "config.ts",
+  "status.ts",
+  "theme.ts",
+  "time.ts",
+];
 
 const source = (file: string): string =>
   fs.readFileSync(path.join(__dirname, "../../src", file), "utf8");
@@ -43,7 +50,11 @@ const reached = (file: string): string[] => {
 
 describe("the unit-tested modules", () => {
   it.each(PURE)("%s imports nothing off the device", (file: string) => {
-    expect(reached(file)).toEqual([]);
+    // The shared flow package is platform-free by construction, so importing
+    // it keeps a module pure (as in the mobile tester).
+    expect(
+      reached(file).filter((from) => from !== "@ncfritz/olympus-auth-flow"),
+    ).toEqual([]);
   });
 
   it("covers every module the specs import", () => {

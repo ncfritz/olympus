@@ -15,6 +15,17 @@ const ARGS: Record<string, unknown[]> = {
   listSessions: [],
   revokeSession: ["session-1"],
   signOut: [],
+  // AvailabilityApi
+  getAvailability: [
+    new Date(0),
+    new Date(1),
+    { timeZone: "America/Los_Angeles" },
+  ],
+  createAvailabilityBlock: [{ startTime: "a", endTime: "b", status: "busy" }],
+  updateAvailabilityBlock: ["block-1", { status: "free" }],
+  deleteAvailabilityBlock: ["block-1"],
+  setMeetingAvailability: ["meeting-1", "interruptable"],
+  clearMeetingAvailability: ["meeting-1"],
   // ContentApi
   createContentAsset: [{}],
   addContentAssetTagToAsset: ["asset-1", { name: "hls", type: "system" }],
