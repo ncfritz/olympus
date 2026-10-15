@@ -118,10 +118,12 @@ Each import is one certificate, in a dialog on the page it belongs to:
 - **An imported CA's page** imports its CSR while it has none, and
   XCA's newest revocation list until one has been imported (lists
   signed here do not take its place).
-- **An issuing CA's page** imports a certificate it signed ("Import
-  leaf"): the certificate, the profile it is taken as issued under, and
-  optionally its key (PKCS#8 or PKCS#12) with its password and, with
-  the key, its CSR. Only a certificate that CA signed is taken
+- **A CA's page** imports a certificate it signed (an issuing CA's,
+  or an imported CA's, whose hierarchy is free-form: ADR 0040) in the
+  same steps as a child CA: its key (PKCS#8 or PKCS#12 and password,
+  read by the signer first; may be skipped), its CSR (only with the key;
+  may be skipped), then the certificate and the profile it is taken as
+  issued under. Only a certificate that CA signed is taken
   (`issuerId`).
 - **The certificates list** imports the same way, from whichever CA
   here signed it.
