@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "OnAir",
+    "slug": "onair",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "olympus",
+    "platforms": ["ios"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "net.ncfritz.olympus.onair",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "plugins": ["expo-router"]
+  }
+}

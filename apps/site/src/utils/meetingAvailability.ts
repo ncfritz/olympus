@@ -4,6 +4,11 @@ import type {
   Meeting,
   MeetingAvailability,
 } from "@ncfritz/olympus-sdk/minerva";
+import {
+  LABELS,
+  levelOfCalendarStatus,
+  STATUSES,
+} from "@ncfritz/olympus-availability";
 import { type OnAirStatus, toOnAirStatus } from "./onair";
 
 /*
@@ -13,12 +18,8 @@ import { type OnAirStatus, toOnAirStatus } from "./onair";
  */
 
 /** The statuses a meeting or a block can be set to, in the picker's order. */
-export const OVERRIDE_STATUSES: { status: OnAirStatus; label: string }[] = [
-  { status: "dnd", label: "Do Not Disturb" },
-  { status: "interrupt", label: "Interruptable" },
-  { status: "free", label: "Free" },
-  { status: "clear", label: "Clear" },
-];
+export const OVERRIDE_STATUSES: { status: OnAirStatus; label: string }[] =
+  STATUSES.map((status) => ({ status, label: LABELS[status] }));
 
 /**
  * What the status filter sorts by: an override's status, or "default" for
@@ -42,19 +43,8 @@ export interface MeetingFilters {
  * A meeting's status with no override, as the API derives it
  * (`levelOfMeetingStatus`): shown until its availability has loaded.
  */
-export const defaultStatusOf = (status: string): OnAirStatus => {
-  switch (status) {
-    case "Free":
-      return "free";
-    case "Tentative":
-      return "interrupt";
-    case "OOF":
-    case "WorkingElsewhere":
-      return "clear";
-    default:
-      return "dnd";
-  }
-};
+export const defaultStatusOf = (status: string): OnAirStatus =>
+  toOnAirStatus(levelOfCalendarStatus(status));
 
 /** What a meeting's dot shows: its override, else its calendar's status. */
 export const dotStatusOf = (

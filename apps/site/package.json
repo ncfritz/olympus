@@ -68,6 +68,7 @@
     "@fullcalendar/timegrid": "^6.1.15",
     "@highcharts/map-collection": "^2.3.1",
     "@ncfritz/olympus-auth-flow": "workspace:*",
+    "@ncfritz/olympus-availability": "workspace:*",
     "@ncfritz/olympus-metrics": "workspace:*",
     "@ncfritz/olympus-sdk": "workspace:*",
     "@rc-component/collapse": "^1.2.0",

@@ -1,0 +1,10 @@
+{
+  "extends": "@ncfritz/olympus-config/tsconfig/library.json",
+  "compilerOptions": {
+    // The site (a browser) and the iPhone app (React Native) both run this,
+    // so it reaches for nothing either lacks.
+    "types": [],
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
+  }
+}

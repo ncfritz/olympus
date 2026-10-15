@@ -9,6 +9,7 @@ Deployable applications that serve HTTP or UI.
 | `site`        | olympus-site                 | not yet imported |
 | `desktop`     | olympus-app (Electron shell) | not yet imported |
 | `harpocrates` | —                            | in progress      |
+| `onair-ios`   | —                            | in progress      |
 
 `control` is the Olympus Control index (ADR 0021): the page at the root of
 the control host, listing the consoles it runs.
@@ -16,6 +17,9 @@ the control host, listing the consoles it runs.
 `harpocrates` is the internal certificate authority (ADR 0020): two
 packages in one directory, `service/` (NestJS) and `signer/` (Python),
 built and deployed together.
+
+`onair-ios` is OnAir for iPhone, an Expo app over Minerva availability
+(ADR 0029); see `docs/plans/onair-ios`.
 
 Minerva calendar sync (currently its own monorepo with `apps/api` and
 `apps/web`) will land here as well; its layout is an open item in
