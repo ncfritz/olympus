@@ -2,6 +2,7 @@ import * as x509 from "@peculiar/x509";
 import { execFileSync } from "child_process";
 import { createPrivateKey, webcrypto } from "crypto";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -230,6 +231,13 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
         .set("Authorization", harness.operator)
         .send({ csr: rootCsr })
         .expect(403);
+    });
+
+    it("gives an imported root no shape: what is beneath it is free-form (ADR 0040)", async () => {
+      const root = await harness.prisma.issuer.findUniqueOrThrow({
+        where: { id: "root-1-g1" },
+      });
+      expect(root.shape).toBeNull();
     });
 
     it("reads a key about to be imported without keeping it", async () => {
@@ -656,6 +664,58 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
         );
       });
 
+      it("takes a certificate an imported root signed directly", async () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "direct-"));
+        try {
+          const key = path.join(dir, "leaf.key");
+          const csrFile = path.join(dir, "leaf.csr");
+          const crt = path.join(dir, "leaf.crt");
+          execFileSync("openssl", [
+            "req",
+            "-new",
+            "-newkey",
+            "ec",
+            "-pkeyopt",
+            "ec_paramgen_curve:P-256",
+            "-nodes",
+            "-keyout",
+            key,
+            "-subj",
+            "/CN=direct-from-root",
+            "-out",
+            csrFile,
+          ]);
+          execFileSync("openssl", [
+            "x509",
+            "-req",
+            "-in",
+            csrFile,
+            "-CA",
+            path.join(CA, "root", "ca.crt"),
+            "-CAkey",
+            path.join(CA, "root", "ca.key"),
+            "-set_serial",
+            "0x5eed01",
+            "-days",
+            "30",
+            "-out",
+            crt,
+          ]);
+          const answer = (
+            await send({
+              issuerId: "root-1-g1",
+              certificates: [fs.readFileSync(crt, "utf8")],
+            }).expect(200)
+          ).body as Imported;
+          expect(answer.skipped).toEqual([]);
+          expect(answer.imported).toEqual([
+            expect.objectContaining({ issuerId: "root-1-g1" }),
+          ]);
+        } finally {
+          fs.rmSync(dir, { recursive: true, force: true });
+        }
+      });
+
       it("imports a new certificate with its key from a PKCS#12 file", async () => {
         const answer = (
           await send({
@@ -822,9 +882,10 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
       const kinds = (
         await harness.prisma.auditEvent.findMany({ select: { kind: true } })
       ).map((e) => e.kind);
-      // 15 as a record, and one more with its key (ADR 0039).
+      // 15 as a record, one more with its key (ADR 0039), and one the
+      // root signed directly (ADR 0040).
       expect(kinds.filter((k) => k === "certificate.imported")).toHaveLength(
-        16,
+        17,
       );
       expect(kinds.filter((k) => k === "issuer.imported")).toHaveLength(7);
       const verification = await request(server())

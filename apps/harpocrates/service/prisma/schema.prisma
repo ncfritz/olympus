@@ -79,7 +79,7 @@ model Issuer {
   /// O, and the start of the CN; null: the CA's configured organisation.
   /// Children take their root's (ADR 0032, Names and settings).
   organization           String?
-  /// A root's shape; null for the tiers below.
+  /// A root's shape; null for the tiers below and an imported root (ADR 0040).
   shape                  IssuerShape?
   /// When its key was first given back from the offline media and opened
   /// a ceremony: the backup is proved (ADR 0032, a new root).

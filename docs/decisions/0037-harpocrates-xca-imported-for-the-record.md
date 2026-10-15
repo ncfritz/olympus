@@ -1,6 +1,6 @@
 # 0037. Harpocrates: XCA's CAs imported, as a record and to revoke
 
-- **Status:** Accepted (amended by [0039](0039-harpocrates-xca-certificates-with-their-keys.md))
+- **Status:** Accepted (amended by [0039](0039-harpocrates-xca-certificates-with-their-keys.md), [0040](0040-harpocrates-imported-hierarchy-free-form.md))
 - **Date:** 2026-10-12; accepted 2026-10-12
 - **Amends:** [ADR 0032](0032-harpocrates-roots-and-migration.md) (No
   import from XCA in production; the migration from XCA, later)

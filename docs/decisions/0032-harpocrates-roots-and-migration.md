@@ -1,7 +1,9 @@
 # 0032. Harpocrates: new roots, three shapes, and a migration from XCA
 
 - **Status:** Accepted (amended by [0037](0037-harpocrates-xca-imported-for-the-record.md):
-  XCA's CAs may be imported, closed, as a record and to revoke them)
+  XCA's CAs may be imported, closed, as a record and to revoke them;
+  amended by [0040](0040-harpocrates-imported-hierarchy-free-form.md):
+  an imported root has no shape)
 - **Date:** 2026-10-09; accepted 2026-10-09
 - **Amends:** [ADR 0020](0020-internal-certificate-authority.md)
 

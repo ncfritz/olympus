@@ -40,13 +40,14 @@ Status values: **Proposed** (direction agreed, specifics still open),
 | [0029](0029-minerva-availability.md)                         | Availability per user in Minerva; the console signs in through Olympus     | Accepted                         |
 | [0030](0030-email-management.md)                             | Email management: a local label audit and suggestion engine over Gmail     | Accepted                         |
 | [0031](0031-control-stack-deployment-agents-and-releases.md) | Control in a stack of its own, deployment agents, and releases             | Proposed                         |
-| [0032](0032-harpocrates-roots-and-migration.md)              | Harpocrates: new roots, three shapes, and a migration from XCA             | Accepted (amended by 0037)       |
+| [0032](0032-harpocrates-roots-and-migration.md)              | Harpocrates: new roots, three shapes, and a migration from XCA             | Accepted (amended by 0037, 0040) |
 | [0033](0033-harpocrates-key-types-and-imported-keys.md)      | Harpocrates: the key type chosen at issuance, and keys brought in          | Accepted (amended by 0034, 0038) |
 | [0034](0034-harpocrates-profiles-versioned-presets.md)       | Harpocrates: profiles as versioned, editable presets                       | Accepted (amended by 0035–0036)  |
 | [0035](0035-harpocrates-ssh-certificates.md)                 | Harpocrates: SSH certificates                                              | Accepted                         |
 | [0036](0036-harpocrates-ocsp.md)                             | Harpocrates: OCSP                                                          | Accepted                         |
-| [0037](0037-harpocrates-xca-imported-for-the-record.md)      | Harpocrates: XCA's CAs imported, as a record and to revoke                 | Accepted (amended by 0039)       |
+| [0037](0037-harpocrates-xca-imported-for-the-record.md)      | Harpocrates: XCA's CAs imported, as a record and to revoke                 | Accepted (amended by 0039, 0040) |
 | [0038](0038-harpocrates-ca-key-types.md)                     | Harpocrates: the key types a CA may have                                   | Accepted                         |
 | [0039](0039-harpocrates-xca-certificates-with-their-keys.md) | Harpocrates: XCA's certificates imported with their keys and CSRs          | Accepted                         |
+| [0040](0040-harpocrates-imported-hierarchy-free-form.md)     | Harpocrates: an imported CA's hierarchy is free-form                       | Accepted                         |
 
 New records: copy [template.md](template.md), take the next number.

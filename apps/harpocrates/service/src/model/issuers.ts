@@ -124,7 +124,8 @@ export class Issuer {
   @ApiProperty({
     ...ISSUER_SHAPE_ENUM,
     required: false,
-    description: "A root's shape; absent below a root",
+    description:
+      "A root's shape; absent below a root and for an imported one, whose hierarchy is free-form (ADR 0040)",
   })
   shape?: IssuerShapeName;
 

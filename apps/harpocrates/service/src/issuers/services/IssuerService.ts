@@ -465,8 +465,10 @@ export class IssuerService {
   ): Promise<FullIssuer> {
     const certificate = parseCertificate(offline.certificatePem);
     const tier = offline.parts.tier as "root" | "intermediate";
+    // An imported root has no shape (ADR 0040): Harpocrates did not choose
+    // its hierarchy, so what is beneath it is taken as it comes.
     const shape =
-      tier === "root"
+      tier === "root" && offline.kind !== AuditKind.IssuerImported
         ? (offline.shape ?? shapeOfPathLength(certificate.pathLength))
         : undefined;
     await this.prisma.$transaction(async (tx) => {
