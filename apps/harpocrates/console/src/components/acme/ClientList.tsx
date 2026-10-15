@@ -225,7 +225,9 @@ export function ClientList({
         dataSource={shown}
         className={styles.flushTable}
         tableLayout="fixed"
-        scroll={{ x: 960 }}
+        // Wide enough for its columns; an empty list, whose placeholder
+        // would overflow it, is not.
+        scroll={shown.length ? { x: 960 } : undefined}
         locale={{
           emptyText:
             clients.length === 0

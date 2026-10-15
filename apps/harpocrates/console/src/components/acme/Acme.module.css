@@ -145,7 +145,7 @@
 /* The graphs: two boxes to a row, four where there is room. */
 .graphs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   border-bottom: 1px solid var(--ant-color-border-secondary);
 }
 
