@@ -403,6 +403,24 @@ export function IssuerPage() {
       width={PANEL_WIDTH}
       className={styles.page}
     >
+      {ceremonial && !issuer.provedAt && (
+        <Alert
+          type="info"
+          showIcon
+          banner
+          title="Prove the backup"
+          description="Bring its key back from the offline media and open a ceremony with it: until then, nothing shows the backup can be restored, and it signs nothing."
+          action={
+            <Button
+              size="small"
+              disabled={Boolean(signer?.ceremonyId) || !isAdmin}
+              onClick={() => setOpening(true)}
+            >
+              Prove the backup
+            </Button>
+          }
+        />
+      )}
       <Flex
         justify="space-between"
         align="center"
@@ -465,24 +483,6 @@ export function IssuerPage() {
           )}
         </Flex>
       </Flex>
-      {ceremonial && !issuer.provedAt && (
-        <Alert
-          type="info"
-          showIcon
-          banner
-          title="Prove the backup"
-          description="Bring its key back from the offline media and open a ceremony with it: until then, nothing shows the backup can be restored, and it signs nothing."
-          action={
-            <Button
-              size="small"
-              disabled={Boolean(signer?.ceremonyId) || !isAdmin}
-              onClick={() => setOpening(true)}
-            >
-              Prove the backup
-            </Button>
-          }
-        />
-      )}
       {issuer.offline && !discarded && <OpenCeremonyAlert />}
       {Boolean(error) && (
         <div className={styles.padded}>
