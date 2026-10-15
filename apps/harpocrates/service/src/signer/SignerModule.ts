@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { InitialiseSignerController } from "./controllers/InitialiseSignerController";
+import { ReadKeyController } from "./controllers/ReadKeyController";
 import { DescribeSignerStatusController } from "./controllers/DescribeSignerStatusController";
 import { SealSignerController } from "./controllers/SealSignerController";
 import { UnsealSignerController } from "./controllers/UnsealSignerController";
@@ -14,6 +15,7 @@ import { SignerService } from "./services/SignerService";
     SealSignerController,
     UnsealSignerController,
     InitialiseSignerController,
+    ReadKeyController,
   ],
   providers: [SignerService, SealService],
   exports: [SignerService],

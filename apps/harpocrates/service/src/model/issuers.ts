@@ -138,6 +138,13 @@ export class Issuer {
   @ApiTimestamp({
     required: false,
     description:
+      "An ISO-8601 formatted string: when it was imported from another CA product (XCA); absent for a CA made here",
+  })
+  importedAt?: Moment;
+
+  @ApiTimestamp({
+    required: false,
+    description:
       "An ISO-8601 formatted string: when a root that had signed nothing was discarded",
   })
   discardedAt?: Moment;
@@ -834,6 +841,27 @@ export class ListIssuersResponse {
     description: "Every CA, parents before children",
   })
   issuers: Issuer[];
+}
+
+export class AddIssuerCsrRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "The CSR its certificate was issued from, PEM: signed by the key it certifies (ADR 0039)",
+  })
+  @IsString()
+  @IsNotEmpty()
+  csr: string;
+}
+
+export class AddIssuerCsrResponse {
+  @ApiProperty({
+    type: () => FullIssuer,
+    required: true,
+    description: "The CA, its CSR kept",
+  })
+  issuer: FullIssuer;
 }
 
 export class DiscardIssuerResponse {

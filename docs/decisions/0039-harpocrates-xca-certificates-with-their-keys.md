@@ -81,13 +81,25 @@ there is one (`POST /issuers/import`, `csr`): refused unless it is
 signed by the key the certificate certifies, and kept as a CA created
 here keeps its own. An issuing CA still comes with its key (ADR 0037);
 a CA's CSR does not need one, since the certificate already names the
-key.
+key. A CA imported without its CSR is given it afterwards from its page
+(`POST /issuer/{id}/csr`), checked the same way, while it has none; a CA
+says when it was imported (`importedAt`), so its page offers this only
+for XCA's CAs.
+
+### Keys read before they are taken
+
+The signer refuses for good a key it has held, so a key is checked
+against its CSR and certificate before an import hands it over:
+`POST /keys/read` has the signer decrypt it and say its public key,
+keeping nothing. The console's import of a CA reads the key first and
+shows a key, CSR and certificate that do not match before anything is
+sent to be kept.
 
 ### Audited
 
 The key's import is audited (`key.imported`, with the certificate and
 its enrollment), as a key brought at issuance is; a CSR added alone, as
-`certificate.csr-added`.
+`certificate.csr-added` (`issuer.csr-added` for a CA's).
 
 ### The console
 
@@ -95,11 +107,16 @@ Each import is one certificate, in a dialog on the page it belongs to:
 
 - **The roots page** imports a root: its certificate, its ID, number
   and generation, and optionally its CSR.
-- **A root's or an intermediate's page** imports a CA beneath it, an
-  intermediate or an issuing CA, the same way; an issuing CA with its
-  key (encrypted PKCS#8) and password, its purpose, longest certificate,
-  extended key usages and whether it is closed. Its revocation list is
-  imported from its page too.
+- **A root's or an intermediate's page** imports a CA beneath it, in
+  steps: its key (encrypted PKCS#8 and password; skipped for an
+  intermediate, whose key stays offline, but an issuing CA's is
+  required), its CSR (optional), then its certificate, with its ID,
+  number, generation and tier, and for an issuing CA its purpose,
+  longest certificate, extended key usages and whether it is closed. A
+  key, CSR and certificate that do not belong together are shown as
+  such at the step that finds it.
+- **An imported CA's page** imports its CSR and its revocation list,
+  each while it has none.
 - **An issuing CA's page** imports a certificate it signed ("Import
   leaf"): the certificate, the profile it is taken as issued under, and
   optionally its key (PKCS#8 or PKCS#12) with its password and, with

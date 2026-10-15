@@ -494,6 +494,8 @@ export class IssuerService {
           maxValidityDays: offlineMaxValidityDays(tier, shape),
           organization: offline.organization,
           shape,
+          importedAt:
+            offline.kind === AuditKind.IssuerImported ? new Date() : undefined,
           csr: offline.csr ? bytes(offline.csr) : undefined,
           ...this.urlsFor(offline.id),
           nameConstraints: { create: offline.constraints ?? [] },
@@ -596,6 +598,51 @@ export class IssuerService {
     return this.describe(request.id);
   }
 
+  /**
+   * Keeps the CSR an imported CA's certificate was issued from, while it
+   * has none (ADR 0039): signed by the key its certificate certifies.
+   */
+  async addCsr(
+    principal: Principal,
+    issuerId: string,
+    pem: string,
+  ): Promise<FullIssuer> {
+    const row = await this.row(issuerId);
+    if (!row.importedAt) {
+      throw new UnprocessableEntityException(
+        "Only a CA imported from another CA product is given its CSR",
+      );
+    }
+    if (!row.certificate) {
+      throw new UnprocessableEntityException("The CA has no certificate yet");
+    }
+    if (row.csr) throw new ConflictException("It has its CSR already");
+    const csr = await this.importedCsr(
+      pem,
+      parseCertificate(certificatePem(row.certificate)).spki,
+    );
+    await this.prisma.$transaction(async (tx) => {
+      const kept = await tx.issuer.updateMany({
+        where: { id: issuerId, csr: null },
+        data: { csr: bytes(csr) },
+      });
+      if (kept.count === 0) {
+        throw new ConflictException("It has its CSR already");
+      }
+      await this.audit.record(
+        {
+          kind: AuditKind.IssuerCsrAdded,
+          principal,
+          subjectType: "issuer",
+          subjectId: issuerId,
+          attributes: { subject: row.subject },
+        },
+        tx,
+      );
+    });
+    return this.describe(issuerId);
+  }
+
   /** An imported CA's CSR, DER: signed by the key its certificate certifies. */
   private async importedCsr(pem: string, spki: Buffer): Promise<Buffer> {
     let csr;
@@ -679,6 +726,8 @@ export class IssuerService {
           pathLength: 0,
           maxValidityDays: issuing.maxValidityDays,
           organization: issuing.organization,
+          importedAt:
+            issuing.kind === AuditKind.IssuerImported ? new Date() : undefined,
           csr: issuing.csr ? bytes(issuing.csr) : undefined,
           ...this.urlsFor(issuing.id),
           extendedKeyUsages: {

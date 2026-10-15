@@ -86,6 +86,8 @@ model Issuer {
   provedAt               DateTime?    @map("proved_at")
   /// Discarded before it signed anything: never published, never reused.
   discardedAt            DateTime?    @map("discarded_at")
+  /// Imported from another CA product (XCA; ADR 0037).
+  importedAt             DateTime?    @map("imported_at")
   number                 Int
   generation             Int
   parentId               String?      @map("parent_id")

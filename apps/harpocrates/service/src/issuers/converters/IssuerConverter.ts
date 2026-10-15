@@ -70,6 +70,7 @@ export const toDomainObject = (row: IssuerWithRules): Issuer => ({
   organization: row.organization ?? undefined,
   shape: row.shape ?? undefined,
   provedAt: row.provedAt ? moment(row.provedAt) : undefined,
+  importedAt: row.importedAt ? moment(row.importedAt) : undefined,
   discardedAt: row.discardedAt ? moment(row.discardedAt) : undefined,
   number: row.number,
   generation: row.generation,

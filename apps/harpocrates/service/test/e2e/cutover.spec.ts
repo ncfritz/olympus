@@ -7,7 +7,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CrlScheduler } from "../../src/crls/services/CrlScheduler";
 import { parseCrl } from "../../src/pki/crl";
-import { OID, parseCertificate } from "../../src/pki/x509";
+import { OID, parseCertificate, spkiFromPem } from "../../src/pki/x509";
 import {
   E2E_DATABASE_URL,
   makeCsr,
@@ -194,6 +194,74 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
         where: { id: "signing-issuing-1-g1" },
       });
       expect(signing.status).toBe("closed");
+    });
+
+    it("gives an imported CA its CSR afterwards, its own only (ADR 0039)", async () => {
+      const root = await request(server())
+        .get("/v1/issuer/root-1-g1")
+        .set("Authorization", harness.admin)
+        .expect(200);
+      expect(root.body.issuer.importedAt).toBeDefined();
+      expect(root.body.issuer.csr).toBeUndefined();
+      const addCsr = (issuerId: string, csr: string) =>
+        request(server())
+          .post(`/v1/issuer/${issuerId}/csr`)
+          .set("Authorization", harness.admin)
+          .send({ csr });
+      // XCA made the root without one: one from its key stands in.
+      const rootCsr = execFileSync(
+        "openssl",
+        [
+          "req",
+          "-new",
+          "-key",
+          path.join(CA, "root", "ca.key"),
+          "-subj",
+          "/CN=Olympus Dev Root CA",
+        ],
+        { encoding: "utf8" },
+      );
+      await addCsr("root-1-g1", read(CA, "int-1", "ca.csr")).expect(422);
+      const added = await addCsr("root-1-g1", rootCsr).expect(200);
+      expect(added.body.issuer.csr).toMatch(/BEGIN CERTIFICATE REQUEST/);
+      await addCsr("root-1-g1", rootCsr).expect(409);
+      await request(server())
+        .post("/v1/issuer/root-1-g1/csr")
+        .set("Authorization", harness.operator)
+        .send({ csr: rootCsr })
+        .expect(403);
+    });
+
+    it("reads a key about to be imported without keeping it", async () => {
+      const key = {
+        format: "pem",
+        data: read(CERTS, "keys", "tls-issuing-1-g1.p8"),
+        passphrase: "olympus",
+      };
+      const answer = await request(server())
+        .post("/v1/keys/read")
+        .set("Authorization", harness.admin)
+        .send(key)
+        .expect(200);
+      const tls = await harness.prisma.issuer.findUniqueOrThrow({
+        where: { id: "tls-issuing-1-g1" },
+        include: { key: true },
+      });
+      expect(
+        Buffer.from(tls.key.publicKey).equals(
+          spkiFromPem(answer.body.publicKey as string),
+        ),
+      ).toBe(true);
+      await request(server())
+        .post("/v1/keys/read")
+        .set("Authorization", harness.admin)
+        .send({ ...key, passphrase: "not it" })
+        .expect(400);
+      await request(server())
+        .post("/v1/keys/read")
+        .set("Authorization", harness.operator)
+        .send(key)
+        .expect(403);
     });
 
     it("refuses to import an offline CA closed", async () => {

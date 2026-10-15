@@ -2,6 +2,7 @@
 export const AuditKind = {
   IssuerCreated: "issuer.created",
   IssuerImported: "issuer.imported",
+  IssuerCsrAdded: "issuer.csr-added",
   IssuerCompleted: "issuer.completed",
   IssuerDiscarded: "issuer.discarded",
   IssuerUpdated: "issuer.updated",

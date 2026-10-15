@@ -710,6 +710,95 @@
         ]
       }
     },
+    "/v1/keys/read": {
+      "post": {
+        "description": "Decrypts a key about to be imported (encrypted PKCS#8, or the key in a PKCS#12 file) and says its type and public key, keeping nothing (ADR 0039): so an import can check the key is its CSR's and certificate's before the signer takes it, since a key once taken is refused for good after.",
+        "operationId": "ReadKey",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The key and its passphrase.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportedKey"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Its type and public key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The signer is sealed or unreachable, or the Olympus API cannot be asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reads a key without keeping it",
+        "tags": [
+          "Signer"
+        ]
+      }
+    },
     "/v1/issuers": {
       "get": {
         "description": "Every CA, roots first, with its status, validity, issuing window and rules; the tree follows parentId.",
@@ -1298,6 +1387,115 @@
           }
         ],
         "summary": "Discards a root that has signed nothing",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
+    "/v1/issuer/{issuerId}/csr": {
+      "post": {
+        "description": "Keeps the CSR an imported CA's certificate was issued from, while it has none (ADR 0039). The CSR must be signed by the key its certificate certifies.",
+        "operationId": "AddIssuerCsr",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The CSR, PEM.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddIssuerCsrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The CA.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddIssuerCsrResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gives an imported CA its CSR",
         "tags": [
           "Issuers"
         ]
@@ -7304,6 +7502,57 @@
           "unsealKey"
         ]
       },
+      "KeyImportFormat": {
+        "type": "string",
+        "description": "What `data` is",
+        "enum": [
+          "pem",
+          "pkcs12"
+        ]
+      },
+      "ImportedKey": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "description": "What `data` is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KeyImportFormat"
+              }
+            ]
+          },
+          "data": {
+            "type": "string",
+            "description": "The key: encrypted PKCS#8 PEM, or a PKCS#12 file in base64 (only its key is used)"
+          },
+          "passphrase": {
+            "type": "string",
+            "description": "Its passphrase; used once, never kept"
+          }
+        },
+        "required": [
+          "format",
+          "data",
+          "passphrase"
+        ]
+      },
+      "ReadKeyResponse": {
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string",
+            "description": "Its type, e.g. P-256 or RSA-4096"
+          },
+          "publicKey": {
+            "type": "string",
+            "description": "Its public key, SubjectPublicKeyInfo PEM"
+          }
+        },
+        "required": [
+          "algorithm",
+          "publicKey"
+        ]
+      },
       "IssuerTier": {
         "type": "string",
         "description": "A CA's tier: roots and intermediates are offline, issuing CAs online",
@@ -7451,6 +7700,10 @@
           "provedAt": {
             "type": "string",
             "description": "An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup"
+          },
+          "importedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was imported from another CA product (XCA); absent for a CA made here"
           },
           "discardedAt": {
             "type": "string",
@@ -7709,6 +7962,10 @@
           "provedAt": {
             "type": "string",
             "description": "An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup"
+          },
+          "importedAt": {
+            "type": "string",
+            "description": "An ISO-8601 formatted string: when it was imported from another CA product (XCA); absent for a CA made here"
           },
           "discardedAt": {
             "type": "string",
@@ -8004,6 +8261,34 @@
         "properties": {
           "issuer": {
             "description": "The discarded root, revoked in the record",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
+      "AddIssuerCsrRequest": {
+        "type": "object",
+        "properties": {
+          "csr": {
+            "type": "string",
+            "description": "The CSR its certificate was issued from, PEM: signed by the key it certifies (ADR 0039)"
+          }
+        },
+        "required": [
+          "csr"
+        ]
+      },
+      "AddIssuerCsrResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The CA, its CSR kept",
             "allOf": [
               {
                 "$ref": "#/components/schemas/FullIssuer"
@@ -9488,40 +9773,6 @@
         "required": [
           "asOf",
           "lineages"
-        ]
-      },
-      "KeyImportFormat": {
-        "type": "string",
-        "description": "What `data` is",
-        "enum": [
-          "pem",
-          "pkcs12"
-        ]
-      },
-      "ImportedKey": {
-        "type": "object",
-        "properties": {
-          "format": {
-            "description": "What `data` is",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/KeyImportFormat"
-              }
-            ]
-          },
-          "data": {
-            "type": "string",
-            "description": "The key: encrypted PKCS#8 PEM, or a PKCS#12 file in base64 (only its key is used)"
-          },
-          "passphrase": {
-            "type": "string",
-            "description": "Its passphrase; used once, never kept"
-          }
-        },
-        "required": [
-          "format",
-          "data",
-          "passphrase"
         ]
       },
       "KeyAlgorithm": {

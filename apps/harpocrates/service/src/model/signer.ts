@@ -102,3 +102,19 @@ export class DescribeSignerStatusResponse {
   })
   status: SignerStatus;
 }
+
+export class ReadKeyResponse {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its type, e.g. P-256 or RSA-4096",
+  })
+  algorithm: string;
+
+  @ApiProperty({
+    type: String,
+    required: true,
+    description: "Its public key, SubjectPublicKeyInfo PEM",
+  })
+  publicKey: string;
+}
