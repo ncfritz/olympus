@@ -37,7 +37,7 @@ import { NeedsALook } from "./NeedsALook";
 import { RenewalTimeline } from "./RenewalTimeline";
 
 /** The tabs, by `?view=`. */
-const VIEWS = ["clients", "timeline"] as const;
+const VIEWS = ["clients", "timeline", "activity"] as const;
 type View = (typeof VIEWS)[number];
 
 /** The side panel's width, open. */
@@ -222,7 +222,6 @@ export function AcmePage() {
           }
         />
       </CountStrip>
-      <AcmeGraphs orders={recent} now={now} />
       <Tabs
         className={styles.tabs}
         activeKey={view}
@@ -247,6 +246,17 @@ export function AcmePage() {
             label: "Timeline",
             children: (
               <RenewalTimeline clients={all} now={now} onOpen={reveal} />
+            ),
+          },
+          {
+            // The graphs have a tab of their own, so the lists keep the
+            // page's height and the page never scrolls.
+            key: "activity",
+            label: "Activity",
+            children: (
+              <div className={styles.activity}>
+                <AcmeGraphs orders={recent} now={now} />
+              </div>
             ),
           },
         ]}

@@ -25,6 +25,7 @@
 .page.fit > :global(.ant-layout-content) {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .header.header {
@@ -47,12 +48,11 @@
 /*
  * Each tab's list takes the height the rest of the page leaves: its rows
  * scroll beneath its header, and its pagination stays at the page's
- * foot. Only in a window too short to leave the tabs room for a few
- * rows does the page scroll. antd 6.6 calls each pane .ant-tabs-content.
+ * foot; nothing else scrolls. antd 6.6 calls each pane .ant-tabs-content.
  */
 .tabs.tabs {
   flex: 1 1 0;
-  min-height: 340px;
+  min-height: 0;
 }
 
 .tabs :global(.ant-tabs-body-holder),
@@ -64,13 +64,21 @@
   flex-direction: column;
 }
 
+/* The Activity tab's graphs: two to a row, scrolling only in a short window. */
+.activity {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .fill.fill {
-  flex: 1 0 auto;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .fill > :global(.ant-table-wrapper) {
   flex: 1 1 0;
-  min-height: 200px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -255,7 +263,7 @@
 /* The renewal windows fill the tab, scrolling beneath their heading. */
 .timeline {
   flex: 1 1 0;
-  min-height: 200px;
+  min-height: 0;
   overflow: auto;
 }
 

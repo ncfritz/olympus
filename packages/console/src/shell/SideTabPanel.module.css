@@ -10,8 +10,14 @@
   background: var(--ant-color-bg-container);
 }
 
-/* The page beside the panel scrolls by itself. */
+/*
+ * The page beside the panel scrolls by itself, and holds what is
+ * positioned within it (a chart's accessibility announcer, a tooltip's
+ * anchor): positioned against the window instead, those would make the
+ * whole window scroll.
+ */
 .main {
+  position: relative;
   min-width: 0;
   overflow: auto;
   padding: 24px;
