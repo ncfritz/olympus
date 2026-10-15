@@ -185,7 +185,11 @@ export function IssuerPage() {
     ...(issuer.importedAt && !issuer.csr
       ? [{ key: "csr" as const, label: "Its CSR" }]
       : []),
-    ...(issuer.importedAt && crls && crls.length === 0
+    // XCA's newest list, until one has been brought in: lists signed
+    // here (a ceremony's, the signer's) do not take its place.
+    ...(issuer.importedAt &&
+    crls &&
+    !crls.some((list) => list.source === "imported")
       ? [{ key: "crl" as const, label: "Its revocation list" }]
       : []),
   ];

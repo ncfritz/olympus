@@ -20,7 +20,7 @@
   padding: 16px 24px;
 }
 
-.tabs > :global(.ant-tabs-nav) {
+.tabs.tabs > :global(.ant-tabs-nav) {
   margin-bottom: 0;
   padding-inline: 24px;
 }

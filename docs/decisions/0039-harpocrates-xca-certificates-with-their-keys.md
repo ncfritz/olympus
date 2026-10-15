@@ -115,8 +115,9 @@ Each import is one certificate, in a dialog on the page it belongs to:
   longest certificate, extended key usages and whether it is closed. A
   key, CSR and certificate that do not belong together are shown as
   such at the step that finds it.
-- **An imported CA's page** imports its CSR and its revocation list,
-  each while it has none.
+- **An imported CA's page** imports its CSR while it has none, and
+  XCA's newest revocation list until one has been imported (lists
+  signed here do not take its place).
 - **An issuing CA's page** imports a certificate it signed ("Import
   leaf"): the certificate, the profile it is taken as issued under, and
   optionally its key (PKCS#8 or PKCS#12) with its password and, with
