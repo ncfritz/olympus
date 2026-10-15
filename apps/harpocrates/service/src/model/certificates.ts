@@ -527,6 +527,17 @@ export class ImportCertificatesRequest {
   certificates: string[];
 
   @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "Only what this CA signed (its page's import): others are passed over",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  issuerId?: string;
+
+  @ApiProperty({
     type: () => ImportedKey,
     required: false,
     description:

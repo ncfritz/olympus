@@ -74,6 +74,15 @@ enrollment put it, and its CSR if it had one. A certificate says how it
 was enrolled (`enrollmentMode`) and whether its CSR is kept (`hasCsr`),
 so the page offers only what applies.
 
+### A CA's CSR
+
+An XCA CA is imported with the CSR its certificate was issued from, if
+there is one (`POST /issuers/import`, `csr`): refused unless it is
+signed by the key the certificate certifies, and kept as a CA created
+here keeps its own. An issuing CA still comes with its key (ADR 0037);
+a CA's CSR does not need one, since the certificate already names the
+key.
+
 ### Audited
 
 The key's import is audited (`key.imported`, with the certificate and
@@ -82,11 +91,27 @@ its enrollment), as a key brought at issuance is; a CSR added alone, as
 
 ### The console
 
-The import's certificates step takes, beside many certificates as a
-record, one certificate with its key (PKCS#8 or PKCS#12, and its
-password) and, optionally, its CSR. An imported certificate's page
-offers "Add its key" while its key is with the subscriber, and "Add its
-CSR" once the key is escrowed and the CSR is not kept.
+Each import is one certificate, in a dialog on the page it belongs to:
+
+- **The roots page** imports a root: its certificate, its ID, number
+  and generation, and optionally its CSR.
+- **A root's or an intermediate's page** imports a CA beneath it, an
+  intermediate or an issuing CA, the same way; an issuing CA with its
+  key (encrypted PKCS#8) and password, its purpose, longest certificate,
+  extended key usages and whether it is closed. Its revocation list is
+  imported from its page too.
+- **An issuing CA's page** imports a certificate it signed ("Import
+  leaf"): the certificate, the profile it is taken as issued under, and
+  optionally its key (PKCS#8 or PKCS#12) with its password and, with
+  the key, its CSR. Only a certificate that CA signed is taken
+  (`issuerId`).
+- **The certificates list** imports the same way, from whichever CA
+  here signed it.
+
+A key or CSR left out is added later from the certificate's page: "Add
+its key" while its key is with the subscriber, and "Add its CSR" once
+the key is escrowed and the CSR is not kept. Importing many
+certificates at once, as a record, stays with the API and the CLI.
 
 ## Consequences
 

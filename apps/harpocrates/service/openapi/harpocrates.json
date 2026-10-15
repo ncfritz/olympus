@@ -7900,6 +7900,10 @@
           "closed": {
             "type": "boolean",
             "description": "Import an issuing CA closed: it signs its revocation lists and nothing new (XCA's Issuing CA 1 and 2)"
+          },
+          "csr": {
+            "type": "string",
+            "description": "The CSR its certificate was issued from, PEM: signed by its key (ADR 0039)"
           }
         },
         "required": [
@@ -9781,6 +9785,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "issuerId": {
+            "type": "string",
+            "description": "Only what this CA signed (its page's import): others are passed over"
           },
           "key": {
             "description": "The private key of one of them, escrowed in the signer (ADR 0039); a certificate already imported gains it",

@@ -110,8 +110,8 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
         maxValidityDays: 3650,
         extendedKeyUsages: [],
       }).expect(201);
-      for (const n of [1, 2]) {
-        await importIssuer({
+      const intermediate = (n: number, csr: string) =>
+        importIssuer({
           id: `intermediate-${n}-g1`,
           tier: "intermediate",
           number: n,
@@ -120,8 +120,17 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
           chain: [caCertificate("root")],
           maxValidityDays: 1825,
           extendedKeyUsages: [],
-        }).expect(201);
+          csr,
+        });
+      // Its CSR, if given, is its own (ADR 0039): another's is refused.
+      await intermediate(1, read(CA, "int-2", "ca.csr")).expect(422);
+      for (const n of [1, 2]) {
+        await intermediate(n, read(CA, `int-${n}`, "ca.csr")).expect(201);
       }
+      const kept = await harness.prisma.issuer.findUniqueOrThrow({
+        where: { id: "intermediate-1-g1" },
+      });
+      expect(kept.csr).not.toBeNull();
       const keys = await harness.prisma.key.findMany({
         where: { purpose: "issuer" },
       });
@@ -154,6 +163,7 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
           privateKey: read(CERTS, "keys", `${id}.p8`),
           passphrase: "olympus",
           closed,
+          csr: read(CA, dir, "ca.csr"),
         }).expect(201);
       await issuing(
         "services",
@@ -563,6 +573,19 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
             .send({ csr: csr("dionysus-asset-agent") })
             .expect(403);
         });
+      });
+
+      it("passes over a certificate another CA signed, when one CA is named", async () => {
+        const answer = (
+          await send({
+            issuerId: "device-issuing-1-g1",
+            certificates: [certificate("minerva-mail-ml")],
+          }).expect(200)
+        ).body as Imported;
+        expect(answer.imported).toEqual([]);
+        expect(answer.skipped[0].reason).toBe(
+          "Signed by service-issuing-1-g1, not device-issuing-1-g1",
+        );
       });
 
       it("imports a new certificate with its key from a PKCS#12 file", async () => {

@@ -131,6 +131,10 @@ export class CertificateImportService {
         skip(`Signed by ${parsed.issuer}, which is not a CA here`);
         continue;
       }
+      if (request.issuerId && issuer.id !== request.issuerId) {
+        skip(`Signed by ${issuer.id}, not ${request.issuerId}`);
+        continue;
+      }
       const key = await this.keys.findBySpki(parsed.spki);
       if (key?.purpose === "issuer") {
         skip("Its key is a CA's");

@@ -809,6 +809,17 @@ export class ImportIssuerRequest {
   @IsOptional()
   @IsBoolean()
   closed?: boolean;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      "The CSR its certificate was issued from, PEM: signed by its key (ADR 0039)",
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  csr?: string;
 }
 
 /* ------------------------------------------------------------------------------------------------------------------ */

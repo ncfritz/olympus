@@ -25,9 +25,11 @@ import type {
   UpdateIssuerRequest,
 } from "../../model/issuers";
 import {
+  bytes,
   certificatePem,
   isIssuedBy,
   parseCertificate,
+  parseCsr,
   randomSerial,
   spkiFromPem,
   subjectName,
@@ -455,6 +457,8 @@ export class IssuerService {
       organization?: string;
       /** A root's; an imported root takes it from its path length. */
       shape?: IssuerShapeName;
+      /** The CSR it was issued from, DER: an imported CA's, if given. */
+      csr?: Buffer;
       /** The settings given instead of their defaults, for the audit log. */
       overrides?: string[];
     },
@@ -490,6 +494,7 @@ export class IssuerService {
           maxValidityDays: offlineMaxValidityDays(tier, shape),
           organization: offline.organization,
           shape,
+          csr: offline.csr ? bytes(offline.csr) : undefined,
           ...this.urlsFor(offline.id),
           nameConstraints: { create: offline.constraints ?? [] },
         },
@@ -507,6 +512,7 @@ export class IssuerService {
             notAfter: certificate.notAfter.toISOString(),
             keyLocation: "offline",
             shape,
+            csr: offline.csr ? true : undefined,
             overrides: offline.overrides?.join(",") || undefined,
           },
         },
@@ -530,6 +536,9 @@ export class IssuerService {
       throw new BadRequestException("The certificate is not a CA");
     }
     const parent = await this.parentOf(request.certificate, request.chain);
+    const csr = request.csr
+      ? await this.importedCsr(request.csr, certificate.spki)
+      : undefined;
     const parts: IssuerNameParts = {
       tier: request.tier,
       purpose: request.purpose,
@@ -553,6 +562,7 @@ export class IssuerService {
         certificatePem: request.certificate,
         parentId: parent?.id ?? null,
         kind: AuditKind.IssuerImported,
+        csr,
       });
     }
     if (!request.privateKey || !request.passphrase) {
@@ -581,8 +591,30 @@ export class IssuerService {
       constraints: [],
       kind: AuditKind.IssuerImported,
       closed: request.closed,
+      csr,
     });
     return this.describe(request.id);
+  }
+
+  /** An imported CA's CSR, DER: signed by the key its certificate certifies. */
+  private async importedCsr(pem: string, spki: Buffer): Promise<Buffer> {
+    let csr;
+    try {
+      csr = await parseCsr(pem);
+    } catch {
+      throw new BadRequestException("The CSR is not PEM");
+    }
+    if (!csr.signatureValid) {
+      throw new UnprocessableEntityException(
+        "The CSR's signature does not verify",
+      );
+    }
+    if (!csr.spki.equals(spki)) {
+      throw new UnprocessableEntityException(
+        "The CSR is not this CA's: its public key differs",
+      );
+    }
+    return csr.der;
   }
 
   /** Registers an online issuing CA with the signer and records it. */
@@ -606,6 +638,8 @@ export class IssuerService {
       kind: typeof AuditKind.IssuerCreated | typeof AuditKind.IssuerImported;
       /** Signs its lists and nothing new (an XCA CA kept to its end). */
       closed?: boolean;
+      /** The CSR it was issued from, DER: an imported CA's, if given. */
+      csr?: Buffer;
       organization?: string;
       /** The settings given instead of their defaults, for the audit log. */
       overrides?: string[];
@@ -645,6 +679,7 @@ export class IssuerService {
           pathLength: 0,
           maxValidityDays: issuing.maxValidityDays,
           organization: issuing.organization,
+          csr: issuing.csr ? bytes(issuing.csr) : undefined,
           ...this.urlsFor(issuing.id),
           extendedKeyUsages: {
             create: issuing.extendedKeyUsages.map((oid) => ({ oid })),
@@ -666,6 +701,7 @@ export class IssuerService {
             keyLocation: "signer",
             maxValidityDays: issuing.maxValidityDays,
             status: issuing.closed ? "closed" : "active",
+            csr: issuing.csr ? true : undefined,
             overrides: issuing.overrides?.join(",") || undefined,
           },
         },
