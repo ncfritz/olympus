@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { STATUSES } from "../../src/status";
+import { STATUSES } from "@ncfritz/olympus-availability";
 import { statusAccent, statusFill } from "../../src/theme";
 
 describe("theme", () => {

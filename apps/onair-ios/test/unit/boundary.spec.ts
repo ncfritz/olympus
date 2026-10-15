@@ -14,10 +14,12 @@ const PURE = [
   "auth/failure.ts",
   "auth/keys.ts",
   "config.ts",
-  "status.ts",
+  "schedule.ts",
   "theme.ts",
-  "time.ts",
 ];
+
+/** Workspace packages built to run anywhere, so importing one keeps a module pure. */
+const SHARED = ["@ncfritz/olympus-auth-flow", "@ncfritz/olympus-availability"];
 
 const source = (file: string): string =>
   fs.readFileSync(path.join(__dirname, "../../src", file), "utf8");
@@ -50,11 +52,7 @@ const reached = (file: string): string[] => {
 
 describe("the unit-tested modules", () => {
   it.each(PURE)("%s imports nothing off the device", (file: string) => {
-    // The shared flow package is platform-free by construction, so importing
-    // it keeps a module pure (as in the mobile tester).
-    expect(
-      reached(file).filter((from) => from !== "@ncfritz/olympus-auth-flow"),
-    ).toEqual([]);
+    expect(reached(file).filter((from) => !SHARED.includes(from))).toEqual([]);
   });
 
   it("covers every module the specs import", () => {

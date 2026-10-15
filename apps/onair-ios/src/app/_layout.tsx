@@ -45,6 +45,10 @@ function GatedStack() {
         />
         <Stack.Screen name="override/new" options={{ presentation: "modal" }} />
         <Stack.Screen
+          name="override/[blockId]"
+          options={{ presentation: "modal" }}
+        />
+        <Stack.Screen
           name="loading"
           options={{ presentation: "fullScreenModal" }}
         />

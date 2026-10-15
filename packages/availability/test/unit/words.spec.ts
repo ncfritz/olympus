@@ -1,19 +1,18 @@
 import { describe, expect, it } from "vitest";
-
 import {
   isOnAir,
   LABELS,
+  type Level,
   levelOfCalendarStatus,
   STATUSES,
   toLevel,
   toOnAirStatus,
-  type Level,
-} from "../../src/status";
+} from "../../src";
 
 const LEVELS: Level[] = ["none", "free", "interruptable", "busy"];
 
-describe("status", () => {
-  it("maps each level to the site's word and back", () => {
+describe("availability words", () => {
+  it("maps each level to OnAir's word and back", () => {
     expect(LEVELS.map(toOnAirStatus)).toEqual([
       "clear",
       "free",
@@ -23,6 +22,11 @@ describe("status", () => {
     for (const level of LEVELS) {
       expect(toLevel(toOnAirStatus(level))).toBe(level);
     }
+  });
+
+  it("reads any other word as none", () => {
+    expect(toLevel("busy")).toBe("none");
+    expect(toLevel("")).toBe("none");
   });
 
   it("lights the sign for busy and interruptable only", () => {

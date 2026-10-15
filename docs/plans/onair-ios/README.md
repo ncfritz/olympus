@@ -57,6 +57,26 @@ override. The status words and colours move from `apps/site/src/utils` and
 `src/status.ts` to one shared package so the site and the app agree. Refresh
 on open and every 30 seconds, as the site's drawer does.
 
+1. `packages/availability` (`@ncfritz/olympus-availability`): the four
+   OnAir words, their labels, and the mapping to and from Minerva's levels
+   and calendar statuses. The site's `onair.ts` and `meetingAvailability.ts`
+   and the app's `src/status.ts` use it. **Done 2026-10-14.**
+2. `src/schedule.ts`, pure and unit-tested: the loaded window (a week back,
+   two weeks ahead), what holds the status now and why (an override before a
+   meeting), the day strip, Up next, timeline columns, overrides by day and
+   the New override length chips. **Done 2026-10-14.**
+3. The session refreshes every 30 seconds and when the app comes back to the
+   foreground; a failed refresh keeps what is on screen and says it is out of
+   date. It sets a meeting's level, and saves and deletes overrides, then
+   reloads. **Done 2026-10-14.**
+4. Screens: Now (glow header, countdown ring, ON AIR, Change and Override,
+   day strip, Up next), Schedule (week strip, timeline from 7 AM, status
+   rail, now line), Meeting status (follow calendar or DND, Interruptable,
+   Free), Overrides (Upcoming and Past by day) and New override, which also
+   edits and deletes an override as a modal. Adds `react-native-svg` and
+   `@react-native-community/datetimepicker`, so the native build has to be
+   made again. **Done 2026-10-14.**
+
 ## Phase 3 — Widgets
 
 `expo-widgets`: small, medium, large and the three Lock Screen sizes. The app

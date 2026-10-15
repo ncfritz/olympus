@@ -2,6 +2,12 @@ import type {
   Availability,
   AvailabilityLevel,
 } from "@ncfritz/olympus-sdk/minerva";
+import {
+  isOnAir,
+  type OnAirStatus,
+  toLevel,
+  toOnAirStatus,
+} from "@ncfritz/olympus-availability";
 
 export const Colors = {
   DND: "#990000",
@@ -26,25 +32,13 @@ export const getColorForStatus = (status: string) => {
 /*
  * The OnAir drawer's words for Minerva's availability levels (ADR 0029).
  * The drawer keeps the shapes and words it had with the legacy OnAir
- * service; these turn the API's availability into them and back.
+ * service; these turn the API's availability into them and back. The words
+ * themselves are `@ncfritz/olympus-availability`'s, shared with the iPhone
+ * app.
  */
 
-/** The drawer's word for a level. */
-export type OnAirStatus = "dnd" | "interrupt" | "free" | "clear";
-
-const TO_ONAIR: Record<AvailabilityLevel, OnAirStatus> = {
-  busy: "dnd",
-  interruptable: "interrupt",
-  free: "free",
-  none: "clear",
-};
-
-const TO_LEVEL: Record<OnAirStatus, AvailabilityLevel> = {
-  dnd: "busy",
-  interrupt: "interruptable",
-  free: "free",
-  clear: "none",
-};
+export { isOnAir, toLevel, toOnAirStatus };
+export type { OnAirStatus };
 
 /** The strength of each level's slot, as the drawer shades it. */
 const SIGNAL: Record<AvailabilityLevel, number> = {
@@ -55,17 +49,6 @@ const SIGNAL: Record<AvailabilityLevel, number> = {
 };
 
 const SLOT_MS = 15 * 60 * 1000;
-
-export const toOnAirStatus = (level: AvailabilityLevel): OnAirStatus =>
-  TO_ONAIR[level] ?? "clear";
-
-/** The level for a drawer word; anything else is none. */
-export const toLevel = (status: string): AvailabilityLevel =>
-  TO_LEVEL[status as OnAirStatus] ?? "none";
-
-/** Whether the ON AIR button lights: busy or interruptable. */
-export const isOnAir = (level: AvailabilityLevel | undefined): boolean =>
-  level === "busy" || level === "interruptable";
 
 /** A slot's strength in the drawer's shading: dnd 4+, interrupt 2+, free 1+. */
 export const signalStatus = (signal: number): OnAirStatus => {

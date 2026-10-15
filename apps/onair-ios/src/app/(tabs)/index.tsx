@@ -1,78 +1,290 @@
-import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 
-import { useSession } from "../../auth/SessionProvider";
-import { Placeholder } from "../../components/Placeholder";
+import { useReady } from "../../auth/SessionProvider";
+import { CountdownRing } from "../../components/CountdownRing";
+import { DayStrip } from "../../components/DayStrip";
+import { Glow } from "../../components/Glow";
+import { ItemRow, RowSeparator } from "../../components/ItemRow";
 import { PillButton } from "../../components/PillButton";
-import { LABELS, toOnAirStatus } from "../../status";
-import { colors, statusFill } from "../../theme";
-import { levelAt } from "../../time";
+import { StatusGlyph } from "../../components/StatusGlyph";
+import { changeHref, hrefOf } from "../../links";
+import {
+  causeTitle,
+  clock,
+  countdown,
+  dayStrip,
+  nowState,
+  upNext,
+} from "../../schedule";
+import { isOnAir, LABELS } from "../../status";
+import { colors, statusAccent, statusFill } from "../../theme";
+import { useNow } from "../../useNow";
+
+const WEEKDAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 export default function NowScreen() {
-  const { state, reload, signOut } = useSession();
-  if (state.phase !== "ready") return null;
+  const ready = useReady();
+  const insets = useSafeAreaInsets();
+  const now = useNow(1000);
+  if (ready === undefined) return null;
+  const { state, reload, signOut } = ready;
 
-  // Phase 1's proof that sign-in, the token and the API all work: the level
-  // of the slot we are in. The designed Now screen replaces this in phase 2.
-  const status = toOnAirStatus(
-    levelAt(state.availability.slots, new Date()) ?? "none",
-  );
+  const current = nowState(state.availability, now);
+  const status = current?.status ?? "clear";
+  const strip = dayStrip(state.availability.slots, now);
+  const next = upNext(state.availability, now);
+  const title = causeTitle(current?.cause);
+  const onAir = isOnAir(current?.level);
 
   return (
-    <Placeholder
-      title="Now"
-      description="The countdown ring, today's strip and what's up next arrive in phase 2."
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={false}
+          onRefresh={() => void reload()}
+          tintColor={colors.text}
+        />
+      }
     >
-      <View
-        style={[styles.status, { backgroundColor: statusFill[status] }]}
-        accessibilityLabel={`Right now: ${LABELS[status]}`}
-      >
-        <Text style={styles.statusLabel}>Right now</Text>
-        <Text style={styles.statusValue}>{LABELS[status]}</Text>
-        <Text style={styles.statusMeta}>
-          {state.availability.meetings.length} meetings,{" "}
-          {state.availability.blocks.length} overrides today · loaded{" "}
-          {state.loadedAt.toLocaleTimeString([], {
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </Text>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+        <Glow color={statusFill[status]} />
+
+        <View style={styles.titleRow}>
+          <View style={styles.titleText}>
+            <Text style={styles.date}>
+              {`${WEEKDAYS.at(now.getDay())}, ${MONTHS.at(now.getMonth())} ${now.getDate()}`}
+            </Text>
+            <Text style={styles.title} accessibilityRole="header">
+              Now
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Refresh"
+            onPress={() => void reload()}
+            style={styles.iconButton}
+          >
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"
+                stroke="#FFFFFF"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </Pressable>
+        </View>
+
+        <View style={styles.hero}>
+          <CountdownRing
+            progress={current?.progress ?? 0}
+            lamp={statusAccent[status]}
+            glow={statusAccent[status]}
+          >
+            <Text style={styles.countdown} accessibilityLabel="Time left">
+              {current === undefined
+                ? "--:--"
+                : countdown(current.until - now.getTime())}
+            </Text>
+            <Text style={styles.left}>left</Text>
+          </CountdownRing>
+          <View style={styles.heroText}>
+            <View style={styles.onAirRow}>
+              <View style={[styles.onAirDot, !onAir && styles.onAirDotOff]} />
+              <Text style={styles.onAir}>{onAir ? "ON AIR" : "OFF AIR"}</Text>
+            </View>
+            <Text style={styles.status}>{LABELS[status]}</Text>
+            {title !== undefined && (
+              <Text style={styles.heroLine} numberOfLines={1}>
+                {title}
+              </Text>
+            )}
+            {current !== undefined && (
+              <Text style={styles.heroLine}>
+                {`${clock(current.since)} – ${clock(current.until)}`}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.buttons}>
+          <View style={styles.button}>
+            <PillButton
+              label="Change"
+              onPress={() => router.push(changeHref(current?.cause))}
+            />
+          </View>
+          <View style={styles.button}>
+            <PillButton
+              label="Override"
+              primary
+              onPress={() => router.push("/override/new")}
+            />
+          </View>
+        </View>
+
+        <DayStrip
+          parts={strip.parts}
+          {...(strip.nowFraction === undefined
+            ? {}
+            : { nowFraction: strip.nowFraction })}
+        />
       </View>
-      <View style={styles.row}>
-        <PillButton label="Refresh" primary onPress={() => void reload()} />
-        <PillButton label="Sign out" onPress={() => void signOut()} />
+
+      <View style={styles.body}>
+        {current?.next !== undefined && (
+          <View style={styles.nextLine}>
+            <StatusGlyph status={current.next.status} size={14} />
+            <Text style={styles.nextText}>
+              {`${LABELS[current.next.status]} at ${clock(current.next.at)}`}
+            </Text>
+          </View>
+        )}
+
+        <Text style={styles.section}>UP NEXT</Text>
+        <View style={styles.card}>
+          {next.length === 0 ? (
+            <Text style={styles.empty}>Nothing else today.</Text>
+          ) : (
+            next.map((item, index) => (
+              <View key={`${item.kind}-${item.id}`}>
+                {index > 0 && <RowSeparator />}
+                <ItemRow
+                  item={item}
+                  onPress={() => router.push(hrefOf(item))}
+                />
+              </View>
+            ))
+          )}
+        </View>
+
+        {state.problem !== undefined && (
+          <Text style={styles.problem} accessibilityRole="alert">
+            {`${state.problem} Showing what was loaded at ${clock(state.loadedAt)}.`}
+          </Text>
+        )}
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void signOut()}
+          style={styles.signOut}
+        >
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
       </View>
-      <Link href="/meeting/example" style={styles.link}>
-        Meeting status
-      </Link>
-      <Link href="/override/new" style={styles.link}>
-        New override
-      </Link>
-      {__DEV__ && (
-        <Link href="/loading" style={styles.link}>
-          Preview the loading screen
-        </Link>
-      )}
-    </Placeholder>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  status: { borderRadius: 20, padding: 20, gap: 6 },
-  statusLabel: {
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: { paddingBottom: 32 },
+  header: { paddingHorizontal: 20, paddingBottom: 26, gap: 22 },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  titleText: { gap: 2 },
+  date: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.85)",
+  },
+  title: { fontSize: 34, fontWeight: "700", color: colors.text },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  hero: { flexDirection: "row", alignItems: "center", gap: 18 },
+  countdown: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    fontVariant: ["tabular-nums"],
+  },
+  left: { fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.9)" },
+  heroText: { flex: 1, gap: 6 },
+  onAirRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  onAirDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#FFFFFF",
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  onAirDotOff: { backgroundColor: "rgba(255,255,255,0.4)", shadowOpacity: 0 },
+  onAir: {
     fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 1.6,
-    color: "rgba(255,255,255,0.85)",
-    textTransform: "uppercase",
+    letterSpacing: 1.7,
+    color: "#FFFFFF",
   },
-  statusValue: { fontSize: 30, fontWeight: "700", color: "#FFFFFF" },
-  statusMeta: { fontSize: 13, color: "rgba(255,255,255,0.85)" },
-  row: { flexDirection: "row", gap: 10 },
-  link: {
-    fontSize: 16,
+  status: { fontSize: 28, fontWeight: "700", color: "#FFFFFF" },
+  heroLine: { fontSize: 14, color: "rgba(255,255,255,0.92)" },
+  buttons: { flexDirection: "row", gap: 10 },
+  button: { flex: 1 },
+  body: { paddingHorizontal: 20, gap: 10 },
+  nextLine: { flexDirection: "row", alignItems: "center", gap: 8 },
+  nextText: { fontSize: 14, color: colors.textSecondary },
+  section: {
+    marginTop: 6,
+    fontSize: 13,
     fontWeight: "600",
-    color: colors.text,
-    paddingVertical: 12,
+    letterSpacing: 0.8,
+    color: colors.textSecondary,
   },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  empty: { padding: 16, fontSize: 15, color: colors.textSecondary },
+  problem: { fontSize: 13, lineHeight: 18, color: "#FF8A8E" },
+  signOut: { alignSelf: "flex-start", paddingVertical: 12 },
+  signOutText: { fontSize: 15, color: colors.textSecondary },
 });
