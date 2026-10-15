@@ -38,7 +38,12 @@ export function CeremonyList({ issuerId }: { issuerId: string }) {
       size="small"
       loading={isLoading}
       dataSource={ceremonies ?? []}
-      pagination={{ pageSize: 20, hideOnSinglePage: true }}
+      pagination={{
+        pageSize: 20,
+        size: "small",
+        showSizeChanger: false,
+        showTotal: (total) => `${total} ceremonies`,
+      }}
       locale={{ emptyText: "No ceremonies yet" }}
       columns={[
         {

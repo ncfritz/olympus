@@ -1,0 +1,10 @@
+/* What is above the responders, kept off the page's edges; the table abuts them. */
+.head.head {
+  padding: 16px 24px;
+}
+
+/* As the CA's details show its OCSP URL: the code font, a size down. */
+.url {
+  font-family: var(--ant-font-family-code);
+  font-size: var(--ant-font-size-sm, 12px);
+}

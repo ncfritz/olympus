@@ -589,11 +589,7 @@ export function IssuerPage() {
                 {
                   key: "ocsp",
                   label: "OCSP",
-                  children: (
-                    <div className={styles.tabPadded}>
-                      <IssuerOcspPanel issuer={issuer} />
-                    </div>
-                  ),
+                  children: <IssuerOcspPanel issuer={issuer} />,
                 },
               ]
             : []),
@@ -605,7 +601,12 @@ export function IssuerPage() {
                 rowKey="number"
                 size="small"
                 dataSource={crls ?? []}
-                pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                pagination={{
+                  pageSize: 20,
+                  size: "small",
+                  showSizeChanger: false,
+                  showTotal: (total) => `${total} lists`,
+                }}
                 columns={[
                   { title: "Number", dataIndex: "number" },
                   { title: "Source", dataIndex: "source" },

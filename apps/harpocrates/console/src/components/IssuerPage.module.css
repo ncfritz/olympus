@@ -52,6 +52,8 @@
  */
 .page > :global(.ant-layout-content) {
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* The title as far from the top as from the left. */
@@ -76,6 +78,48 @@
   padding-inline: 24px;
 }
 
+/*
+ * The tabs take the height the details leave (at least enough for a few
+ * rows; shorter, the page scrolls instead), and each tab's list fills
+ * them: its rows scroll beneath its header, and its pagination stays at
+ * the foot of the page. antd 6.6 calls each pane .ant-tabs-content.
+ */
+.tabs.tabs {
+  flex: 1 1 0;
+  min-height: 360px;
+}
+
+.tabs :global(.ant-tabs-body-holder),
+.tabs :global(.ant-tabs-body),
+.tabs :global(.ant-tabs-content-active),
+.tabs :global(.ant-table-wrapper),
+.tabs :global(.ant-table-wrapper > .ant-spin),
+.tabs :global(.ant-table-wrapper .ant-spin-container) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs :global(.ant-table-wrapper .ant-table) {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tabs :global(.ant-table-thead > tr > th) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.tabs :global(.ant-table-wrapper .ant-table-pagination.ant-pagination) {
+  flex: none;
+  margin: 0;
+  padding: 8px 24px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+}
+
 /* The tabs' tables abut the edges; their first and last cells keep the margin. */
 .tabs :global(.ant-table-cell:first-child) {
   padding-inline-start: 24px !important;
@@ -85,14 +129,7 @@
   padding-inline-end: 24px !important;
 }
 
-.tabs :global(.ant-table-pagination) {
-  padding-inline: 24px;
-}
 
-/* A tab whose content is not a table keeps the page's margin. */
-.tabPadded {
-  padding: 16px 24px;
-}
 
 /* A long value (an ID, a URL), a size down. */
 .small {
