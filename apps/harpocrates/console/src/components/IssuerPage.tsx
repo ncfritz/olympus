@@ -178,10 +178,16 @@ export function IssuerPage() {
   /** Where an admin imports what XCA made beneath it, and its list. */
   const importable = isAdmin && !discarded && Boolean(issuer.certificate);
   /** What its Import menu offers: what is beneath it; an XCA CA's missing CSR and list. */
+  // An imported CA's hierarchy is free-form (ADR 0040): it may have signed
+  // CAs and certificates side by side.
+  const freeForm = Boolean(issuer.importedAt) && issuer.tier !== "issuing";
+  const signsCas = issuer.tier !== "issuing";
+  const signsLeaves = issuer.tier === "issuing" || freeForm;
   const imports = [
-    issuer.tier === "issuing"
-      ? { key: "leaf" as const, label: "A certificate it signed" }
-      : { key: "child" as const, label: "A child CA" },
+    ...(signsCas ? [{ key: "child" as const, label: "A child CA" }] : []),
+    ...(signsLeaves
+      ? [{ key: "leaf" as const, label: "A certificate it signed" }]
+      : []),
     ...(issuer.importedAt && !issuer.csr
       ? [{ key: "csr" as const, label: "Its CSR" }]
       : []),
@@ -221,7 +227,9 @@ export function IssuerPage() {
       issuer.offline && {
         key: "signs",
         label: "Signs",
-        children: SIGNS_LABEL[signsOf(issuer)],
+        children: freeForm
+          ? "anything beneath it (imported)"
+          : SIGNS_LABEL[signsOf(issuer)],
       },
       {
         key: "longest",
@@ -495,13 +503,14 @@ export function IssuerPage() {
       )}
       {importable && (
         <>
-          {issuer.tier === "issuing" ? (
+          {signsLeaves && (
             <ImportLeafModal
               issuer={issuer}
               open={importing === "leaf"}
               onClose={() => setImporting(undefined)}
             />
-          ) : (
+          )}
+          {signsCas && (
             <ImportChildCaModal
               parent={issuer}
               open={importing === "child"}

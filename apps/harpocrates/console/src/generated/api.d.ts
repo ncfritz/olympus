@@ -1731,7 +1731,7 @@ export interface components {
       purpose?: string;
       /** @description Its organisation (O, and the start of its CN) when set for it or its root; absent, the CA's configured one */
       organization?: string;
-      /** @description A root's shape; absent below a root */
+      /** @description A root's shape; absent below a root and for an imported one, whose hierarchy is free-form (ADR 0040) */
       shape?: components["schemas"]["IssuerShape"];
       /** @description An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup */
       provedAt?: string;
@@ -1831,7 +1831,7 @@ export interface components {
       purpose?: string;
       /** @description Its organisation (O, and the start of its CN) when set for it or its root; absent, the CA's configured one */
       organization?: string;
-      /** @description A root's shape; absent below a root */
+      /** @description A root's shape; absent below a root and for an imported one, whose hierarchy is free-form (ADR 0040) */
       shape?: components["schemas"]["IssuerShape"];
       /** @description An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup */
       provedAt?: string;
