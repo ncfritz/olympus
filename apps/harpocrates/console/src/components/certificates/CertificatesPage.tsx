@@ -1,14 +1,19 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
+import { ImportOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Flex, Skeleton, Tabs, Typography } from "antd";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCertificateLineages, useIssuers } from "@/lib/api/queries";
+import {
+  useCertificateLineages,
+  useCurrentUser,
+  useIssuers,
+} from "@/lib/api/queries";
 import { countsOf } from "@/lib/lineages";
 import { Count, CountStrip } from "../CountStrip";
 import { ErrorAlert } from "../ErrorAlert";
+import { ImportLeafModal } from "../imports/ImportLeafModal";
 import styles from "./Certificates.module.css";
 import { LineageGraphs } from "./LineageGraphs";
 import { LineageList } from "./LineageList";
@@ -27,6 +32,8 @@ type View = (typeof VIEWS)[number];
 export function CertificatesPage() {
   const { data, error, isLoading } = useCertificateLineages();
   const { data: issuers } = useIssuers();
+  const { isAdmin } = useCurrentUser();
+  const [importing, setImporting] = useState(false);
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -71,11 +78,21 @@ export function CertificatesPage() {
             : "Each certificate's newest version, its others beneath it"}
         </Typography.Text>
       </div>
-      <Link href="/certificates/new">
-        <Button type="primary" icon={<PlusOutlined />}>
-          Issue
+      <Flex gap="small">
+        <Button
+          icon={<ImportOutlined />}
+          disabled={!isAdmin}
+          onClick={() => setImporting(true)}
+        >
+          Import
         </Button>
-      </Link>
+        <ImportLeafModal open={importing} onClose={() => setImporting(false)} />
+        <Link href="/certificates/new">
+          <Button type="primary" icon={<PlusOutlined />}>
+            Issue
+          </Button>
+        </Link>
+      </Flex>
     </Flex>
   );
 

@@ -1,0 +1,16 @@
+/* The import dialogs' forms. */
+
+/* Room for three digits, as the new root's number and generation. */
+.number.number {
+  width: 72px;
+}
+
+/* The ID takes what the number and generation leave. */
+.id {
+  flex: 1;
+  min-width: 0;
+}
+
+.intro {
+  margin-block-end: var(--ant-margin, 16px);
+}

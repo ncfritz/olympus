@@ -450,20 +450,6 @@
   height: 12px;
 }
 
-/* The import's forms: their inputs fill their column; one alone, a column. */
-.fill.fill {
-  width: 100%;
-}
-
-.narrow.narrow {
-  max-width: 720px;
-}
-
-/* The recent sign-in notice, kept off the page's edges. */
-.notice:not(:empty) {
-  padding: 0 24px 16px;
-}
-
 /* A shape's sample hierarchy (ShapeSample), on the new root page. */
 .sample {
   display: flex;

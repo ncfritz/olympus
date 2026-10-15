@@ -5,6 +5,7 @@ import {
   DownloadOutlined,
   FileProtectOutlined,
   FileTextOutlined,
+  ImportOutlined,
   ProfileOutlined,
 } from "@ant-design/icons";
 import { SideTabPanel } from "@ncfritz/olympus-console";
@@ -56,6 +57,9 @@ import {
 } from "./CertificateDetails";
 import { CeremonyList } from "./CeremonyList";
 import { ErrorAlert } from "./ErrorAlert";
+import { ImportCaModal } from "./imports/ImportCaModal";
+import { ImportCrlModal } from "./imports/ImportCrlModal";
+import { ImportLeafModal } from "./imports/ImportLeafModal";
 import { IssuedChart } from "./IssuedChart";
 import { IssuerAltNamesModal } from "./IssuerAltNamesModal";
 import { IssuerOcspPanel } from "./IssuerOcspPanel";
@@ -144,6 +148,7 @@ export function IssuerPage() {
   const [error, setError] = useState<unknown>();
   const [editingNames, setEditingNames] = useState(false);
   const [editingOcspUrl, setEditingOcspUrl] = useState(false);
+  const [importing, setImporting] = useState<"ca" | "leaf" | "crl">();
 
   if (!issuerId) return <Alert type="error" title="Which CA?" />;
   if (notFound) return <ErrorAlert error={notFound} />;
@@ -156,6 +161,8 @@ export function IssuerPage() {
     !(issuers ?? []).some((other) => other.parentId === issuer.id) &&
     (crls ?? []).length === 0;
   const constraints = constraintLines(issuer.nameConstraints);
+  /** Where an admin imports what XCA made beneath it, and its list. */
+  const importable = isAdmin && !discarded && Boolean(issuer.certificate);
   /** An offline CA that can sit: its key comes back only in a ceremony. */
   const ceremonial = issuer.offline && !discarded && issuer.status === "active";
 
@@ -393,6 +400,19 @@ export function IssuerPage() {
                 Certificate
               </Button>
             )}
+            {importable && (
+              <Button
+                icon={<ImportOutlined />}
+                onClick={() =>
+                  setImporting(issuer.tier === "issuing" ? "leaf" : "ca")
+                }
+              >
+                {issuer.tier === "issuing" ? "Import leaf" : "Import"}
+              </Button>
+            )}
+            {importable && (
+              <Button onClick={() => setImporting("crl")}>Import list</Button>
+            )}
             {ceremonial && (
               <Button
                 type="primary"
@@ -419,6 +439,28 @@ export function IssuerPage() {
         </Flex>
         <ErrorAlert error={error} />
         {issuer.offline && !discarded && <OpenCeremonyAlert />}
+        {importable && (
+          <>
+            {issuer.tier === "issuing" ? (
+              <ImportLeafModal
+                issuer={issuer}
+                open={importing === "leaf"}
+                onClose={() => setImporting(undefined)}
+              />
+            ) : (
+              <ImportCaModal
+                parent={issuer}
+                open={importing === "ca"}
+                onClose={() => setImporting(undefined)}
+              />
+            )}
+            <ImportCrlModal
+              issuer={issuer}
+              open={importing === "crl"}
+              onClose={() => setImporting(undefined)}
+            />
+          </>
+        )}
         {ceremonial && (
           <OpenCeremonyModal
             issuer={issuer}

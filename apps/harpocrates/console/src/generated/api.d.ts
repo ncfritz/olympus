@@ -1844,6 +1844,8 @@ export interface components {
       passphrase?: string;
       /** @description Import an issuing CA closed: it signs its revocation lists and nothing new (XCA's Issuing CA 1 and 2) */
       closed?: boolean;
+      /** @description The CSR its certificate was issued from, PEM: signed by its key (ADR 0039) */
+      csr?: string;
     };
     ImportIssuerResponse: {
       /** @description The imported CA */
@@ -2489,6 +2491,8 @@ export interface components {
       profileId: string;
       /** @description The certificates, PEM; each item may hold several (an XCA export) */
       certificates: string[];
+      /** @description Only what this CA signed (its page's import): others are passed over */
+      issuerId?: string;
       /** @description The private key of one of them, escrowed in the signer (ADR 0039); a certificate already imported gains it */
       key?: components["schemas"]["ImportedKey"];
       /** @description The CSR that certificate was issued from, PEM; only with its key, and signed by it */

@@ -4,7 +4,7 @@ import { ImportOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Empty, Flex, Skeleton, Tabs, Typography } from "antd";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useCurrentUser, useDashboard, useIssuers } from "@/lib/api/queries";
 import { SHAPES } from "@/lib/labels";
 import {
@@ -16,6 +16,7 @@ import {
 import { shortCaName } from "@/lib/tree";
 import { Count, CountStrip } from "../CountStrip";
 import { ErrorAlert } from "../ErrorAlert";
+import { ImportCaModal } from "../imports/ImportCaModal";
 import { CaBoard } from "./CaBoard";
 import { CaDiagram } from "./CaDiagram";
 import { CaList } from "./CaList";
@@ -40,6 +41,7 @@ export function RootsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const view: View = VIEWS.find((v) => v === params.get("view")) ?? "list";
+  const [importing, setImporting] = useState(false);
 
   const issuers = useMemo(() => shownIssuers(all ?? []), [all]);
   const authorities = useMemo(
@@ -67,11 +69,14 @@ export function RootsPage() {
         </Typography.Text>
       </div>
       <Flex gap="small">
-        <Link href="/roots/import">
-          <Button icon={<ImportOutlined />} disabled={!isAdmin}>
-            Import
-          </Button>
-        </Link>
+        <Button
+          icon={<ImportOutlined />}
+          disabled={!isAdmin}
+          onClick={() => setImporting(true)}
+        >
+          Import
+        </Button>
+        <ImportCaModal open={importing} onClose={() => setImporting(false)} />
         <Link href="/roots/new">
           <Button type="primary" icon={<PlusOutlined />} disabled={!isAdmin}>
             New root
