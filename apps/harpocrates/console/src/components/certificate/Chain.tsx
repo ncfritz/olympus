@@ -161,7 +161,7 @@ export function Chain({
         pagination={false}
         dataSource={targets}
         className={styles.flushTable}
-        scroll={{ x: 800 }}
+        scroll={targets.length ? { x: 800 } : undefined}
         locale={{
           emptyText:
             "Not deployed by Harpocrates: its holder installs it, or its renewer does",

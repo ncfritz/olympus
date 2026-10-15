@@ -293,7 +293,7 @@ export function AuditList({
         columns={columns}
         pagination={false}
         tableLayout="fixed"
-        scroll={{ x: 1100 }}
+        scroll={events.length ? { x: 1100 } : undefined}
         className={styles.flushTable}
         locale={{ emptyText: "No event matches" }}
         expandable={{

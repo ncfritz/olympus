@@ -238,7 +238,7 @@ export function CaList({
       pagination={false}
       dataSource={rows}
       columns={columns}
-      scroll={{ x: 1000 }}
+      scroll={rows.length ? { x: 1000 } : undefined}
       className={styles.flushTable}
       expandable={{
         expandedRowKeys: expanded,

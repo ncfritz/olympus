@@ -84,7 +84,7 @@ export function CaList({
       dataSource={cas}
       className={styles.flushTable}
       tableLayout="fixed"
-      scroll={{ x: 900 }}
+      scroll={cas.length ? { x: 900 } : undefined}
       locale={{ emptyText: "No SSH CA yet: make the user CA first" }}
       expandable={{
         expandRowByClick: true,

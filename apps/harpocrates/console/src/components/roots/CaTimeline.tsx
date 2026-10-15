@@ -272,7 +272,7 @@ export function CaTimeline({
         rowKey="key"
         dataSource={coming}
         className={styles.flushTable}
-        scroll={{ x: "max-content" }}
+        scroll={coming.length ? { x: "max-content" } : undefined}
         locale={{ emptyText: "Nothing coming up for the CAs" }}
         columns={[
           {

@@ -382,7 +382,7 @@ export function LineageTimeline({
         columns={rowColumns}
         pagination={false}
         tableLayout="fixed"
-        scroll={{ x: 900 }}
+        scroll={rows.length ? { x: 900 } : undefined}
         className={styles.flushTable}
         rowClassName={(row) => (isGroup(row) ? styles.groupLine : "")}
         locale={{ emptyText: "No certificate matches" }}

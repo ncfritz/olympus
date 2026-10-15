@@ -343,7 +343,7 @@ export function LineageList({
         columns={columns}
         className={styles.flushTable}
         tableLayout="fixed"
-        scroll={{ x: 1000 }}
+        scroll={rows.length ? { x: 1000 } : undefined}
         pagination={{
           pageSize: 50,
           size: "small",

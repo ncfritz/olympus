@@ -151,7 +151,7 @@ export function CertificateList({
         dataSource={shown}
         className={styles.flushTable}
         tableLayout="fixed"
-        scroll={{ x: 1000 }}
+        scroll={shown.length ? { x: 1000 } : undefined}
         pagination={
           shown.length > 50 ? { pageSize: 50, showSizeChanger: false } : false
         }

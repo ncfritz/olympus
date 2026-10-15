@@ -60,7 +60,7 @@ export function Review({
         dataSource={shown}
         className={styles.flushTable}
         tableLayout="fixed"
-        scroll={{ x: 760 }}
+        scroll={shown.length ? { x: 760 } : undefined}
         locale={{
           emptyText: `Nothing to look at: no privileged grants, and every grant carried in ${USAGE_DAYS} days`,
         }}

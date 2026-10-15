@@ -196,7 +196,7 @@ export function MappingList({
           dataSource={shown}
           className={styles.flushTable}
           tableLayout="fixed"
-          scroll={{ x: 1000 }}
+          scroll={shown.length ? { x: 1000 } : undefined}
           locale={{
             emptyText:
               "Nobody is mapped: map a person to issue them a user certificate",
