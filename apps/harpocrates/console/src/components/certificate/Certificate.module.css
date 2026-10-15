@@ -6,6 +6,12 @@
 .page {
   display: flex;
   flex-direction: column;
+  /*
+   * As tall as the shell leaves (below its header, 64px, and breadcrumbs,
+   * 28px), so the side panel's tabs run the page's full height; the page
+   * beside them scrolls by itself.
+   */
+  height: calc(100vh - 92px);
 }
 
 /* Beside a side panel, the page runs to the panel's edges too. */
