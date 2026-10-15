@@ -16,6 +16,7 @@ import {
 } from "vitest";
 import {
   createClientCertificateListener,
+  peerAddress,
   readRevocationList,
   refusalMessage,
 } from "../../../src/mtls/clientCertificateListener";
@@ -115,6 +116,19 @@ describe("readRevocationList", () => {
     expect(pem.replace(/\s/g, "")).toBe(
       fs.readFileSync(list, "latin1").replace(/\s/g, ""),
     );
+  });
+});
+
+describe("peerAddress", () => {
+  it("drops the IPv4-mapped prefix a dual-stack listener reports", () => {
+    expect(peerAddress("::ffff:127.0.0.1", 62257)).toBe("127.0.0.1:62257");
+    expect(peerAddress("::FFFF:10.210.3.7", 443)).toBe("10.210.3.7:443");
+  });
+
+  it("leaves IPv4 and real IPv6 addresses as they are", () => {
+    expect(peerAddress("10.210.3.7", 51234)).toBe("10.210.3.7:51234");
+    expect(peerAddress("::1", 3443)).toBe("::1:3443");
+    expect(peerAddress("::ffff:abcd", 1)).toBe("::ffff:abcd:1");
   });
 });
 
