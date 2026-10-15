@@ -204,6 +204,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/keys/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reads a key without keeping it
+     * @description Decrypts a key about to be imported (encrypted PKCS#8, or the key in a PKCS#12 file) and says its type and public key, keeping nothing (ADR 0039): so an import can check the key is its CSR's and certificate's before the signer takes it, since a key once taken is refused for good after.
+     */
+    post: operations["ReadKey"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/issuers": {
     parameters: {
       query?: never;
@@ -322,6 +342,26 @@ export interface paths {
      * @description Discards a root with no CA, certificate or list beneath it (ADR 0032): its backup did not prove, or it was made by mistake. It is revoked in the record, never published, and its number is not used again.
      */
     post: operations["DiscardIssuer"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/issuer/{issuerId}/csr": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Gives an imported CA its CSR
+     * @description Keeps the CSR an imported CA's certificate was issued from, while it has none (ADR 0039). The CSR must be signed by the key its certificate certifies.
+     */
+    post: operations["AddIssuerCsr"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1623,6 +1663,25 @@ export interface components {
       unsealKey: string;
     };
     /**
+     * @description What `data` is
+     * @enum {string}
+     */
+    KeyImportFormat: "pem" | "pkcs12";
+    ImportedKey: {
+      /** @description What `data` is */
+      format: components["schemas"]["KeyImportFormat"];
+      /** @description The key: encrypted PKCS#8 PEM, or a PKCS#12 file in base64 (only its key is used) */
+      data: string;
+      /** @description Its passphrase; used once, never kept */
+      passphrase: string;
+    };
+    ReadKeyResponse: {
+      /** @description Its type, e.g. P-256 or RSA-4096 */
+      algorithm: string;
+      /** @description Its public key, SubjectPublicKeyInfo PEM */
+      publicKey: string;
+    };
+    /**
      * @description A CA's tier: roots and intermediates are offline, issuing CAs online
      * @enum {string}
      */
@@ -1676,6 +1735,8 @@ export interface components {
       shape?: components["schemas"]["IssuerShape"];
       /** @description An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup */
       provedAt?: string;
+      /** @description An ISO-8601 formatted string: when it was imported from another CA product (XCA); absent for a CA made here */
+      importedAt?: string;
       /** @description An ISO-8601 formatted string: when a root that had signed nothing was discarded */
       discardedAt?: string;
       /** @description Tells apart CAs of the same purpose and tier */
@@ -1774,6 +1835,8 @@ export interface components {
       shape?: components["schemas"]["IssuerShape"];
       /** @description An ISO-8601 formatted string: when an offline CA's key was first given back and opened a ceremony, proving its backup */
       provedAt?: string;
+      /** @description An ISO-8601 formatted string: when it was imported from another CA product (XCA); absent for a CA made here */
+      importedAt?: string;
       /** @description An ISO-8601 formatted string: when a root that had signed nothing was discarded */
       discardedAt?: string;
       /** @description Tells apart CAs of the same purpose and tier */
@@ -1874,6 +1937,14 @@ export interface components {
     };
     DiscardIssuerResponse: {
       /** @description The discarded root, revoked in the record */
+      issuer: components["schemas"]["FullIssuer"];
+    };
+    AddIssuerCsrRequest: {
+      /** @description The CSR its certificate was issued from, PEM: signed by the key it certifies (ADR 0039) */
+      csr: string;
+    };
+    AddIssuerCsrResponse: {
+      /** @description The CA, its CSR kept */
       issuer: components["schemas"]["FullIssuer"];
     };
     UpdateIssuerRequest: {
@@ -2386,19 +2457,6 @@ export interface components {
       asOf: string;
       /** @description The lineages whose newest version is valid, or ended within the last year; soonest to expire first */
       lineages: components["schemas"]["CertificateLineage"][];
-    };
-    /**
-     * @description What `data` is
-     * @enum {string}
-     */
-    KeyImportFormat: "pem" | "pkcs12";
-    ImportedKey: {
-      /** @description What `data` is */
-      format: components["schemas"]["KeyImportFormat"];
-      /** @description The key: encrypted PKCS#8 PEM, or a PKCS#12 file in base64 (only its key is used) */
-      data: string;
-      /** @description Its passphrase; used once, never kept */
-      passphrase: string;
     };
     /**
      * @description A key type the signer generates: RSA, DSA, an EC curve, or Ed25519
@@ -4685,6 +4743,76 @@ export interface operations {
       };
     };
   };
+  ReadKey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description The key and its passphrase. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ImportedKey"];
+      };
+    };
+    responses: {
+      /** @description Its type and public key. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReadKeyResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The signer is sealed or unreachable, or the Olympus API cannot be asked */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
   ListIssuers: {
     parameters: {
       query?: never;
@@ -5077,6 +5205,88 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["DiscardIssuerResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  AddIssuerCsr: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        issuerId: string;
+      };
+      cookie?: never;
+    };
+    /** @description The CSR, PEM. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddIssuerCsrRequest"];
+      };
+    };
+    responses: {
+      /** @description The CA. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AddIssuerCsrResponse"];
         };
       };
       /** @description The request presented was not valid */

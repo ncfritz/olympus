@@ -14,3 +14,12 @@
 .intro {
   margin-block-end: var(--ant-margin, 16px);
 }
+
+.steps.steps {
+  margin-block: var(--ant-margin-sm, 12px) var(--ant-margin-lg, 24px);
+}
+
+/* What does not match, above the dialog's buttons. */
+.problem.problem {
+  margin-block-end: var(--ant-margin-sm, 12px);
+}

@@ -44,3 +44,57 @@
 .page {
   height: calc(100vh - 92px);
 }
+
+/*
+ * Its contents run to the shell's edges (docs/conventions/ux.md, Page
+ * edges): the tabs and tables abut them; what is in them keeps the
+ * page's 24px margin. Doubled selectors outrank antd's own.
+ */
+.page > :global(.ant-layout-content) {
+  padding: 0;
+}
+
+/* The title as far from the top as from the left. */
+.header.header {
+  padding: 24px 24px 8px;
+}
+
+.title.title {
+  margin: 0;
+}
+
+.padded.padded {
+  padding: 0 24px 16px;
+}
+
+.details {
+  padding: 16px 24px;
+}
+
+.tabs > :global(.ant-tabs-nav) {
+  margin-bottom: 0;
+  padding-inline: 24px;
+}
+
+/* The tabs' tables abut the edges; their first and last cells keep the margin. */
+.tabs :global(.ant-table-cell:first-child) {
+  padding-inline-start: 24px !important;
+}
+
+.tabs :global(.ant-table-cell:last-child) {
+  padding-inline-end: 24px !important;
+}
+
+.tabs :global(.ant-table-pagination) {
+  padding-inline: 24px;
+}
+
+/* A tab whose content is not a table keeps the page's margin. */
+.tabPadded {
+  padding: 16px 24px;
+}
+
+/* A long value (an ID, a URL), a size down. */
+.small {
+  font-size: var(--ant-font-size-sm, 12px);
+}

@@ -2,6 +2,7 @@
 
 import {
   DeleteOutlined,
+  DownOutlined,
   DownloadOutlined,
   FileProtectOutlined,
   FileTextOutlined,
@@ -13,6 +14,7 @@ import {
   Alert,
   Button,
   Descriptions,
+  Dropdown,
   Flex,
   Popconfirm,
   Table,
@@ -57,8 +59,9 @@ import {
 } from "./CertificateDetails";
 import { CeremonyList } from "./CeremonyList";
 import { ErrorAlert } from "./ErrorAlert";
-import { ImportCaModal } from "./imports/ImportCaModal";
+import { ImportChildCaModal } from "./imports/ImportChildCaModal";
 import { ImportCrlModal } from "./imports/ImportCrlModal";
+import { ImportIssuerCsrModal } from "./imports/ImportIssuerCsrModal";
 import { ImportLeafModal } from "./imports/ImportLeafModal";
 import { IssuedChart } from "./IssuedChart";
 import { IssuerAltNamesModal } from "./IssuerAltNamesModal";
@@ -101,8 +104,17 @@ const columnsOf = (
 };
 
 /** A value in the theme's code font, without code formatting. */
-const Mono = ({ children }: { children: ReactNode }) => (
-  <span className={styles.mono}>{children}</span>
+const Mono = ({
+  children,
+  small,
+}: {
+  children: ReactNode;
+  /** A long value (an ID, a URL), a size down. */
+  small?: boolean;
+}) => (
+  <span className={`${styles.mono} ${small ? styles.small : ""}`}>
+    {children}
+  </span>
 );
 
 /** A tag in the details: all the same width. */
@@ -148,7 +160,9 @@ export function IssuerPage() {
   const [error, setError] = useState<unknown>();
   const [editingNames, setEditingNames] = useState(false);
   const [editingOcspUrl, setEditingOcspUrl] = useState(false);
-  const [importing, setImporting] = useState<"ca" | "leaf" | "crl">();
+  const [importing, setImporting] = useState<
+    "child" | "leaf" | "csr" | "crl"
+  >();
 
   if (!issuerId) return <Alert type="error" title="Which CA?" />;
   if (notFound) return <ErrorAlert error={notFound} />;
@@ -163,12 +177,24 @@ export function IssuerPage() {
   const constraints = constraintLines(issuer.nameConstraints);
   /** Where an admin imports what XCA made beneath it, and its list. */
   const importable = isAdmin && !discarded && Boolean(issuer.certificate);
+  /** What its Import menu offers: what is beneath it; an XCA CA's missing CSR and list. */
+  const imports = [
+    issuer.tier === "issuing"
+      ? { key: "leaf" as const, label: "A certificate it signed" }
+      : { key: "child" as const, label: "A child CA" },
+    ...(issuer.importedAt && !issuer.csr
+      ? [{ key: "csr" as const, label: "Its CSR" }]
+      : []),
+    ...(issuer.importedAt && crls && crls.length === 0
+      ? [{ key: "crl" as const, label: "Its revocation list" }]
+      : []),
+  ];
   /** An offline CA that can sit: its key comes back only in a ceremony. */
   const ceremonial = issuer.offline && !discarded && issuer.status === "active";
 
   const [leftFields, rightFields] = columnsOf(
     [
-      { key: "id", label: "ID", children: <Mono>{issuer.id}</Mono> },
+      { key: "id", label: "ID", children: <Mono small>{issuer.id}</Mono> },
       Boolean(issuer.parentId) && {
         key: "parent",
         label: "Parent",
@@ -265,8 +291,8 @@ export function IssuerPage() {
         label: "Published",
         children: (
           <Flex vertical>
-            <Mono>{issuer.caIssuersUrl}</Mono>
-            <Mono>{issuer.crlUrl}</Mono>
+            <Mono small>{issuer.caIssuersUrl}</Mono>
+            <Mono small>{issuer.crlUrl}</Mono>
           </Flex>
         ),
       },
@@ -275,7 +301,7 @@ export function IssuerPage() {
         label: "OCSP",
         children: (
           <Flex gap="small" align="baseline" wrap>
-            <Mono>{issuer.ocspUrl}</Mono>
+            <Mono small>{issuer.ocspUrl}</Mono>
             {isAdmin && !discarded && (
               <Button
                 type="link"
@@ -345,21 +371,20 @@ export function IssuerPage() {
         none("It has no certificate yet.")
       ),
     },
-    {
-      key: "csr",
-      label: (
-        <TabIcon title="Certificate request" icon={<FileProtectOutlined />} />
-      ),
-      children: issuer.csr ? (
-        <PemBlock pem={issuer.csr} />
-      ) : (
-        none(
-          issuer.tier === "root"
-            ? "A root signs itself: it has no CSR."
-            : "Its certificate was made here, from its key: there is no CSR.",
-        )
-      ),
-    },
+    ...(issuer.csr
+      ? [
+          {
+            key: "csr",
+            label: (
+              <TabIcon
+                title="Certificate request"
+                icon={<FileProtectOutlined />}
+              />
+            ),
+            children: <PemBlock pem={issuer.csr} />,
+          },
+        ]
+      : []),
     {
       key: "pem",
       label: <TabIcon title="Certificate (PEM)" icon={<FileTextOutlined />} />,
@@ -378,196 +403,230 @@ export function IssuerPage() {
       width={PANEL_WIDTH}
       className={styles.page}
     >
-      <Flex vertical gap="large">
-        <Flex justify="space-between" align="center" wrap gap="middle">
-          <div>
-            <Typography.Title level={3}>
-              {commonName(issuer.subject)}
-            </Typography.Title>
-          </div>
-          <Flex gap="small" wrap>
-            {issuer.certificate && (
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={() =>
-                  saveFile(
-                    `${issuer.id}.crt.pem`,
-                    issuer.certificate!,
-                    "application/x-pem-file",
-                  )
-                }
-              >
-                Certificate
+      <Flex
+        justify="space-between"
+        align="center"
+        wrap
+        gap="middle"
+        className={styles.header}
+      >
+        <Typography.Title level={3} className={styles.title}>
+          {commonName(issuer.subject)}
+        </Typography.Title>
+        <Flex gap="small" wrap>
+          {issuer.certificate && (
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={() =>
+                saveFile(
+                  `${issuer.id}.crt.pem`,
+                  issuer.certificate!,
+                  "application/x-pem-file",
+                )
+              }
+            >
+              Certificate
+            </Button>
+          )}
+          {importable && (
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: imports,
+                onClick: ({ key }) => setImporting(key as typeof importing),
+              }}
+            >
+              <Button icon={<ImportOutlined />}>
+                Import <DownOutlined />
               </Button>
-            )}
-            {importable && (
-              <Button
-                icon={<ImportOutlined />}
-                onClick={() =>
-                  setImporting(issuer.tier === "issuing" ? "leaf" : "ca")
-                }
-              >
-                {issuer.tier === "issuing" ? "Import leaf" : "Import"}
+            </Dropdown>
+          )}
+          {ceremonial && issuer.provedAt && (
+            <Button
+              type="primary"
+              disabled={Boolean(signer?.ceremonyId) || !isAdmin}
+              onClick={() => setOpening(true)}
+            >
+              Open a ceremony
+            </Button>
+          )}
+          {unused && isAdmin && (
+            <Popconfirm
+              title="Discard this root?"
+              description="It has signed nothing. It is never published, and its name and number are not used again."
+              okText="Discard"
+              okButtonProps={{ danger: true }}
+              onConfirm={discard}
+            >
+              <Button type="primary" danger icon={<DeleteOutlined />}>
+                Discard
               </Button>
-            )}
-            {importable && (
-              <Button onClick={() => setImporting("crl")}>Import list</Button>
-            )}
-            {ceremonial && (
-              <Button
-                type="primary"
-                disabled={Boolean(signer?.ceremonyId) || !isAdmin}
-                onClick={() => setOpening(true)}
-              >
-                {issuer.provedAt ? "Open a ceremony" : "Prove the backup"}
-              </Button>
-            )}
-            {unused && isAdmin && (
-              <Popconfirm
-                title="Discard this root?"
-                description="It has signed nothing. It is never published, and its name and number are not used again."
-                okText="Discard"
-                okButtonProps={{ danger: true }}
-                onConfirm={discard}
-              >
-                <Button danger icon={<DeleteOutlined />}>
-                  Discard
-                </Button>
-              </Popconfirm>
-            )}
-          </Flex>
+            </Popconfirm>
+          )}
         </Flex>
-        <ErrorAlert error={error} />
-        {issuer.offline && !discarded && <OpenCeremonyAlert />}
-        {importable && (
-          <>
-            {issuer.tier === "issuing" ? (
-              <ImportLeafModal
-                issuer={issuer}
-                open={importing === "leaf"}
-                onClose={() => setImporting(undefined)}
-              />
-            ) : (
-              <ImportCaModal
-                parent={issuer}
-                open={importing === "ca"}
-                onClose={() => setImporting(undefined)}
-              />
-            )}
-            <ImportCrlModal
+      </Flex>
+      {ceremonial && !issuer.provedAt && (
+        <Alert
+          type="info"
+          showIcon
+          banner
+          title="Prove the backup"
+          description="Bring its key back from the offline media and open a ceremony with it: until then, nothing shows the backup can be restored, and it signs nothing."
+          action={
+            <Button
+              size="small"
+              disabled={Boolean(signer?.ceremonyId) || !isAdmin}
+              onClick={() => setOpening(true)}
+            >
+              Prove the backup
+            </Button>
+          }
+        />
+      )}
+      {issuer.offline && !discarded && <OpenCeremonyAlert />}
+      {Boolean(error) && (
+        <div className={styles.padded}>
+          <ErrorAlert error={error} />
+        </div>
+      )}
+      {importable && (
+        <>
+          {issuer.tier === "issuing" ? (
+            <ImportLeafModal
               issuer={issuer}
-              open={importing === "crl"}
+              open={importing === "leaf"}
               onClose={() => setImporting(undefined)}
             />
-          </>
-        )}
-        {ceremonial && (
-          <OpenCeremonyModal
+          ) : (
+            <ImportChildCaModal
+              parent={issuer}
+              open={importing === "child"}
+              onClose={() => setImporting(undefined)}
+            />
+          )}
+          <ImportIssuerCsrModal
             issuer={issuer}
-            open={opening && !signer?.ceremonyId}
-            onClose={() => setOpening(false)}
+            open={importing === "csr"}
+            onClose={() => setImporting(undefined)}
           />
-        )}
-        <Flex vertical gap="small">
-          <Descriptions
-            column={1}
-            size="small"
-            classNames={{ label: styles.label }}
-            items={[
-              {
-                key: "subject",
-                label: "Subject",
-                children: <Mono>{issuer.subject}</Mono>,
-              },
-            ]}
+          <ImportCrlModal
+            issuer={issuer}
+            open={importing === "crl"}
+            onClose={() => setImporting(undefined)}
           />
-          <Flex wrap gap={64}>
-            {[leftFields, rightFields].map((fields, index) => (
-              <Descriptions
-                key={index}
-                className={styles.column}
-                column={1}
-                size="small"
-                classNames={{
-                  label: index === 0 ? styles.label : styles.rightLabel,
-                }}
-                items={fields}
-              />
-            ))}
-            {issued && <IssuedChart counts={issued} />}
-          </Flex>
-        </Flex>
-        <Tabs
+        </>
+      )}
+      {ceremonial && (
+        <OpenCeremonyModal
+          issuer={issuer}
+          open={opening && !signer?.ceremonyId}
+          onClose={() => setOpening(false)}
+        />
+      )}
+      <Flex vertical gap="small" className={styles.details}>
+        <Descriptions
+          column={1}
+          size="small"
+          classNames={{ label: styles.label }}
           items={[
             {
-              key: "certificates",
-              label: "Certificates",
-              children: (
-                <SignedList issuerId={issuer.id} issuers={issuers ?? []} />
-              ),
-            },
-            ...(issuer.offline
-              ? [
-                  {
-                    key: "ceremonies",
-                    label: "Ceremonies",
-                    children: <CeremonyList issuerId={issuer.id} />,
-                  },
-                ]
-              : []),
-            ...(issuer.certificate && !discarded
-              ? [
-                  {
-                    key: "ocsp",
-                    label: "OCSP",
-                    children: <IssuerOcspPanel issuer={issuer} />,
-                  },
-                ]
-              : []),
-            {
-              key: "crls",
-              label: "Revocation lists",
-              children: (
-                <Table<RevocationList>
-                  rowKey="number"
-                  size="small"
-                  dataSource={crls ?? []}
-                  pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                  columns={[
-                    { title: "Number", dataIndex: "number" },
-                    { title: "Source", dataIndex: "source" },
-                    { title: "Entries", dataIndex: "entries" },
-                    {
-                      title: "This update",
-                      dataIndex: "thisUpdate",
-                      render: formatDateTime,
-                    },
-                    {
-                      title: "Next update",
-                      dataIndex: "nextUpdate",
-                      render: formatDate,
-                    },
-                    {
-                      title: "Published",
-                      dataIndex: "publishedAt",
-                      render: (publishedAt: string | undefined, list) =>
-                        publishedAt ? (
-                          formatDateTime(publishedAt)
-                        ) : list.lastError ? (
-                          <Typography.Text type="danger">
-                            {list.lastError}
-                          </Typography.Text>
-                        ) : (
-                          <Tag color="gold">waiting</Tag>
-                        ),
-                    },
-                  ]}
-                />
-              ),
+              key: "subject",
+              label: "Subject",
+              children: <Mono>{issuer.subject}</Mono>,
             },
           ]}
         />
+        <Flex wrap gap={64}>
+          {[leftFields, rightFields].map((fields, index) => (
+            <Descriptions
+              key={index}
+              className={styles.column}
+              column={1}
+              size="small"
+              classNames={{
+                label: index === 0 ? styles.label : styles.rightLabel,
+              }}
+              items={fields}
+            />
+          ))}
+          {issued && <IssuedChart counts={issued} />}
+        </Flex>
       </Flex>
+      <Tabs
+        className={styles.tabs}
+        items={[
+          {
+            key: "certificates",
+            label: "Certificates",
+            children: (
+              <SignedList issuerId={issuer.id} issuers={issuers ?? []} />
+            ),
+          },
+          ...(issuer.offline
+            ? [
+                {
+                  key: "ceremonies",
+                  label: "Ceremonies",
+                  children: <CeremonyList issuerId={issuer.id} />,
+                },
+              ]
+            : []),
+          ...(issuer.certificate && !discarded
+            ? [
+                {
+                  key: "ocsp",
+                  label: "OCSP",
+                  children: (
+                    <div className={styles.tabPadded}>
+                      <IssuerOcspPanel issuer={issuer} />
+                    </div>
+                  ),
+                },
+              ]
+            : []),
+          {
+            key: "crls",
+            label: "Revocation lists",
+            children: (
+              <Table<RevocationList>
+                rowKey="number"
+                size="small"
+                dataSource={crls ?? []}
+                pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                columns={[
+                  { title: "Number", dataIndex: "number" },
+                  { title: "Source", dataIndex: "source" },
+                  { title: "Entries", dataIndex: "entries" },
+                  {
+                    title: "This update",
+                    dataIndex: "thisUpdate",
+                    render: formatDateTime,
+                  },
+                  {
+                    title: "Next update",
+                    dataIndex: "nextUpdate",
+                    render: formatDate,
+                  },
+                  {
+                    title: "Published",
+                    dataIndex: "publishedAt",
+                    render: (publishedAt: string | undefined, list) =>
+                      publishedAt ? (
+                        formatDateTime(publishedAt)
+                      ) : list.lastError ? (
+                        <Typography.Text type="danger">
+                          {list.lastError}
+                        </Typography.Text>
+                      ) : (
+                        <Tag color="gold">waiting</Tag>
+                      ),
+                  },
+                ]}
+              />
+            ),
+          },
+        ]}
+      />
       <IssuerAltNamesModal
         issuer={issuer}
         open={editingNames}

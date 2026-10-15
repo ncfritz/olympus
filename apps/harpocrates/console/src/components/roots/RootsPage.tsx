@@ -16,7 +16,7 @@ import {
 import { shortCaName } from "@/lib/tree";
 import { Count, CountStrip } from "../CountStrip";
 import { ErrorAlert } from "../ErrorAlert";
-import { ImportCaModal } from "../imports/ImportCaModal";
+import { ImportRootModal } from "../imports/ImportRootModal";
 import { CaBoard } from "./CaBoard";
 import { CaDiagram } from "./CaDiagram";
 import { CaList } from "./CaList";
@@ -76,7 +76,7 @@ export function RootsPage() {
         >
           Import
         </Button>
-        <ImportCaModal open={importing} onClose={() => setImporting(false)} />
+        <ImportRootModal open={importing} onClose={() => setImporting(false)} />
         <Link href="/roots/new">
           <Button type="primary" icon={<PlusOutlined />} disabled={!isAdmin}>
             New root

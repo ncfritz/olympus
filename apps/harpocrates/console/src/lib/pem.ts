@@ -212,3 +212,39 @@ export const numberingOf = (
   const number = /(\d+)\s*$/.exec(name);
   return number ? { number: Number(number[1]), generation: 1 } : {};
 };
+
+/** DER as base64, to compare public keys. */
+const derBase64 = (der: ArrayBuffer): string =>
+  btoa(String.fromCharCode(...new Uint8Array(der)));
+
+/** A certificate's public key (SubjectPublicKeyInfo, base64); undefined when it is not one. */
+export const certificateSpkiOf = (pem: string): string | undefined => {
+  const block = blocksOf(pem).find((b) => b.label === "CERTIFICATE");
+  if (!block) return undefined;
+  try {
+    return derBase64(new x509.X509Certificate(block.pem).publicKey.rawData);
+  } catch {
+    return undefined;
+  }
+};
+
+/** A CSR's public key, and whether it is signed by it; undefined when it is not one. */
+export const readCsr = async (
+  pem: string,
+): Promise<{ spki: string; signed: boolean } | undefined> => {
+  const block = blocksOf(pem).find((b) => b.label === "CERTIFICATE REQUEST");
+  if (!block) return undefined;
+  try {
+    const csr = new x509.Pkcs10CertificateRequest(block.pem);
+    return {
+      spki: derBase64(csr.publicKey.rawData),
+      signed: await csr.verify().catch(() => false),
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+/** A public key in PEM (SubjectPublicKeyInfo) as base64 DER. */
+export const publicKeySpkiOf = (pem: string): string =>
+  pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");

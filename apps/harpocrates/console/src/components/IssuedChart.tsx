@@ -15,12 +15,12 @@ const SIZE = 200;
 
 /**
  * The rings, as fractions of the chart: tiers inside from 50% to 72% of
- * the radius, types outside from 76% to 100%. Highcharts sizes a pie's
+ * the radius, types outside from 74% to 100% (2px apart, at this size). Highcharts sizes a pie's
  * hole against the pie itself, so the inner ring's hole is 50/72 of it.
  * Half the radius is left empty in the centre.
  */
 const INNER = { size: "72%", innerSize: `${(50 / 72) * 100}%` };
-const OUTER = { size: "100%", innerSize: "76%" };
+const OUTER = { size: "100%", innerSize: "74%" };
 
 /** The tiers in their order around the rings. */
 const TIER_ORDER: IssuedTier[] = ["intermediate", "issuing", "leaf"];
