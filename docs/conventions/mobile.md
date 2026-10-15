@@ -1,8 +1,8 @@
 # Mobile (Expo / React Native)
 
-`tools/auth-tester-mobile`, and the iOS app when it comes. The Expo parts of
-this are not general React knowledge; the rules below are the ones that cost
-time when they are not followed.
+`apps/onair-ios` and `tools/auth-tester-mobile`. The Expo parts of this are
+not general React knowledge; the rules below are the ones that cost time when
+they are not followed.
 
 ## Do not write Expo code from memory
 

@@ -8,7 +8,8 @@ code:
 - `docs/conventions/api.md`: `apps/api`
 - `docs/conventions/agent.md`: `agents/*`
 - `docs/conventions/ux.md`: `apps/site`, `packages/ui`, `packages/theme`
-- `docs/conventions/mobile.md`: `tools/auth-tester-mobile` (Expo/React Native)
+- `docs/conventions/mobile.md`: `apps/onair-ios`, `tools/auth-tester-mobile`
+  (Expo/React Native)
 - `docs/conventions/python.md`: the Python services, `apps/harpocrates/signer`
   (in Turbo) and `agents/minerva-mail-ml` (its checks are ruff and pytest,
   outside Turbo)
