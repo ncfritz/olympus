@@ -62,6 +62,15 @@ const CALLER_REFUSED =
   /alert (certificate unknown|unknown ca|bad certificate|unsupported certificate|certificate expired|certificate revoked)/;
 
 /**
+ * A caller's address as `host:port`. A listener on every address (no host)
+ * is dual-stack, so an IPv4 caller arrives IPv4-mapped (`::ffff:10.0.0.5`)
+ * on macOS and Linux alike; the prefix is dropped so the log names the
+ * address the caller actually has.
+ */
+export const peerAddress = (address: string, port: number | undefined) =>
+  `${address.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/i, "")}:${port}`;
+
+/**
  * The line a refused handshake is logged with: who, and why. The address
  * is the TCP connection's, captured when it arrived, because by the time
  * the handshake is reported the TLS socket is torn down and has none.
@@ -149,7 +158,7 @@ export const createClientCertificateListener = (
   const peers = new WeakMap<net.Socket, string>();
   server.on("connection", (socket: net.Socket) => {
     if (socket.remoteAddress) {
-      peers.set(socket, `${socket.remoteAddress}:${socket.remotePort}`);
+      peers.set(socket, peerAddress(socket.remoteAddress, socket.remotePort));
     }
   });
   server.on("tlsClientError", (error: Error, socket: tls.TLSSocket) => {
@@ -158,7 +167,7 @@ export const createClientCertificateListener = (
     const peer =
       (tcp && peers.get(tcp)) ??
       (socket.remoteAddress
-        ? `${socket.remoteAddress}:${socket.remotePort}`
+        ? peerAddress(socket.remoteAddress, socket.remotePort)
         : undefined);
     logger.warn(refusalMessage(error, peer));
     hooks.onRefused?.();
