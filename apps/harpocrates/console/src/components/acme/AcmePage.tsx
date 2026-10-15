@@ -163,7 +163,7 @@ export function AcmePage() {
     <SideTabPanel
       panelId="harpocrates.acme"
       width={PANEL_WIDTH}
-      className={styles.page}
+      className={`${styles.page} ${styles.fit}`}
       tabs={[
         {
           key: "look",

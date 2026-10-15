@@ -1,4 +1,4 @@
-import { Flex, Segmented, Tooltip, Typography } from "antd";
+import { Flex, Pagination, Segmented, Tooltip, Typography } from "antd";
 import { type CSSProperties, useState } from "react";
 import { DAY, stateOf, type WindowState, windowStateOf } from "@/lib/acme";
 import type { AcmeClient } from "@/lib/api/types";
@@ -6,6 +6,9 @@ import { formatDate } from "@/lib/labels";
 import styles from "./Acme.module.css";
 
 /** The ranges the timeline shows: days before today, and after. */
+/** A page of the timeline holds this many windows. */
+const PAGE_SIZE = 50;
+
 const RANGES = {
   "120 days": [30, 90],
   "1 year": [90, 275],
@@ -44,6 +47,7 @@ export function RenewalTimeline({
   onOpen: (credentialId: string) => void;
 }) {
   const [range, setRange] = useState<Range>("120 days");
+  const [page, setPage] = useState(1);
   const [before, after] = RANGES[range];
   const start = now - before * DAY;
   const end = now + after * DAY;
@@ -63,8 +67,12 @@ export function RenewalTimeline({
     (_, i) => -before + i * step,
   ).filter((d) => d > -before && d < after);
 
+  const pages = Math.max(1, Math.ceil(lanes.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const shown = lanes.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
   return (
-    <Flex vertical>
+    <Flex vertical className={styles.fill}>
       <Flex
         justify="space-between"
         align="center"
@@ -124,7 +132,7 @@ export function RenewalTimeline({
             </Typography.Text>
           </div>
         ) : (
-          lanes.map(({ client, certificate }) => {
+          shown.map(({ client, certificate }) => {
             const state = windowStateOf(certificate, now);
             const opens = Date.parse(certificate.renewalStart);
             const closes = Date.parse(certificate.renewalEnd);
@@ -198,6 +206,18 @@ export function RenewalTimeline({
           })
         )}
       </div>
+      <Pagination
+        className={styles.pager}
+        size="small"
+        current={current}
+        pageSize={PAGE_SIZE}
+        total={lanes.length}
+        showSizeChanger={false}
+        onChange={setPage}
+        showTotal={(total) =>
+          `${total} certificate${total === 1 ? "" : "s"} held via ACME`
+        }
+      />
     </Flex>
   );
 }

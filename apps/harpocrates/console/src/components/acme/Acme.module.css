@@ -8,9 +8,23 @@
   flex-direction: column;
 }
 
+/*
+ * The clients page is exactly as tall as the shell leaves (below its
+ * header, 64px, and breadcrumbs, 28px), so it never scrolls: its tab's
+ * list takes the rest.
+ */
+.page.fit {
+  height: calc(100vh - 92px);
+}
+
 /* Beside a side panel, the page runs to the panel's edges too. */
 .page > :global(.ant-layout-content) {
   padding: 0;
+}
+
+.page.fit > :global(.ant-layout-content) {
+  display: flex;
+  flex-direction: column;
 }
 
 .header.header {
@@ -28,6 +42,69 @@
 .tabs.tabs > :global(.ant-tabs-nav) {
   margin-bottom: 0;
   padding-inline: 24px;
+}
+
+/*
+ * Each tab's list takes the height the rest of the page leaves: its rows
+ * scroll beneath its header, and its pagination stays at the page's
+ * foot. Only in a window too short to leave the tabs room for a few
+ * rows does the page scroll. antd 6.6 calls each pane .ant-tabs-content.
+ */
+.tabs.tabs {
+  flex: 1 1 0;
+  min-height: 340px;
+}
+
+.tabs :global(.ant-tabs-body-holder),
+.tabs :global(.ant-tabs-body),
+.tabs :global(.ant-tabs-content-active) {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill.fill {
+  flex: 1 0 auto;
+}
+
+.fill > :global(.ant-table-wrapper) {
+  flex: 1 1 0;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill > :global(.ant-table-wrapper > .ant-spin),
+.fill > :global(.ant-table-wrapper .ant-spin-container),
+.fill > :global(.ant-table-wrapper .ant-table),
+.fill > :global(.ant-table-wrapper .ant-table-container) {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fill > :global(.ant-table-wrapper .ant-table-content) {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto !important;
+}
+
+.fill :global(.ant-table-thead > tr > th) {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* A list's pagination at its foot, the table's or its own. */
+.fill > :global(.ant-table-wrapper .ant-table-pagination.ant-pagination),
+.pager.pager {
+  flex: none;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 8px 24px;
+  border-top: 1px solid var(--ant-color-border-secondary);
 }
 
 .small {
@@ -175,8 +252,11 @@
  * a bar and its renewal window a box on it, today across them all; each
  * span's start (--from) and length (--width) set from code.
  */
+/* The renewal windows fill the tab, scrolling beneath their heading. */
 .timeline {
-  border-bottom: 1px solid var(--ant-color-border-secondary);
+  flex: 1 1 0;
+  min-height: 200px;
+  overflow: auto;
 }
 
 .lane {
@@ -193,8 +273,17 @@
 }
 
 .laneHead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   padding-block: 10px 6px;
-  background: var(--ant-color-fill-quaternary);
+  /* Opaque, as it stays over the windows scrolling beneath it. */
+  background:
+    linear-gradient(
+      var(--ant-color-fill-quaternary),
+      var(--ant-color-fill-quaternary)
+    ),
+    var(--ant-color-bg-container);
   font-size: var(--ant-font-size-sm, 12px);
   font-weight: 600;
 }

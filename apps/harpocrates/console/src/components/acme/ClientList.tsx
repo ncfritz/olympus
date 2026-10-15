@@ -175,7 +175,7 @@ export function ClientList({
   }, [clients, filter, search, now]);
 
   return (
-    <>
+    <Flex vertical className={styles.fill}>
       <Flex gap="middle" align="center" wrap className={styles.filters}>
         <Input.Search
           allowClear
@@ -216,7 +216,12 @@ export function ClientList({
       <Table<AcmeClient>
         rowKey={(client) => client.credential.id}
         size="middle"
-        pagination={false}
+        pagination={{
+          pageSize: 50,
+          size: "small",
+          showSizeChanger: false,
+          showTotal: (total) => `${total} client${total === 1 ? "" : "s"}`,
+        }}
         dataSource={shown}
         className={styles.flushTable}
         tableLayout="fixed"
@@ -340,7 +345,7 @@ export function ClientList({
           },
         ]}
       />
-    </>
+    </Flex>
   );
 }
 
