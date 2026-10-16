@@ -15623,6 +15623,10 @@
         "description": "An ISO-8601 formatted string indicating when the meeting ends",
         "type": "string"
       },
+      "isAllDay": {
+        "description": "`true` if the meeting is an all-day event, `false` otherwise",
+        "type": "boolean"
+      },
       "meetingId": {
         "description": "The ID of the meeting",
         "type": "string"
@@ -15652,6 +15656,7 @@
       "calendarStatus",
       "counted",
       "endTime",
+      "isAllDay",
       "meetingId",
       "overridden",
       "startTime",

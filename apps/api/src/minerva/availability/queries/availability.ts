@@ -11,5 +11,6 @@ export const AVAILABILITY_MEETING = `id
   subject
   start_time
   end_time
+  all_day
   status
   source`;

@@ -17106,6 +17106,10 @@
             "type": "string",
             "description": "An ISO-8601 formatted string indicating when the meeting ends"
           },
+          "isAllDay": {
+            "type": "boolean",
+            "description": "`true` if the meeting is an all-day event, `false` otherwise"
+          },
           "calendarStatus": {
             "type": "string",
             "description": "The meeting's free/busy status from its calendar: Busy, Tentative, Free, OOF or WorkingElsewhere"
@@ -17131,6 +17135,7 @@
           "meetingId",
           "startTime",
           "endTime",
+          "isAllDay",
           "calendarStatus",
           "status",
           "overridden",

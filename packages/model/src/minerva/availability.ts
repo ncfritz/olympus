@@ -109,6 +109,13 @@ export class MeetingAvailability {
   endTime: Moment;
 
   @ApiProperty({
+    type: Boolean,
+    required: true,
+    description: "`true` if the meeting is an all-day event, `false` otherwise",
+  })
+  isAllDay: boolean;
+
+  @ApiProperty({
     type: String,
     required: true,
     description:

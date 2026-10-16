@@ -23,6 +23,7 @@ export type GraphQlAvailabilityMeeting = {
   subject: string | null;
   start_time: string;
   end_time: string;
+  all_day: boolean | null;
   status: string;
   source: string | null;
 };
@@ -53,6 +54,7 @@ export const toMeetingAvailability = (
   subject: row.subject ?? undefined,
   startTime: moment.utc(row.start_time),
   endTime: moment.utc(row.end_time),
+  isAllDay: row.all_day === true,
   calendarStatus: row.status,
   status: override ?? levelOfMeetingStatus(row.status),
   overridden: override !== undefined,

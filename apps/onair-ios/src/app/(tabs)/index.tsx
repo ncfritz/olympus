@@ -1,12 +1,5 @@
 import { router } from "expo-router";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
@@ -15,6 +8,7 @@ import { DayStrip } from "../../components/DayStrip";
 import { Glow } from "../../components/Glow";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
 import { PillButton } from "../../components/PillButton";
+import { PullHint } from "../../components/PullHint";
 import { StatusGlyph } from "../../components/StatusGlyph";
 import { changeHref, hrefOf } from "../../links";
 import {
@@ -60,7 +54,16 @@ export default function NowScreen() {
   const ready = useReady();
   const insets = useSafeAreaInsets();
   const now = useNow(1000);
-  const pull = usePullToRefresh(ready?.reload ?? noReload);
+  const pull = usePullToRefresh({
+    idleLabel: "Pull to refresh",
+    stages: [
+      {
+        at: 70,
+        label: "Release to refresh",
+        run: () => (ready?.reload ?? noReload)(),
+      },
+    ],
+  });
   if (ready === undefined) return null;
   const { state, signOut } = ready;
 
@@ -72,134 +75,132 @@ export default function NowScreen() {
   const onAir = isOnAir(current?.level);
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={pull.refreshing}
-          onRefresh={pull.onRefresh}
-          tintColor={colors.text}
-        />
-      }
-    >
-      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-        <Glow color={statusFill[status]} />
+    <View style={styles.screen}>
+      <Animated.ScrollView
+        style={styles.fill}
+        contentContainerStyle={styles.content}
+        {...pull.scrollProps}
+      >
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+          <Glow color={statusFill[status]} />
 
-        <View style={styles.titleRow}>
-          <View style={styles.titleText}>
-            <Text style={styles.date}>
-              {`${WEEKDAYS.at(now.getDay())}, ${MONTHS.at(now.getMonth())} ${now.getDate()}`}
-            </Text>
-            <Text style={styles.title} accessibilityRole="header">
-              Now
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.hero}>
-          <CountdownRing
-            progress={current?.progress ?? 0}
-            lamp={statusAccent[status]}
-            glow={statusAccent[status]}
-          >
-            <Text style={styles.countdown} accessibilityLabel="Time left">
-              {current === undefined
-                ? "--:--"
-                : countdown(current.until - now.getTime())}
-            </Text>
-            <Text style={styles.left}>left</Text>
-          </CountdownRing>
-          <View style={styles.heroText}>
-            <View style={styles.onAirRow}>
-              <View style={[styles.onAirDot, !onAir && styles.onAirDotOff]} />
-              <Text style={styles.onAir}>{onAir ? "ON AIR" : "OFF AIR"}</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleText}>
+              <Text style={styles.date}>
+                {`${WEEKDAYS.at(now.getDay())}, ${MONTHS.at(now.getMonth())} ${now.getDate()}`}
+              </Text>
+              <Text style={styles.title} accessibilityRole="header">
+                Now
+              </Text>
             </View>
-            <Text style={styles.status}>{LABELS[status]}</Text>
-            {title !== undefined && (
-              <Text style={styles.heroLine} numberOfLines={1}>
-                {title}
+          </View>
+
+          <View style={styles.hero}>
+            <CountdownRing
+              progress={current?.progress ?? 0}
+              lamp={statusAccent[status]}
+              glow={statusAccent[status]}
+            >
+              <Text style={styles.countdown} accessibilityLabel="Time left">
+                {current === undefined
+                  ? "--:--"
+                  : countdown(current.until - now.getTime())}
               </Text>
-            )}
-            {current !== undefined && (
-              <Text style={styles.heroLine}>
-                {`${clock(current.since)} – ${clock(current.until)}`}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.buttons}>
-          <View style={styles.button}>
-            <PillButton
-              label="Change"
-              onPress={() => router.push(changeHref(current?.cause))}
-            />
-          </View>
-          <View style={styles.button}>
-            <PillButton
-              label="Override"
-              primary
-              onPress={() => router.push("/override/new")}
-            />
-          </View>
-        </View>
-
-        <DayStrip
-          parts={strip.parts}
-          {...(strip.nowFraction === undefined
-            ? {}
-            : { nowFraction: strip.nowFraction })}
-        />
-      </View>
-
-      <View style={styles.body}>
-        {current?.next !== undefined && (
-          <View style={styles.nextLine}>
-            <StatusGlyph status={current.next.status} size={14} />
-            <Text style={styles.nextText}>
-              {`${LABELS[current.next.status]} at ${clock(current.next.at)}`}
-            </Text>
-          </View>
-        )}
-
-        <Text style={styles.section}>UP NEXT</Text>
-        <View style={styles.card}>
-          {next.length === 0 ? (
-            <Text style={styles.empty}>Nothing else today.</Text>
-          ) : (
-            next.map((item, index) => (
-              <View key={`${item.kind}-${item.id}`}>
-                {index > 0 && <RowSeparator />}
-                <ItemRow
-                  item={item}
-                  onPress={() => router.push(hrefOf(item))}
-                />
+              <Text style={styles.left}>left</Text>
+            </CountdownRing>
+            <View style={styles.heroText}>
+              <View style={styles.onAirRow}>
+                <View style={[styles.onAirDot, !onAir && styles.onAirDotOff]} />
+                <Text style={styles.onAir}>{onAir ? "ON AIR" : "OFF AIR"}</Text>
               </View>
-            ))
-          )}
+              <Text style={styles.status}>{LABELS[status]}</Text>
+              {title !== undefined && (
+                <Text style={styles.heroLine} numberOfLines={1}>
+                  {title}
+                </Text>
+              )}
+              {current !== undefined && (
+                <Text style={styles.heroLine}>
+                  {`${clock(current.since)} – ${clock(current.until)}`}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.buttons}>
+            <View style={styles.button}>
+              <PillButton
+                label="Change"
+                onPress={() => router.push(changeHref(current?.cause))}
+              />
+            </View>
+            <View style={styles.button}>
+              <PillButton
+                label="Override"
+                primary
+                onPress={() => router.push("/override/new")}
+              />
+            </View>
+          </View>
+
+          <DayStrip
+            parts={strip.parts}
+            {...(strip.nowFraction === undefined
+              ? {}
+              : { nowFraction: strip.nowFraction })}
+          />
         </View>
 
-        {state.problem !== undefined && (
-          <Text style={styles.problem} accessibilityRole="alert">
-            {`${state.problem} Showing what was loaded at ${clock(state.loadedAt)}. Pull down to try again.`}
-          </Text>
-        )}
+        <View style={styles.body}>
+          {current?.next !== undefined && (
+            <View style={styles.nextLine}>
+              <StatusGlyph status={current.next.status} size={14} />
+              <Text style={styles.nextText}>
+                {`${LABELS[current.next.status]} at ${clock(current.next.at)}`}
+              </Text>
+            </View>
+          )}
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void signOut()}
-          style={styles.signOut}
-        >
-          <Text style={styles.signOutText}>Sign out</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+          <Text style={styles.section}>UP NEXT</Text>
+          <View style={styles.card}>
+            {next.length === 0 ? (
+              <Text style={styles.empty}>Nothing else today.</Text>
+            ) : (
+              next.map((item, index) => (
+                <View key={`${item.kind}-${item.id}`}>
+                  {index > 0 && <RowSeparator />}
+                  <ItemRow
+                    item={item}
+                    onPress={() => router.push(hrefOf(item))}
+                  />
+                </View>
+              ))
+            )}
+          </View>
+
+          {state.problem !== undefined && (
+            <Text style={styles.problem} accessibilityRole="alert">
+              {`${state.problem} Showing what was loaded at ${clock(state.loadedAt)}. Pull down to try again.`}
+            </Text>
+          )}
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void signOut()}
+            style={styles.signOut}
+          >
+            <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
+        </View>
+      </Animated.ScrollView>
+      <PullHint pull={pull} top={insets.top + 6} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  fill: { flex: 1 },
   content: { paddingBottom: 32 },
   header: { paddingHorizontal: 20, paddingBottom: 26, gap: 22 },
   titleRow: {

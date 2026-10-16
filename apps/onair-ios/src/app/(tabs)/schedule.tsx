@@ -1,14 +1,24 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  Pressable,
+  type ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 
 import { useReady } from "../../auth/SessionProvider";
+import { ItemRow, RowSeparator } from "../../components/ItemRow";
+import { PullHint } from "../../components/PullHint";
 import { StatusGlyph } from "../../components/StatusGlyph";
 import { hrefOf } from "../../links";
 import {
   addDays,
+  allDayOn,
   clock,
   itemsBetween,
   layoutColumns,
@@ -21,6 +31,7 @@ import {
 import { LABELS, STATUSES, toOnAirStatus } from "../../status";
 import { colors, statusAccent } from "../../theme";
 import { useNow } from "../../useNow";
+import { usePullToRefresh } from "../../usePullToRefresh";
 
 /** Points per hour on the day's timeline. */
 const HOUR = 60;
@@ -42,6 +53,14 @@ const MONTHS = [
 ];
 const RAIL_LEFT = 46;
 const EVENTS_LEFT = 60;
+/** Room above midnight so the 12 AM label is not cut off. */
+const GRID_TOP = 10;
+/** The "3 all-day events" row above midnight, margins included. */
+const SUMMARY_HEIGHT = 34;
+/** The gap under the open all-day list. */
+const ALL_DAY_GAP = 8;
+
+const noReload = () => Promise.resolve();
 
 const hourLabel = (hour: number) =>
   hour === 0
@@ -62,6 +81,57 @@ export default function ScheduleScreen() {
   const now = useNow(60_000);
   const [day, setDay] = useState(() => startOfDay(new Date()));
   const [width, setWidth] = useState(0);
+  const [allDayOpen, setAllDayOpen] = useState(false);
+  const scroller = useRef<ScrollView>(null);
+  const listHeight = useRef(0);
+  const pendingScroll = useRef<number | undefined>(undefined);
+
+  const pickDay = (next: Date) => {
+    setDay(next);
+    setAllDayOpen(false);
+  };
+
+  // All-day events sit above midnight: a row saying how many, and the list
+  // itself once pulled down (or the row tapped). Pulling with the list open,
+  // or on a day without any, refreshes.
+  const allDay =
+    ready === undefined ? [] : allDayOn(ready.state.availability, day);
+  const allDayLabel = `${allDay.length} all-day event${allDay.length === 1 ? "" : "s"}`;
+  const pullOpensList = allDay.length > 0 && !allDayOpen;
+  const pull = usePullToRefresh({
+    idleLabel: pullOpensList
+      ? `Pull to show ${allDayLabel}`
+      : "Pull to refresh",
+    stages: pullOpensList
+      ? [
+          {
+            at: 56,
+            label: `Release to show ${allDayLabel}`,
+            run: () => setAllDayOpen(true),
+          },
+        ]
+      : [
+          {
+            at: 70,
+            label: "Release to refresh",
+            run: () => (ready?.reload ?? noReload)(),
+          },
+        ],
+    onScrollY: (y) => {
+      // Scrolled past the open list: fold it away, and keep the timeline
+      // where it was on screen.
+      if (!allDayOpen || pendingScroll.current !== undefined) return;
+      if (y > SUMMARY_HEIGHT + listHeight.current) {
+        pendingScroll.current = y - listHeight.current;
+        setAllDayOpen(false);
+      }
+    },
+  });
+  useLayoutEffect(() => {
+    if (allDayOpen || pendingScroll.current === undefined) return;
+    scroller.current?.scrollTo({ y: pendingScroll.current, animated: false });
+    pendingScroll.current = undefined;
+  }, [allDayOpen]);
 
   const loaded = useMemo(() => loadWindow(now), [now]);
   const week = weekOf(day);
@@ -116,7 +186,7 @@ export default function ScheduleScreen() {
             accessibilityRole="button"
             accessibilityLabel="Previous week"
             disabled={!canGoBack}
-            onPress={() => setDay(addDays(day, -7))}
+            onPress={() => pickDay(addDays(day, -7))}
             style={[styles.chevron, !canGoBack && styles.disabled]}
           >
             <Text style={styles.chevronText}>‹</Text>
@@ -133,7 +203,7 @@ export default function ScheduleScreen() {
                   accessibilityState={{ selected, disabled: !inWindow }}
                   accessibilityLabel={`${DAY_LETTERS.at(index)} ${date.getDate()}${today ? ", today" : ""}`}
                   disabled={!inWindow}
-                  onPress={() => setDay(date)}
+                  onPress={() => pickDay(date)}
                   style={[
                     styles.dayButton,
                     selected && styles.daySelected,
@@ -160,7 +230,7 @@ export default function ScheduleScreen() {
             accessibilityRole="button"
             accessibilityLabel="Next week"
             disabled={!canGoForward}
-            onPress={() => setDay(addDays(day, 7))}
+            onPress={() => pickDay(addDays(day, 7))}
             style={[styles.chevron, !canGoForward && styles.disabled]}
           >
             <Text style={styles.chevronText}>›</Text>
@@ -177,98 +247,137 @@ export default function ScheduleScreen() {
         </View>
       </View>
 
-      <ScrollView
-        style={styles.timeline}
-        contentOffset={{ x: 0, y: 7 * HOUR }}
-        contentContainerStyle={{ height: 24 * HOUR + 24 }}
-      >
-        <View
-          style={styles.grid}
-          onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+      <View style={styles.timeline}>
+        <Animated.ScrollView
+          ref={scroller}
+          contentOffset={{
+            x: 0,
+            y: (allDay.length > 0 ? SUMMARY_HEIGHT : 0) + 7 * HOUR,
+          }}
+          {...pull.scrollProps}
         >
-          {HOURS.map((hour) => (
-            <View
-              key={hour}
-              style={[styles.hourRow, { top: hour * HOUR }]}
-              accessible={false}
+          {allDay.length > 0 && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: allDayOpen }}
+              accessibilityHint={allDayOpen ? "Hides them" : "Shows them"}
+              onPress={() => setAllDayOpen((open) => !open)}
+              style={styles.allDaySummary}
             >
-              <Text style={styles.hourLabel}>{hourLabel(hour)}</Text>
-              <View style={styles.hourLine} />
-            </View>
-          ))}
-
-          {rail.map((run) => (
+              <Text style={styles.allDayText}>{allDayLabel}</Text>
+              <Text style={styles.allDayChevron}>{allDayOpen ? "▴" : "▾"}</Text>
+            </Pressable>
+          )}
+          {allDayOpen && allDay.length > 0 && (
             <View
-              key={run.start}
-              style={[
-                styles.rail,
-                {
-                  top: offsetOf(dayStart, run.start),
-                  height: offsetOf(run.start, run.end),
-                  backgroundColor:
-                    run.level === "none"
-                      ? colors.separator
-                      : statusAccent[toOnAirStatus(run.level)],
-                },
-              ]}
-            />
-          ))}
-
-          {placed.map((item) => {
-            const top = offsetOf(dayStart, Math.max(item.start, dayStart));
-            const height = Math.max(
-              22,
-              offsetOf(
-                Math.max(item.start, dayStart),
-                Math.min(item.end, dayEnd),
-              ) - 2,
-            );
-            const slotWidth = columnsWidth / item.columns;
-            const color = statusAccent[item.status];
-            return (
-              <Pressable
-                key={`${item.kind}-${item.id}`}
-                accessibilityRole="button"
-                accessibilityLabel={`${clock(item.start)} to ${clock(item.end)}, ${item.title}, ${LABELS[item.status]}`}
-                onPress={() => router.push(hrefOf(item))}
-                style={[
-                  styles.event,
-                  {
-                    top,
-                    height,
-                    left: EVENTS_LEFT + item.column * slotWidth,
-                    width: slotWidth - 4,
-                    backgroundColor: `${color}2E`,
-                    borderColor: item.kind === "block" ? color : "transparent",
-                  },
-                  item.kind === "block" && styles.eventBlock,
-                ]}
-              >
-                <Text style={styles.eventTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                {height > 36 && (
-                  <Text style={styles.eventDetail} numberOfLines={1}>
-                    {`${clock(item.start)} – ${clock(item.end)} · ${item.detail}`}
-                  </Text>
-                )}
-              </Pressable>
-            );
-          })}
-
-          {sameDay(now, day) && (
-            <View
-              style={[
-                styles.nowLine,
-                { top: offsetOf(dayStart, now.getTime()) },
-              ]}
-              accessibilityLabel={`Now, ${clock(now)}`}
+              style={styles.allDayList}
+              onLayout={(event) => {
+                listHeight.current =
+                  event.nativeEvent.layout.height + ALL_DAY_GAP;
+              }}
             >
-              <View style={styles.nowDot} />
+              {allDay.map((item, index) => (
+                <View key={item.id}>
+                  {index > 0 && <RowSeparator />}
+                  <ItemRow
+                    item={item}
+                    showTime={false}
+                    onPress={() => router.push(hrefOf(item))}
+                  />
+                </View>
+              ))}
             </View>
           )}
-        </View>
-      </ScrollView>
+          <View
+            style={styles.grid}
+            onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+          >
+            {HOURS.map((hour) => (
+              <View
+                key={hour}
+                style={[styles.hourRow, { top: hour * HOUR }]}
+                accessible={false}
+              >
+                <Text style={styles.hourLabel}>{hourLabel(hour)}</Text>
+                <View style={styles.hourLine} />
+              </View>
+            ))}
+
+            {rail.map((run) => (
+              <View
+                key={run.start}
+                style={[
+                  styles.rail,
+                  {
+                    top: offsetOf(dayStart, run.start),
+                    height: offsetOf(run.start, run.end),
+                    backgroundColor:
+                      run.level === "none"
+                        ? colors.separator
+                        : statusAccent[toOnAirStatus(run.level)],
+                  },
+                ]}
+              />
+            ))}
+
+            {placed.map((item) => {
+              const top = offsetOf(dayStart, Math.max(item.start, dayStart));
+              const height = Math.max(
+                22,
+                offsetOf(
+                  Math.max(item.start, dayStart),
+                  Math.min(item.end, dayEnd),
+                ) - 2,
+              );
+              const slotWidth = columnsWidth / item.columns;
+              const color = statusAccent[item.status];
+              return (
+                <Pressable
+                  key={`${item.kind}-${item.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${clock(item.start)} to ${clock(item.end)}, ${item.title}, ${LABELS[item.status]}`}
+                  onPress={() => router.push(hrefOf(item))}
+                  style={[
+                    styles.event,
+                    {
+                      top,
+                      height,
+                      left: EVENTS_LEFT + item.column * slotWidth,
+                      width: slotWidth - 4,
+                      backgroundColor: `${color}2E`,
+                      borderColor:
+                        item.kind === "block" ? color : "transparent",
+                    },
+                    item.kind === "block" && styles.eventBlock,
+                  ]}
+                >
+                  <Text style={styles.eventTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {height > 36 && (
+                    <Text style={styles.eventDetail} numberOfLines={1}>
+                      {`${clock(item.start)} – ${clock(item.end)} · ${item.detail}`}
+                    </Text>
+                  )}
+                </Pressable>
+              );
+            })}
+
+            {sameDay(now, day) && (
+              <View
+                style={[
+                  styles.nowLine,
+                  { top: offsetOf(dayStart, now.getTime()) },
+                ]}
+                accessibilityLabel={`Now, ${clock(now)}`}
+              >
+                <View style={styles.nowDot} />
+              </View>
+            )}
+          </View>
+        </Animated.ScrollView>
+        <PullHint pull={pull} top={6} />
+      </View>
     </View>
   );
 }
@@ -325,7 +434,27 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendText: { fontSize: 12, color: colors.textSecondary },
   timeline: { flex: 1, marginTop: 12 },
-  grid: { flex: 1, marginHorizontal: 20 },
+  grid: { height: 24 * HOUR + 24, marginTop: GRID_TOP, marginHorizontal: 20 },
+  allDaySummary: {
+    height: SUMMARY_HEIGHT - 8,
+    marginVertical: 4,
+    marginHorizontal: 20,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  allDayText: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
+  allDayChevron: { fontSize: 13, color: colors.textSecondary },
+  allDayList: {
+    marginHorizontal: 20,
+    marginBottom: ALL_DAY_GAP,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: colors.surface,
+  },
   hourRow: {
     position: "absolute",
     left: 0,

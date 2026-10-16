@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  allDayOn,
   type Availability,
   type Block,
   causeTitle,
@@ -295,5 +296,43 @@ describe("lengthChoices", () => {
         (m) => m.subject,
       ),
     ).toEqual(["Design review", "Office hours"]);
+  });
+});
+
+describe("all-day events", () => {
+  const holiday = meeting({
+    meetingId: "h",
+    subject: "Holiday",
+    startTime: at(0).toISOString(),
+    endTime: at(0, 0, 15).toISOString(),
+    calendarStatus: "Free",
+    status: "free",
+    isAllDay: true,
+  });
+  // Stored from UTC midnight: in Los Angeles it starts the evening before.
+  const utc = meeting({
+    meetingId: "u",
+    subject: "Birthday",
+    startTime: new Date(Date.UTC(2026, 9, 14)).toISOString(),
+    endTime: new Date(Date.UTC(2026, 9, 15)).toISOString(),
+    calendarStatus: "Free",
+    status: "free",
+    isAllDay: true,
+  });
+  const avail: Availability = {
+    slots: [],
+    meetings: [holiday, utc, meeting({})],
+    blocks: [],
+  };
+
+  it("lists them for their day, by title, and not on the timeline", () => {
+    expect(allDayOn(avail, at(12)).map((item) => item.id)).toEqual(["u", "h"]);
+    expect(allDayOn(avail, at(12))[1]?.detail).toBe("All day · Free");
+    expect(allDayOn(avail, at(12, 0, 13))).toEqual([]);
+    expect(
+      itemsBetween(avail, at(0).getTime(), at(0, 0, 15).getTime()).map(
+        (item) => item.id,
+      ),
+    ).toEqual(["m"]);
   });
 });

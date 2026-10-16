@@ -1,17 +1,11 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
+import { PullHint } from "../../components/PullHint";
 import { hrefOf } from "../../links";
 import { dayTitle, overridesByDay } from "../../schedule";
 import { colors } from "../../theme";
@@ -25,7 +19,16 @@ export default function OverridesScreen() {
   const insets = useSafeAreaInsets();
   const now = useNow(60_000);
   const [showing, setShowing] = useState<"upcoming" | "past">("upcoming");
-  const pull = usePullToRefresh(ready?.reload ?? noReload);
+  const pull = usePullToRefresh({
+    idleLabel: "Pull to refresh",
+    stages: [
+      {
+        at: 70,
+        label: "Release to refresh",
+        run: () => (ready?.reload ?? noReload)(),
+      },
+    ],
+  });
   if (ready === undefined) return null;
 
   const groups = overridesByDay(ready.state.availability.blocks, now);
@@ -37,14 +40,8 @@ export default function OverridesScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl
-            refreshing={pull.refreshing}
-            onRefresh={pull.onRefresh}
-            tintColor={colors.text}
-          />
-        }
+      <Animated.ScrollView
+        {...pull.scrollProps}
         contentContainerStyle={[
           styles.content,
           { paddingTop: insets.top + 14 },
@@ -104,7 +101,8 @@ export default function OverridesScreen() {
             </View>
           </View>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
+      <PullHint pull={pull} top={insets.top + 6} />
 
       <Pressable
         accessibilityRole="button"

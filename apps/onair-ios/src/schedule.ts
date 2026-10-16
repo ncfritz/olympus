@@ -25,6 +25,8 @@ export type Meeting = {
   status: Level;
   overridden: boolean;
   counted: boolean;
+  /** An all-day event; absent from an API that does not say. */
+  isAllDay?: boolean;
 };
 
 export type Block = {
@@ -339,11 +341,38 @@ export const itemsBetween = (
   to: number,
 ): Item[] =>
   [
-    ...availability.meetings.map(meetingItem),
+    ...availability.meetings
+      .filter((meeting) => meeting.isAllDay !== true)
+      .map(meetingItem),
     ...availability.blocks.map(blockItem),
   ]
     .filter((item) => item.start < to && item.end > from)
     .sort(byStart);
+
+/**
+ * The all-day events on a day, by title. One lands on the day it covers at
+ * least half of, so an event stored from UTC midnight still lands on its own
+ * date wherever the phone is.
+ */
+export const allDayOn = (availability: Availability, day: Date): Item[] => {
+  const from = startOfDay(day).getTime();
+  const to = addDays(startOfDay(day), 1).getTime();
+  return availability.meetings
+    .filter(
+      (meeting) =>
+        meeting.isAllDay === true &&
+        Math.min(ms(meeting.endTime), to) -
+          Math.max(ms(meeting.startTime), from) >=
+          (to - from) / 2,
+    )
+    .map((meeting) => {
+      const item = meetingItem(meeting);
+      return meeting.overridden
+        ? item
+        : { ...item, detail: `All day · ${meeting.calendarStatus}` };
+    })
+    .sort((a, b) => a.title.localeCompare(b.title));
+};
 
 /** Up next: what starts later today, by start. */
 export const upNext = (availability: Availability, now: Date): Item[] => {
