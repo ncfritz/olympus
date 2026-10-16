@@ -9,10 +9,10 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
 
 import { useReady } from "../../auth/SessionProvider";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
+import { NewOverrideButton } from "../../components/NewOverrideButton";
 import { PullHint, PullSpacer } from "../../components/PullHint";
 import { StatusGlyph } from "../../components/StatusGlyph";
 import { hrefOf } from "../../links";
@@ -165,21 +165,7 @@ export default function ScheduleScreen() {
               Schedule
             </Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="New override"
-            onPress={() => router.push("/override/new")}
-            style={styles.iconButton}
-          >
-            <Svg width={20} height={20} viewBox="0 0 24 24">
-              <Path
-                d="M12 5v14M5 12h14"
-                stroke={colors.text}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-              />
-            </Svg>
-          </Pressable>
+          <NewOverrideButton />
         </View>
 
         <View style={styles.weekRow}>
@@ -401,14 +387,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   title: { fontSize: 34, fontWeight: "700", color: colors.text },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surfaceRaised,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   weekRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   chevron: {
     width: 24,

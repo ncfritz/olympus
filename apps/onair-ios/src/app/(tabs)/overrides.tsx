@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
+import { NewOverrideButton } from "../../components/NewOverrideButton";
 import { PullHint, PullSpacer } from "../../components/PullHint";
 import { hrefOf } from "../../links";
 import { dayTitle, overridesByDay } from "../../schedule";
@@ -49,11 +50,14 @@ export default function OverridesScreen() {
         ]}
       >
         <PullSpacer pull={pull} gap={18} />
-        <View style={styles.titleText}>
-          <Text style={styles.count}>{`${upcomingCount} upcoming`}</Text>
-          <Text style={styles.title} accessibilityRole="header">
-            Overrides
-          </Text>
+        <View style={styles.titleRow}>
+          <View style={styles.titleText}>
+            <Text style={styles.count}>{`${upcomingCount} upcoming`}</Text>
+            <Text style={styles.title} accessibilityRole="header">
+              Overrides
+            </Text>
+          </View>
+          <NewOverrideButton />
         </View>
 
         <View style={styles.segmented} accessibilityRole="tablist">
@@ -80,7 +84,7 @@ export default function OverridesScreen() {
         {shown.length === 0 && (
           <Text style={styles.empty}>
             {showing === "upcoming"
-              ? "No overrides coming up. Tap + below to set one."
+              ? "No overrides coming up. Tap + to set one."
               : "No overrides in the last week."}
           </Text>
         )}
@@ -112,6 +116,11 @@ export default function OverridesScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: 20, paddingBottom: 40, gap: 18 },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
   titleText: { gap: 2 },
   count: {
     fontSize: 13,

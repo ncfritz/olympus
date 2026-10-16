@@ -133,10 +133,7 @@ export function OverrideForm({ block }: { block?: AvailabilityBlock }) {
               onPress={() => setStatus(option)}
               style={[
                 styles.tile,
-                selected && {
-                  backgroundColor: statusFill[option],
-                  borderColor: "#FFFFFF",
-                },
+                selected && { backgroundColor: statusFill[option] },
               ]}
             >
               <StatusGlyph
@@ -246,7 +243,7 @@ export function OverrideForm({ block }: { block?: AvailabilityBlock }) {
       <View style={styles.actions}>
         <PillButton
           label={block === undefined ? "Set override" : "Save"}
-          primary
+          primary={block === undefined}
           busy={busy === "save"}
           onPress={() => {
             if (valid) void save();
@@ -255,6 +252,7 @@ export function OverrideForm({ block }: { block?: AvailabilityBlock }) {
         {block !== undefined && (
           <PillButton
             label="Delete override"
+            danger
             busy={busy === "delete"}
             onPress={() =>
               void run("delete", () => ready.deleteBlock(block.id))
@@ -293,8 +291,6 @@ const styles = StyleSheet.create({
     padding: 14,
     justifyContent: "space-between",
     backgroundColor: "#26282C",
-    borderWidth: 3,
-    borderColor: "transparent",
   },
   tileText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

@@ -274,6 +274,7 @@ describe("lengthChoices", () => {
   it("offers fixed lengths, the meeting in progress, and the rest of the day", () => {
     const choices = lengthChoices(DAY, at(11, 11));
     expect(choices.map((choice) => choice.key)).toEqual([
+      "15m",
       "30m",
       "1h",
       "2h",

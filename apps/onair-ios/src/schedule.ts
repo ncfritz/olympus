@@ -550,7 +550,7 @@ export const dayTitle = (day: Date, now: Date): string => {
 /* ------------------------------------------------------------------ */
 
 export type LengthChoice = {
-  key: "30m" | "1h" | "2h" | "meeting" | "day";
+  key: "15m" | "30m" | "1h" | "2h" | "meeting" | "day";
   label: string;
   end: number;
 };
@@ -567,6 +567,7 @@ export const lengthChoices = (
 ): LengthChoice[] => {
   const at = now.getTime();
   const choices: LengthChoice[] = [
+    { key: "15m", label: "15 min", end: at + 15 * MINUTE },
     { key: "30m", label: "30 min", end: at + 30 * MINUTE },
     { key: "1h", label: "1 hr", end: at + 60 * MINUTE },
     { key: "2h", label: "2 hr", end: at + 120 * MINUTE },
