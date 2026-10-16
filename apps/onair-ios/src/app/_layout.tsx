@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View } from "react-native";
 
@@ -41,6 +41,18 @@ function GatedStack() {
             title: "Meeting",
             headerStyle: { backgroundColor: colors.background },
             headerTintColor: colors.text,
+            // A bare chevron: no "Back" title and, on iOS 26, no glass
+            // capsule around it.
+            unstable_headerLeftItems: () => [
+              {
+                type: "button",
+                label: "Back",
+                icon: { type: "sfSymbol", name: "chevron.left" },
+                tintColor: colors.text,
+                hidesSharedBackground: true,
+                onPress: () => router.back(),
+              },
+            ],
           }}
         />
         <Stack.Screen name="override/new" options={{ presentation: "modal" }} />

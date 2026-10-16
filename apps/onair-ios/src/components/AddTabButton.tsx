@@ -2,11 +2,11 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
-import { colors } from "../theme";
+import { colors, statusAccent } from "../theme";
 
 /**
- * The tab bar's centre button: a raised + that opens New override as a
- * modal. It is a button, not a tab, so the tab you were on stays selected.
+ * The tab bar's centre button: a raised + with the Interruptable glow that
+ * opens New override as a modal. It is a button, not a tab, so the tab you were on stays selected.
  */
 export function AddTabButton() {
   return (
@@ -42,6 +42,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.text,
     borderWidth: 4,
     borderColor: colors.tabBar,
+    shadowColor: statusAccent.interrupt,
+    shadowOpacity: 0.75,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
   },
   pressed: { opacity: 0.8 },
 });
