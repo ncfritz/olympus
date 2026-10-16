@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
 
 import { useReady } from "../../auth/SessionProvider";
 import { CountdownRing } from "../../components/CountdownRing";
@@ -29,6 +28,7 @@ import {
 import { isOnAir, LABELS } from "../../status";
 import { colors, statusAccent, statusFill } from "../../theme";
 import { useNow } from "../../useNow";
+import { usePullToRefresh } from "../../usePullToRefresh";
 
 const WEEKDAYS = [
   "Sunday",
@@ -54,12 +54,15 @@ const MONTHS = [
   "Dec",
 ];
 
+const noReload = () => Promise.resolve();
+
 export default function NowScreen() {
   const ready = useReady();
   const insets = useSafeAreaInsets();
   const now = useNow(1000);
+  const pull = usePullToRefresh(ready?.reload ?? noReload);
   if (ready === undefined) return null;
-  const { state, reload, signOut } = ready;
+  const { state, signOut } = ready;
 
   const current = nowState(state.availability, now);
   const status = current?.status ?? "clear";
@@ -74,8 +77,8 @@ export default function NowScreen() {
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl
-          refreshing={false}
-          onRefresh={() => void reload()}
+          refreshing={pull.refreshing}
+          onRefresh={pull.onRefresh}
           tintColor={colors.text}
         />
       }
@@ -92,22 +95,6 @@ export default function NowScreen() {
               Now
             </Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Refresh"
-            onPress={() => void reload()}
-            style={styles.iconButton}
-          >
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"
-                stroke="#FFFFFF"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </Pressable>
         </View>
 
         <View style={styles.hero}>
@@ -195,7 +182,7 @@ export default function NowScreen() {
 
         {state.problem !== undefined && (
           <Text style={styles.problem} accessibilityRole="alert">
-            {`${state.problem} Showing what was loaded at ${clock(state.loadedAt)}.`}
+            {`${state.problem} Showing what was loaded at ${clock(state.loadedAt)}. Pull down to try again.`}
           </Text>
         )}
 
@@ -229,14 +216,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.85)",
   },
   title: { fontSize: 34, fontWeight: "700", color: colors.text },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   hero: { flexDirection: "row", alignItems: "center", gap: 18 },
   countdown: {
     fontSize: 24,

@@ -1,6 +1,13 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
@@ -9,12 +16,16 @@ import { hrefOf } from "../../links";
 import { dayTitle, overridesByDay } from "../../schedule";
 import { colors } from "../../theme";
 import { useNow } from "../../useNow";
+import { usePullToRefresh } from "../../usePullToRefresh";
+
+const noReload = () => Promise.resolve();
 
 export default function OverridesScreen() {
   const ready = useReady();
   const insets = useSafeAreaInsets();
   const now = useNow(60_000);
   const [showing, setShowing] = useState<"upcoming" | "past">("upcoming");
+  const pull = usePullToRefresh(ready?.reload ?? noReload);
   if (ready === undefined) return null;
 
   const groups = overridesByDay(ready.state.availability.blocks, now);
@@ -27,6 +38,13 @@ export default function OverridesScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            tintColor={colors.text}
+          />
+        }
         contentContainerStyle={[
           styles.content,
           { paddingTop: insets.top + 14 },
