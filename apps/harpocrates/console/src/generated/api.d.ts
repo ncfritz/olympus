@@ -368,6 +368,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/issuer/{issuerId}/rename": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Gives an imported CA another ID
+     * @description Corrects the ID an offline CA imported from another CA product was given (ADR 0042), while nothing it signed names its URLs under the old one. Everything referencing it follows, its list and certificate URLs are made from the new ID, and its published files move to the new names.
+     */
+    post: operations["RenameIssuer"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/issuers/preview": {
     parameters: {
       query?: never;
@@ -1955,6 +1975,14 @@ export interface components {
     };
     UpdateIssuerResponse: {
       /** @description The CA, as it now is */
+      issuer: components["schemas"]["FullIssuer"];
+    };
+    RenameIssuerRequest: {
+      /** @description Its new ID: a slug, as an import's (lower case, digits and hyphens) */
+      id: string;
+    };
+    RenameIssuerResponse: {
+      /** @description The CA, under its new ID */
       issuer: components["schemas"]["FullIssuer"];
     };
     PreviewIssuerRequest: {
@@ -5287,6 +5315,88 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["AddIssuerCsrResponse"];
+        };
+      };
+      /** @description The request presented was not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description No valid access token was presented */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The entity with the specified identifiers was not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description The request conflicts with the current state */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Refused: a profile rule or one of the signer's invariants */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  RenameIssuer: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The CA's slug */
+        issuerId: string;
+      };
+      cookie?: never;
+    };
+    /** @description Its new ID. */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RenameIssuerRequest"];
+      };
+    };
+    responses: {
+      /** @description The CA, under its new ID. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RenameIssuerResponse"];
         };
       };
       /** @description The request presented was not valid */

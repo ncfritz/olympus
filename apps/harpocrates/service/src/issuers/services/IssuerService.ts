@@ -8,6 +8,8 @@ import {
 } from "@nestjs/common";
 import type { Issuer as IssuerRow, Prisma } from "../../store/prisma";
 import type { ProfileWithRules } from "../../profiles/converters/ProfileConverter";
+import * as fs from "fs/promises";
+import * as path from "path";
 import { AuditKind } from "../../audit/auditKinds";
 import { AuditService } from "../../audit/services/AuditService";
 import type { Principal } from "../../auth/principal";
@@ -435,6 +437,126 @@ export class IssuerService {
       );
     });
     return this.describe(issuerId);
+  }
+
+  /**
+   * Corrects the ID an imported offline CA was given (ADR 0042), while
+   * nothing it signed names its URLs under the old one: its record and
+   * everything referencing it take the new ID, its URLs are made from
+   * it, and its published list and certificate move to the new names.
+   */
+  async rename(
+    principal: Principal,
+    issuerId: string,
+    newId: string,
+  ): Promise<FullIssuer> {
+    const row = await this.row(issuerId);
+    if (newId === issuerId) return this.describe(issuerId);
+    if (!row.importedAt) {
+      throw new UnprocessableEntityException(
+        "Only a CA imported from another CA product is given another ID: a CA made here is named by its parts",
+      );
+    }
+    if (row.tier === "issuing") {
+      throw new UnprocessableEntityException(
+        "An issuing CA's key is held by the signer under its ID: only an offline CA is given another ID",
+      );
+    }
+    if (await this.prisma.issuer.findUnique({ where: { id: newId } })) {
+      throw new ConflictException(`There is a CA ${newId} already`);
+    }
+    const naming = await this.namingIt(issuerId, row);
+    if (naming.length) {
+      throw new ConflictException(
+        `${naming.length === 1 ? "A certificate it signed names" : `${naming.length} certificates it signed name`} its URLs under ${issuerId} (${naming.slice(0, 3).join(", ")}${naming.length > 3 ? ", …" : ""}): they must keep resolving, so its ID stays`,
+      );
+    }
+    await this.prisma.$transaction(async (tx) => {
+      // Every reference follows the ID: each foreign key to it cascades.
+      await tx.issuer.update({
+        where: { id: issuerId },
+        data: { id: newId, ...this.urlsFor(newId) },
+      });
+      await this.audit.record(
+        {
+          kind: AuditKind.IssuerRenamed,
+          principal,
+          subjectType: "issuer",
+          subjectId: newId,
+          attributes: { previousId: issuerId, subject: row.subject },
+        },
+        tx,
+      );
+    });
+    await this.movePublished(issuerId, newId);
+    return this.describe(newId);
+  }
+
+  /**
+   * What the CA signed that names its list or certificate URL: the
+   * certificates recorded under it, the CAs beneath it and its OCSP
+   * responders'. A URI is IA5String in DER, so the URL is in the bytes.
+   */
+  private async namingIt(issuerId: string, row: IssuerRow): Promise<string[]> {
+    const urls = [row.crlUrl, row.caIssuersUrl].map((url) =>
+      Buffer.from(url, "ascii"),
+    );
+    const names = (der: Uint8Array | null) =>
+      der !== null && urls.some((url) => Buffer.from(der).includes(url));
+    const [certificates, children, responders] = await Promise.all([
+      this.prisma.certificate.findMany({
+        where: { issuerId },
+        select: { serial: true, der: true },
+      }),
+      this.prisma.issuer.findMany({
+        where: { parentId: issuerId },
+        select: { id: true, certificate: true },
+      }),
+      this.prisma.ocspResponder.findMany({
+        where: { issuerId },
+        select: { id: true, certificate: true },
+      }),
+    ]);
+    return [
+      ...certificates.filter((c) => names(c.der)).map((c) => c.serial),
+      ...children.filter((c) => names(c.certificate)).map((c) => c.id),
+      ...responders
+        .filter((r) => names(r.certificate))
+        .map((r) => `OCSP responder ${r.id}`),
+    ];
+  }
+
+  /**
+   * A renamed CA's list and certificate, moved to the new ID's names. If
+   * they cannot be, its newest list is published again, under the new
+   * name, by the next publication run.
+   */
+  private async movePublished(from: string, to: string): Promise<void> {
+    const moves = [
+      ["crl", `${from}.crl`, `${to}.crl`],
+      ["ca", `${from}.crt`, `${to}.crt`],
+    ].map(([dir, old, now]) => [
+      path.join(this.pki.publishedDir, dir, old),
+      path.join(this.pki.publishedDir, dir, now),
+    ]);
+    try {
+      for (const [old, now] of moves) {
+        await fs.rename(old, now).catch((error: NodeJS.ErrnoException) => {
+          if (error.code !== "ENOENT") throw error;
+        });
+      }
+    } catch {
+      const newest = await this.prisma.crl.findFirst({
+        where: { issuerId: to },
+        orderBy: { number: "desc" },
+      });
+      if (newest) {
+        await this.prisma.crl.update({
+          where: { id: newest.id },
+          data: { publishedAt: null, publishAttempts: 0, lastError: null },
+        });
+      }
+    }
   }
 
   /**

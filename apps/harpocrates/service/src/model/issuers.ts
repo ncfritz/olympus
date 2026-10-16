@@ -865,6 +865,27 @@ export class AddIssuerCsrResponse {
   issuer: FullIssuer;
 }
 
+export class RenameIssuerRequest {
+  @ApiProperty({
+    type: String,
+    required: true,
+    description:
+      "Its new ID: a slug, as an import's (lower case, digits and hyphens)",
+  })
+  @IsString()
+  @Matches(/^[a-z][a-z0-9-]{0,62}$/)
+  id: string;
+}
+
+export class RenameIssuerResponse {
+  @ApiProperty({
+    type: () => FullIssuer,
+    required: true,
+    description: "The CA, under its new ID",
+  })
+  issuer: FullIssuer;
+}
+
 export class DiscardIssuerResponse {
   @ApiProperty({
     type: () => FullIssuer,

@@ -67,6 +67,7 @@ import { IssuedChart } from "./IssuedChart";
 import { IssuerAltNamesModal } from "./IssuerAltNamesModal";
 import { IssuerOcspPanel } from "./IssuerOcspPanel";
 import { OcspUrlModal } from "./OcspUrlModal";
+import { RenameIssuerModal } from "./RenameIssuerModal";
 import { OpenCeremonyAlert } from "./OpenCeremonyAlert";
 import { OpenCeremonyModal } from "./OpenCeremonyModal";
 import styles from "./IssuerPage.module.css";
@@ -160,6 +161,7 @@ export function IssuerPage() {
   const [error, setError] = useState<unknown>();
   const [editingNames, setEditingNames] = useState(false);
   const [editingOcspUrl, setEditingOcspUrl] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [importing, setImporting] = useState<
     "child" | "leaf" | "csr" | "crl"
   >();
@@ -204,7 +206,28 @@ export function IssuerPage() {
 
   const [leftFields, rightFields] = columnsOf(
     [
-      { key: "id", label: "ID", children: <Mono small>{issuer.id}</Mono> },
+      {
+        key: "id",
+        label: "ID",
+        children: (
+          <Flex gap="small" align="baseline" wrap>
+            <Mono small>{issuer.id}</Mono>
+            {/* An imported offline CA's may be corrected (ADR 0042). */}
+            {isAdmin &&
+              !discarded &&
+              issuer.importedAt &&
+              issuer.tier !== "issuing" && (
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => setRenaming(true)}
+                >
+                  Change
+                </Button>
+              )}
+          </Flex>
+        ),
+      },
       Boolean(issuer.parentId) && {
         key: "parent",
         label: "Parent",
@@ -650,6 +673,11 @@ export function IssuerPage() {
         issuer={issuer}
         open={editingOcspUrl}
         onClose={() => setEditingOcspUrl(false)}
+      />
+      <RenameIssuerModal
+        issuer={issuer}
+        open={renaming}
+        onClose={() => setRenaming(false)}
       />
     </SideTabPanel>
   );

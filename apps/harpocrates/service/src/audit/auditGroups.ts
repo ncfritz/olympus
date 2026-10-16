@@ -59,6 +59,7 @@ const SENSITIVE_KINDS = new Set([
   "ssh-certificate.revoked",
   "issuer.imported",
   "issuer.discarded",
+  "issuer.renamed",
   "profile.updated",
   "profile.deactivated",
   "ssh-principals.set",

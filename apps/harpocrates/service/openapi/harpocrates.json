@@ -1501,6 +1501,115 @@
         ]
       }
     },
+    "/v1/issuer/{issuerId}/rename": {
+      "post": {
+        "description": "Corrects the ID an offline CA imported from another CA product was given (ADR 0042), while nothing it signed names its URLs under the old one. Everything referencing it follows, its list and certificate URLs are made from the new ID, and its published files move to the new names.",
+        "operationId": "RenameIssuer",
+        "parameters": [
+          {
+            "name": "issuerId",
+            "required": true,
+            "in": "path",
+            "description": "The CA's slug",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Its new ID.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameIssuerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The CA, under its new ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenameIssuerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request presented was not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid access token was presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller's roles do not allow it, it needs a more recent sign-in, or a change riding on the console's cookies came from another page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entity with the specified identifiers was not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Refused: a profile rule or one of the signer's invariants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gives an imported CA another ID",
+        "tags": [
+          "Issuers"
+        ]
+      }
+    },
     "/v1/issuers/preview": {
       "post": {
         "description": "Returns a root, intermediate or issuing CA as creating it would make it, with every setting beside its default and the reasons creating it would be refused (ADR 0032, Names and settings). Nothing is signed or recorded: the console shows it for review before the CA is created.",
@@ -8322,6 +8431,34 @@
         "properties": {
           "issuer": {
             "description": "The CA, as it now is",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FullIssuer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "issuer"
+        ]
+      },
+      "RenameIssuerRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its new ID: a slug, as an import's (lower case, digits and hyphens)"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "RenameIssuerResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "description": "The CA, under its new ID",
             "allOf": [
               {
                 "$ref": "#/components/schemas/FullIssuer"

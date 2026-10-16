@@ -131,6 +131,7 @@ const EVENT_PHRASES: Record<string, string> = {
   "ceremony.closed": "Closed a ceremony for",
   "issuer.created": "Created",
   "issuer.updated": "Changed",
+  "issuer.renamed": "Gave another ID to",
   "issuer.proved": "Proved the backup of",
   "signer.sealed": "Sealed the signer",
   "signer.unsealed": "Unsealed the signer",
