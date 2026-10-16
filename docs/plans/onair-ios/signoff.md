@@ -35,6 +35,8 @@ added as each phase lands.
 | O2.20 | 2     | INT | Settings, Calendars: turn Counts toward busy off for one, then on                    | Its meetings stop (then start) setting your status, on the site too                     |
 | O2.21 | 2     | INT | Turn Show in app off for one                                                         | Its meetings leave Schedule, Up next and all-day; the status is unchanged               |
 | O2.22 | 2     | INT | Open Now during an override, a meeting, a meeting with its status set, and free time | Update Override, Set Status, Update Status; in free time New Override alone, full width |
+| O2.23 | 2     | DEV | Home Screen in light, dark and tinted; cold launch                                   | The tilted ON AIR icon in each; a dark splash, then the sign screen                     |
+| O2.24 | 2     | INT | Edit an override; set a meeting's status                                             | Update Override; Set Status or Update Status; no outline, just the ✓                    |
 
 Environments are the authentication sign-off's: DEV, INT (the LAN), EXT
 (outside it).

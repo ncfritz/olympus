@@ -125,8 +125,7 @@ export default function MeetingScreen() {
 
       <View style={styles.actions}>
         <PillButton
-          label="Save"
-          primary
+          label={meeting.overridden ? "Update Status" : "Set Status"}
           busy={saving}
           onPress={() => void save(picked)}
         />
@@ -161,13 +160,7 @@ function Option({
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={[
-        styles.option,
-        selected && {
-          borderColor: color ?? colors.text,
-          backgroundColor: colors.surfaceRaised,
-        },
-      ]}
+      style={[styles.option, selected && styles.optionSelected]}
     >
       {glyph}
       <View style={styles.optionText}>
@@ -214,10 +207,9 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingHorizontal: 16,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "transparent",
     backgroundColor: colors.surface,
   },
+  optionSelected: { backgroundColor: colors.surfaceRaised },
   followGlyph: {
     width: 26,
     height: 26,

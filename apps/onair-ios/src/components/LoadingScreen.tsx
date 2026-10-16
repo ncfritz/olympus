@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 
 import { colors } from "../theme";
 
@@ -28,10 +29,22 @@ export function LoadingScreen({
           }
         : {})}
     >
-      <View style={styles.glow} />
+      {/* The red room the sign lights: the design's radial background. */}
+      <Svg style={StyleSheet.absoluteFill} accessible={false}>
+        <Defs>
+          <RadialGradient id="room" cx="58%" cy="44%" rx="70%" ry="45%">
+            <Stop offset="0" stopColor="#3A1214" />
+            <Stop offset="0.55" stopColor="#160B0C" />
+            <Stop offset="1" stopColor={colors.background} />
+          </RadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#room)" />
+      </Svg>
       <View style={styles.sign} accessibilityElementsHidden>
         <View style={styles.signFace}>
-          <Text style={styles.signText}>ON AIR</Text>
+          {/* Two glows, as the design layers them: pink wide, white close. */}
+          <Text style={[styles.signText, styles.signGlowWide]}>ON AIR</Text>
+          <Text style={[styles.signText, styles.signGlowClose]}>ON AIR</Text>
         </View>
       </View>
 
@@ -60,16 +73,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     overflow: "hidden",
   },
-  glow: {
-    position: "absolute",
-    left: "-20%",
-    right: "-20%",
-    top: "30%",
-    height: "40%",
-    borderRadius: 400,
-    backgroundColor: "#3A1214",
-    opacity: 0.8,
-  },
   sign: {
     position: "absolute",
     alignSelf: "center",
@@ -97,9 +100,13 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 6,
     color: colors.signText,
-    textShadowColor: "#FF8A8E",
-    textShadowRadius: 24,
   },
+  signGlowWide: {
+    position: "absolute",
+    textShadowColor: "#FF8A8E",
+    textShadowRadius: 36,
+  },
+  signGlowClose: { textShadowColor: "#FFFFFF", textShadowRadius: 14 },
   brand: {
     position: "absolute",
     left: 28,

@@ -242,7 +242,7 @@ export function OverrideForm({ block }: { block?: AvailabilityBlock }) {
 
       <View style={styles.actions}>
         <PillButton
-          label={block === undefined ? "Set override" : "Save"}
+          label={block === undefined ? "Set override" : "Update Override"}
           primary={block === undefined}
           busy={busy === "save"}
           onPress={() => {
