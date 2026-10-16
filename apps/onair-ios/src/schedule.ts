@@ -201,6 +201,48 @@ export const causeAt = (
   return meeting === undefined ? undefined : { kind: "meeting", meeting };
 };
 
+/**
+ * What Now's change button acts on, and what it says: an override running
+ * now (Update Override), else a meeting now, by whether its status has been
+ * set (Update Status) or not (Set Status). Undefined when neither: Now then
+ * shows New Override alone. The one setting the level comes first; all-day
+ * events and meetings on calendars that do not count are left out, since
+ * setting their status changes nothing.
+ */
+export type ChangeTarget =
+  | { kind: "block"; block: Block; label: "Update Override" }
+  | {
+      kind: "meeting";
+      meeting: Meeting;
+      label: "Update Status" | "Set Status";
+    };
+
+export const changeTarget = (
+  availability: Availability,
+  now: Date,
+  level?: Level,
+): ChangeTarget | undefined => {
+  const at = now.getTime();
+  const blocks = availability.blocks.filter((block) => covers(block, at));
+  const block = blocks.find((b) => b.status === level) ?? blocks[0];
+  if (block !== undefined) {
+    return { kind: "block", block, label: "Update Override" };
+  }
+  const meetings = availability.meetings
+    .filter(
+      (meeting) =>
+        meeting.counted && meeting.isAllDay !== true && covers(meeting, at),
+    )
+    .sort((a, b) => ms(a.startTime) - ms(b.startTime));
+  const meeting = meetings.find((m) => m.status === level) ?? meetings[0];
+  if (meeting === undefined) return undefined;
+  return {
+    kind: "meeting",
+    meeting,
+    label: meeting.overridden ? "Update Status" : "Set Status",
+  };
+};
+
 export type NowState = {
   level: Level;
   status: OnAirStatus;

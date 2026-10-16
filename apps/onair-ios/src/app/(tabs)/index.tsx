@@ -14,6 +14,7 @@ import { StatusGlyph } from "../../components/StatusGlyph";
 import { changeHref, hrefOf } from "../../links";
 import {
   causeTitle,
+  changeTarget,
   clearUntil,
   clock,
   countdown,
@@ -94,6 +95,7 @@ export default function NowScreen() {
   const strip = dayStrip(state.availability.slots, now, ready.settings);
   // Off work: no countdown, just when work (or an override) starts.
   const offWork = clearUntil(current, now);
+  const change = changeTarget(state.availability, now, current?.level);
   const next = upNext(state.availability, now);
   const title = causeTitle(current?.cause);
   const onAir = isOnAir(current?.level);
@@ -183,12 +185,14 @@ export default function NowScreen() {
           </View>
 
           <View style={styles.buttons}>
-            <View style={styles.button}>
-              <PillButton
-                label="Change Override"
-                onPress={() => router.push(changeHref(current?.cause))}
-              />
-            </View>
+            {change !== undefined && (
+              <View style={styles.button}>
+                <PillButton
+                  label={change.label}
+                  onPress={() => router.push(changeHref(change))}
+                />
+              </View>
+            )}
             <View style={styles.button}>
               <PillButton
                 label="New Override"

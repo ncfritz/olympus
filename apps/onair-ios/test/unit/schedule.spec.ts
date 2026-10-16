@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   allDayOn,
+  changeTarget,
   hideCalendars,
   clearUntil,
   type Availability,
@@ -388,5 +389,35 @@ describe("hideCalendars", () => {
     expect(shown.meetings.map((m) => m.meetingId)).toEqual(["w", "x"]);
     expect(shown.slots).toBe(avail.slots);
     expect(hideCalendars(avail, [])).toBe(avail);
+  });
+});
+
+describe("changeTarget", () => {
+  const label = (hour: number, minute = 0) =>
+    changeTarget(DAY, at(hour, minute), nowState(DAY, at(hour, minute))?.level)
+      ?.label;
+
+  it("updates an override, else sets or updates the meeting's status", () => {
+    expect(label(15, 30)).toBe("Update Override");
+    expect(label(11, 11)).toBe("Set Status");
+    expect(label(12)).toBe("Update Status");
+    expect(label(13)).toBeUndefined();
+  });
+
+  it("leaves out all-day events and calendars that do not count", () => {
+    const quiet: Availability = {
+      ...DAY,
+      meetings: [
+        meeting({
+          meetingId: "a",
+          startTime: iso(0),
+          endTime: iso(23),
+          isAllDay: true,
+        }),
+        meeting({ meetingId: "c", counted: false }),
+      ],
+      blocks: [],
+    };
+    expect(changeTarget(quiet, at(11, 11))).toBeUndefined();
   });
 });
