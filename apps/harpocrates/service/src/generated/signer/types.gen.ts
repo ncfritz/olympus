@@ -386,6 +386,12 @@ export type IssuerResponse = {
    * Extendedkeyusages
    */
   extendedKeyUsages: Array<string>;
+  /**
+   * Listsonly
+   *
+   * Signs its revocation lists and its OCSP responder's certificate only (ADR 0041).
+   */
+  listsOnly: boolean;
 };
 
 /**
@@ -783,6 +789,12 @@ export type RegisterIssuerRequest = {
    * Dotted OIDs this issuer may put in a certificate.
    */
   extendedKeyUsages: Array<string>;
+  /**
+   * Listsonly
+   *
+   * Signs its revocation lists and its OCSP responder's certificate only: how an imported issuing CA whose certificate does not say path length 0 is held (ADR 0041).
+   */
+  listsOnly?: boolean;
 };
 
 /**

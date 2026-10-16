@@ -15,7 +15,7 @@ import {
   Typography,
 } from "antd";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSWRConfig } from "swr";
 import { apiClient } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/errors";
@@ -91,6 +91,18 @@ export function ImportChildCaModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const tier: Tier = Form.useWatch("tier", form) ?? "issuing";
+  const certificate = Form.useWatch("certificate", form) as string | undefined;
+  const certified = certificate ? readCaCertificate(certificate) : undefined;
+  /**
+   * An issuing CA whose certificate does not say path length 0 could sign
+   * a CA: its key is held to sign its lists only, so it comes in closed
+   * (ADR 0041).
+   */
+  const listsOnly =
+    tier === "issuing" && !!certified?.ca && certified.pathLength !== 0;
+  useEffect(() => {
+    if (listsOnly) form.setFieldValue("closed", true);
+  }, [form, listsOnly]);
   const parentName = commonName(parent.subject);
 
   /** What the certificate says, into each field not yet touched. */
@@ -100,7 +112,8 @@ export function ImportChildCaModal({
     const guessed: Partial<Values> = {
       id: slugOf(ca.commonName),
       ...numberingOf(ca.commonName),
-      tier: ca.pathLength === 0 ? "issuing" : "intermediate",
+      // With its key it is an issuing CA: an intermediate's stays offline.
+      tier: ca.pathLength === 0 || read.key ? "issuing" : "intermediate",
       ...(ca.extendedKeyUsages.length
         ? { extendedKeyUsages: ca.extendedKeyUsages }
         : {}),
@@ -178,6 +191,16 @@ export function ImportChildCaModal({
       return fail(
         2,
         "An issuing CA comes with its key: go back to the key, which the signer will hold.",
+      );
+    }
+    if (
+      values.tier === "issuing" &&
+      !values.closed &&
+      readCaCertificate(values.certificate ?? "")?.pathLength !== 0
+    ) {
+      return fail(
+        2,
+        "Its certificate does not say path length 0, so it is imported closed: it signs its lists only (ADR 0041).",
       );
     }
     if (values.tier === "intermediate" && read.key) {
@@ -472,9 +495,13 @@ export function ImportChildCaModal({
                 name="closed"
                 label="Closed"
                 valuePropName="checked"
-                extra="It signs its revocation lists and nothing new: XCA's CAs are imported closed (ADR 0037)."
+                extra={
+                  listsOnly
+                    ? "Its certificate does not say path length 0, so it could sign a CA: it is imported closed, its key signing its lists only (ADR 0041)."
+                    : "It signs its revocation lists and nothing new: XCA's CAs are imported closed (ADR 0037)."
+                }
               >
-                <Switch />
+                <Switch disabled={listsOnly} />
               </Form.Item>
             </>
           )}

@@ -196,6 +196,8 @@ export class SignerService {
     chain: string[];
     maxValidityDays: number;
     extendedKeyUsages: string[];
+    /** Its key signs its lists only, no certificate (ADR 0041). */
+    listsOnly?: boolean;
   }): Promise<void> {
     await this.call(() => signer.registerIssuer({ client: this.client, body }));
   }

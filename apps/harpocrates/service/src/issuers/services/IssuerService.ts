@@ -574,8 +574,13 @@ export class IssuerService {
         "An issuing CA is imported with its key and passphrase",
       );
     }
-    if (certificate.pathLength !== 0) {
-      throw new UnprocessableEntityException("An issuing CA has path length 0");
+    // A certificate that does not say path length 0 could sign a CA; its
+    // key is kept to sign its lists only, so it comes in closed (ADR 0041).
+    const listsOnly = certificate.pathLength !== 0;
+    if (listsOnly && !request.closed) {
+      throw new UnprocessableEntityException(
+        "An issuing CA whose certificate does not say path length 0 is imported closed: it signs its lists only (ADR 0041)",
+      );
     }
     const signerKey = await this.signer.importKey(
       "issuer",
@@ -595,6 +600,7 @@ export class IssuerService {
       constraints: [],
       kind: AuditKind.IssuerImported,
       closed: request.closed,
+      listsOnly,
       csr,
     });
     return this.describe(request.id);
@@ -687,6 +693,11 @@ export class IssuerService {
       kind: typeof AuditKind.IssuerCreated | typeof AuditKind.IssuerImported;
       /** Signs its lists and nothing new (an XCA CA kept to its end). */
       closed?: boolean;
+      /**
+       * Its certificate does not say path length 0, so its key signs its
+       * lists only (ADR 0041): an imported CA, closed.
+       */
+      listsOnly?: boolean;
       /** The CSR it was issued from, DER: an imported CA's, if given. */
       csr?: Buffer;
       organization?: string;
@@ -702,6 +713,7 @@ export class IssuerService {
       chain: issuing.chain,
       maxValidityDays: issuing.maxValidityDays,
       extendedKeyUsages: issuing.extendedKeyUsages,
+      listsOnly: issuing.listsOnly,
     });
     await this.prisma.$transaction(async (tx) => {
       const key = await this.keys.record(tx, {
@@ -725,7 +737,7 @@ export class IssuerService {
           serial: certificate.serial,
           notBefore: certificate.notBefore,
           notAfter: certificate.notAfter,
-          pathLength: 0,
+          pathLength: certificate.pathLength ?? null,
           maxValidityDays: issuing.maxValidityDays,
           organization: issuing.organization,
           importedAt:

@@ -197,6 +197,104 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
       expect(signing.status).toBe("closed");
     });
 
+    it("takes an issuing CA without path length 0 closed only, to sign its lists (ADR 0041)", async () => {
+      // XCA's default CA template sets no path length: one beneath
+      // intermediate 2, made as XCA would.
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "xca-issuing-"));
+      const at = (name: string) => path.join(dir, name);
+      const env = { ...process.env, KEY_PASSWORD: "xca export" };
+      const openssl = (...args: string[]) =>
+        execFileSync("openssl", args, { env, stdio: "pipe" });
+      fs.writeFileSync(
+        at("ext.cnf"),
+        [
+          "basicConstraints = critical, CA:true",
+          "keyUsage = critical, keyCertSign, cRLSign",
+          "subjectKeyIdentifier = hash",
+          "authorityKeyIdentifier = keyid",
+        ].join("\n"),
+      );
+      openssl(
+        "ecparam",
+        "-name",
+        "prime256v1",
+        "-genkey",
+        "-noout",
+        "-out",
+        at("ca.key"),
+      );
+      openssl(
+        "req",
+        "-new",
+        "-key",
+        at("ca.key"),
+        "-subj",
+        "/CN=ncfritz.net Legacy Issuing CA/O=Olympus Dev",
+        "-out",
+        at("ca.csr"),
+      );
+      openssl(
+        "x509",
+        "-req",
+        "-in",
+        at("ca.csr"),
+        "-days",
+        "365",
+        "-CA",
+        path.join(CA, "int-2", "ca.crt"),
+        "-CAkey",
+        path.join(CA, "int-2", "ca.key"),
+        "-set_serial",
+        "0x4101",
+        "-extfile",
+        at("ext.cnf"),
+        "-out",
+        at("ca.crt"),
+      );
+      openssl(
+        "pkcs8",
+        "-topk8",
+        "-v2",
+        "aes-256-cbc",
+        "-in",
+        at("ca.key"),
+        "-out",
+        at("ca.p8"),
+        "-passout",
+        "env:KEY_PASSWORD",
+      );
+      const certificate = read(dir, "ca.crt");
+      expect(parseCertificate(certificate).pathLength).toBeUndefined();
+      const legacy = (closed: boolean) =>
+        importIssuer({
+          id: "legacy-issuing-1-g1",
+          tier: "issuing",
+          purpose: "Legacy",
+          number: 1,
+          generation: 1,
+          certificate,
+          chain: [caCertificate("intermediate-2"), caCertificate("root")],
+          maxValidityDays: 825,
+          extendedKeyUsages: [OID.serverAuth],
+          privateKey: read(dir, "ca.p8"),
+          passphrase: "xca export",
+          closed,
+          csr: read(dir, "ca.csr"),
+        });
+      try {
+        await legacy(false).expect(422);
+        await legacy(true).expect(201);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+      const row = await harness.prisma.issuer.findUniqueOrThrow({
+        where: { id: "legacy-issuing-1-g1" },
+      });
+      expect(row.status).toBe("closed");
+      expect(row.pathLength).toBeNull();
+      // Its lists are signed with the rest after the cutover.
+    });
+
     it("gives an imported CA its CSR afterwards, its own only (ADR 0039)", async () => {
       const root = await request(server())
         .get("/v1/issuer/root-1-g1")
@@ -780,12 +878,13 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
       expect(run.failed).toEqual([]);
       expect(run.signed.map((s) => s.issuerId).sort()).toEqual([
         "device-issuing-1-g1",
+        "legacy-issuing-1-g1",
         "service-issuing-1-g1",
         "signing-issuing-1-g1",
         "tls-issuing-1-g1",
       ]);
       expect(run.published.filter((p) => p.error)).toEqual([]);
-      expect(run.published).toHaveLength(7);
+      expect(run.published).toHaveLength(8);
 
       for (const [slug, file] of [
         ["service-issuing-1-g1", "services.crl"],
@@ -887,7 +986,8 @@ describe.skipIf(!E2E_DATABASE_URL)("the cutover from XCA", () => {
       expect(kinds.filter((k) => k === "certificate.imported")).toHaveLength(
         17,
       );
-      expect(kinds.filter((k) => k === "issuer.imported")).toHaveLength(7);
+      // XCA's seven, and one without path length 0 (ADR 0041).
+      expect(kinds.filter((k) => k === "issuer.imported")).toHaveLength(8);
       const verification = await request(server())
         .get("/v1/audit/verification")
         .set("Authorization", harness.operator)
