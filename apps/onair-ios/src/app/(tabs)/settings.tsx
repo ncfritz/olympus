@@ -108,6 +108,7 @@ export default function SettingsScreen() {
         <View style={styles.row}>
           <Text style={styles.rowLabel}>Weekends free</Text>
           <Switch
+            style={styles.switch}
             value={settings.weekendsFree}
             onValueChange={(weekendsFree) =>
               void updateSettings({ ...settings, weekendsFree })
@@ -203,6 +204,7 @@ function SecuritySection() {
       <View style={styles.row}>
         <Text style={styles.rowLabel}>Require Passcode</Text>
         <Switch
+          style={styles.switch}
           value={lock.hasPasscode === true}
           disabled={lock.hasPasscode === undefined}
           onValueChange={(on) =>
@@ -230,6 +232,7 @@ function SecuritySection() {
         <View style={styles.row}>
           <Text style={styles.rowLabel}>{`Unlock with ${name}`}</Text>
           <Switch
+            style={styles.switch}
             value={lock.hasPasscode === true && settings.useBiometrics}
             disabled={lock.hasPasscode !== true}
             onValueChange={(on) => void setBiometrics(on)}
@@ -308,6 +311,9 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.separator,
   },
   rowLabel: { fontSize: 16, color: colors.text },
+  // React Native's iOS Switch sets alignSelf: flex-start on itself, which
+  // beats the row's alignItems: center; this puts it back in the middle.
+  switch: { alignSelf: "center" },
   rowPressed: { backgroundColor: colors.surfaceRaised },
   rowValue: { flexShrink: 1, fontSize: 15, color: colors.textSecondary },
   actions: { marginTop: 4 },
