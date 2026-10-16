@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   allDayOn,
+  clearUntil,
   type Availability,
   type Block,
   causeTitle,
@@ -334,5 +335,37 @@ describe("all-day events", () => {
         (item) => item.id,
       ),
     ).toEqual(["m"]);
+  });
+});
+
+describe("clearUntil", () => {
+  const off = (until: Date) => ({
+    level: "none" as const,
+    status: "clear" as const,
+    since: at(18).getTime(),
+    progress: 0,
+    until: until.getTime(),
+  });
+
+  it("says when work starts again, off hours only", () => {
+    expect(clearUntil(off(at(23)), at(19))).toBe("11:00 PM");
+    expect(clearUntil(off(at(8, 0, 15)), at(19))).toBe("tomorrow, 8:00 AM");
+    expect(clearUntil(off(at(8, 0, 19)), at(19))).toBe("Monday, 8:00 AM");
+    expect(
+      clearUntil({ ...off(at(23)), level: "free", status: "free" }, at(19)),
+    ).toBeUndefined();
+    expect(clearUntil(undefined, at(19))).toBeUndefined();
+  });
+});
+
+describe("working hours", () => {
+  it("draws the day strip over the hours set", () => {
+    const strip = dayStrip(slots(9, 17, "free"), at(13), {
+      dayStart: 9 * 60,
+      dayEnd: 17 * 60,
+      weekendsFree: true,
+    });
+    expect(strip.parts).toEqual([{ status: "free", fraction: 1 }]);
+    expect(strip.nowFraction).toBe(0.5);
   });
 });

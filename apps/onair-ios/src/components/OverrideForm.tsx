@@ -66,7 +66,9 @@ export function OverrideForm({ block }: { block?: AvailabilityBlock }) {
   if (ready === undefined) return null;
   const { availability } = ready.state;
   const choices =
-    block === undefined ? lengthChoices(availability, opened) : [];
+    block === undefined
+      ? lengthChoices(availability, opened, ready.settings)
+      : [];
   const meetings = covered(availability, start.getTime(), end.getTime());
   const valid = end.getTime() > start.getTime();
 

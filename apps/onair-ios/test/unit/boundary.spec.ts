@@ -15,6 +15,7 @@ const PURE = [
   "auth/keys.ts",
   "config.ts",
   "schedule.ts",
+  "settings.ts",
   "theme.ts",
 ];
 

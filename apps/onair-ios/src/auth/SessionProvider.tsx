@@ -12,12 +12,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { AppState as AppLifecycle } from "react-native";
 
 import { apiBaseUrl } from "../config";
 import { loadWindow } from "../schedule";
+import {
+  DEFAULT_SETTINGS,
+  type WorkSettings,
+  workingDayQuery,
+} from "../settings";
+import { loadSettings, saveSettings } from "../settingsStore";
 import { createCaller } from "./caller";
 import { classifyFailure } from "./failure";
 import { signIn } from "./signIn";
@@ -54,6 +61,10 @@ type SessionContext = {
   /** A new override, or changes to one. */
   saveBlock(block: BaseAvailabilityBlock | BlockChanges): Promise<void>;
   deleteBlock(blockId: string): Promise<void>;
+  /** The working day the availability is read against (Settings). */
+  settings: WorkSettings;
+  /** Keeps new settings on the phone and reloads against them. */
+  updateSettings(settings: WorkSettings): Promise<void>;
 };
 
 /**
@@ -96,6 +107,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [],
   );
   const [state, setState] = useState<AppState>({ phase: "starting" });
+  const [settings, setSettings] = useState<WorkSettings>(DEFAULT_SETTINGS);
+  // Read by reload, so a change takes effect without remaking it.
+  const settingsRef = useRef<WorkSettings>(DEFAULT_SETTINGS);
 
   const signedOut = useCallback(
     async (problem?: string) => {
@@ -116,7 +130,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const availability = await caller.availability.getAvailability(
         start,
         end,
-        { timeZone: timeZone() },
+        { timeZone: timeZone(), ...workingDayQuery(settingsRef.current) },
       );
       setState({ phase: "ready", availability, loadedAt: new Date() });
     } catch (error) {
@@ -137,8 +151,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const tokens = await loadTokens(caller.baseUrl);
+      const [tokens, stored] = await Promise.all([
+        loadTokens(caller.baseUrl),
+        loadSettings(),
+      ]);
       if (cancelled) return;
+      settingsRef.current = stored;
+      setSettings(stored);
       if (tokens === undefined) {
         setState({ phase: "signed-out", signingIn: false });
         return;
@@ -257,6 +276,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [caller, edit],
   );
 
+  const updateSettings = useCallback(
+    async (next: WorkSettings) => {
+      settingsRef.current = next;
+      setSettings(next);
+      await saveSettings(next);
+      await reload();
+    },
+    [reload],
+  );
+
   const value = useMemo(
     () => ({
       state,
@@ -266,6 +295,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setMeetingLevel,
       saveBlock,
       deleteBlock,
+      settings,
+      updateSettings,
     }),
     [
       state,
@@ -275,6 +306,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setMeetingLevel,
       saveBlock,
       deleteBlock,
+      settings,
+      updateSettings,
     ],
   );
 

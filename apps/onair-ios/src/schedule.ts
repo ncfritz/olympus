@@ -5,6 +5,8 @@ import {
   toOnAirStatus,
 } from "@ncfritz/olympus-availability";
 
+import { DEFAULT_SETTINGS, type WorkSettings } from "./settings";
+
 /*
  * What the screens read from the API's availability (ADR 0029): the status
  * now and when it changes, today's strip, what is up next, a day laid out,
@@ -229,6 +231,38 @@ export const nowState = (
   };
 };
 
+/**
+ * When "Clear" is off work rather than a free stretch: the API's `none`,
+ * outside the working day with no override or meeting the user set. Then
+ * Now says "Clear until …" instead of counting down. The end of the run is
+ * the next working day's start, or an override's, whichever comes first.
+ */
+export const clearUntil = (
+  state: NowState | undefined,
+  now: Date,
+): string | undefined => {
+  if (state === undefined || state.level !== "none") return undefined;
+  const until = new Date(state.until);
+  const days = Math.round(
+    (startOfDay(until).getTime() - startOfDay(now).getTime()) / DAY_MS,
+  );
+  const time = clockWithPeriod(until);
+  if (days <= 0) return time;
+  if (days === 1) return `tomorrow, ${time}`;
+  if (days < 7) return `${WEEKDAY_NAMES.at(until.getDay())}, ${time}`;
+  return `${until.getMonth() + 1}/${until.getDate()}, ${time}`;
+};
+
+const WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 /** What a cause is called in a line: the meeting's subject, the block's label. */
 export const causeTitle = (cause: Cause | undefined): string | undefined => {
   if (cause === undefined) return undefined;
@@ -241,9 +275,6 @@ export const causeTitle = (cause: Cause | undefined): string | undefined => {
 /* The day strip                                                       */
 /* ------------------------------------------------------------------ */
 
-/** The working day the API reads against by default: 08:00 to 18:00. */
-export const WORKING_DAY = { startHour: 8, endHour: 18 } as const;
-
 export type StripPart = { status: OnAirStatus; fraction: number };
 
 /**
@@ -253,10 +284,11 @@ export type StripPart = { status: OnAirStatus; fraction: number };
 export const dayStrip = (
   slots: readonly Slot[],
   now: Date,
+  settings: WorkSettings = DEFAULT_SETTINGS,
 ): { parts: StripPart[]; nowFraction?: number } => {
   const day = startOfDay(now);
-  const from = day.getTime() + WORKING_DAY.startHour * 60 * MINUTE;
-  const to = day.getTime() + WORKING_DAY.endHour * 60 * MINUTE;
+  const from = day.getTime() + settings.dayStart * MINUTE;
+  const to = day.getTime() + settings.dayEnd * MINUTE;
   const span = to - from;
   const parts: StripPart[] = [];
   const push = (status: OnAirStatus, length: number) => {
@@ -510,6 +542,7 @@ export type LengthChoice = {
 export const lengthChoices = (
   availability: Availability,
   now: Date,
+  settings: WorkSettings = DEFAULT_SETTINGS,
 ): LengthChoice[] => {
   const at = now.getTime();
   const choices: LengthChoice[] = [
@@ -528,7 +561,7 @@ export const lengthChoices = (
     });
   }
   const day = startOfDay(now);
-  const workEnd = day.getTime() + WORKING_DAY.endHour * 60 * MINUTE;
+  const workEnd = day.getTime() + settings.dayEnd * MINUTE;
   choices.push({
     key: "day",
     label: "Rest of day",

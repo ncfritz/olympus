@@ -14,6 +14,7 @@ import { StatusGlyph } from "../../components/StatusGlyph";
 import { changeHref, hrefOf } from "../../links";
 import {
   causeTitle,
+  clearUntil,
   clock,
   countdown,
   dayStrip,
@@ -90,7 +91,9 @@ export default function NowScreen() {
 
   const current = nowState(state.availability, now);
   const status = current?.status ?? "clear";
-  const strip = dayStrip(state.availability.slots, now);
+  const strip = dayStrip(state.availability.slots, now, ready.settings);
+  // Off work: no countdown, just when work (or an override) starts.
+  const offWork = clearUntil(current, now);
   const next = upNext(state.availability, now);
   const title = causeTitle(current?.cause);
   const onAir = isOnAir(current?.level);
@@ -136,16 +139,25 @@ export default function NowScreen() {
 
           <View style={styles.hero}>
             <CountdownRing
-              progress={current?.progress ?? 0}
+              progress={offWork === undefined ? (current?.progress ?? 0) : 0}
               lamp={statusAccent[status]}
               glow={statusAccent[status]}
             >
-              <Text style={styles.countdown} accessibilityLabel="Time left">
-                {current === undefined
-                  ? "--:--"
-                  : countdown(current.until - now.getTime())}
-              </Text>
-              <Text style={styles.left}>left</Text>
+              {offWork === undefined ? (
+                <>
+                  <Text style={styles.countdown} accessibilityLabel="Time left">
+                    {current === undefined
+                      ? "--:--"
+                      : countdown(current.until - now.getTime())}
+                  </Text>
+                  <Text style={styles.left}>left</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.countdown}>Off</Text>
+                  <Text style={styles.left}>hours</Text>
+                </>
+              )}
             </CountdownRing>
             <View style={styles.heroText}>
               <View style={styles.onAirRow}>
@@ -158,10 +170,14 @@ export default function NowScreen() {
                   {title}
                 </Text>
               )}
-              {current !== undefined && (
-                <Text style={styles.heroLine}>
-                  {`${clock(current.since)} – ${clock(current.until)}`}
-                </Text>
+              {offWork !== undefined ? (
+                <Text style={styles.heroLine}>{`until ${offWork}`}</Text>
+              ) : (
+                current !== undefined && (
+                  <Text style={styles.heroLine}>
+                    {`${clock(current.since)} – ${clock(current.until)}`}
+                  </Text>
+                )
               )}
             </View>
           </View>
@@ -183,6 +199,7 @@ export default function NowScreen() {
           </View>
 
           <DayStrip
+            settings={ready.settings}
             parts={strip.parts}
             {...(strip.nowFraction === undefined
               ? {}
