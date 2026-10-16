@@ -18,7 +18,7 @@ describe("settings", () => {
       dayEnd: 1080,
       weekendsFree: true,
       hiddenCalendars: [],
-      requireUnlock: false,
+      useBiometrics: false,
     });
     expect(parseSettings(null)).toEqual(DEFAULT_SETTINGS);
   });
@@ -31,7 +31,7 @@ describe("settings", () => {
           dayEnd: 990,
           weekendsFree: false,
           hiddenCalendars: ["holidays", 7],
-          requireUnlock: true,
+          useBiometrics: true,
         }),
       ),
     ).toEqual({
@@ -39,7 +39,7 @@ describe("settings", () => {
       dayEnd: 990,
       weekendsFree: false,
       hiddenCalendars: ["holidays"],
-      requireUnlock: true,
+      useBiometrics: true,
     });
     expect(
       parseSettings(JSON.stringify({ dayStart: 600, dayEnd: 540 })),

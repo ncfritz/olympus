@@ -14,8 +14,8 @@ export type WorkSettings = {
   weekendsFree: boolean;
   /** Calendars (by source label) whose events this phone does not show. */
   hiddenCalendars: string[];
-  /** Face ID, Touch ID or the passcode to open the app. */
-  requireUnlock: boolean;
+  /** Face ID or Touch ID in front of OnAir's passcode. */
+  useBiometrics: boolean;
 };
 
 export const DEFAULT_SETTINGS: WorkSettings = {
@@ -23,7 +23,7 @@ export const DEFAULT_SETTINGS: WorkSettings = {
   dayEnd: 18 * 60,
   weekendsFree: true,
   hiddenCalendars: [],
-  requireUnlock: false,
+  useBiometrics: false,
 };
 
 const MINUTES_IN_DAY = 24 * 60;
@@ -63,10 +63,10 @@ export const parseSettings = (stored: string | null): WorkSettings => {
             (source): source is string => typeof source === "string",
           )
         : DEFAULT_SETTINGS.hiddenCalendars,
-      requireUnlock:
-        typeof value.requireUnlock === "boolean"
-          ? value.requireUnlock
-          : DEFAULT_SETTINGS.requireUnlock,
+      useBiometrics:
+        typeof value.useBiometrics === "boolean"
+          ? value.useBiometrics
+          : DEFAULT_SETTINGS.useBiometrics,
     };
   } catch {
     return DEFAULT_SETTINGS;

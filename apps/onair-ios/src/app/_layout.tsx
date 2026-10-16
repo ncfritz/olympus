@@ -6,6 +6,7 @@ import { StyleSheet, View } from "react-native";
 import { SessionProvider, useSession } from "../auth/SessionProvider";
 import { AppLock } from "../components/AppLock";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { LockProvider } from "../lock/LockProvider";
 import { PillButton } from "../components/PillButton";
 import { colors } from "../theme";
 
@@ -13,9 +14,11 @@ export default function RootLayout() {
   return (
     <SessionProvider>
       <StatusBar style="light" />
-      <GatedStack />
-      <StartupOverlay />
-      <AppLock />
+      <LockProvider>
+        <GatedStack />
+        <StartupOverlay />
+        <AppLock />
+      </LockProvider>
     </SessionProvider>
   );
 }
@@ -63,6 +66,7 @@ function GatedStack() {
           name="override/[blockId]"
           options={{ presentation: "modal" }}
         />
+        <Stack.Screen name="passcode" options={{ presentation: "modal" }} />
         <Stack.Screen
           name="loading"
           options={{ presentation: "fullScreenModal" }}

@@ -1,58 +1,60 @@
 import * as LocalAuthentication from "expo-local-authentication";
 
 /*
- * Unlocking with Face ID or Touch ID, falling back to the iPhone's passcode
- * (iOS offers it after a failed scan, or straight away without biometrics).
+ * Face ID or Touch ID, as a quicker way past OnAir's own passcode. The
+ * iPhone's passcode is never offered: the fallback is OnAir's passcode.
  */
 
-export type UnlockMethod = {
-  /** The iPhone has a passcode, so OnAir can be locked at all. */
-  available: boolean;
-  /** What the buttons and Settings call it. */
-  name: "Face ID" | "Touch ID" | "Passcode";
-};
+export type Biometry = "Face ID" | "Touch ID";
 
-export const unlockMethod = async (): Promise<UnlockMethod> => {
+/** What this iPhone has set up, if either. */
+export const biometry = async (): Promise<Biometry | undefined> => {
   const level = await LocalAuthentication.getEnrolledLevelAsync();
-  if (level === LocalAuthentication.SecurityLevel.NONE) {
-    return { available: false, name: "Passcode" };
-  }
-  if (level === LocalAuthentication.SecurityLevel.SECRET) {
-    return { available: true, name: "Passcode" };
+  if (
+    level !== LocalAuthentication.SecurityLevel.BIOMETRIC_WEAK &&
+    level !== LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG
+  ) {
+    return undefined;
   }
   const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
   if (
     types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
   ) {
-    return { available: true, name: "Face ID" };
+    return "Face ID";
   }
   if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-    return { available: true, name: "Touch ID" };
+    return "Touch ID";
   }
-  return { available: true, name: "Passcode" };
+  return undefined;
 };
 
-/** Asks for Face ID, Touch ID or the passcode. A cancel is not a problem. */
-export const unlock = async (
-  reason: string,
-): Promise<{ ok: true } | { ok: false; problem?: string }> => {
+/**
+ * One Face ID or Touch ID prompt. `fallback`: the user chose the passcode;
+ * `failed`: the scans did not match; `lockout`: iOS has stopped biometrics
+ * after too many tries, so only a passcode will do.
+ */
+export type ScanResult = "ok" | "fallback" | "cancel" | "failed" | "lockout";
+
+export const scan = async (reason: string): Promise<ScanResult> => {
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: reason,
     cancelLabel: "Cancel",
-    fallbackLabel: "Use Passcode",
-    disableDeviceFallback: false,
+    fallbackLabel: "Enter Passcode",
+    disableDeviceFallback: true,
   });
-  if (result.success) return { ok: true };
+  if (result.success) return "ok";
   switch (result.error) {
+    case "user_fallback":
+      return "fallback";
     case "user_cancel":
     case "system_cancel":
     case "app_cancel":
-      return { ok: false };
+      return "cancel";
     case "lockout":
-      return { ok: false, problem: "Too many tries. Use your passcode." };
-    case "passcode_not_set":
-      return { ok: false, problem: "This iPhone has no passcode set." };
+      return "lockout";
+    case "authentication_failed":
+      return "failed";
     default:
-      return { ok: false, problem: "Could not unlock. Try again." };
+      return "fallback";
   }
 };

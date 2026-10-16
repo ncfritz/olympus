@@ -1,9 +1,11 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Constants from "expo-constants";
+import { router } from "expo-router";
 import type { Calendar } from "@ncfritz/olympus-sdk/minerva";
 import { type ReactNode, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -12,8 +14,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { unlock, type UnlockMethod, unlockMethod } from "../../appLock";
+import { scan } from "../../appLock";
 import { useReady } from "../../auth/SessionProvider";
+import { useLock } from "../../lock/LockProvider";
 import { PillButton } from "../../components/PillButton";
 import { API_BASE_URLS, apiBaseUrl } from "../../config";
 import { clockWithPeriod, dayTitle } from "../../schedule";
@@ -260,31 +263,30 @@ function CalendarsSection() {
 }
 
 /**
- * Require Face ID (or Touch ID, or the passcode on an iPhone without
- * either). Turning it on or off asks first, so it is the owner changing it.
+ * OnAir's own passcode (separate from the iPhone's), and Face ID or Touch
+ * ID in front of it, which needs the passcode set first.
  */
 function SecuritySection() {
   const ready = useReady();
-  const [method, setMethod] = useState<UnlockMethod>();
+  const lock = useLock();
   const [problem, setProblem] = useState<string>();
-
-  useEffect(() => {
-    void unlockMethod().then(setMethod);
-  }, []);
-
   if (ready === undefined) return null;
   const { settings, updateSettings } = ready;
-  const name = method?.name ?? "Face ID";
+  const name = lock.biometry ?? "Face ID";
 
-  const setRequired = async (requireUnlock: boolean) => {
+  const setBiometrics = async (on: boolean) => {
     setProblem(undefined);
-    const result = await unlock(
-      requireUnlock
-        ? `Turn on ${name} for OnAir`
-        : `Turn off ${name} for OnAir`,
-    );
-    if (result.ok) await updateSettings({ ...settings, requireUnlock });
-    else if (result.problem !== undefined) setProblem(result.problem);
+    if (!on) {
+      await updateSettings({ ...settings, useBiometrics: false });
+      return;
+    }
+    // A scan now, so it is known to work before it guards the app.
+    const result = await scan(`Turn on ${name} for OnAir`);
+    if (result === "ok") {
+      await updateSettings({ ...settings, useBiometrics: true });
+    } else if (result === "failed" || result === "lockout") {
+      setProblem(`${name} did not match.`);
+    }
   };
 
   return (
@@ -292,22 +294,50 @@ function SecuritySection() {
       title="SECURITY"
       problem={problem}
       note={
-        method?.available === false
-          ? "Set a passcode on this iPhone to lock OnAir."
-          : name === "Passcode"
-            ? "Asks for your iPhone passcode when OnAir opens or comes back."
-            : `Asks for ${name} when OnAir opens or comes back. If ${name} fails, your iPhone passcode works.`
+        lock.hasPasscode === true
+          ? lock.biometry === undefined
+            ? "OnAir asks for its passcode when it opens or comes back."
+            : `OnAir asks for ${name} when it opens or comes back, and its passcode after 5 failed tries.`
+          : `A passcode of OnAir's own, separate from your iPhone's. Set one to use ${name}.`
       }
     >
       <View style={styles.row}>
-        <Text style={styles.rowLabel}>{`Require ${name}`}</Text>
+        <Text style={styles.rowLabel}>Require Passcode</Text>
         <Switch
-          value={settings.requireUnlock}
-          disabled={method?.available !== true}
-          onValueChange={(value) => void setRequired(value)}
-          accessibilityLabel={`Require ${name}`}
+          value={lock.hasPasscode === true}
+          disabled={lock.hasPasscode === undefined}
+          onValueChange={(on) =>
+            router.push({
+              pathname: "/passcode",
+              params: { mode: on ? "set" : "off" },
+            })
+          }
+          accessibilityLabel="Require passcode"
         />
       </View>
+      {lock.hasPasscode === true && (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push({ pathname: "/passcode", params: { mode: "change" } })
+          }
+          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+        >
+          <Text style={styles.rowLabel}>Change Passcode</Text>
+          <Text style={styles.rowValue}>›</Text>
+        </Pressable>
+      )}
+      {lock.biometry !== undefined && (
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>{`Unlock with ${name}`}</Text>
+          <Switch
+            value={lock.hasPasscode === true && settings.useBiometrics}
+            disabled={lock.hasPasscode !== true}
+            onValueChange={(on) => void setBiometrics(on)}
+            accessibilityLabel={`Unlock with ${name}`}
+          />
+        </View>
+      )}
     </Section>
   );
 }
@@ -379,6 +409,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.separator,
   },
   rowLabel: { fontSize: 16, color: colors.text },
+  rowPressed: { backgroundColor: colors.surfaceRaised },
   rowValue: { flexShrink: 1, fontSize: 15, color: colors.textSecondary },
   actions: { marginTop: 4 },
   note: { fontSize: 13, lineHeight: 18, color: colors.textSecondary },
