@@ -1,7 +1,7 @@
 "use client";
 
 import { ConfigProvider, theme as antdTheme, type TableProps } from "antd";
-import { ExpandCaret, PanelCaret } from "../shell/ExpandCaret";
+import { ExpandCaret, ExpandSpacer, PanelCaret } from "../shell/ExpandCaret";
 import {
   createContext,
   useContext,
@@ -70,7 +70,9 @@ const tableExpandIcon: TableExpandIcon = ({
       expanded={expanded}
       onToggle={(event) => onExpand(record, event)}
     />
-  ) : null;
+  ) : (
+    <ExpandSpacer />
+  );
 
 const collapseExpandIcon = ({ isActive }: { isActive?: boolean }) => (
   <PanelCaret isActive={isActive} />
