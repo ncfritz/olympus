@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
@@ -9,7 +9,7 @@ import { DayStrip } from "../../components/DayStrip";
 import { Glow } from "../../components/Glow";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
 import { PillButton } from "../../components/PillButton";
-import { PullHint } from "../../components/PullHint";
+import { PullHint, PullSpacer } from "../../components/PullHint";
 import { StatusGlyph } from "../../components/StatusGlyph";
 import { changeHref, hrefOf } from "../../links";
 import {
@@ -86,7 +86,7 @@ export default function NowScreen() {
     ],
   });
   if (ready === undefined) return null;
-  const { state, signOut } = ready;
+  const { state } = ready;
 
   const current = nowState(state.availability, now);
   const status = current?.status ?? "clear";
@@ -101,7 +101,10 @@ export default function NowScreen() {
         style={[
           styles.backdrop,
           {
-            height: Animated.add(headerHeight, pullDepth(pull.offset)),
+            height: Animated.add(
+              Animated.add(headerHeight, pull.hold),
+              pullDepth(pull.offset),
+            ),
             transform: [{ translateY: scrolledUp(pull.offset) }],
           },
         ]}
@@ -113,6 +116,7 @@ export default function NowScreen() {
         contentContainerStyle={styles.content}
         {...pull.scrollProps}
       >
+        <PullSpacer pull={pull} />
         <View
           style={[styles.header, { paddingTop: insets.top + 14 }]}
           onLayout={(event) =>
@@ -218,14 +222,6 @@ export default function NowScreen() {
               {`${state.problem} Showing what was loaded at ${clock(state.loadedAt)}. Pull down to try again.`}
             </Text>
           )}
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void signOut()}
-            style={styles.signOut}
-          >
-            <Text style={styles.signOutText}>Sign out</Text>
-          </Pressable>
         </View>
       </Animated.ScrollView>
       <PullHint pull={pull} top={insets.top + 6} />
@@ -301,6 +297,4 @@ const styles = StyleSheet.create({
   },
   empty: { padding: 16, fontSize: 15, color: colors.textSecondary },
   problem: { fontSize: 13, lineHeight: 18, color: "#FF8A8E" },
-  signOut: { alignSelf: "flex-start", paddingVertical: 12 },
-  signOutText: { fontSize: 15, color: colors.textSecondary },
 });

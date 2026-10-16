@@ -17,7 +17,10 @@ export type PullStage = {
 };
 
 /** A refresh shows for at least this long, so it reads as one. */
-const MIN_REFRESH_MS = 1000;
+const MIN_REFRESH_MS = 600;
+
+/** How much of the pull stays open while a refresh runs. */
+export const HOLD_HEIGHT = 52;
 
 export type Pull = {
   /** Spread onto the scroll view. */
@@ -28,6 +31,8 @@ export type Pull = {
   };
   /** The scroll offset, for the hint to fade in with. */
   offset: Animated.Value;
+  /** The space held open at the top while refreshing (PullSpacer). */
+  hold: Animated.Value;
   /** The first stage's distance. */
   firstAt: number;
   /** The label for how far the pull has gone. */
@@ -68,6 +73,7 @@ export const usePullToRefresh = ({
   onScrollY?: (y: number) => void;
 }): Pull => {
   const [offset] = useState(() => new Animated.Value(0));
+  const [hold] = useState(() => new Animated.Value(0));
   const [reached, setReached] = useState(-1);
   const [busy, setBusy] = useState(false);
   const latest = useRef({ stages, onScrollY, reached: -1, busy: false });
@@ -100,19 +106,34 @@ export const usePullToRefresh = ({
       const result = stage.run();
       if (result instanceof Promise) {
         setBusy(true);
+        // Grow the held space as the bounce returns, so the content settles
+        // just below the hint instead of jumping.
+        Animated.timing(hold, {
+          toValue: HOLD_HEIGHT,
+          duration: 180,
+          useNativeDriver: false,
+        }).start();
         const shown = new Promise((resolve) =>
           setTimeout(resolve, MIN_REFRESH_MS),
         );
-        void Promise.allSettled([result, shown]).then(() => setBusy(false));
+        void Promise.allSettled([result, shown]).then(() => {
+          setBusy(false);
+          Animated.timing(hold, {
+            toValue: 0,
+            duration: 220,
+            useNativeDriver: false,
+          }).start();
+        });
       }
     },
-    [],
+    [hold],
   );
 
   const stage = stages[reached];
   return {
     scrollProps: { onScroll, onScrollEndDrag, scrollEventThrottle: 16 },
     offset,
+    hold,
     firstAt: stages[0]?.at ?? 60,
     label: stage?.label ?? idleLabel,
     armed: stage !== undefined,

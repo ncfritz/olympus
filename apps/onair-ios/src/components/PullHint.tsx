@@ -61,7 +61,21 @@ export function PullHint({ pull, top }: { pull: Pull; top: number }) {
   );
 }
 
+/**
+ * The first child of the scroll view's content: the space a refresh holds
+ * open under the hint, as the native control does.
+ */
+export function PullSpacer({ pull, gap = 0 }: { pull: Pull; gap?: number }) {
+  // `gap`: the content's own gap, taken back so a closed spacer adds none.
+  return (
+    <Animated.View
+      style={[styles.spacer, { height: pull.hold, marginBottom: -gap }]}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
+  spacer: { width: "100%" },
   wrap: {
     position: "absolute",
     left: 0,

@@ -13,7 +13,7 @@ import Svg, { Path } from "react-native-svg";
 
 import { useReady } from "../../auth/SessionProvider";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
-import { PullHint } from "../../components/PullHint";
+import { PullHint, PullSpacer } from "../../components/PullHint";
 import { StatusGlyph } from "../../components/StatusGlyph";
 import { hrefOf } from "../../links";
 import {
@@ -257,6 +257,7 @@ export default function ScheduleScreen() {
           }}
           {...pull.scrollProps}
         >
+          <PullSpacer pull={pull} />
           {allDay.length > 0 && (
             <Pressable
               accessibilityRole="button"

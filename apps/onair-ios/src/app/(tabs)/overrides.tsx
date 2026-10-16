@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
 import { ItemRow, RowSeparator } from "../../components/ItemRow";
-import { PullHint } from "../../components/PullHint";
+import { PullHint, PullSpacer } from "../../components/PullHint";
 import { hrefOf } from "../../links";
 import { dayTitle, overridesByDay } from "../../schedule";
 import { colors } from "../../theme";
@@ -48,6 +48,7 @@ export default function OverridesScreen() {
           { paddingTop: insets.top + 14 },
         ]}
       >
+        <PullSpacer pull={pull} gap={18} />
         <View style={styles.titleText}>
           <Text style={styles.count}>{`${upcomingCount} upcoming`}</Text>
           <Text style={styles.title} accessibilityRole="header">
@@ -79,7 +80,7 @@ export default function OverridesScreen() {
         {shown.length === 0 && (
           <Text style={styles.empty}>
             {showing === "upcoming"
-              ? "No overrides coming up. Tap New override to set one."
+              ? "No overrides coming up. Tap + below to set one."
               : "No overrides in the last week."}
           </Text>
         )}
@@ -104,21 +105,13 @@ export default function OverridesScreen() {
         ))}
       </Animated.ScrollView>
       <PullHint pull={pull} top={insets.top + 6} />
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push("/override/new")}
-        style={styles.fab}
-      >
-        <Text style={styles.fabText}>＋ New override</Text>
-      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 110, gap: 18 },
+  content: { paddingHorizontal: 20, paddingBottom: 40, gap: 18 },
   titleText: { gap: 2 },
   count: {
     fontSize: 13,
@@ -158,20 +151,4 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
   },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    height: 52,
-    paddingHorizontal: 20,
-    borderRadius: 26,
-    backgroundColor: colors.text,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-  },
-  fabText: { fontSize: 16, fontWeight: "600", color: colors.background },
 });

@@ -25,6 +25,9 @@ added as each phase lands.
 | O2.10 | 2     | INT | Pull down on that row, then scroll down past the list      | Pulling shows the list; scrolling away folds it; the timeline stays put     |
 | O2.11 | 2     | INT | Pull down with the list open, and on a day without any     | The hint says Release to refresh, then Refreshing… until it reloads         |
 | O2.12 | 2     | INT | Pull down on Now and on Overrides                          | A hint below the Dynamic Island: Pull, Release, then Refreshing…            |
+| O2.13 | 2     | INT | Pull to refresh on any tab and let go                      | The hint stays open with the spinner for at least 0.6 s, then closes        |
+| O2.14 | 2     | DEV | Look at the tab bar; tap + from each tab                   | Icons on Now, Schedule, Overrides, Settings; + opens New override           |
+| O2.15 | 2     | INT | Open Settings; Sign out                                    | API host, connection, last update, version; Sign out goes to sign-in        |
 
 Environments are the authentication sign-off's: DEV, INT (the LAN), EXT
 (outside it).
