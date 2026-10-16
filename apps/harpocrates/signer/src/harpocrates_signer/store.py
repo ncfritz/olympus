@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE settings (
@@ -92,6 +92,12 @@ CREATE TABLE ocsp_responders (
     registered_at  TEXT NOT NULL
 );
 """,
+    # An imported issuing CA without path length 0 (ADR 0041): its key signs
+    # its lists and its OCSP responder's certificate, nothing else.
+    4: """
+ALTER TABLE issuers ADD COLUMN lists_only INTEGER NOT NULL DEFAULT 0
+    CHECK (lists_only IN (0, 1));
+""",
 }
 
 
@@ -119,6 +125,8 @@ class IssuerRow:
     max_validity_days: int
     chain: tuple[bytes, ...]
     extended_key_usages: frozenset[str]
+    #: Signs its lists (and its OCSP responder's certificate) only (ADR 0041).
+    lists_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -284,8 +292,15 @@ class Store:
         with self.transaction() as db:
             db.execute(
                 "INSERT INTO issuers (id, key_id, certificate, max_validity_days, "
-                "registered_at) VALUES (?, ?, ?, ?, ?)",
-                (row.id, row.key_id, row.certificate, row.max_validity_days, now()),
+                "registered_at, lists_only) VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    row.id,
+                    row.key_id,
+                    row.certificate,
+                    row.max_validity_days,
+                    now(),
+                    int(row.lists_only),
+                ),
             )
             db.executemany(
                 "INSERT INTO issuer_chain_certificates (issuer_id, position, "
@@ -300,8 +315,8 @@ class Store:
     def issuer(self, issuer_id: str) -> IssuerRow | None:
         with self._lock:
             row = self._connection.execute(
-                "SELECT id, key_id, certificate, max_validity_days FROM issuers "
-                "WHERE id = ?",
+                "SELECT id, key_id, certificate, max_validity_days, lists_only "
+                "FROM issuers WHERE id = ?",
                 (issuer_id,),
             ).fetchone()
             if row is None:
@@ -322,6 +337,7 @@ class Store:
             max_validity_days=row[3],
             chain=tuple(bytes(c[0]) for c in chain),
             extended_key_usages=frozenset(u[0] for u in usages),
+            lists_only=bool(row[4]),
         )
 
     # ---- SSH CAs

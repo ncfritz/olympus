@@ -29,6 +29,7 @@ def test_a_version_2_store_admits_ocsp_keys_and_keeps_its_rows(tmp_path: Path):
         """
 BEGIN;
 DROP TABLE ocsp_responders;
+ALTER TABLE issuers DROP COLUMN lists_only;
 CREATE TABLE keys_v2 (
     id TEXT PRIMARY KEY,
     purpose TEXT NOT NULL CHECK (purpose IN ('issuer', 'subject')),
@@ -56,7 +57,9 @@ COMMIT;
         store.close()
     connection = sqlite3.connect(path)
     try:
-        assert connection.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == (
+            SCHEMA_VERSION
+        )
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute(
             "INSERT INTO keys VALUES "
@@ -73,3 +76,29 @@ COMMIT;
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
     finally:
         connection.close()
+
+
+def test_a_version_3_store_gains_lists_only_issuers(tmp_path: Path):
+    path = tmp_path / "signer.db"
+    store = Store(path)
+    store.close()
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+BEGIN;
+ALTER TABLE issuers DROP COLUMN lists_only;
+INSERT INTO keys VALUES ('k1', 'issuer', 'P-256', X'01', X'02', X'03', 't', NULL);
+INSERT INTO issuers VALUES ('issuing-1-g1', 'k1', X'04', 30, 't');
+PRAGMA user_version = 3;
+COMMIT;
+"""
+    )
+    connection.close()
+
+    store = Store(path)
+    try:
+        issuer = store.issuer("issuing-1-g1")
+        assert issuer is not None
+        assert issuer.lists_only is False
+    finally:
+        store.close()

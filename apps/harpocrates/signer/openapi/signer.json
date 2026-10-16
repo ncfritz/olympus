@@ -3533,6 +3533,11 @@
             },
             "type": "array",
             "title": "Extendedkeyusages"
+          },
+          "listsOnly": {
+            "type": "boolean",
+            "title": "Listsonly",
+            "description": "Signs its revocation lists and its OCSP responder's certificate only (ADR 0041)."
           }
         },
         "additionalProperties": false,
@@ -3543,7 +3548,8 @@
           "certificate",
           "chain",
           "maxValidityDays",
-          "extendedKeyUsages"
+          "extendedKeyUsages",
+          "listsOnly"
         ],
         "title": "IssuerResponse"
       },
@@ -4088,6 +4094,12 @@
             "type": "array",
             "title": "Extendedkeyusages",
             "description": "Dotted OIDs this issuer may put in a certificate."
+          },
+          "listsOnly": {
+            "type": "boolean",
+            "title": "Listsonly",
+            "description": "Signs its revocation lists and its OCSP responder's certificate only: how an imported issuing CA whose certificate does not say path length 0 is held (ADR 0041).",
+            "default": false
           }
         },
         "additionalProperties": false,

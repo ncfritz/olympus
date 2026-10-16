@@ -42,6 +42,7 @@ def register_issuer(body: RegisterIssuerRequest, signer: SignerDep) -> IssuerRes
             tuple(load_certificate(c) for c in body.chain),
             body.max_validity_days,
             frozenset(body.extended_key_usages),
+            body.lists_only,
         )
     )
 

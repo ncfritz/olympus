@@ -220,6 +220,12 @@ class RegisterIssuerRequest(Wire):
     extended_key_usages: list[str] = Field(
         description="Dotted OIDs this issuer may put in a certificate."
     )
+    lists_only: bool = Field(
+        default=False,
+        description="Signs its revocation lists and its OCSP responder's "
+        "certificate only: how an imported issuing CA whose certificate does "
+        "not say path length 0 is held (ADR 0041).",
+    )
 
 
 class IssuerResponse(Wire):
@@ -229,6 +235,10 @@ class IssuerResponse(Wire):
     chain: list[str]
     max_validity_days: int
     extended_key_usages: list[str]
+    lists_only: bool = Field(
+        description="Signs its revocation lists and its OCSP responder's "
+        "certificate only (ADR 0041)."
+    )
 
     @staticmethod
     def of(info: IssuerInfo) -> "IssuerResponse":
@@ -239,6 +249,7 @@ class IssuerResponse(Wire):
             chain=[pem_certificate(c) for c in info.chain],
             max_validity_days=info.max_validity_days,
             extended_key_usages=sorted(info.extended_key_usages),
+            lists_only=info.lists_only,
         )
 
 

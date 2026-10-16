@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from cryptography import x509
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import ExtendedKeyUsageOID
 from fastapi.testclient import TestClient
@@ -245,6 +245,86 @@ def test_registering_needs_the_issuers_own_key_and_path_length_0(unsealed, hiera
         },
     )
     refused(response, "issuer-key")
+
+
+def _xca_issuing_ca() -> tuple[str, str]:
+    """An issuing CA as XCA makes one: a CA with no path length, its key
+    exported as encrypted PKCS#8."""
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "XCA Issuing CA 1")])
+    now = datetime.now(UTC)
+    certificate = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(days=1))
+        .not_valid_after(now + timedelta(days=365))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=True,
+                crl_sign=True,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            True,
+        )
+        .sign(key, hashes.SHA256())
+    )
+    pem = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.BestAvailableEncryption(b"xca export"),
+    ).decode()
+    return certificate.public_bytes(serialization.Encoding.PEM).decode(), pem
+
+
+def test_an_issuer_without_path_length_0_signs_its_lists_only(unsealed):
+    certificate, pem = _xca_issuing_ca()
+    key = ok(
+        unsealed.post(
+            "/v1/keys/import",
+            json={"purpose": "issuer", "privateKey": pem, "passphrase": "xca export"},
+        )
+    )
+    body = {
+        "id": "xca-issuing-ca-1",
+        "keyId": key["id"],
+        "certificate": certificate,
+        "maxValidityDays": 90,
+        "extendedKeyUsages": [SERVER_AUTH],
+    }
+    refused(unsealed.post("/v1/issuers", json=body), "path-length")
+    issuer = ok(unsealed.post("/v1/issuers", json={**body, "listsOnly": True}))
+    assert issuer["listsOnly"] is True
+
+    _, csr = csr_for(["localhost"])
+    refused(
+        unsealed.post(
+            "/v1/issuers/xca-issuing-ca-1/certificates",
+            json=server_spec(["localhost"], csr=csr),
+        ),
+        "lists-only",
+    )
+    now = datetime.now(UTC)
+    crl = ok(
+        unsealed.post(
+            "/v1/issuers/xca-issuing-ca-1/crls",
+            json={
+                "number": 7,
+                "thisUpdate": now.isoformat(),
+                "nextUpdate": (now + timedelta(days=7)).isoformat(),
+            },
+        )
+    )["crl"]
+    assert x509.load_pem_x509_crl(crl.encode()).issuer == load(certificate).subject
 
 
 # ---- keys

@@ -173,6 +173,8 @@ class IssuerInfo:
     chain: tuple[x509.Certificate, ...]
     max_validity_days: int
     extended_key_usages: frozenset[str]
+    #: Signs its lists (and its OCSP responder's certificate) only (ADR 0041).
+    lists_only: bool = False
 
 
 def signature_hash(key: PrivateKey) -> hashes.SHA256 | None:
@@ -596,6 +598,7 @@ class Issuers:
         chain: tuple[x509.Certificate, ...],
         max_validity_days: int,
         extended_key_usages: frozenset[str],
+        lists_only: bool = False,
     ) -> IssuerInfo:
         if not ISSUER_ID.match(issuer_id):
             raise BadRequestError("an issuer id is a lower-case slug")
@@ -612,9 +615,14 @@ class Issuers:
             ).value
         except x509.ExtensionNotFound as error:
             raise RefusedError("ca", "the certificate is not a CA") from error
-        if not constraints.ca or constraints.path_length != 0:
+        if not constraints.ca:
+            raise RefusedError("ca", "the certificate is not a CA")
+        # A key held online signs no CA that validates (ADR 0020): its
+        # certificate says path length 0, or it signs its lists only (ADR 0041).
+        if constraints.path_length != 0 and not lists_only:
             raise RefusedError(
-                "path-length", "an online issuer is a CA with path length 0"
+                "path-length",
+                "an online issuer is a CA with path length 0, or signs its lists only",
             )
         _check_chain(certificate, chain)
         if self._store.issuer(issuer_id) is not None:
@@ -629,6 +637,7 @@ class Issuers:
                 max_validity_days=max_validity_days,
                 chain=tuple(c.public_bytes(_DER) for c in chain),
                 extended_key_usages=extended_key_usages,
+                lists_only=lists_only,
             )
         )
         return self.get(issuer_id)
@@ -644,12 +653,17 @@ class Issuers:
             chain=tuple(x509.load_der_x509_certificate(c) for c in row.chain),
             max_validity_days=row.max_validity_days,
             extended_key_usages=row.extended_key_usages,
+            lists_only=row.lists_only,
         )
 
     def sign_certificate(
         self, issuer_id: str, request: CertificateRequest
     ) -> x509.Certificate:
         issuer = self.get(issuer_id)
+        if issuer.lists_only:
+            raise RefusedError(
+                "lists-only", f"issuer {issuer_id} signs its lists only (ADR 0041)"
+            )
         signing_key = self._keys.private_key(issuer.key_id)
         check_leaf(request, issuer, self._keys)
         return build_certificate(
