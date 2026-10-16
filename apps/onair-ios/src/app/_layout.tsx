@@ -42,24 +42,11 @@ function GatedStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="meeting/[meetingId]"
-          options={{
-            headerShown: true,
-            title: "Meeting",
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.text,
-            // A bare chevron: no "Back" title and, on iOS 26, no glass
-            // capsule around it.
-            unstable_headerLeftItems: () => [
-              {
-                type: "button",
-                label: "Back",
-                icon: { type: "sfSymbol", name: "chevron.left" },
-                tintColor: colors.text,
-                hidesSharedBackground: true,
-                onPress: () => router.back(),
-              },
-            ],
-          }}
+          options={{ ...PUSHED, title: "Meeting" }}
+        />
+        <Stack.Screen
+          name="calendars"
+          options={{ ...PUSHED, title: "Calendars" }}
         />
         <Stack.Screen name="override/new" options={{ presentation: "modal" }} />
         <Stack.Screen
@@ -117,6 +104,26 @@ function StartupOverlay() {
   }
   return null;
 }
+
+/**
+ * A screen pushed over the tabs: dark header and a bare chevron back, with
+ * no "Back" title and, on iOS 26, no glass capsule around it.
+ */
+const PUSHED = {
+  headerShown: true,
+  headerStyle: { backgroundColor: colors.background },
+  headerTintColor: colors.text,
+  unstable_headerLeftItems: () => [
+    {
+      type: "button" as const,
+      label: "Back",
+      icon: { type: "sfSymbol" as const, name: "chevron.left" as const },
+      tintColor: colors.text,
+      hidesSharedBackground: true,
+      onPress: () => router.back(),
+    },
+  ],
+};
 
 /** The loading screen's least time on screen at launch. */
 const MIN_LOADING_MS = 600;
