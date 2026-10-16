@@ -80,7 +80,6 @@ export function AppLock() {
           )}
           <PillButton
             label={`Unlock with ${method?.name ?? "Face ID"}`}
-            primary
             onPress={() => void tryUnlock()}
           />
         </View>
