@@ -9,16 +9,19 @@ import { colors } from "../theme";
  * past both edges. Static for now; the flicker-on animation is phase 6.
  *
  * With `children` it is the backdrop for a choice instead of a wait (sign
- * in, retry): the progress bar gives way to them.
+ * in, retry): the progress bar gives way to them. `bare` leaves out the
+ * message and bar altogether: the sign alone, behind the lock.
  */
 export function LoadingScreen({
   message = "Syncing your calendars",
   children,
+  bare = false,
 }: {
   message?: string;
   children?: ReactNode;
+  bare?: boolean;
 }) {
-  const waiting = children === undefined;
+  const waiting = children === undefined && !bare;
   return (
     <View
       style={styles.screen}
@@ -53,16 +56,18 @@ export function LoadingScreen({
         <Text style={styles.brandSub}>Olympus · Minerva</Text>
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.message}>{message}</Text>
-        {waiting ? (
-          <View style={styles.track}>
-            <View style={styles.progress} />
-          </View>
-        ) : (
-          children
-        )}
-      </View>
+      {!bare && (
+        <View style={styles.footer}>
+          <Text style={styles.message}>{message}</Text>
+          {waiting ? (
+            <View style={styles.track}>
+              <View style={styles.progress} />
+            </View>
+          ) : (
+            children
+          )}
+        </View>
+      )}
     </View>
   );
 }
