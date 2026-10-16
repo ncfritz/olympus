@@ -106,3 +106,14 @@ watch calls the API itself (its own device certificate) or the phone relays.
 
 The chosen icon in default, dark and tinted; the loading screen's animation;
 [signoff.md](signoff.md) on a real iPhone and Watch, on the LAN and away.
+
+## Follow-ups
+
+- **Working hours live on the phone only** (noted 2026-10-15). The app's
+  Settings (working day start and end, weekends free) are kept in the
+  phone's Keychain and sent with each availability request (`dayStart`,
+  `dayEnd`, `includeWeekends`). The site's OnAir drawer and the lamp send
+  none, so they read the API's defaults (08:00 to 18:00, weekends off) and
+  disagree with the app once the hours change. The fix is to keep the
+  working day on the server, per user, as the default the API reads when a
+  request names none, with the app's Settings reading and writing it.
