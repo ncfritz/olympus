@@ -2,6 +2,7 @@ import type {
   AvailabilityLevel,
   Availability,
   BaseAvailabilityBlock,
+  Calendar,
   PartialAvailabilityBlock,
 } from "@ncfritz/olympus-sdk/minerva";
 import Constants from "expo-constants";
@@ -18,7 +19,7 @@ import {
 import { AppState as AppLifecycle } from "react-native";
 
 import { apiBaseUrl } from "../config";
-import { loadWindow } from "../schedule";
+import { hideCalendars, loadWindow } from "../schedule";
 import {
   DEFAULT_SETTINGS,
   type WorkSettings,
@@ -65,6 +66,10 @@ type SessionContext = {
   settings: WorkSettings;
   /** Keeps new settings on the phone and reloads against them. */
   updateSettings(settings: WorkSettings): Promise<void>;
+  /** The synced calendars (Settings). */
+  listCalendars(): Promise<Calendar[]>;
+  /** Whether a calendar counts toward busy: on the server, for everyone. */
+  setCalendarCounted(calendarId: string, counted: boolean): Promise<void>;
 };
 
 /**
@@ -89,8 +94,18 @@ export const useSession = (): SessionContext => {
 /** The ready state, for screens that only render once loaded. */
 export const useReady = () => {
   const session = useSession();
+  // Calendars hidden on this phone drop out of every screen's meetings.
   return session.state.phase === "ready"
-    ? { ...session, state: session.state }
+    ? {
+        ...session,
+        state: {
+          ...session.state,
+          availability: hideCalendars(
+            session.state.availability,
+            session.settings.hiddenCalendars,
+          ),
+        },
+      }
     : undefined;
 };
 
@@ -276,6 +291,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [caller, edit],
   );
 
+  const listCalendars = useCallback(async () => {
+    try {
+      return await caller.availability.listCalendars();
+    } catch (error) {
+      const failure = classifyFailure(error);
+      if (failure.kind === "signed-out") await signedOut(failure.message);
+      throw new Error(failure.message, { cause: error });
+    }
+  }, [caller, signedOut]);
+
+  const setCalendarCounted = useCallback(
+    (calendarId: string, counted: boolean) =>
+      edit(() =>
+        caller.availability.updateCalendar(calendarId, {
+          includedInBusy: counted,
+        }),
+      ),
+    [caller, edit],
+  );
+
   const updateSettings = useCallback(
     async (next: WorkSettings) => {
       settingsRef.current = next;
@@ -297,6 +332,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       deleteBlock,
       settings,
       updateSettings,
+      listCalendars,
+      setCalendarCounted,
     }),
     [
       state,
@@ -308,6 +345,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       deleteBlock,
       settings,
       updateSettings,
+      listCalendars,
+      setCalendarCounted,
     ],
   );
 

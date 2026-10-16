@@ -32,6 +32,8 @@ added as each phase lands.
 | O2.17 | 2     | INT | Open Now after working hours with no override                                  | No countdown: Off hours, Clear, until tomorrow (or Monday) at the start     |
 | O2.18 | 2     | INT | Set an override after hours, then turn Weekends free off on a Saturday         | The override counts down; Saturday becomes a working day                    |
 | O2.19 | 2     | DEV | Open a meeting; go back with the chevron, then with a swipe from the left edge | A bare < with no label or capsule; both go back to the list                 |
+| O2.20 | 2     | INT | Settings, Calendars: turn Counts toward busy off for one, then on              | Its meetings stop (then start) setting your status, on the site too         |
+| O2.21 | 2     | INT | Turn Show in app off for one                                                   | Its meetings leave Schedule, Up next and all-day; the status is unchanged   |
 
 Environments are the authentication sign-off's: DEV, INT (the LAN), EXT
 (outside it).

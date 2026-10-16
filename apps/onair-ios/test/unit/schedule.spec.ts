@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   allDayOn,
+  hideCalendars,
   clearUntil,
   type Availability,
   type Block,
@@ -364,8 +365,27 @@ describe("working hours", () => {
       dayStart: 9 * 60,
       dayEnd: 17 * 60,
       weekendsFree: true,
+      hiddenCalendars: [],
     });
     expect(strip.parts).toEqual([{ status: "free", fraction: 1 }]);
     expect(strip.nowFraction).toBe(0.5);
+  });
+});
+
+describe("hideCalendars", () => {
+  it("drops the meetings of hidden calendars, and leaves the slots", () => {
+    const avail: Availability = {
+      slots: slots(9, 10, "busy"),
+      meetings: [
+        meeting({ meetingId: "w", source: "work" }),
+        meeting({ meetingId: "h", source: "holidays" }),
+        meeting({ meetingId: "x" }),
+      ],
+      blocks: [],
+    };
+    const shown = hideCalendars(avail, ["holidays"]);
+    expect(shown.meetings.map((m) => m.meetingId)).toEqual(["w", "x"]);
+    expect(shown.slots).toBe(avail.slots);
+    expect(hideCalendars(avail, [])).toBe(avail);
   });
 });

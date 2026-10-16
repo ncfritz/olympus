@@ -29,6 +29,8 @@ export type Meeting = {
   counted: boolean;
   /** An all-day event; absent from an API that does not say. */
   isAllDay?: boolean;
+  /** The source label of the calendar it is on. */
+  source?: string;
 };
 
 export type Block = {
@@ -85,6 +87,25 @@ export const weekOf = (day: Date): Date[] => {
 
 export const sameDay = (a: Date | number, b: Date | number): boolean =>
   startOfDay(a).getTime() === startOfDay(b).getTime();
+
+/**
+ * The availability without the meetings of calendars hidden on this phone.
+ * The slots stay as the API gave them: hiding a calendar here does not
+ * change the status, only what the screens list.
+ */
+export const hideCalendars = <A extends Availability>(
+  availability: A,
+  hidden: readonly string[],
+): A =>
+  hidden.length === 0
+    ? availability
+    : {
+        ...availability,
+        meetings: availability.meetings.filter(
+          (meeting) =>
+            meeting.source === undefined || !hidden.includes(meeting.source),
+        ),
+      };
 
 /* ------------------------------------------------------------------ */
 /* Words                                                               */

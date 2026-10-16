@@ -1,7 +1,15 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Constants from "expo-constants";
-import { type ReactNode, useState } from "react";
-import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import type { Calendar } from "@ncfritz/olympus-sdk/minerva";
+import { type ReactNode, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useReady } from "../../auth/SessionProvider";
@@ -107,6 +115,8 @@ export default function SettingsScreen() {
         </View>
       </Section>
 
+      <CalendarsSection />
+
       <Section title="SERVER">
         <Row label="API" value={apiHost} />
         <Row label="Connection" value={connection} />
@@ -131,6 +141,118 @@ export default function SettingsScreen() {
         <PillButton label="Sign out" onPress={() => void signOut()} />
       </View>
     </ScrollView>
+  );
+}
+
+/**
+ * Each synced calendar, with two switches: Counts toward busy (the
+ * calendar's own setting on the server, which the site and the lamp follow
+ * too) and Show in app (this phone only).
+ */
+function CalendarsSection() {
+  const ready = useReady();
+  const [calendars, setCalendars] = useState<Calendar[]>();
+  const [problem, setProblem] = useState<string>();
+  const listCalendars = ready?.listCalendars;
+
+  useEffect(() => {
+    if (listCalendars === undefined) return;
+    let cancelled = false;
+    listCalendars().then(
+      (list) => {
+        if (!cancelled) setCalendars(list);
+      },
+      (error: Error) => {
+        if (!cancelled) setProblem(error.message);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [listCalendars]);
+
+  if (ready === undefined) return null;
+  const { settings, updateSettings, setCalendarCounted } = ready;
+
+  const setCounted = (calendar: Calendar, counted: boolean) => {
+    const before = calendars;
+    setProblem(undefined);
+    setCalendars(
+      calendars?.map((c) =>
+        c.calendarId === calendar.calendarId
+          ? { ...c, includedInBusy: counted }
+          : c,
+      ),
+    );
+    setCalendarCounted(calendar.calendarId, counted).catch((error: Error) => {
+      setCalendars(before);
+      setProblem(error.message);
+    });
+  };
+
+  const setShown = (source: string, shown: boolean) => {
+    const others = settings.hiddenCalendars.filter((s) => s !== source);
+    void updateSettings({
+      ...settings,
+      hiddenCalendars: shown ? others : [...others, source],
+    });
+  };
+
+  return (
+    <Section
+      title="CALENDARS"
+      problem={problem}
+      note="Counts toward busy changes your status everywhere, on the site and the lamp too. Show in app only hides a calendar's events on this phone."
+    >
+      {calendars === undefined ? (
+        <View style={styles.row}>
+          {problem === undefined ? (
+            <ActivityIndicator color={colors.textSecondary} />
+          ) : (
+            <Text style={styles.rowValue}>Could not load the calendars.</Text>
+          )}
+        </View>
+      ) : calendars.length === 0 ? (
+        <View style={styles.row}>
+          <Text style={styles.rowValue}>No calendars are synced yet.</Text>
+        </View>
+      ) : (
+        calendars.map((calendar) => (
+          <View key={calendar.calendarId} style={styles.calendar}>
+            <View style={styles.calendarHead}>
+              <View
+                style={[
+                  styles.calendarDot,
+                  { backgroundColor: calendar.color ?? colors.textTertiary },
+                ]}
+              />
+              <Text style={styles.calendarName} numberOfLines={1}>
+                {calendar.source}
+              </Text>
+              {!calendar.enabled && (
+                <Text style={styles.rowValue}>Not syncing</Text>
+              )}
+            </View>
+            <View style={styles.subRow}>
+              <Text style={styles.subLabel}>Counts toward busy</Text>
+              <Switch
+                value={calendar.includedInBusy}
+                onValueChange={(counted) => setCounted(calendar, counted)}
+                accessibilityLabel={`${calendar.source} counts toward busy`}
+              />
+            </View>
+            <View style={styles.subRow}>
+              <Text style={styles.subLabel}>Show in app</Text>
+              <Switch
+                value={!settings.hiddenCalendars.includes(calendar.source)}
+                onValueChange={(shown) => setShown(calendar.source, shown)}
+                accessibilityLabel={`Show ${calendar.source} in the app`}
+              />
+            </View>
+          </View>
+        ))
+      )}
+    </Section>
   );
 }
 
@@ -204,5 +326,33 @@ const styles = StyleSheet.create({
   rowValue: { flexShrink: 1, fontSize: 15, color: colors.textSecondary },
   actions: { marginTop: 4 },
   note: { fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+  calendar: {
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
+  },
+  calendarHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  calendarDot: { width: 10, height: 10, borderRadius: 5 },
+  calendarName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  subRow: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: 36,
+    paddingRight: 16,
+  },
+  subLabel: { fontSize: 15, color: colors.textSecondary },
   problem: { fontSize: 13, color: "#FF8A8E" },
 });

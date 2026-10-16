@@ -17,6 +17,7 @@ describe("settings", () => {
       dayStart: 480,
       dayEnd: 1080,
       weekendsFree: true,
+      hiddenCalendars: [],
     });
     expect(parseSettings(null)).toEqual(DEFAULT_SETTINGS);
   });
@@ -24,9 +25,19 @@ describe("settings", () => {
   it("reads what was stored, and falls back where it is not right", () => {
     expect(
       parseSettings(
-        JSON.stringify({ dayStart: 540, dayEnd: 990, weekendsFree: false }),
+        JSON.stringify({
+          dayStart: 540,
+          dayEnd: 990,
+          weekendsFree: false,
+          hiddenCalendars: ["holidays", 7],
+        }),
       ),
-    ).toEqual({ dayStart: 540, dayEnd: 990, weekendsFree: false });
+    ).toEqual({
+      dayStart: 540,
+      dayEnd: 990,
+      weekendsFree: false,
+      hiddenCalendars: ["holidays"],
+    });
     expect(
       parseSettings(JSON.stringify({ dayStart: 600, dayEnd: 540 })),
     ).toEqual(DEFAULT_SETTINGS);
@@ -35,7 +46,7 @@ describe("settings", () => {
 
   it("asks the API for the working day", () => {
     expect(
-      workingDayQuery({ dayStart: 510, dayEnd: 1050, weekendsFree: true }),
+      workingDayQuery({ ...DEFAULT_SETTINGS, dayStart: 510, dayEnd: 1050 }),
     ).toEqual({ dayStart: "08:30", dayEnd: "17:30", includeWeekends: false });
     expect(
       workingDayQuery({ ...DEFAULT_SETTINGS, weekendsFree: false })

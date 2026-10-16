@@ -150,6 +150,13 @@ export class MeetingAvailability {
       "Whether the meeting counts toward availability (its calendar counts toward busy)",
   })
   counted: boolean;
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: "The source label of the calendar the meeting is on",
+  })
+  source?: string;
 }
 
 /** The level of one 15-minute slot. */

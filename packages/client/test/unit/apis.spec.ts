@@ -26,6 +26,8 @@ const ARGS: Record<string, unknown[]> = {
   deleteAvailabilityBlock: ["block-1"],
   setMeetingAvailability: ["meeting-1", "interruptable"],
   clearMeetingAvailability: ["meeting-1"],
+  listCalendars: [],
+  updateCalendar: ["calendar-1", { includedInBusy: false }],
   // ContentApi
   createContentAsset: [{}],
   addContentAssetTagToAsset: ["asset-1", { name: "hls", type: "system" }],

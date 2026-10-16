@@ -165,6 +165,7 @@ describe("Availability API", () => {
           status: "busy",
           overridden: false,
           counted: true,
+          source: "work",
         },
         expect.objectContaining({
           meetingId: "m-2",

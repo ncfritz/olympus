@@ -17129,6 +17129,10 @@
           "counted": {
             "type": "boolean",
             "description": "Whether the meeting counts toward availability (its calendar counts toward busy)"
+          },
+          "source": {
+            "type": "string",
+            "description": "The source label of the calendar the meeting is on"
           }
         },
         "required": [

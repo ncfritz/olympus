@@ -12,12 +12,15 @@ export type WorkSettings = {
   dayEnd: number;
   /** Saturday and Sunday are not working days. */
   weekendsFree: boolean;
+  /** Calendars (by source label) whose events this phone does not show. */
+  hiddenCalendars: string[];
 };
 
 export const DEFAULT_SETTINGS: WorkSettings = {
   dayStart: 8 * 60,
   dayEnd: 18 * 60,
   weekendsFree: true,
+  hiddenCalendars: [],
 };
 
 const MINUTES_IN_DAY = 24 * 60;
@@ -52,6 +55,11 @@ export const parseSettings = (stored: string | null): WorkSettings => {
         typeof value.weekendsFree === "boolean"
           ? value.weekendsFree
           : DEFAULT_SETTINGS.weekendsFree,
+      hiddenCalendars: Array.isArray(value.hiddenCalendars)
+        ? value.hiddenCalendars.filter(
+            (source): source is string => typeof source === "string",
+          )
+        : DEFAULT_SETTINGS.hiddenCalendars,
     };
   } catch {
     return DEFAULT_SETTINGS;

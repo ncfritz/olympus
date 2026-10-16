@@ -5,9 +5,12 @@ import {
   createAvailabilityBlock,
   deleteAvailabilityBlock,
   getAvailability,
+  listCalendars,
+  type PartialCalendar,
   type PartialAvailabilityBlock,
   setMeetingAvailability,
   updateAvailabilityBlock,
+  updateCalendar,
 } from "@ncfritz/olympus-sdk/minerva";
 import type { OlympusClients } from "../clients";
 
@@ -85,5 +88,21 @@ export class AvailabilityApi {
       client: this.clients.minerva,
       path: { meetingId },
     });
+  }
+
+  /** The synced calendars, with whether each counts toward busy. */
+  async listCalendars() {
+    const response = await listCalendars({ client: this.clients.minerva });
+    return response.data.calendars;
+  }
+
+  /** Changes to a calendar: whether it syncs, counts toward busy, its colour. */
+  async updateCalendar(calendarId: string, calendar: PartialCalendar) {
+    const response = await updateCalendar({
+      client: this.clients.minerva,
+      path: { calendarId },
+      body: { calendar },
+    });
+    return response.data.calendar;
   }
 }

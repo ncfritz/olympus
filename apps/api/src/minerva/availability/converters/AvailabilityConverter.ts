@@ -59,4 +59,5 @@ export const toMeetingAvailability = (
   status: override ?? levelOfMeetingStatus(row.status),
   overridden: override !== undefined,
   counted: !(row.source && excludedSources.has(row.source)),
+  ...(row.source ? { source: row.source } : {}),
 });

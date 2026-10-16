@@ -15635,6 +15635,10 @@
         "description": "Whether the user set the meeting's level",
         "type": "boolean"
       },
+      "source": {
+        "description": "The source label of the calendar the meeting is on",
+        "type": "string"
+      },
       "startTime": {
         "description": "An ISO-8601 formatted string indicating when the meeting starts",
         "type": "string"
