@@ -51,6 +51,12 @@
   min-width: 0;
 }
 
+/* A CA's caret, after its indent: centred on what its cell says. */
+.caret {
+  display: inline-flex;
+  flex: none;
+}
+
 .spacer {
   flex: 1;
 }

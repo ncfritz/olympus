@@ -35,14 +35,6 @@ export function ExpandCaret({
   );
 }
 
-/**
- * Where a row that does not expand would have its caret: in a tree, its
- * name lines up with its siblings' that do.
- */
-export function ExpandSpacer() {
-  return <span className={styles.spacer} aria-hidden />;
-}
-
 /** A panel's (Collapse) expander: the same caret, inside antd's own button. */
 export function PanelCaret({ isActive }: { isActive?: boolean }) {
   return (

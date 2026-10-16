@@ -1,3 +1,4 @@
+import { ExpandCaret } from "@ncfritz/olympus-console";
 import {
   Button,
   Flex,
@@ -27,17 +28,23 @@ import { CaIcon, certificatesOf, NameTags } from "./shared";
 
 const DAY = 24 * 60 * 60 * 1000;
 
-type Row = { key: string; issuer: Issuer; children?: Row[] };
+/** A CA, how deep it sits beneath its root, and the CAs beneath it. */
+type Row = { key: string; issuer: Issuer; level: number; children?: Row[] };
 
-const rowsOf = (issuers: Issuer[], tops: Issuer[]): Row[] =>
+const rowsOf = (issuers: Issuer[], tops: Issuer[], level = 0): Row[] =>
   tops.map((issuer) => {
-    const children = rowsOf(issuers, childrenOf(issuers, issuer.id));
+    const children = rowsOf(issuers, childrenOf(issuers, issuer.id), level + 1);
     return {
       key: issuer.id,
       issuer,
+      level,
       children: children.length ? children : undefined,
     };
   });
+
+/** How far a level sits in from the one above it, and the caret's room. */
+const INDENT = 28;
+const CARET = 20;
 
 const STATUSES: IssuerStatus[] = ["active", "pending", "closed", "revoked"];
 
@@ -87,7 +94,7 @@ export function CaList({
   const flat = (tops: Issuer[]): Row[] =>
     inOrder(issuers, tops)
       .filter(({ issuer }) => matches(issuer))
-      .map(({ issuer }) => ({ key: issuer.id, issuer }));
+      .map(({ issuer }) => ({ key: issuer.id, issuer, level: 0 }));
   const anchoredRows = filtering ? flat(roots) : rowsOf(issuers, roots);
   const outsideRows = filtering ? flat(outside) : rowsOf(issuers, outside);
 
@@ -134,8 +141,30 @@ export function CaList({
     {
       title: "CA",
       key: "ca",
-      render: (_, { issuer }) => (
+      // Its indent and caret are drawn here, not by the table, so the caret
+      // centres on the whole of what the cell says.
+      render: (_, { issuer, level, children }) => (
         <Flex gap="small" align="center">
+          {!filtering && (
+            <span
+              className={styles.caret}
+              style={{ marginInlineStart: level * INDENT, width: CARET }}
+            >
+              {children && (
+                <ExpandCaret
+                  expanded={expanded.includes(issuer.id)}
+                  label={shortCaName(issuer)}
+                  onToggle={() =>
+                    setExpanded(
+                      expanded.includes(issuer.id)
+                        ? expanded.filter((key) => key !== issuer.id)
+                        : [...expanded, issuer.id],
+                    )
+                  }
+                />
+              )}
+            </span>
+          )}
           <CaIcon issuer={issuer} outside={outsideIds.has(issuer.id)} />
           <Flex vertical className={styles.shrink}>
             <Flex gap={6} align="center" wrap className={styles.tags}>
@@ -243,7 +272,9 @@ export function CaList({
       expandable={{
         expandedRowKeys: expanded,
         onExpandedRowsChange: setExpanded,
-        indentSize: 28,
+        // The CA column draws the indent and the caret itself.
+        indentSize: 0,
+        expandIcon: () => null,
       }}
       locale={{
         emptyText: filtering ? "No CA matches" : "No CAs here yet",
