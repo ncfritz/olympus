@@ -6,8 +6,9 @@ import type { Pull } from "../usePullToRefresh";
 
 /**
  * The pull's hint, over the top of a scroll view: fades in as the pull
- * starts, its arrow turns once letting go would do something, and it stays
- * as "Refreshing…" until the refresh settles.
+ * starts, its arrow turns once letting go would do something (or spins, the
+ * iOS activity indicator, once letting go refreshes), and it stays as
+ * "Refreshing…" until the refresh settles.
  */
 export function PullHint({ pull, top }: { pull: Pull; top: number }) {
   if (pull.busy) {
@@ -35,21 +36,25 @@ export function PullHint({ pull, top }: { pull: Pull; top: number }) {
       <Animated.View
         style={[styles.pill, { opacity, transform: [{ translateY }] }]}
       >
-        <Svg
-          width={14}
-          height={14}
-          viewBox="0 0 24 24"
-          style={pull.armed ? styles.arrowUp : undefined}
-        >
-          <Path
-            d="M12 4v16M5 13l7 7 7-7"
-            stroke={colors.text}
-            strokeWidth={2.4}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        </Svg>
+        {pull.spinning ? (
+          <ActivityIndicator size="small" color={colors.text} />
+        ) : (
+          <Svg
+            width={14}
+            height={14}
+            viewBox="0 0 24 24"
+            style={pull.armed ? styles.arrowUp : undefined}
+          >
+            <Path
+              d="M12 4v16M5 13l7 7 7-7"
+              stroke={colors.text}
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </Svg>
+        )}
         <Text style={styles.label}>{pull.label}</Text>
       </Animated.View>
     </Animated.View>

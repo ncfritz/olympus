@@ -26,6 +26,7 @@ export default function OverridesScreen() {
         at: 70,
         label: "Release to refresh",
         run: () => (ready?.reload ?? noReload)(),
+        spins: true,
       },
     ],
   });

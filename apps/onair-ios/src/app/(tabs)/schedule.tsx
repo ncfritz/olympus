@@ -115,6 +115,7 @@ export default function ScheduleScreen() {
             at: 70,
             label: "Release to refresh",
             run: () => (ready?.reload ?? noReload)(),
+            spins: true,
           },
         ],
     onScrollY: (y) => {

@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -50,10 +51,29 @@ const MONTHS = [
 
 const noReload = () => Promise.resolve();
 
+/**
+ * The glow sits behind the scroll view: it grows into a pull past the top,
+ * so the lamp's colour fills the gap, and moves up with the header when the
+ * screen scrolls.
+ */
+const pullDepth = (offset: Animated.Value) =>
+  offset.interpolate({
+    inputRange: [-1000, 0],
+    outputRange: [1000, 0],
+    extrapolate: "clamp",
+  });
+const scrolledUp = (offset: Animated.Value) =>
+  offset.interpolate({
+    inputRange: [0, 1000],
+    outputRange: [0, -1000],
+    extrapolate: "clamp",
+  });
+
 export default function NowScreen() {
   const ready = useReady();
   const insets = useSafeAreaInsets();
   const now = useNow(1000);
+  const [headerHeight] = useState(() => new Animated.Value(0));
   const pull = usePullToRefresh({
     idleLabel: "Pull to refresh",
     stages: [
@@ -61,6 +81,7 @@ export default function NowScreen() {
         at: 70,
         label: "Release to refresh",
         run: () => (ready?.reload ?? noReload)(),
+        spins: true,
       },
     ],
   });
@@ -76,14 +97,28 @@ export default function NowScreen() {
 
   return (
     <View style={styles.screen}>
+      <Animated.View
+        style={[
+          styles.backdrop,
+          {
+            height: Animated.add(headerHeight, pullDepth(pull.offset)),
+            transform: [{ translateY: scrolledUp(pull.offset) }],
+          },
+        ]}
+      >
+        <Glow color={statusFill[status]} />
+      </Animated.View>
       <Animated.ScrollView
         style={styles.fill}
         contentContainerStyle={styles.content}
         {...pull.scrollProps}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-          <Glow color={statusFill[status]} />
-
+        <View
+          style={[styles.header, { paddingTop: insets.top + 14 }]}
+          onLayout={(event) =>
+            headerHeight.setValue(event.nativeEvent.layout.height)
+          }
+        >
           <View style={styles.titleRow}>
             <View style={styles.titleText}>
               <Text style={styles.date}>
@@ -201,6 +236,7 @@ export default function NowScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   fill: { flex: 1 },
+  backdrop: { position: "absolute", top: 0, left: 0, right: 0 },
   content: { paddingBottom: 32 },
   header: { paddingHorizontal: 20, paddingBottom: 26, gap: 22 },
   titleRow: {

@@ -10,9 +10,14 @@ export type PullStage = {
   at: number;
   /** What the hint says once the pull is this far: "Release to refresh". */
   label: string;
-  /** A promise keeps "Refreshing…" up until it settles. */
+  /** A promise keeps "Refreshing…" up until it settles, for a second at least. */
   run: () => void | Promise<void>;
+  /** Spin the iOS activity indicator once this far: it is a refresh. */
+  spins?: boolean;
 };
+
+/** A refresh shows for at least this long, so it reads as one. */
+const MIN_REFRESH_MS = 1000;
 
 export type Pull = {
   /** Spread onto the scroll view. */
@@ -29,6 +34,8 @@ export type Pull = {
   label: string;
   /** Whether the pull has gone far enough to do something on release. */
   armed: boolean;
+  /** Armed, and letting go refreshes: the hint spins. */
+  spinning: boolean;
   /** A stage's promise is still running. */
   busy: boolean;
 };
@@ -93,7 +100,10 @@ export const usePullToRefresh = ({
       const result = stage.run();
       if (result instanceof Promise) {
         setBusy(true);
-        void result.finally(() => setBusy(false));
+        const shown = new Promise((resolve) =>
+          setTimeout(resolve, MIN_REFRESH_MS),
+        );
+        void Promise.allSettled([result, shown]).then(() => setBusy(false));
       }
     },
     [],
@@ -106,6 +116,7 @@ export const usePullToRefresh = ({
     firstAt: stages[0]?.at ?? 60,
     label: stage?.label ?? idleLabel,
     armed: stage !== undefined,
+    spinning: stage?.spins === true,
     busy,
   };
 };
