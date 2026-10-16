@@ -50,17 +50,20 @@ export function CountdownRing({
           stroke="rgba(0,0,0,0.28)"
           strokeWidth={stroke}
         />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${circumference * progress} ${circumference}`}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
+        {/* A round cap draws a dot even at zero length, so no arc at all. */}
+        {progress > 0 && (
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${circumference * progress} ${circumference}`}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        )}
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]}>{children}</View>
     </View>
