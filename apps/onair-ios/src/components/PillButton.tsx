@@ -3,20 +3,22 @@ import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import { colors, statusFill } from "../theme";
 
 /**
- * The design's rounded button: white for the main action, glass beside it,
- * red for one that destroys something.
+ * The design's rounded button: white for the main action, glass beside it
+ * (a brighter glass when `emphasis`), red for one that destroys something.
  */
 export function PillButton({
   label,
   onPress,
   primary = false,
   danger = false,
+  emphasis = false,
   busy = false,
 }: {
   label: string;
   onPress: () => void;
   primary?: boolean;
   danger?: boolean;
+  emphasis?: boolean;
   busy?: boolean;
 }) {
   return (
@@ -27,7 +29,13 @@ export function PillButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.pill,
-        primary ? styles.primary : danger ? styles.danger : styles.secondary,
+        primary
+          ? styles.primary
+          : danger
+            ? styles.danger
+            : emphasis
+              ? styles.emphasis
+              : styles.secondary,
         pressed && styles.pressed,
       ]}
     >
@@ -53,6 +61,7 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: "#FFFFFF" },
   secondary: { backgroundColor: "rgba(255,255,255,0.14)" },
   danger: { backgroundColor: statusFill.dnd },
+  emphasis: { backgroundColor: "rgba(255,255,255,0.26)" },
   pressed: { opacity: 0.8 },
   label: { fontSize: 15, fontWeight: "600", color: colors.text },
   primaryLabel: { color: colors.background },

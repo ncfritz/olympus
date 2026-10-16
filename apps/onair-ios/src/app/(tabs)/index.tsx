@@ -185,14 +185,14 @@ export default function NowScreen() {
           <View style={styles.buttons}>
             <View style={styles.button}>
               <PillButton
-                label="Change"
+                label="Change Override"
                 onPress={() => router.push(changeHref(current?.cause))}
               />
             </View>
             <View style={styles.button}>
               <PillButton
-                label="Override"
-                primary
+                label="New Override"
+                emphasis
                 onPress={() => router.push("/override/new")}
               />
             </View>
