@@ -31,6 +31,12 @@
             "backgroundColor": "#0D0E10"
           }
         }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "OnAir uses Face ID to keep your status and calendar private."
+        }
       ]
     ],
     "icon": "./assets/images/icon.png"

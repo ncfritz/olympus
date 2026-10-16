@@ -368,6 +368,7 @@ describe("working hours", () => {
       dayEnd: 17 * 60,
       weekendsFree: true,
       hiddenCalendars: [],
+      requireUnlock: false,
     });
     expect(strip.parts).toEqual([{ status: "free", fraction: 1 }]);
     expect(strip.nowFraction).toBe(0.5);

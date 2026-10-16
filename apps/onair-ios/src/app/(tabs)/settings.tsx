@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { unlock, type UnlockMethod, unlockMethod } from "../../appLock";
 import { useReady } from "../../auth/SessionProvider";
 import { PillButton } from "../../components/PillButton";
 import { API_BASE_URLS, apiBaseUrl } from "../../config";
@@ -116,6 +117,8 @@ export default function SettingsScreen() {
       </Section>
 
       <CalendarsSection />
+
+      <SecuritySection />
 
       <Section title="SERVER">
         <Row label="API" value={apiHost} />
@@ -252,6 +255,59 @@ function CalendarsSection() {
           </View>
         ))
       )}
+    </Section>
+  );
+}
+
+/**
+ * Require Face ID (or Touch ID, or the passcode on an iPhone without
+ * either). Turning it on or off asks first, so it is the owner changing it.
+ */
+function SecuritySection() {
+  const ready = useReady();
+  const [method, setMethod] = useState<UnlockMethod>();
+  const [problem, setProblem] = useState<string>();
+
+  useEffect(() => {
+    void unlockMethod().then(setMethod);
+  }, []);
+
+  if (ready === undefined) return null;
+  const { settings, updateSettings } = ready;
+  const name = method?.name ?? "Face ID";
+
+  const setRequired = async (requireUnlock: boolean) => {
+    setProblem(undefined);
+    const result = await unlock(
+      requireUnlock
+        ? `Turn on ${name} for OnAir`
+        : `Turn off ${name} for OnAir`,
+    );
+    if (result.ok) await updateSettings({ ...settings, requireUnlock });
+    else if (result.problem !== undefined) setProblem(result.problem);
+  };
+
+  return (
+    <Section
+      title="SECURITY"
+      problem={problem}
+      note={
+        method?.available === false
+          ? "Set a passcode on this iPhone to lock OnAir."
+          : name === "Passcode"
+            ? "Asks for your iPhone passcode when OnAir opens or comes back."
+            : `Asks for ${name} when OnAir opens or comes back. If ${name} fails, your iPhone passcode works.`
+      }
+    >
+      <View style={styles.row}>
+        <Text style={styles.rowLabel}>{`Require ${name}`}</Text>
+        <Switch
+          value={settings.requireUnlock}
+          disabled={method?.available !== true}
+          onValueChange={(value) => void setRequired(value)}
+          accessibilityLabel={`Require ${name}`}
+        />
+      </View>
     </Section>
   );
 }

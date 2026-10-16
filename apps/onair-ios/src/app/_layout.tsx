@@ -1,8 +1,10 @@
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { SessionProvider, useSession } from "../auth/SessionProvider";
+import { AppLock } from "../components/AppLock";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { PillButton } from "../components/PillButton";
 import { colors } from "../theme";
@@ -13,6 +15,7 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <GatedStack />
       <StartupOverlay />
+      <AppLock />
     </SessionProvider>
   );
 }
@@ -79,7 +82,13 @@ function GatedStack() {
  */
 function StartupOverlay() {
   const { state, reload, signOut } = useSession();
-  if (state.phase === "starting") {
+  // On screen for a moment at least, so a fast load does not flash it.
+  const [shownLongEnough, setShownLongEnough] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setShownLongEnough(true), MIN_LOADING_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  if (state.phase === "starting" || !shownLongEnough) {
     return (
       <View style={StyleSheet.absoluteFill}>
         <LoadingScreen />
@@ -104,6 +113,9 @@ function StartupOverlay() {
   }
   return null;
 }
+
+/** The loading screen's least time on screen at launch. */
+const MIN_LOADING_MS = 600;
 
 const styles = StyleSheet.create({
   actions: { gap: 10 },
