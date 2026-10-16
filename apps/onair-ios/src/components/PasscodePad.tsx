@@ -148,8 +148,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  digitKey: { backgroundColor: "rgba(255,255,255,0.14)" },
-  pressed: { backgroundColor: "rgba(255,255,255,0.32)" },
+  // Dark glass, so the digits read over the red sign behind the lock.
+  digitKey: { backgroundColor: "rgba(13,14,16,0.72)" },
+  pressed: { backgroundColor: "rgba(60,62,68,0.9)" },
   digit: { fontSize: 34, fontWeight: "400", color: colors.text },
   textKey: { backgroundColor: "transparent" },
   textKeyLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
