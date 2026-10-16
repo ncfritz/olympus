@@ -4,7 +4,8 @@ import { colors, statusFill } from "../theme";
 
 /**
  * The design's rounded button: white for the main action, glass beside it
- * (a brighter glass when `emphasis`), red for one that destroys something.
+ * (a brighter glass when `emphasis`), red for one that destroys something,
+ * or text alone when `plain`.
  */
 export function PillButton({
   label,
@@ -12,6 +13,7 @@ export function PillButton({
   primary = false,
   danger = false,
   emphasis = false,
+  plain = false,
   busy = false,
 }: {
   label: string;
@@ -19,6 +21,7 @@ export function PillButton({
   primary?: boolean;
   danger?: boolean;
   emphasis?: boolean;
+  plain?: boolean;
   busy?: boolean;
 }) {
   return (
@@ -35,7 +38,9 @@ export function PillButton({
             ? styles.danger
             : emphasis
               ? styles.emphasis
-              : styles.secondary,
+              : plain
+                ? styles.plain
+                : styles.secondary,
         pressed && styles.pressed,
       ]}
     >
@@ -62,6 +67,7 @@ const styles = StyleSheet.create({
   secondary: { backgroundColor: "rgba(255,255,255,0.14)" },
   danger: { backgroundColor: statusFill.dnd },
   emphasis: { backgroundColor: "rgba(255,255,255,0.26)" },
+  plain: { backgroundColor: "transparent" },
   pressed: { opacity: 0.8 },
   label: { fontSize: 15, fontWeight: "600", color: colors.text },
   primaryLabel: { color: colors.background },
